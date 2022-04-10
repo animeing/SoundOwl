@@ -1,0 +1,66 @@
+<Files ~ "^\.(htaccess|htpasswd)$">
+order allow,deny
+deny from all
+</Files>
+<Files ~ "\.(ini)$">
+order allow,deny
+deny from all
+</Files>
+Header unset X-Powered-By
+Header unset Server
+Header always set X-UA-Compatible "IE=edge,chrome=1"
+Header always set Vary Origin
+Header always set X-XSS-Protection "1; mode=block"
+Header always set X-Content-Type-Options "nosniff"
+Header always set X-Frame-Options DENY
+Header always set X-Download-Options: noopen
+Header always set X-Robots-Tag "noindex,nofollow,noarchive,nosnippet,noodp"
+
+
+<ifModule mod_expires.c>
+
+ BrowserMatch ^Mozilla/4\.0[678] no-gzip
+ BrowserMatch ^Mozilla/4 gzip-only-text/html
+ BrowserMatch \bMSI[E] !no-gzip !gzip-only-text/html
+ 
+ SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|ico|zip)$ no-gzip dont-vary
+ SetEnvIfNoCase Request_URI _\.utxt$ no-gzip
+</IfModule>
+
+<IfModule mod_headers.c>
+<FilesMatch "\.(ico|jpe?g|png|gif|svg|swf|pdf|ttf|woff|otf|eot)$">
+    Header set Cache-Control "max-age=604800, public"
+</FilesMatch>
+
+</ifModule>
+
+<IfModule mod_php5.c>
+php_flag session.cookie_httponly on
+php_flag session.cookie_secure On
+
+php_flag session.auto_start Off
+php_flag session.use_trans_sid Off
+php_flag session.use_cookies On
+php_flag session.use_only_cookies On
+</IfModule>
+
+
+<IfModule mod_rewrite.c>
+ RewriteEngine on
+ 
+
+ RewriteCond %{REQUEST_FILENAME} !^(.*)\.(gif|png|jpg|jpeg|js|css|xml|mp4|avi|bmp|mp3|wav|ogg|wma|wav|m4a|ico|clomex|json|clomex)$ [NC]
+ RewriteCond %{REQUEST_URI} !^/user/*.*$
+ RewriteCond %{REQUEST_URI} !^/serch/*.*$
+ RewriteCond %{REQUEST_URI} !/parts/
+ RewriteCond %{REQUEST_URI} !/js/
+ RewriteCond %{REQUEST_URI} !/css/
+ RewriteCond %{REQUEST_URI} !/img/
+ RewriteCond %{REQUEST_URI} !/sound_create/
+ RewriteCond %{REQUEST_URI} !/content/
+ RewriteCond %{REQUEST_URI} !/api/
+ RewriteCond %{REQUEST_URI} !/error/
+ RewriteRule (.*)$ index.php
+
+
+</IfModule>

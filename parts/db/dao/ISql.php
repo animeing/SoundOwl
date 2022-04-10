@@ -1,0 +1,65 @@
+<?php
+namespace db\dao;
+interface ISql {
+	const PLACE = " ? ";
+	const ALL_COLUMN = " * ";
+	const COUNT_1 = " COUNT(1) ";
+	const COUNT_ASTER = " COUNT(*) AS COUNTER ";
+	const COUNT = " COUNT ";
+	const SELECT = " SELECT ";
+	const FROM = " FROM ";
+	const WHERE = " WHERE ";
+	const EQUAL_AND = " = ? AND ";
+	const EQUAL_OR = " = ? OR ";
+	const EQUAL_PARAM = " = ? ";
+	const GROUP_BY = " GROUP_BY ";
+	const ORDER_BY = " ODER BY ";
+	const DESC = " DESC ";
+	const ASC = " ASC ";
+	const UPDATE = " UPDATE ";
+	const INSERT = " INSERT ";
+	const DELETE = " DELETE ";
+	const INTO = " INTO ";
+	const VALUES = "VALUES";
+	const SET = " SET ";
+	const VALUE = " ? ";
+	const EQUAL_OVER = " >= ? ";
+	const EQUAL_OVER_AND = " >= ? AND";
+	const EQUAL_OVER_OR = " >= ? OR";
+	const NOT_EQUAL = " <> ? ";
+	const OR = " OR ";
+	const AND = " AND ";
+	const OVER = " > ?";
+	const OVER_AND = " > ? AND";
+	const OVER_OR = " > ? OR";
+	const EQUAL_UNDER = " <= ? ";
+	const EQUAL_UNDER_AND = " <= ? AND";
+	const EQUAL_UNDER_OR = " <= ? OR";
+	const UNDER = " < ?";
+	const UNDER_AND = " < ? AND";
+	const UNDER_OR = " < ? OR";
+	const BETWEEN = " BETWEEN ";
+    const BETWEEN_AND = " BETWEEN ? AND ? ";
+	const IN = " IN ";
+	const NOT = " NOT ";
+	const NOT_IN = " NOT IN ";
+	const NOT_BETWEEN = " NOT BETWEEN ";
+	const SYSTIMESAMP = " SYSTIMESAMP ";
+	const BRACKET_OPEN = " ( ";
+	const BRACKET_END = " ) ";
+	const LIKE = " LIKE ? ";
+	const LIKE_OR = " LIKE ? OR ";
+	const LIKE_AND = " LIKE ? AND ";
+	const LIMIT = " LIMIT ? ";
+	const LIMIT_OFFSET = " LIMIT ? OFFSET ? ";
+	const SUBSTRING = " SUBSTRING( ? , ? , ? ) ";
+	const JOIN = " JOIN ";
+	const LEFT_JOIN = " LEFT ".ISql::JOIN;
+	const RIGHT_JOIN = " RIGHT ".ISql::JOIN;
+	const INNER = " INNER ".ISql::JOIN;
+	const OUTER = " OUTER ".ISql::JOIN;
+	const UNION = " UNION ";
+
+	
+	const TRADITIONAL_COMMAND = "SET SESSION sql_mode='TRADITIONAL'";
+}

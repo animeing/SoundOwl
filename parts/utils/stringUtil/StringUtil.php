@@ -1,0 +1,84 @@
+<?php
+
+final class StringUtil {
+    private function __construct(){}
+	
+	const EMPTY_STRING = "";
+	const TIME_STAMP_FORMAT = "Y-m-d H:i:s";
+	
+    public static function isNullOrEmpty($variable){
+        return (!isset($variable) || $variable == "");
+	}
+    
+	public static function deleteBom($str){
+		if (($str == NULL) || (mb_strlen($str) == 0)) {
+			return $str;
+		}
+		if (ord($str{0}) == 0xef && ord($str{1}) == 0xbb && ord($str{2}) == 0xbf) {
+			$str = substr($str, 3);
+		}
+		return $str;
+	}
+
+	public static function encloseData($data, $enclose){
+		return $enclose.$data.$enclose;
+	}
+
+	public static function uniqueRandom($length = 8){
+		return substr(str_shuffle('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLNMOPQRSTUVWXYZ*+=-^~|{}[]`?_<>,.'), 0, $length);
+	}
+	
+	/**
+	 * @param string $html 
+	 * @return string
+	 */
+	public static function removeEOL($html){
+		$html = preg_replace('[\r\n|\r|\n|'.PHP_EOL.']', "", $html);
+		return $html;
+	}
+
+	public static function changeHtmlEOL($data){
+		return str_replace(PHP_EOL, '<br>', $data);
+	}
+	/**
+	 * @param string $html 
+	 * @return string
+	 */
+	public static function deleteTab($html){
+		return preg_replace('[\t|  ]',"", $html);
+	}
+	/**
+	 * @param string $html 
+	 * @return string
+	 */
+	public static function deleteSlashComment($html){
+		return preg_replace('[\s//.*'.PHP_EOL.']',"" , $html);
+	}
+	/**
+	 * @param string $html 
+	 * @return string
+	 */
+	public static function deleteJsDocComment($html){
+		return preg_replace("/[\/][\*][\*][^\/]*[\*][\/]/s", "", $html);
+	}
+
+	public static function deleteString($remove, $text){		
+		return str_replace($remove, '', $text);
+	}
+
+	/**
+	 * @param string $javascript 
+	 * @return string
+	 */
+	public static function deleteNonCode($javascript){
+		return StringUtil::removeEOL(StringUtil::deleteTab(StringUtil::deleteJsDocComment(StringUtil::deleteSlashComment($javascript))));
+	}
+
+	public static function deleteNonCss($css){
+		return StringUtil::removeEOL(StringUtil::deleteTab($css));
+	}
+
+	public static function deleteNonHtml($html){
+		return StringUtil::removeEOL(StringUtil::deleteBom($html));
+	}
+}

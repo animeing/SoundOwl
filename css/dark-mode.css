@@ -1,0 +1,14 @@
+
+
+:root{
+  --fontcolor: #c7c7c7;
+  --subfontcolor: #949494;
+  --basecolor: rgb(63, 63, 63);
+  --subcolor: rgb(41, 41, 41);
+  --subcoloraccentcolor: rgb(116, 116, 116);
+  --accentcolor: rgb(180, 117, 35);
+  --playerbgcolor: #252525;
+  --playerftcolor: rgb(211, 211, 211);
+  --playerfcbgcolor: #3d3d3d;
+  --itemfcbgcolor: #303030;
+}
