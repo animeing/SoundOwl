@@ -13,5 +13,6 @@
     <base>db/dto/DtoBase.php</base>
 
     <data table="SoundLinkTable.php" dto="SoundLinkDto.php" dao="SoundLinkDao.php" />
+    <data table="AlbumTable.php" dto="AlbumDto.php" dao="AlbumDao.php" />
 
 </scripts>
