@@ -14,5 +14,6 @@
 
     <data table="SoundLinkTable.php" dto="SoundLinkDto.php" dao="SoundLinkDao.php" />
     <data table="AlbumTable.php" dto="AlbumDto.php" dao="AlbumDao.php" />
+    <data table="SoundPlayHistoryTable.php" dto="SoundPlayHistoryDto.php" dao="SoundPlayHistoryDao.php" />
 
 </scripts>
