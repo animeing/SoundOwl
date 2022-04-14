@@ -12,4 +12,6 @@
     <base>db/dao/SqlCreater.php</base>
     <base>db/dto/DtoBase.php</base>
 
+    <data table="SoundLinkTable.php" dto="SoundLinkDto.php" dao="SoundLinkDao.php" />
+
 </scripts>
