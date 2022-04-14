@@ -1,9 +1,11 @@
 <?xml version="1.0"?>
 <!--phpファイルの読み込み先を設定しています。-->
 <scripts>
-    <util>utils/stringUtil/ComplessUtil.php</util> 
-    <util>utils/stringUtil/StringUtil.php</util> 
-    <util>utils/browserUtil/BrowserUtil.php</util> 
+    <util>utils/stringUtil/ComplessUtil.php</util>
+    <util>utils/stringUtil/StringUtil.php</util>
+    <util>utils/browserUtil/BrowserUtil.php</util>
+    <util>utils/fileUtil/IMimeType.php</util>
+    <util>utils/fileUtil/FileUtil.php</util>
 
     <base>db/dao/ISql.php</base>
     <base>db/connector/Connector.php</base>
