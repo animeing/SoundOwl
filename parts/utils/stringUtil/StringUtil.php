@@ -14,10 +14,8 @@ final class StringUtil {
 		if (($str == NULL) || (mb_strlen($str) == 0)) {
 			return $str;
 		}
-		if (ord($str{0}) == 0xef && ord($str{1}) == 0xbb && ord($str{2}) == 0xbf) {
-			$str = substr($str, 3);
-		}
-		return $str;
+		$bomcode = hex2bin('EFBBBF');
+		return preg_replace("/^$bomcode/", '', $str);
 	}
 
 	public static function encloseData($data, $enclose){

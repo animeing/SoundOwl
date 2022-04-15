@@ -7,7 +7,7 @@ final class BrowserUtil{
         return $_COOKIE[$key];
     }
 
-    public static function setCookieParam(string $key, $value, long $expirationSecond = null){
+    public static function setCookieParam(string $key, $value, int $expirationSecond = null){
         if($expirationSecond == null){
             setcookie($key, $value);
         } else {
