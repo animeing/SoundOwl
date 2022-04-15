@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "941f936a001c42220e2b0306687953c9",
+    "content-hash": "55915b9498c2766e2111821ca5fb0a31",
     "packages": [
         {
             "name": "james-heinrich/getid3",
@@ -72,6 +72,56 @@
                 "source": "https://github.com/JamesHeinrich/getID3/tree/v1.9.21"
             },
             "time": "2021-09-22T16:34:51+00:00"
+        },
+        {
+            "name": "kenangundogan/fontisto",
+            "version": "v3.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/kenangundogan/fontisto.git",
+                "reference": "cc3d221f23f562b3ce1d994dadb18f94f288fc74"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/kenangundogan/fontisto/zipball/cc3d221f23f562b3ce1d994dadb18f94f288fc74",
+                "reference": "cc3d221f23f562b3ce1d994dadb18f94f288fc74",
+                "shasum": ""
+            },
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Kenan Gündoğan",
+                    "email": "kenangundogann@gmail.com",
+                    "role": "Visual UI / UX Designer and Developer"
+                }
+            ],
+            "description": "Fontisto gives you scalable vector icons that can instantly be customized: size, color, drop shadow and anything that can be done with the power of CSS.",
+            "homepage": "http://www.fontisto.com/",
+            "keywords": [
+                "font",
+                "font-icon",
+                "font-icon-libraries",
+                "font-library",
+                "fontisto",
+                "icon",
+                "icon-font",
+                "icon-pack",
+                "icon-set",
+                "less",
+                "sass",
+                "stylus",
+                "web-font",
+                "web-icons"
+            ],
+            "support": {
+                "issues": "https://github.com/kenangundogan/fontisto/issues",
+                "source": "https://github.com/kenangundogan/fontisto"
+            },
+            "time": "2018-04-20T18:48:41+00:00"
         }
     ],
     "packages-dev": [],
