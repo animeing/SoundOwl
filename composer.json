@@ -1,0 +1,12 @@
+{
+    "name": "animeing/sound-owl_local",
+    "authors": [
+        {
+            "name": "animeing",
+            "email": "msdsoftpopo@yahoo.co.jp"
+        }
+    ],
+    "require": {
+        "james-heinrich/getid3": "^1.9"
+    }
+}
