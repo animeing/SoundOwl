@@ -86,6 +86,7 @@ class AudioPlayController extends HTMLElement {
         });
 
         this._audioProgress = document.createElement('sw-audio-progress');
+        this._audioProgress.classList.add('progress-times');
         this._volumeObject = document.createElement('sw-v-progress');
 
         let controller = document.createElement('span');
@@ -186,14 +187,14 @@ class AudioPlayController extends HTMLElement {
             let playListIcon = document.createElement('input');
             playListIcon.value = '';
             playListIcon.type = 'button';
-            playListIcon.classList.add('audio-controller-volume', 'audio-controller-parts', 'icon');
+            playListIcon.classList.add('audio-controller-parts', 'icon');
             cntAppndObj(playListIcon);
         }
         {
             let volumeIcon = document.createElement('input');
             volumeIcon.value = '';
             volumeIcon.type = 'button';
-            volumeIcon.classList.add('audio-controller-volume', 'audio-controller-parts', 'icon');
+            volumeIcon.classList.add('audio-controller-parts', 'icon');
             cntAppndObj(volumeIcon);
         }
         {
@@ -201,6 +202,52 @@ class AudioPlayController extends HTMLElement {
             openIcon.value = '';
             openIcon.type='button';
             openIcon.classList.add('audio-controller-parts', 'icon');
+
+            let musicCanvasEvent = ()=>{
+                if(openIcon.value === ''){
+                    openIcon.value = '';
+                    this.classList.add('current-sound-controller-fill-layout');
+                    this.parentNode.addEventListener('scroll', this.disableWindowScroll);
+                    this.top = window.scrollY;
+                    /// /
+                    this.canvas.object.setAttribute('height', window.innerHeight - 45);
+                    this.canvas.object.setAttribute('width', window.innerWidth - 56);
+                } else {
+                    document.body.removeAttribute('style');
+                    this.parentNode.removeEventListener('scroll', this.disableWindowScroll);
+                    openIcon.value = '';
+                    openIcon.removeAttribute('style');
+                    this.classList.remove('current-sound-controller-fill-layout');
+                    Array.prototype.filter.call(document.getElementsByClassName('progress-times'), (e)=>{
+                        e.removeAttribute('style');
+                    });
+                    
+                }
+            };
+
+            this.canvas = new CanvasAudioAnalizer;
+            this.canvas.connect(audio.audioContext, audio.source);
+            this.canvas.run();
+            openIcon.addEventListener(MouseEventEnum.CLICK, musicCanvasEvent);
+            openIcon.addEventListener('contextmenu',e=>{
+                ContextMenu.contextMenu.removeAll();
+                {
+                    let soundOpenClose = document.createElement('li', {is:'sw-libutton'});
+                    if(openIcon.value === ''){
+                        soundOpenClose.menuItem.value = 'Open';
+                    } else {
+                        soundOpenClose.menuItem.value = 'Close';
+                    }
+                    soundOpenClose.menuItem.onclick=e=>{
+                        musicCanvasEvent();
+                    };
+                    ContextMenu.contextMenu.list.add(soundOpenClose);
+                }
+                ContextMenu.visible(e);
+                e.stopPropagation();
+            });
+
+            
             cntAppndObj(openIcon);
         }
     }
@@ -210,13 +257,16 @@ class AudioPlayController extends HTMLElement {
         let durationText = timeToText(duration);
         let currentText = timeToText(current);
         return currentText['min']+':'+currentText['sec']+'/'+durationText['min']+':'+durationText['sec'];
-    };
+    }
+    
     connectedCallback() {
         this.classList.add('audio-play-controller');
         this.appendChild(this.currentSoundInfoFrame);
         this.appendChild(this.progressTextElement = document.createElement('span'));
         this.progressTextElement.innerText = this.progressText();
+        this.progressTextElement.classList.add('progress-times', 'progress-time', 'nonselectable');
         this.appendChild(this._audioProgress);
+        this.appendObject(this.canvas);
     }
 }
 
