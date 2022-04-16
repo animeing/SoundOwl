@@ -51,13 +51,13 @@ BaseFrameWork.Draw.Transform=class{
 };
 
 class MousePosition{
-    #element = null;
+    _element = null;
     /**
      * 
      * @param {HTMLElement} element 
      */
     constructor(element){
-        this.#element = element;
+        this._element = element;
     }
 
     /**
@@ -67,8 +67,8 @@ class MousePosition{
     localMousePosition(e){
         let position = new BaseFrameWork.Draw.Point2D;
         position = this.worldMousePosition(e);
-        position.x = e.clientX - this.#element.offsetLeft;
-        position.y = e.clientY - this.#element.offsetTop;
+        position.x = e.clientX - this._element.offsetLeft;
+        position.y = e.clientY - this._element.offsetTop;
         return position;
     }
     /**
@@ -83,14 +83,14 @@ class MousePosition{
     }
     toLocalMousePosition(worldPosition){
         let localPosition = worldPosition;
-        localPosition.x -= this.#element.offsetLeft;
-        localPosition.y -= this.#element.offsetTop;
+        localPosition.x -= this._element.offsetLeft;
+        localPosition.y -= this._element.offsetTop;
         return localPosition;
     }
     toWorldMousePosition(localPosition){
         let worldPosition = localPosition;
-        worldPosition.x += this.#element.offsetLeft;
-        worldPosition.y += this.#element.offsetTop;
+        worldPosition.x += this._element.offsetLeft;
+        worldPosition.y += this._element.offsetTop;
         return worldPosition;
     }
 }
@@ -658,9 +658,9 @@ class WebObjectList extends BaseFrameWork.List{
 }
 
 BaseFrameWork.Storage.Application.CookieMap=class {
-    #savePath = '';
+    _savePath = '';
     constructor(savePath = ''){
-        this.#savePath = savePath;
+        this._savePath = savePath;
     }
 
     *[Symbol.iterator](){
@@ -683,7 +683,7 @@ BaseFrameWork.Storage.Application.CookieMap=class {
     }
 
     get path(){
-        return this.#savePath;
+        return this._savePath;
     }
 
     /**
@@ -1164,25 +1164,25 @@ BaseFrameWork.Network.RequestServerBase=class {
 
 
 class BindValue{
-    #currentValue = "";
-    #bindObject = new WebObject;
+    _currentValue = "";
+    _bindObject = new WebObject;
 
     constructor(bindWrapper){
-        this.#bindObject = bindWrapper;
+        this._bindObject = bindWrapper;
     }
 
     set value(newValue){
-        if(this.#currentValue !== newValue){
+        if(this._currentValue !== newValue){
             this.bindObject.value = newValue;
-            this.#currentValue = newValue;
+            this._currentValue = newValue;
         }
     }
     get value(){
-        return this.#currentValue;
+        return this._currentValue;
     }
 
     get bindObject(){
-        return this.#bindObject;
+        return this._bindObject;
     }
 }
 
@@ -1191,9 +1191,9 @@ class BindValue{
  * @deprecated Use Element
  */
 class WebObject{
-    #obj = undefined;
+    _obj = undefined;
     constructor(){
-        this.#obj = document.createElement(this.tagName);
+        this._obj = document.createElement(this.tagName);
     }
 
     /**
@@ -1231,7 +1231,7 @@ class WebObject{
      * @returns {HTMLElement}
      */
     get object(){
-        return this.#obj;
+        return this._obj;
     }
     
     set value(str){
@@ -1255,9 +1255,9 @@ class DivObject extends WebObject{
 
 class ProgressComposite extends HTMLElement{
     eventSupport = new EventTarget;
-    #max = 0;
-    #min = 0;
-    #value = 0;
+    _max = 0;
+    _min = 0;
+    _value = 0;
     constructor(){
         super();
         this.mousePosition = new MousePosition(this);
@@ -1341,17 +1341,17 @@ class ProgressComposite extends HTMLElement{
      * @param {number} value
      */
     get value(){
-        return this.#value;
+        return this._value;
     }
 
     /**
      * @param {number} value
      */
     set value(value){
-        if(this.#value == value || isNaN(value)){
+        if(this._value == value || isNaN(value)){
             return;
         }
-        this.#value = value;
+        this._value = value;
         this.update(value);
     }
 
@@ -1360,7 +1360,7 @@ class ProgressComposite extends HTMLElement{
      * @param {number} max
      */
     get max(){
-        return this.#max;
+        return this._max;
     }
 
     /**
@@ -1368,17 +1368,17 @@ class ProgressComposite extends HTMLElement{
      */
     set max(max){
         if(this.min >= max || this.max == max || isNaN(max)) return;
-        this.#max = max;
+        this._max = max;
         this.update();
     }
 
     get min(){
-        return this.#min;
+        return this._min;
     }
 
     set min(min){
         if(min >= this.max || this.min == min || isNaN(min)) return;
-        this.#min = min;
+        this._min = min;
         this.update()
     }
 
@@ -1553,20 +1553,20 @@ class ButtonObject extends InputObject{
 }
 
 class MessageWindow extends HTMLElement{
-    #messageElement = document.createElement('p');
+    _messageElement = document.createElement('p');
     constructor(){
         super();
     }
 
     set value(message){
-        if(this.#messageElement.innerText == message){
+        if(this._messageElement.innerText == message){
             return;
         }
-        this.#messageElement.innerText = message;
+        this._messageElement.innerText = message;
     }
 
     get value(){
-        return this.#messageElement.innerText;
+        return this._messageElement.innerText;
     }
 
     open(){
@@ -1577,7 +1577,7 @@ class MessageWindow extends HTMLElement{
      * @protected
      */
     connectedCallback(){
-        this.appendChild(this.#messageElement);
+        this.appendChild(this._messageElement);
         return this;
     }
     /**
@@ -1597,11 +1597,11 @@ class MessageWindow extends HTMLElement{
 customElements.define('sw-message-box', MessageWindow);
 
 class MessageButtonWindow extends MessageWindow {
-    #buttonNameList = new BaseFrameWork.List;
+    _buttonNameList = new BaseFrameWork.List;
     constructor(){
         super();
         this.buttonFrame = new DivObject;
-        this.#buttonNameList.eventSupport.addEventListener('change',()=>this.changeButtonList());
+        this._buttonNameList.eventSupport.addEventListener('change',()=>this.changeButtonList());
     }
 
     connectedCallback(){
@@ -1623,7 +1623,7 @@ class MessageButtonWindow extends MessageWindow {
      */
     changeButtonList(){
         this.buttonFrame.removeAll();
-        for (const buttonName of this.#buttonNameList) {
+        for (const buttonName of this._buttonNameList) {
             this.addButton(buttonName);
         }
     }
@@ -1647,7 +1647,7 @@ class MessageButtonWindow extends MessageWindow {
         let menuItem = new MenuItem(button);
         menuItem.value = value;
         menuItem.onClickEvent = onclick;
-        this.#buttonNameList.add(menuItem);
+        this._buttonNameList.add(menuItem);
     }
 }
 
@@ -1696,7 +1696,7 @@ class LIButtonObject extends HTMLLIElement{
 customElements.define('sw-libutton', LIButtonObject, {extends:'li'});
 
 class DropDownElement extends HTMLUListElement{
-    #dropdownNameObject = null;
+    _dropdownNameObject = null;
     list = new WebObjectList(this);
     constructor(){
         super();
@@ -1707,7 +1707,7 @@ class DropDownElement extends HTMLUListElement{
         if(this.dropdownObject != null){
             this.dropdownObject.destory();
         }
-        this.#dropdownNameObject = value;
+        this._dropdownNameObject = value;
         if(this.list == undefined||this.list.get(0) == undefined){
             this.appendChild(this.dropdownObject);
         } else {
@@ -1716,7 +1716,7 @@ class DropDownElement extends HTMLUListElement{
     }
 
     get dropdownObject(){
-        return this.#dropdownNameObject;
+        return this._dropdownNameObject;
     }
 
     set displayName(value){
@@ -1752,11 +1752,11 @@ customElements.define('sw-dropdown', DropDownElement, {extends: 'ul'});
  * @abstract
  */
 BaseFrameWork.Draw.Module.CanvasBase=class extends WebObject{
-    #canvasObjectList = new BaseFrameWork.List;
-    #paramClass = null;
+    _canvasObjectList = new BaseFrameWork.List;
+    _paramClass = null;
     constructor(){
         super();
-        this.#paramClass = {
+        this._paramClass = {
             mousePosition: new MousePosition(this.object)
             
         };
@@ -1786,7 +1786,7 @@ BaseFrameWork.Draw.Module.CanvasBase=class extends WebObject{
         this.canvasObjectList.remove(canvasObject);
     }
     get canvasObjectList(){
-        return this.#canvasObjectList;
+        return this._canvasObjectList;
     }
     run(){
         let self = this;
@@ -1891,14 +1891,14 @@ class CanvasObjectColor{
 }
 
 BaseFrameWork.Draw.Figure.Module.CanvasObjectBase=class {
-    #color = new CanvasObjectColor;
-    #_context = null;
+    _color = new CanvasObjectColor;
+    __context = null;
     update = ()=>{};
     /**
      * @returns {CanvasObjectColor}
      */
     get color(){
-        return this.#color;
+        return this._color;
     }
 
     /**
@@ -1906,14 +1906,14 @@ BaseFrameWork.Draw.Figure.Module.CanvasObjectBase=class {
      * @returns {RenderingContext}
      */
     fcontext(context){
-        this.#_context = context;
+        this.__context = context;
         return this.context;
     }
     /**
      * @returns {RenderingContext}
      */
     get context(){
-        return this.#_context;
+        return this.__context;
     }
 
     async renderObjectBase(){
@@ -1940,8 +1940,8 @@ BaseFrameWork.Draw.Figure.Module.CanvasObjectBase=class {
 };
 
 BaseFrameWork.Draw.Figure.CanvasObject2DBase=class extends BaseFrameWork.Draw.Figure.Module.CanvasObjectBase{
-    #path = new Path2D();
-    #isFill = true;
+    _path = new Path2D();
+    _isFill = true;
     constructor(){
         super();
         this.transform = new BaseFrameWork.Draw.Transform2D;
@@ -1950,23 +1950,23 @@ BaseFrameWork.Draw.Figure.CanvasObject2DBase=class extends BaseFrameWork.Draw.Fi
      * @private
      */
     pathReset(){
-        this.#path = new Path2D;
+        this._path = new Path2D;
     }
     /**
      * @returns {Path2D}
      */
     get path(){
-        return this.#path;
+        return this._path;
     }
     /**
      * @return {boolean}
      */
     get fill(){
-        return this.#isFill;
+        return this._isFill;
     }
 
     set fill(value){
-        this.#isFill = value;
+        this._isFill = value;
     }
 
 };

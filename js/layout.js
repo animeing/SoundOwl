@@ -1,6 +1,6 @@
 
 class SearchBox extends HTMLElement{
-    #searchBox = document.createElement('input');
+    _searchBox = document.createElement('input');
     searchIcon = document.createElement('span');
     searchEvent = value=>{};
     constructor(){
@@ -34,7 +34,7 @@ class SearchBox extends HTMLElement{
     }
 
     get searchBox(){
-        return this.#searchBox
+        return this._searchBox
     }
 }
 customElements.define('sw-searchbox', SearchBox);
