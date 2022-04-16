@@ -2307,7 +2307,7 @@ class AudioPlayer{
 
     set currentAudioClip(currentAudioClip){
         this._currentAudioClip = currentAudioClip;
-        {
+        if(this.currentAudioClip){
             let url = UrlParam.setGetter({'PlayerHash': this.currentAudioClip.soundHash});
             if(url != location.pathname+location.search){
                 history.pushState(null,null,url);
