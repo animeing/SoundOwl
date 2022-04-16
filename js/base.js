@@ -2273,6 +2273,354 @@ class AudioLoopModeEnum{
 }
 
 
+
+class AudioPlayer{
+    _currentAudioClip = null;
+    constructor(){
+        this.audio = new Audio;
+        this.stateInit();
+        this.audioContext = new AudioContext;
+        this.source = this.audioContext.createMediaElementSource(this.audio);
+        this.source.connect(this.audioContext.destination);
+        /**
+         * @type {BaseFrameWork.List<AudioClip>}
+         */
+        this.playList = new BaseFrameWork.List;
+        this.loopMode = AudioLoopModeEnum.NON_LOOP;
+        this.currentPlayState = AudioPlayStateEnum.STOP;
+        this.eventSupport = new EventTarget;
+        this.audioUpdateEvent = new CustomEvent('update');
+        this.audioUpdatedEvent = new CustomEvent('updated');
+        this.loadGiveUpTime = 10000;
+        this.audio.onerror = ()=> {
+            console.log("Error " + this.audio.error.code + "; details: " + this.audio.error.message);
+        };
+        this.setUpdate();
+    }
+
+    /**
+     * @type {AudioClip}
+     */
+    get currentAudioClip(){
+        return this._currentAudioClip;
+    }
+
+    set currentAudioClip(currentAudioClip){
+        this._currentAudioClip = currentAudioClip;
+        {
+            let url = UrlParam.setGetter({'PlayerHash': this.currentAudioClip.soundHash});
+            if(url != location.pathname+location.search){
+                history.pushState(null,null,url);
+                popPage();
+            }
+        }
+    }
+
+    stateInit(){
+        let instance = this;
+        this.audioState = AudioStateEnum.PAUSE;
+        this.audio.addEventListener(AudioStateEnum.ABORT,()=>{
+            instance.audioState = AudioStateEnum.ABORT;
+        });
+        this.audio.addEventListener(AudioStateEnum.CAN_PLAY,()=>{
+            instance.audioState = AudioStateEnum.CAN_PLAY;
+        });
+        this.audio.addEventListener(AudioStateEnum.CAN_PLAY_THROUGH,()=>{
+            instance.audioState = AudioStateEnum.CAN_PLAY_THROUGH;
+        });
+        this.audio.addEventListener(AudioStateEnum.EMPTIED,()=>{
+            instance.audioState = AudioStateEnum.EMPTIED;
+        });
+        this.audio.addEventListener(AudioStateEnum.ENDED,()=>{
+            instance.audioState = AudioStateEnum.ENDED;
+        });
+        this.audio.addEventListener(AudioStateEnum.ERROR,()=>{
+            instance.audioState = AudioStateEnum.ERROR;
+        });
+        this.audio.addEventListener(AudioStateEnum.LOADED_DATA,()=>{
+            instance.audioState = AudioStateEnum.LOADED_DATA;
+        });
+        this.audio.addEventListener(AudioStateEnum.LOADED_METADATA,()=>{
+            instance.audioState = AudioStateEnum.LOADED_METADATA;
+        });
+        this.audio.addEventListener(AudioStateEnum.LOAD_START,()=>{
+            instance.audioState = AudioStateEnum.LOAD_START;
+        });
+        this.audio.addEventListener(AudioStateEnum.PAUSE,()=>{
+            instance.audioState = AudioStateEnum.PAUSE;
+        });
+        this.audio.addEventListener(AudioStateEnum.PLAYING,()=>{
+            instance.audioState = AudioStateEnum.PLAYING;
+        });
+        this.audio.addEventListener(AudioStateEnum.PROGRESS,()=>{
+            instance.audioState = AudioStateEnum.PROGRESS;
+        });
+        this.audio.addEventListener(AudioStateEnum.STALLED,()=>{
+            instance.audioState = AudioStateEnum.STALLED;
+        });
+        this.audio.addEventListener(AudioStateEnum.SUSPEND,()=>{
+            instance.audioState = AudioStateEnum.SUSPEND;
+        });
+        this.audio.addEventListener(AudioStateEnum.WAITING,()=>{
+            instance.audioState = AudioStateEnum.WAITING;
+        });
+        this.audio.addEventListener(AudioPlayStateEnum.PLAY,()=>{
+            instance.audioPlayState = AudioPlayStateEnum.PLAY;
+        });
+        this.audio.addEventListener(AudioPlayStateEnum.PAUSE,()=>{
+            instance.audioPlayState = AudioPlayStateEnum.PAUSE;
+        });
+    }
+
+    updateLockAccess = false;
+
+    /**
+     * @private
+     */
+    setUpdate(){
+        if(this.updateLockAccess) return;
+        this.updateLockAccess = true;
+        try {
+            if(this.updateJob == null){
+                this.updateJob = setInterval(()=>{
+                    this.audioUpdate();
+                }, this.UPDATE_MILI_SEC);
+            }
+        } finally {
+            this.updateLockAccess = false;
+        }
+    }
+
+    setStopUpdate(){
+        if(this.updateLockAccess) return;
+        this.updateLockAccess = true;
+        try{
+            if(this.updateJob != null){
+                clearInterval(this.updateJob);
+                this.updateJob = null;
+            }
+        } finally {
+            this.updateLockAccess = false;
+        }
+    }
+
+    /**
+     * @private
+     */
+    audioUpdate(){
+        this.eventSupport.dispatchEvent(this.audioUpdateEvent);
+        switch(this.currentPlayState){
+            case AudioPlayStateEnum.STOP:
+            case AudioPlayStateEnum.PAUSE:
+            {
+                return;
+            }
+            case AudioPlayStateEnum.PLAY:
+            {
+                if(!this.isPlaying && !this.isLoading){
+                    let com = ()=>{
+                        let audioClip = this.autoNextClip;
+                        if(audioClip == undefined){
+                            this.pause();
+                            this.eventSupport.dispatchEvent(this.audioUpdatedEvent);
+                            return;
+                        }
+                        this.eventSupport.dispatchEvent(this.audioUpdatedEvent);
+                        this.play(audioClip);
+                        this.errorTime = null;
+                    };
+                    if(this.isError){
+                        if(this.errorTime == null){
+                            this.errorTime = setTimeout(()=>{
+                                if(this.audioState != AudioStateEnum.STALLED){
+                                    if(this.audioState == AudioStateEnum.ERROR){
+                                        let errorWindow = new MessageWindow;
+                                        errorWindow.value='Sound load missing.\nPlease check network.';
+                                        errorWindow.close(1000);
+                                    }
+                                    return;
+                                }
+                                return com();
+                            }, this.loadGiveUpTime);
+                        }
+                    } else {
+                        if(this.audioState != AudioStateEnum.ERROR){
+                            if(this.errorTime == null){
+                                this.errorTime = setTimeout(()=>{
+                                    if(this.audioState != AudioStateEnum.STALLED){
+                                        if(this.audioState == AudioStateEnum.ERROR){
+                                            let errorWindow = new MessageWindow;
+                                            errorWindow.value='Sound load missing.\nPlease check network.';
+                                            errorWindow.close(1000);
+                                        }
+                                        return;
+                                    }
+                                    return com();
+                                }, this.loadGiveUpTime);
+                            }
+                        }
+                    }
+                }
+                if(!this.isLoading && (this.audio.currentTime === this.audio.duration)){
+                    let clip = this.autoNextClip;
+                    if(clip == null)
+                    {
+                        return;
+                    }
+                    this.play(clip);
+                }
+            }
+        }
+    }
+
+    /**
+     * 
+     * @param {AudioClip} setAudioClip 
+     */
+    setCurrentAudioClip(setAudioClip){
+        if(this.currentAudioClip === setAudioClip || setAudioClip == undefined){
+            return;
+        }
+        this.currentAudioClip = setAudioClip;
+        this.audioDeployment();
+        // this.audioUpdate(); //CHECK
+    }
+
+    audioDeployment(){
+        this.audio.src = this.currentAudioClip.src;
+    }
+
+    get UPDATE_MILI_SEC(){
+        return 250;
+    }
+
+    get isError(){
+        return (
+               this.audioState === AudioStateEnum.ERROR 
+            || this.audioState === AudioStateEnum.EMPTIED
+            || this.audioState === AudioStateEnum.STALLED
+            || this.audioState === AudioStateEnum.WAITING);
+    }
+
+    get isLoading(){
+        return (
+               this.audioState === AudioStateEnum.LOAD_START 
+            || this.audioState === AudioStateEnum.PROGRESS 
+            || this.audioState === AudioStateEnum.ABORT
+            || this.audioState === AudioStateEnum.LOADED_METADATA
+            || this.audioState === AudioStateEnum.LOADED_DATA);
+    }
+
+    get isPlaying(){
+        if(this.audio.currentTime == 0 && isNaN(this.audio.duration)) return false;
+        return (this.audio.currentTime !== this.audio.duration);
+    }
+    /**
+     * @private
+     */
+    get autoNextClip(){
+        if(this.currentAudioClip == null) {
+            return this.playList.get(0);
+        }
+        switch(this.loopMode){
+            case AudioLoopModeEnum.AUDIO_LOOP:
+            {
+                return this.currentAudioClip;
+            }
+            case AudioLoopModeEnum.NON_LOOP:
+            case AudioLoopModeEnum.TRACK_LOOP:
+            {
+                return this.nextClip();
+            }
+        }
+        return undefined;
+    }
+    nextClip(){
+        let clipIndex = -1;
+        for (let position = 0; position < this.playList.length; position++) {
+            const element = this.playList.get(position);
+            if(element != null && this.currentAudioClip != null && element.soundHash == this.currentAudioClip.soundHash){
+                clipIndex = position;
+                break;
+            }
+            
+        }
+        if(this.currentAudioClip == null){
+            return this.playList.get(0);
+        }
+        if(clipIndex === -1){
+            return this.currentAudioClip;
+        }
+        let nextClip = null;
+        for(let position = clipIndex+1; position < this.playList.length; position++){
+            nextClip = this.playList.get(position);
+            if(nextClip != null){
+                break;
+            }
+        };
+        if(nextClip == undefined){
+            switch (this.loopMode) {
+                case AudioLoopModeEnum.AUDIO_LOOP:
+                {
+                    return this.currentAudioClip;
+                }
+                case AudioLoopModeEnum.NON_LOOP:
+                {
+                    return undefined;
+                }
+                case AudioLoopModeEnum.TRACK_LOOP:
+                {
+                    return this.playList.get(0);
+                }
+            }
+        }
+        return nextClip;
+    }
+    play(audioClip = undefined){
+        this.setStopUpdate();
+        try{
+            if(audioClip != undefined){
+                this.currentAudioClip = audioClip;
+                this.audioDeployment();
+            } else if(this.currentAudioClip == null){
+                this.currentAudioClip = this.playList.get(0);
+                if(this.currentAudioClip == undefined){
+                    return;
+                }
+                this.audioDeployment();
+            } else {
+                if(this.audio.src == null){
+                    this.audioDeployment();
+                }
+            }
+            let soundsTable = historyDB.getTable('sounds');
+            soundsTable.add({
+                'hash':this.currentAudioClip.soundHash,
+                'time':Date.now().toString(16)
+            });
+            this.audio.play();
+            this.currentPlayState = AudioPlayStateEnum.PLAY;
+        } finally {
+            this.setUpdate();
+        }
+    }
+    pause(){
+        this.audio.pause();
+        this.currentPlayState = AudioPlayStateEnum.PAUSE;
+    }
+    stop(){
+        if(this.audio.src == null){
+            return;
+        }
+        this.audio.pause();
+        this.audio.currentTime = 0;
+        this.currentPlayState = AudioPlayStateEnum.STOP;
+    }
+}
+
+
+
+
 var fixed = document.createElement`div`;
 fixed.classList.add`fixed-window`;
 
@@ -2296,6 +2644,20 @@ const getPageName = () =>{
 
 const getTitle = ()=>{
     return document.title;
+};
+const getTime=(sec)=> {
+    return {
+      "min": ~~(sec / 60),
+      "sec": ~~(sec % 60)
+    };
+};
+
+const timeToText=(time)=> {
+    let t = getTime(time);
+    return {
+      "min": ("0" + t["min"]).slice(-2),
+      "sec": ("0" + t["sec"]).slice(-2)
+    };
 };
 
 /**
@@ -2329,9 +2691,6 @@ window.addEventListener('load', ()=>{
     Array.prototype.forEach.call(document.getElementsByTagName('a'), element=>{
         LinkAction(element);
     });
-
-    let indexedDBSyncRequest = new IndexedDBSync;
-    indexedDBSyncRequest.execute();
 
 }, !0);
 
