@@ -5,9 +5,9 @@ namespace db;
 use PDO;
 
 class Connector{
-	private static $dsn = '';
-	private static $user = '';
-    private static $pass = '';
+	private static $dsn = DB_DSN;
+	private static $user = DB_USER;
+    private static $pass = DB_PASSWORD;
     private $pdo;
 
     /**
