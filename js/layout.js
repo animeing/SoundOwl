@@ -49,7 +49,7 @@ customElements.define('sw-searchbox', SearchBox);
         
         let dropdownMenu = document.createElement('ul', {is:'sw-dropdown'});
         dropdownMenu.classList.add('header-item', 'nonselectable');
-        dropdownMenu.displayName = '';
+        dropdownMenu.displayName = 'Menu';
         dropdownMenu.dropdownObject.classList.add('icon');
         menu.appendChild(dropdownMenu);
         dropdownMenu.addItem('File Setting', ()=>{});
