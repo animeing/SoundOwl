@@ -1,7 +1,14 @@
+(()=>{
+    window.addEventListener('load',popPage);
+})();
+
 function popPage() {
     let getterParam = toGetParamMap(UrlParam.getGetter());
+    if(getterParam.page == undefined) {
+        setTitle('');
+    }
     if(getterParam.page == 'file_setting') {
-        console.log('file_setting');
+        setTitle('File Setting')
     }
 }
 
