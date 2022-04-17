@@ -285,7 +285,10 @@ customElements.define('sw-audio-controller', AudioPlayController);
         dropdownMenu.displayName = 'Menu';
         dropdownMenu.dropdownObject.classList.add('icon');
         menu.appendChild(dropdownMenu);
-        dropdownMenu.addItem('File Setting', ()=>{});
+        dropdownMenu.addItem('File Setting', ()=>{
+            history.pushState(null, null, BASE.HOME+'?page=file_setting');
+            popPage();
+        });
 
         
     };

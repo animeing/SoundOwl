@@ -26,6 +26,7 @@ echo StringUtil::deleteNonCss(file_get_contents(dirname(__FILE__).'/css/dark-mod
     </style>
     <script src="js/base.js"></script>
     <script src="js/layout.js"></script>
+    <script src="js/page.js"></script>
 </head>
 <body>
 	<header>
