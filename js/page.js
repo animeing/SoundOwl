@@ -8,7 +8,7 @@ function popPage() {
         setTitle('');
     }
     if(getterParam.page == 'file_setting') {
-        setTitle('File Setting')
+        setTitle('File Setting');
     }
 }
 
