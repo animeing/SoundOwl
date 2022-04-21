@@ -29,4 +29,22 @@ final class FileUtil implements IMimeType{
         }
         return $files;
     }
+
+    public static function getFileList($dir) {
+        if(strpos($dir,'RECYCLE.BIN') !== false)
+        {
+            return array();
+        }
+        $files = glob(rtrim($dir, '/') .  '/*', GLOB_BRACE);
+        $list = array();
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                $list[] = $file;
+            }
+            if (is_dir($file)) {
+                $list = array_merge($list, FileUtil::getFileList($file));
+            }
+        }
+        return $list;
+    }
 }
