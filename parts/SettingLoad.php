@@ -16,7 +16,5 @@ define("DB_USER", $setting['db_user']);
 
 define("DB_PASSWORD", $setting['db_pass']);
 
-define("FONTISTO_PATH",$setting['fontisto_path']);
-
 $setting = null;
 
