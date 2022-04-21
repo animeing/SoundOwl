@@ -31,8 +31,7 @@ final class FileUtil implements IMimeType{
     }
 
     public static function getFileList($dir) {
-        if(strpos($dir,'RECYCLE.BIN') !== false)
-        {
+        if(strpos($dir,'RECYCLE.BIN') !== false) {
             return array();
         }
         $files = glob(rtrim($dir, '/') .  '/*', GLOB_BRACE);
