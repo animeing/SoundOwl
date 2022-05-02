@@ -3,9 +3,12 @@
 interface AlbumTable {
     
     const TABLE_NAME = 'album';
-    const PRIMARY_KEY = 'album_hash';
+    const PRIMARY_KEY = 'album_key';
 
-    const ALBUM_HASH = 'album_hash';
+    const ALBUM_KEY = 'album_key';
+
+    const ALBUM_ID = 'album_id';
+    const ARTIST_ID = 'artist_id';
     //Albumタイトル
     const TITLE = 'title';
     //album art(binary)

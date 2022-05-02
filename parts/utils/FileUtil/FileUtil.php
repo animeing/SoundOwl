@@ -46,4 +46,22 @@ final class FileUtil implements IMimeType{
         }
         return $list;
     }
+
+    /**
+     * @param function $action 引数はFilePathが入ってる。
+     */
+    public static function fileListAction($dir, $action) {
+        if(strpos($dir,'RECYCLE.BIN') !== false) {
+            return;
+        }
+        $files = glob(rtrim($dir, '/') .  '/*', GLOB_BRACE);
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                $action($file);
+            }
+            if (is_dir($file)) {
+                FileUtil::fileListAction($file, $action);
+            }
+        }
+    }
 }

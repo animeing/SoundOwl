@@ -12,12 +12,28 @@ class AlbumDto extends DtoBase implements AlbumTable {
         return parent::getDtoCache()[AlbumTable::TITLE];
     }
 
-    public function setAlbumHash($albumHash){
-        parent::putDtoCache(AlbumTable::ALBUM_HASH, $albumHash);
+    public function setAlbumKey($albumKey) {
+        parent::putDtoCache(AlbumTable::ALBUM_KEY, $albumKey);
     }
 
-    public function getAlbumHash() {
-        return parent::getDtoCache()[AlbumTable::ALBUM_HASH];
+    public function getAlbumKey() {
+        return parent::getDtoCache()[AlbumTable::ALBUM_KEY];
+    }
+
+    public function setAlbumId($albumId){
+        parent::putDtoCache(AlbumTable::ALBUM_ID, $albumId);
+    }
+
+    public function getAlbumId() {
+        return parent::getDtoCache()[AlbumTable::ALBUM_ID];
+    }
+
+    public function setArtistId($artistId){
+        parent::putDtoCache(AlbumTable::ARTIST_ID, $artistId);
+    }
+
+    public function getArtistId() {
+        return parent::getDtoCache()[AlbumTable::ARTIST_ID];
     }
 
     public function setAlbumArt($albumArt){

@@ -1,5 +1,12 @@
 (()=>{
     window.addEventListener('load',popPage);
+    const soket = new WebSocket('ws://localhost:8000');
+    soket.addEventListener('open', function (event) {
+        soket.send('Hello Server!');
+    });
+    soket.addEventListener('message', e=>{
+        console.log('message ', e.data);
+    });
 })();
 
 function popPage() {

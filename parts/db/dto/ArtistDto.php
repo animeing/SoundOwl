@@ -11,4 +11,12 @@ class ArtistDto extends DtoBase implements ArtistTable {
     public function getArtistId() {
         return parent::getDtoCache()[ArtistTable::ARTIST_ID];
     }
+
+    public function setArtistName($artistName) {
+        parent::putDtoCache(ArtistTable::ARTIST_NAME, $artistName);
+    }
+
+    public function getArtistName() {
+        return parent::getDtoCache()[ArtistTable::ARTIST_NAME];
+    }
 }
