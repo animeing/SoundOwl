@@ -51,7 +51,7 @@ if(!file_exists(LOCK_PATH)) {
         $albumDao = new AlbumDao();
         FileUtil::fileListAction(SOUND_DIRECTORY, function($file) {
             global $artistDao, $albumDao, $soundDao;
-            if(hasRegistedSound($file) || preg_match('/\.mp3|\.m4a|\.wav|\.ogg|\.ape|\.flac]/', $file)){
+            if(hasRegistedSound($file) || !preg_match('/\.mp3|\.m4a|\.wav|\.ogg|\.ape|\.flac]/', $file)){
                 return;
             }
             $soundLinkDto = new SoundLinkDto();
