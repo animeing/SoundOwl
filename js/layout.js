@@ -272,6 +272,58 @@ class AudioPlayController extends HTMLElement {
 
 customElements.define('sw-audio-controller', AudioPlayController);
 
+class AudioSlideList extends HTMLElement {
+    constructor() {
+        super();
+        this.addEventListener('wheel', e=>{
+            if((this.scrollLeft == 0 && e.deltaY < 0)|| (this.scrollLeft == (this.scrollWidth - this.clientWidth) && e.deltaY > 0)){
+                return;
+            }
+            e.preventDefault();
+            this.scrollLeft += e.deltaY;
+        });
+        this.frame = document.createElement('div');
+    }
+    
+    connectedCallback() {
+        this.append(this.frame);
+    }
+    add(element) {
+        this.frame.appendChild(element);
+    }
+
+}
+
+customElements.define('sw-audio-slide-list', AudioSlideList);
+
+class AudioSlideItem extends HTMLButtonElement {
+    constructor() {
+        super();
+        this.img = document.createElement('img');
+        this.soundTitle = document.createElement('p');
+    }
+
+    connectedCallback() {
+        this.appendChild(this.img);
+        this.appendChild(this.soundTitle);
+    }
+    set src(value) {
+        this.img.src = value;
+    }
+    get src() {
+        return this.img.src;
+    }
+
+    set title(value) {
+        this.soundTitle.innerText = value;
+    }
+    get title() {
+        return this.soundTitle.innerText;
+    }
+}
+
+customElements.define('sw-audio-slide-item', AudioSlideItem, {extends: "button"});
+
 (()=>{
     const mainMenu=()=>{
         let menu = document.getElementById('main-menu');

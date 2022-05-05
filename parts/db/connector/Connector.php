@@ -53,6 +53,6 @@ class Connector{
         $pdo = $this->getConnector();
         $stmt = $pdo->prepare($sql);
         $stmt->execute($param);
-        return $stmt->fetch();
+        return $stmt->fetch(PDO::FETCH_COLUMN);
     }
 }

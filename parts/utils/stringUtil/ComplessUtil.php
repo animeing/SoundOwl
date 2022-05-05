@@ -14,10 +14,10 @@ final class ComplessUtil{
      */
     public static function compless($str){
         $bb = str_split($str, 9);
-        $ret = null;
+        $ret = '';
         foreach ($bb as $key => $value) {
             $data = "";
-            if (strlen($ret) > 0 && $bb[$key] != "") {
+            if (mb_strlen($ret) > 0 && $bb[$key] != "") {
                 $ret.='_';
             }
             $data = $value;
@@ -65,13 +65,13 @@ final class ComplessUtil{
     
     protected static function dohex2dec($dohex) {
         $HASHTABLE = ComplessUtil::TABLE;
-        $len = strlen($dohex);
+        $len = mb_strlen($dohex);
         $size = mb_strlen($HASHTABLE);
-        $result = "";
+        $result = 0;
         for ($i = 0; $i < $len; ++$i) {
             for ($j = 0; $j < $size; ++$j) {
                 if ($HASHTABLE[$j] == $dohex[$i]) {
-                    @$result += $j * pow($size, $len - $i - 1);
+                    @$result += ($j * pow($size, $len - $i - 1));
                 }
             }
         }

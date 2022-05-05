@@ -1,6 +1,9 @@
 <?php
 
 class AlbumDao extends SqlCreater implements AlbumTable{
+    /**
+     * @return AlbumDto
+     */
     function createDto() {
         return new AlbumDto();
     }

@@ -716,3 +716,39 @@ header ~ .layout-base{
   position: fixed;
   bottom: 0.1em
 }
+
+sw-audio-slide-list{
+  overflow-x: scroll;
+  display: block;
+}
+
+sw-audio-slide-list::-webkit-scrollbar{
+  height: 4px;
+}
+
+sw-audio-slide-list::-webkit-scrollbar-track{
+  border-radius: 2px;
+}
+
+sw-audio-slide-list:hover::-webkit-scrollbar-thumb{
+  background: gray;
+  border-radius: 2px;
+}
+
+sw-audio-slide-list > div{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  width: min-content;
+}
+
+sw-audio-slide-list > div > button {
+  width: 250px;
+  height: 250px;
+  background-color: var(--basecolor);
+}
+
+sw-audio-slide-list > div > button > img{
+  width: 225px;
+  height: 225px;
+}

@@ -1,10 +1,13 @@
 <?php
 
+error_reporting(E_ALL & ~E_WARNING);
 ini_set('max_execution_time', 0);
 
+header("Content-Type: text/json");
 require_once(dirname(dirname(__FILE__)).'/vendor/autoload.php');
 require_once(dirname(dirname(__FILE__)).'/parts/loader.php');
 define('LOCK_PATH', 'lock/sound_regist.lock');
+
 if(!file_exists(LOCK_PATH)) {
     try{
         touch(LOCK_PATH);
@@ -57,6 +60,10 @@ if(!file_exists(LOCK_PATH)) {
             $soundLinkDto = new SoundLinkDto();
             $id3 = new getID3();
             $id3Analyze = $id3->analyze($file);
+            if(!isset($id3Analyze['tags'])){
+                echo $file;
+                return;
+            }
             $id3Tags = $id3Analyze['tags'];
             $tagNames = array_reverse(array_keys($id3Tags));
             {
@@ -131,9 +138,13 @@ if(!file_exists(LOCK_PATH)) {
             }
             $soundDao->insert($soundLinkDto);
         });
-        echo 'success';
     } finally {
         unlink(LOCK_PATH);
     }
 }
 
+$soundDao = new SoundLinkDao();
+echo json_encode(array(
+    'count'=>$soundDao->count($soundDao->countQuery()),
+    'status'=>file_exists(LOCK_PATH)?'lock':'success'
+));

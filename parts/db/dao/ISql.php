@@ -13,7 +13,7 @@ interface ISql {
 	const EQUAL_OR = " = ? OR ";
 	const EQUAL_PARAM = " = ? ";
 	const GROUP_BY = " GROUP_BY ";
-	const ORDER_BY = " ODER BY ";
+	const ORDER_BY = " ORDER BY ";
 	const DESC = " DESC ";
 	const ASC = " ASC ";
 	const UPDATE = " UPDATE ";

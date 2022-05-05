@@ -16,5 +16,6 @@
     <data table="AlbumTable.php" dto="AlbumDto.php" dao="AlbumDao.php" />
     <data table="SoundPlayHistoryTable.php" dto="SoundPlayHistoryDto.php" dao="SoundPlayHistoryDao.php" />
     <data table="ArtistTable.php" dto="ArtistDto.php" dao="ArtistDao.php" />
+    <data table="SoundDataView.php" dto="SoundDataDto.php" dao="SoundDataDao.php" />
 
 </scripts>

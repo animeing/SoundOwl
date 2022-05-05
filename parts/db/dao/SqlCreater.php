@@ -3,6 +3,9 @@ use db\Connector;
 use db\dao\ISql;
 use db\dto\DtoBase;
 
+/**
+ * 
+ */
 abstract class SqlCreater extends Connector implements ISql{
 
     function select(){
@@ -112,14 +115,8 @@ abstract class SqlCreater extends Connector implements ISql{
     }
 
 
-    /**
-     * @return DtoBase
-     */
     abstract function createDto();
 
-    /**
-     * @return DtoBase[]
-     */
     function toDtoList($rs){
         $dtos = array();
         foreach($rs as $row){
