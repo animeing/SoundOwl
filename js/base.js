@@ -4,7 +4,7 @@ const BASE = {
     DOMAIN:'',
     SAVE_PATH:'/',
     HOME:'',
-    API:''
+    API:'/api/'
 };
 
 const BaseFrameWork={};
@@ -2165,14 +2165,14 @@ class AudioClip{
     constructor(){
         this.no=0;
         this.soundHash=null;
-        this.upLoadUser=null;
+        this.artist=null;
         this.title=null;
         this.description=null;
     }
 
     get src(){
         if(this.soundHash != null){
-            return BASE.HOME+'sound_create/playSource.php?media_hash='+this.soundHash;
+            return BASE.HOME+'sound_create/sound.php?media_hash='+this.soundHash;
         }
         return null;
     }
@@ -2189,13 +2189,13 @@ class AudioClip{
         }
         return true;
     }
-    static createAudioClip(serverFileTitle, title, description, upLoadUser, no){
+    static createAudioClip(serverFileTitle, title, description, artist, no){
         let audioClip = new AudioClip;
         audioClip.no = no;
         audioClip.title = title;
         audioClip.description = description;
         audioClip.soundHash = serverFileTitle;
-        audioClip.upLoadUser = upLoadUser;
+        audioClip.artist = artist;
         return audioClip;
     }
 }
@@ -2491,7 +2491,7 @@ class AudioPlayer{
     }
 
     get UPDATE_MILI_SEC(){
-        return 250;
+        return 500;
     }
 
     get isError(){
@@ -2593,11 +2593,6 @@ class AudioPlayer{
                     this.audioDeployment();
                 }
             }
-            let soundsTable = historyDB.getTable('sounds');
-            soundsTable.add({
-                'hash':this.currentAudioClip.soundHash,
-                'time':Date.now().toString(16)
-            });
             this.audio.play();
             this.currentPlayState = AudioPlayStateEnum.PLAY;
         } finally {

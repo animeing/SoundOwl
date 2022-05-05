@@ -101,7 +101,7 @@ class AudioPlayController extends HTMLElement {
                     copy.menuItem.value = 'Copy to clipboard';
                     copy.menuItem.onclick = ()=>{
                         let window = document.createElement('sw-message-box');
-                        if(new ClipBoard().set(currentSoundTitle.value)){
+                        if(new ClipBoard().set(e)){
                             window.value = 'Copied it.';
                         } else {
                             window.value = 'Copy failed.';
@@ -116,22 +116,22 @@ class AudioPlayController extends HTMLElement {
             };
             let frameAppend = this.currentSoundInfoFrame.appendChild.bind(this.currentSoundInfoFrame);
             {
-                let currentSoundTitle = document.createElement('span');
-                currentSoundTitle.classList.add('audio-play-item', 'hide-text-color');
-                currentSoundTitle.addEventListener('contextmenu', copy);
-                frameAppend(currentSoundTitle);
+                this.currentSoundTitle = document.createElement('span');
+                this.currentSoundTitle.classList.add('audio-play-item');
+                this.currentSoundTitle.addEventListener('contextmenu', ()=>{copy(this.currentSoundTitle.innerText);});
+                frameAppend(this.currentSoundTitle);
             }
             {
                 let currentSpanObject = document.createElement('span');
-                currentSpanObject.classList.add('audio-play-item', 'hide-text-color', 'nonselectable');
+                currentSpanObject.classList.add('audio-play-item', 'nonselectable');
                 currentSpanObject.innerText = '-'
                 frameAppend(currentSpanObject);
             }
             {
-                let currentUpLoader = document.createElement('span');
-                currentUpLoader.classList.add('audio-play-item', 'hide-text-color');
-                currentUpLoader.addEventListener('contextmenu', copy);
-                frameAppend(currentUpLoader);
+                this.currentUpLoader = document.createElement('span');
+                this.currentUpLoader.classList.add('audio-play-item');
+                this.currentUpLoader.addEventListener('contextmenu', ()=>{copy(this.currentUpLoader.innerText);});
+                frameAppend(this.currentUpLoader);
             }
             {
                 controller.classList.add('audio-play-item', 'audio-play-item-controller');
@@ -258,7 +258,7 @@ class AudioPlayController extends HTMLElement {
         let currentText = timeToText(current);
         return currentText['min']+':'+currentText['sec']+'/'+durationText['min']+':'+durationText['sec'];
     }
-    
+
     connectedCallback() {
         this.classList.add('audio-play-controller');
         this.appendChild(this.currentSoundInfoFrame);
@@ -267,6 +267,57 @@ class AudioPlayController extends HTMLElement {
         this.progressTextElement.classList.add('progress-times', 'progress-time', 'nonselectable');
         this.appendChild(this._audioProgress);
         this.appendObject(this.canvas);
+        this._audioProgress.addEventListener(MouseEventEnum.MOUSE_MOVE, e=>{
+            let positionTime = 0;
+            if(!isNaN(this._audioProgress.mousePositionvalue(e))){
+                positionTime = this._audioProgress.mousePositionvalue(e);
+            }
+            let textTime = timeToText(positionTime);
+            this._audioProgress.setAttribute('hint', textTime['min']+':'+textTime['sec']);
+        });
+        
+        this._audioProgress.eventSupport.addEventListener('valueSet',()=>{
+            this.progressTextElement.innerText = this.progressText();
+            if(audio.currentAudioClip != null){
+                this.currentSoundTitle.innerText = audio.currentAudioClip.title == null ? '' : audio.currentAudioClip.title;
+                this.currentSoundTitle.setAttribute('hint', this.currentSoundTitle.innerText);
+                setTitle(this.currentSoundTitle.innerText);
+                this.currentUpLoader.innerText = audio.currentAudioClip.artist;
+                this.currentUpLoader.setAttribute('hint',this.currentUpLoader.innerText);
+            }
+        });
+        let audioPlayState = audio.audioPlayState;
+        this._audioProgress.eventSupport.addEventListener('change', ()=>{
+            audioPlayState = audio.audioPlayState;
+        });
+        this._audioProgress.eventSupport.addEventListener('changed', ()=>{
+            audio.stop();
+            audio.audio.currentTime = parseFloat(this._audioProgress.value);
+            if(audioPlayState == AudioPlayStateEnum.PLAY){
+                setTimeout(()=>{
+                    audio.play();
+                },1);
+            }
+        });
+        this._audioProgress.eventSupport.addEventListener('changingValue',()=>{
+            if(audio.currentAudioClip === null){
+                return;
+            }
+            audio.audio.currentTime = this._audioProgress.value;
+            if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+                audio.audio.pause();
+            }
+        });
+        this._audioProgress.min = 0;
+        this._audioProgress.classList.add('progress-times');
+        audio.eventSupport.addEventListener('update', ()=>{
+            if(!this._audioProgress.isProgressManualMove){
+                this._audioProgress.max = audio.audio.duration;
+                this._audioProgress.value = audio.audio.currentTime;
+            } else {
+                audio.audio.currentTime = ~~this._audioProgress.value;
+            }
+        });
     }
 }
 

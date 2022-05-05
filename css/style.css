@@ -651,7 +651,7 @@ header ~ .layout-base{
 }
 
 .audio-play-controller > sw-audio-progress:not(.audio-controller-volume) > div{
-  transition: 250ms;
+  transition: 500ms;
   transition-timing-function: linear;
 }
 
