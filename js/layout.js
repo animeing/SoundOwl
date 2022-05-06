@@ -39,6 +39,203 @@ class SearchBox extends HTMLElement{
 }
 customElements.define('sw-searchbox', SearchBox);
 
+class AudioClipObject extends HTMLButtonElement{
+    _titleObject = null;
+    _albumObject = null;
+    _audioClip = new AudioClip;
+    _artist = null;
+    _image = null;
+    /**
+     * @var {AudioClip}
+     */
+    set audioClip(value){
+        this.setAudioClip(value);
+    }
+    get audioClip(){
+        return this._audioClip;
+    }
+
+    constructor(){
+        super();
+        
+        let alubumArtFrame = document.createElement('div');
+        alubumArtFrame.classList.add('alubm');
+        this._image = document.createElement('img');
+        this._image.setAttribute('loading', 'lazy');
+        alubumArtFrame.appendChild(this._image);
+        this.appendChild(alubumArtFrame);
+
+        let frameObject = document.createElement('div');
+        this.appendChild(frameObject);
+
+        frameObject.classList.add('layout-box');
+        this.classList.add('audio-item');
+        this._titleObject = document.createElement('p');
+        this._titleObject.classList.add('audio-title');
+        frameObject.appendChild(this._titleObject);
+        
+        let uploader = document.createElement('p');
+        uploader.classList.add('audio-uploader');
+        frameObject.appendChild(uploader);
+        this._artist = document.createElement('span');
+        this._artist.classList.add('audio-infomation');
+        uploader.appendChild(this._artist);
+
+        this._albumObject = document.createElement('p');
+        this._albumObject.classList.add('audio-infomation', 'audio-discription');
+        
+        frameObject.appendChild(this._albumObject);
+        
+        this.setDefaultEventListener();
+    }
+
+    /**
+     * 
+     * @param {Generator<LIButtonObject>} contextMenuCreateIterator
+     */
+    setContextMenu(contextMenuCreateIterator){
+        if(!contextMenuCreateIterator){
+            return;
+        }
+        super.setContextMenu(contextMenuCreateIterator);
+        
+        this.menuButton = document.createElement('button');
+
+        let svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 200 300');
+
+        let iconItem = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        iconItem.setAttribute('cx', 100);
+        iconItem.setAttribute('r', 30);
+        let top = iconItem.cloneNode(!1);
+        top.setAttribute('cy', 50);
+        svg.appendChild(top);
+        let middle = iconItem.cloneNode(!1);
+        middle.setAttribute('cy', 150);
+        svg.appendChild(middle);
+        let bottom = iconItem.cloneNode(!1);
+        bottom.setAttribute('cy', 250);
+        svg.appendChild(bottom);
+        this.menuButton.appendChild(svg);
+        this.menuButton.classList.add('audio-item-menu');
+        this.menuButton.addEventListener(MouseEventEnum.CLICK, (e)=>{
+            if(ContextMenu.isVisible){
+                ContextMenu.remove();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return;
+            }
+            this.dispatchEvent(new MouseEvent('contextmenu', e));
+            e.preventDefault();
+            e.stopImmediatePropagation();
+        },!1);
+        this.appendChild(this.menuButton);
+    }
+
+    setDefaultEventListener(){
+        let self = this;
+        this.addEventListener(MouseEventEnum.CLICK, ()=>{
+            if(ContextMenu.isVisible){
+                return;
+            }
+            let url = UrlParam.setGetter({'PlayerHash': self.audioClip.soundHash});
+            if(url != location.pathname+location.search){
+                history.pushState(null,null,url);
+                popPage();
+            }
+            
+
+            if(audio.currentAudioClip == null){
+                audio.play(self.audioClip);
+                return;
+            }
+            if(self.audioClip.equals(audio.currentAudioClip)){
+                if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
+                    audio.play();
+                } else {
+                    if(audio.currentPlayState === AudioPlayStateEnum.PLAY || audio.currentPlayState !== AudioPlayStateEnum.STOP ){
+                        audio.pause();
+                    }
+                }
+                return;
+            } else {
+                audio.play(self.audioClip);
+            }
+        });
+    }
+
+    /**
+     * @param {AudioClip} audioClip 
+     */
+    setAudioClip(audioClip){
+        if(audioClip.soundHash === this._audioClip.soundHash) return;
+        this._image.src = BASE.HOME+'img/album_art.php?media_hash='+audioClip.albumKey;
+        this._audioClip = audioClip;
+        this._titleObject.innerText = audioClip.title;
+        this._titleObject.setAttribute('hint', audioClip.title);
+        this._artist.innerText = audioClip.artist;
+        this._artist.setAttribute('hint', audioClip.artist);
+        this._albumObject.innerText = audioClip.album;
+        this._albumObject.setAttribute('hint', audioClip.album);
+    }
+}
+
+customElements.define('sw-audioclip', AudioClipObject, {extends: "button"});
+
+/**
+ * @singleton
+ * @template AudioClipObject
+ * @type {BaseFrameWork.List<AudioClipObject>}
+ */
+ class PlacementList extends WebObjectList{
+    constructor(){
+        super(document.createElement('div'));
+        this.parent.classList.add('layout-base', 'audio-list');
+        audio.eventSupport.addEventListener('update',()=>{
+            if(this.currentNowPlayingSoundObject != null && this.currentNowPlayingSoundObject.audioClip != null &&
+                this.currentNowPlayingSoundObject.audioClip.equals(audio.currentAudioClip)){
+                    return;
+            }
+            Array.prototype.forEach.call(this.parent.getElementsByClassName('audio-list-nowplaying'), item=>{
+                item.classList.remove('audio-list-nowplaying');
+            });
+            for (const audioClipObject of this) {
+                if(audio.currentAudioClip !== null && audio.currentAudioClip.equals(audioClipObject.audioClip)){
+                    audioClipObject.classList.add('audio-list-nowplaying');
+                    break;
+                }
+            }
+        });
+    }
+
+    copyChilds(){
+        let list = new BaseFrameWork.List;
+        for (const clip of this) {
+            list.add(document.importNode(clip.object, true));
+        }
+        return list;
+    }
+
+    get currentNowPlayingSoundObject(){
+        for (const item of this) {
+            if(item.classList.contains('audio-list-nowplaying')){
+                return item;
+            }
+        }
+        return null;
+    }
+    
+    get audioClips(){
+        let audioClips = new BaseFrameWork.List;
+        for (const audioClipObject of this) {
+            audioClips.add(audioClipObject.audioClip);
+        }
+        return audioClips;
+    }
+
+}
+
+
 class AudioProgressComposite extends ProgressComposite{
     constructor(){
         super();
@@ -116,6 +313,33 @@ class AudioPlayController extends HTMLElement {
             };
             let frameAppend = this.currentSoundInfoFrame.appendChild.bind(this.currentSoundInfoFrame);
             {
+                this._playList = new PlacementList();
+                this._playList.parent.classList.add('audio-controller-playlist', 'height-hide');
+                frameAppend(this._playList.parent);
+                audio.eventSupport.addEventListener('play', ()=>{
+                    
+                    if(!audio.playList.deepEquals(this._playList.audioClips)){
+                        this._playList.removeAll();
+                        for (const iterator of audio.playList) {
+                            let audioClipObject = document.createElement('button',{is:'sw-audioclip'});
+                            audioClipObject.enableDragMove();
+                            audioClipObject.setAttribute('d-group', 'playlist');
+                            audioClipObject.setContextMenu(function *(){
+                                yield ContextAudioMenus.like(iterator.soundHash);
+                                yield ContextAudioMenus.openInNewTab(iterator.soundHash);
+                                if(audioClipObject.audioClip.soundHash != audio.currentAudioClip.soundHash){
+                                    yield ContextAudioMenus.removeFromPlaylist(audioClipObject);
+                                }
+                                yield ContextAudioMenus.property(iterator);
+                            });
+                            audioClipObject.addEventListener('dragelementchange', e=>audio.playList.swap(e.targetElement.audioClip, audioClipObject.audioClip));
+                            audioClipObject.setAudioClip(iterator);
+                            this._playList.add(audioClipObject);
+                        }
+                    }
+                });
+            }
+            {
                 this.currentSoundTitle = document.createElement('span');
                 this.currentSoundTitle.classList.add('audio-play-item');
                 this.currentSoundTitle.addEventListener('contextmenu', ()=>{copy(this.currentSoundTitle.innerText);});
@@ -189,6 +413,28 @@ class AudioPlayController extends HTMLElement {
             playListIcon.type = 'button';
             playListIcon.classList.add('audio-controller-parts', 'icon');
             cntAppndObj(playListIcon);
+
+            playListIcon.addEventListener(MouseEventEnum.CLICK, ()=>{
+                if(ContextMenu.isVisible)return;
+                this._playList.parent.classList.toggle('height-hide');
+            });
+            playListIcon.addEventListener('contextmenu', e=>{
+                ContextMenu.contextMenu.removeAll();
+                {
+                    let openClose = document.createElement('li', {is:'sw-libutton'});
+                    if(this._playList.parent.classList.contains('height-hide')){
+                        openClose.menuItem.value = 'Open';
+                    } else {
+                        openClose.menuItem.value = 'Close';
+                    }
+                    openClose.menuItem.onclick=e=>{
+                        this._playList.parent.classList.toggle('height-hide');
+                    };
+                    ContextMenu.contextMenu.list.add(openClose);
+                }
+                ContextMenu.visible(e);
+                e.stopPropagation();
+            });
         }
         {
             let volumeIcon = document.createElement('input');
@@ -258,6 +504,7 @@ class AudioPlayController extends HTMLElement {
         let currentText = timeToText(current);
         return currentText['min']+':'+currentText['sec']+'/'+durationText['min']+':'+durationText['sec'];
     }
+
 
     connectedCallback() {
         this.classList.add('audio-play-controller');

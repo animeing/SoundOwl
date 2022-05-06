@@ -14,7 +14,7 @@ foreach($soundcountList->getPlayCountDesc() as $soundCountItem) {
         SoundDataView::SOUND_HASH=>ComplessUtil::compless($soundCountItem->getSoundHash()),
         SoundDataView::TITLE=>$soundCountItem->getTitle(),
         SoundDataView::ARTIST_NAME=>$soundCountItem->getArtistName(),
-        'Album'=>array(
+        'album'=>array(
             SoundDataView::ALBUM_KEY=>ComplessUtil::compless($soundCountItem->getAlbumKey()),
             SoundDataView::ALBUM_TITLE=>$soundCountItem->getAlbumTitle()
         )

@@ -643,7 +643,7 @@ class WebObjectList extends BaseFrameWork.List{
      */
     removeAll(){
         super.removeAll();
-        this.parent.removeAll();
+        this.parent.destoryChildren();
     }
 
     /**
@@ -2167,7 +2167,8 @@ class AudioClip{
         this.soundHash=null;
         this.artist=null;
         this.title=null;
-        this.description=null;
+        this.album=null;
+        this.albumKey = null;
     }
 
     get src(){
@@ -2189,11 +2190,11 @@ class AudioClip{
         }
         return true;
     }
-    static createAudioClip(serverFileTitle, title, description, artist, no){
+    static createAudioClip(serverFileTitle, title, album, artist, no){
         let audioClip = new AudioClip;
         audioClip.no = no;
         audioClip.title = title;
-        audioClip.description = description;
+        audioClip.album = album;
         audioClip.soundHash = serverFileTitle;
         audioClip.artist = artist;
         return audioClip;
@@ -2595,6 +2596,7 @@ class AudioPlayer{
             }
             this.audio.play();
             this.currentPlayState = AudioPlayStateEnum.PLAY;
+            this.eventSupport.dispatchEvent(new CustomEvent('play'))
         } finally {
             this.setUpdate();
         }

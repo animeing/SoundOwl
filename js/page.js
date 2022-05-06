@@ -35,13 +35,15 @@ class TopPageLayout extends LayoutBase{
                 for (const response of e) {
                     let item = document.createElement('button',{is:'sw-audio-slide-item'});
                     item.title = response['title'];
-                    item.src = BASE.HOME+'img/album_art.php?media_hash='+response['Album']['album_key'];
+                    item.src = BASE.HOME+'img/album_art.php?media_hash='+response['album']['album_key'];
                     this.playCountList.add(item);
                     
                     let audioClip = new AudioClip();
                     audioClip.soundHash = response['sound_hash'];
                     audioClip.title = response['title'];
                     audioClip.artist = response['artist_name'];
+                    audioClip.album = response['album']['album_title'];
+                    audioClip.albumKey = response['album']['album_key'];
                     audioClip.no = listNo;
                     list.add(audioClip);
                     listNo++;
