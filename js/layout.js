@@ -1,3 +1,14 @@
+const audioParamSave=()=>{
+    let localStorageMap = new BaseFrameWork.Storage.Application.LocalStorageMap();
+    let saveParams = JSON.stringify(
+        {
+            'volume': audio.audio.volume,
+            'loopMode': audio.loopMode,
+            'loadGiveUpTime':audio.loadGiveUpTime
+        });
+    localStorageMap.set('audioParam', saveParams);
+};
+
 
 class SearchBox extends HTMLElement{
     _searchBox = document.createElement('input');
@@ -285,6 +296,7 @@ class AudioPlayController extends HTMLElement {
         this._audioProgress = document.createElement('sw-audio-progress');
         this._audioProgress.classList.add('progress-times');
         this._volumeObject = document.createElement('sw-v-progress');
+        this._volumeObject.classList.add('audio-controller-volume');
 
         let controller = document.createElement('span');
 
@@ -441,6 +453,51 @@ class AudioPlayController extends HTMLElement {
             volumeIcon.value = '';
             volumeIcon.type = 'button';
             volumeIcon.classList.add('audio-controller-parts', 'icon');
+            let volumeChangeEventAction = ()=>{
+                audio.audio.volume = this._volumeObject.value;
+                audioParamSave();
+            };
+            volumeIcon.addEventListener('contextmenu', e=>{
+                ContextMenu.contextMenu.removeAll();
+                {
+                    let volumeUp = document.createElement('li', {is:'sw-libutton'});
+                    volumeUp.menuItem.value = 'Volume Up (+10%)';
+                    volumeUp.menuItem.onclick=e=>{
+                        this._volumeObject.value+=.1;
+                        volumeChangeEventAction();
+                    };
+                    ContextMenu.contextMenu.list.add(volumeUp);
+                }
+                {
+                    let volumeDown = document.createElement('li', {is:'sw-libutton'});
+                    volumeDown.menuItem.value = 'Volume Down (-10%)';
+                    volumeDown.menuItem.onclick=e=>{
+                        this._volumeObject.value-=.1;
+                        volumeChangeEventAction();
+                    };
+                    ContextMenu.contextMenu.list.add(volumeDown);
+                }
+                ContextMenu.visible(e);
+                e.stopPropagation();
+            });
+            volumeIcon.setAttribute('hint', 'Volume');
+            this._volumeObject.max = 1;
+            this._volumeObject.min = 0;
+            this._volumeObject.classList.add('hide');
+            this._volumeObject.value = audio.audio.volume;
+            
+            volumeIcon.addEventListener(MouseEventEnum.CLICK, ()=>{
+                if(ContextMenu.isVisible)return;
+                this._volumeObject.classList.toggle('hide');
+            });
+            this._volumeObject.eventSupport.addEventListener('changingValue', volumeChangeEventAction);
+            this._volumeObject.addEventListener('wheel',e=>{
+                e.preventDefault();
+                this._volumeObject.value -= e.deltaY/1e4;
+                volumeChangeEventAction();
+            },{ passive: false });
+
+            
             cntAppndObj(volumeIcon);
         }
         {
@@ -513,6 +570,7 @@ class AudioPlayController extends HTMLElement {
         this.progressTextElement.innerText = this.progressText();
         this.progressTextElement.classList.add('progress-times', 'progress-time', 'nonselectable');
         this.appendChild(this._audioProgress);
+        this.appendChild(this._volumeObject);
         this.appendObject(this.canvas);
         this._audioProgress.addEventListener(MouseEventEnum.MOUSE_MOVE, e=>{
             let positionTime = 0;
@@ -627,6 +685,13 @@ customElements.define('sw-audio-slide-item', AudioSlideItem, {extends: "button"}
         let menu = document.getElementById('main-menu');
         menu.innerHTML = '';
         const searchBox = document.createElement('sw-searchbox');
+        searchBox.searchEvent = value =>{
+            let url = UrlParam.setGetter({'SearchWord': value,'page': 'search'}, location.pathname);
+            if(url != location.pathname+location.search) {
+                history.pushState(null, null, url);
+                popPage();
+            }
+        }
         searchBox.classList.add('searchbox');
         menu.appendChild(searchBox);
         

@@ -18,6 +18,13 @@ class PlayCountAction extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
+class SoundSearchAction extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'sound_search.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+
+    }
+}
+
 class TopPageLayout extends LayoutBase{
     constructor() {
         super();
@@ -66,20 +73,79 @@ class TopPageLayout extends LayoutBase{
     }
 }
 
+class SearchSoundLayout extends LayoutBase {
+    
+    constructor(searchWord) {
+        super();
+        {
+            let currentAudioListObject = new PlacementList();
+            window.layoutBase.appendChild(currentAudioListObject.parent);
+
+            let soundSearch = new SoundSearchAction();
+            console.log(searchWord);
+            soundSearch.formDataMap.append('SearchWord', searchWord);
+            soundSearch.httpRequestor.addEventListener('success', event => {
+                let e = event.detail.response;
+                let listNo = 0;
+                
+                let list = new BaseFrameWork.List();
+                for (const response of e) {         
+                    let item = document.createElement('button',{is:'sw-audioclip'});           
+                    let audioClip = new AudioClip();
+                    audioClip.soundHash = response['sound_hash'];
+                    audioClip.title = response['title'];
+                    audioClip.artist = response['artist_name'];
+                    audioClip.album = response['album']['album_title'];
+                    audioClip.albumKey = response['album']['album_key'];
+                    audioClip.no = listNo;
+                    list.add(audioClip);
+                    item.audioClip = audioClip;
+                    item.addEventListener(MouseEventEnum.CLICK, e=>{
+                        if(ContextMenu.isVisible){
+                            return;
+                        }
+                        audio.playList.removeAll();
+                        for(const audioclip of list) {
+                            audio.playList.add(audioclip);
+                        }
+                        audio.play(audioClip)
+                    });
+                    currentAudioListObject.add(item);
+                }
+            });
+            soundSearch.execute();
+        }
+    }
+}
+
 let currentPage = '';
 
+//何かいい書き方がある気がする。。。
 function popPage() {
     if(window.layoutBase.parentNode == undefined) {
         document.body.appendChild(window.layoutBase);
     }
     let getterParam = toGetParamMap(UrlParam.getGetter());
-    let isChangePage = currentPage != getterParam.page;
-    currentPage = getterParam.page;
     if(getterParam.page == undefined) {
+        getterParam.page = 'Top';
+    }
+    if(getterParam.SearchWord == undefined) {
+        getterParam.SearchWord = '';
+    }
+    let isChangePage = currentPage != getterParam.page+getterParam.SearchWord;
+    currentPage = getterParam.page+getterParam.SearchWord;
+    if(getterParam.page == 'Top') {
         setTitle('');
         if(isChangePage) {
             new TopPageLayout();
         }
+    }
+    if(getterParam.page == 'search') {
+        
+        if(isChangePage) {
+            new SearchSoundLayout(getterParam.SearchWord);
+        }
+
     }
     if(getterParam.page == 'file_setting') {
         setTitle('File Setting');

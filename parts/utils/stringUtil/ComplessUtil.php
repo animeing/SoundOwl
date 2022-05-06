@@ -13,6 +13,9 @@ final class ComplessUtil{
      * @return string
      */
     public static function compless($str){
+        if($str == null) {
+            $str = '';
+        }
         $bb = str_split($str, 9);
         $ret = '';
         foreach ($bb as $key => $value) {

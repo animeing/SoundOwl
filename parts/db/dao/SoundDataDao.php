@@ -16,4 +16,17 @@ class SoundDataDao extends SqlCreater implements SoundDataView {
             )
         );
     }
+
+    /**
+     * @return SoundViewDto[]
+     */
+    public function getWordSearchSounds($word){
+        return $this->toDtoList(
+            $this->execute(
+                $this->whereQuery(
+                    SoundDataView::ARTIST_NAME.$this::LIKE_OR.SoundDataView::TITLE.$this::LIKE_OR.SoundDataView::ALBUM_TITLE.$this::LIKE),
+                    array('%'.$word.'%', '%'.$word.'%', '%'.$word.'%')
+            )
+        );
+    }
 }
