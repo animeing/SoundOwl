@@ -41,8 +41,6 @@ class TopPageLayout extends LayoutBase{
                 let list = new BaseFrameWork.List();
                 for (const response of e) {
                     let item = document.createElement('button',{is:'sw-audio-slide-item'});
-                    item.title = response['title'];
-                    item.src = BASE.HOME+'img/album_art.php?media_hash='+response['album']['album_key'];
                     this.playCountList.add(item);
                     
                     let audioClip = new AudioClip();
@@ -52,6 +50,7 @@ class TopPageLayout extends LayoutBase{
                     audioClip.album = response['album']['album_title'];
                     audioClip.albumKey = response['album']['album_key'];
                     audioClip.no = listNo;
+                    item.audioClip = audioClip;
                     list.add(audioClip);
                     listNo++;
                     item.addEventListener(MouseEventEnum.CLICK, e=>{
@@ -62,8 +61,7 @@ class TopPageLayout extends LayoutBase{
                         for(const audioclip of list) {
                             audio.playList.add(audioclip);
                         }
-                        audio.play(audioClip)
-                    });
+                    }, !0);
                 }
             });
             playCountAction.execute();
@@ -79,7 +77,6 @@ class SearchSoundLayout extends LayoutBase {
         super();
         {
             let currentAudioListObject = new PlacementList();
-            window.layoutBase.appendChild(currentAudioListObject.parent);
 
             let soundSearch = new SoundSearchAction();
             console.log(searchWord);
@@ -87,10 +84,11 @@ class SearchSoundLayout extends LayoutBase {
             soundSearch.httpRequestor.addEventListener('success', event => {
                 let e = event.detail.response;
                 let listNo = 0;
-                
                 let list = new BaseFrameWork.List();
                 for (const response of e) {         
                     let item = document.createElement('button',{is:'sw-audioclip'});           
+                    currentAudioListObject.add(item);
+
                     let audioClip = new AudioClip();
                     audioClip.soundHash = response['sound_hash'];
                     audioClip.title = response['title'];
@@ -98,8 +96,9 @@ class SearchSoundLayout extends LayoutBase {
                     audioClip.album = response['album']['album_title'];
                     audioClip.albumKey = response['album']['album_key'];
                     audioClip.no = listNo;
-                    list.add(audioClip);
                     item.audioClip = audioClip;
+                    list.add(audioClip);
+                    listNo++;
                     item.addEventListener(MouseEventEnum.CLICK, e=>{
                         if(ContextMenu.isVisible){
                             return;
@@ -108,12 +107,12 @@ class SearchSoundLayout extends LayoutBase {
                         for(const audioclip of list) {
                             audio.playList.add(audioclip);
                         }
-                        audio.play(audioClip)
-                    });
-                    currentAudioListObject.add(item);
+
+                    }, !0);
                 }
             });
             soundSearch.execute();
+            window.layoutBase.appendChild(currentAudioListObject.parent);
         }
     }
 }

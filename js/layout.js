@@ -153,23 +153,16 @@ class AudioClipObject extends HTMLButtonElement{
     }
 
     setDefaultEventListener(){
-        let self = this;
         this.addEventListener(MouseEventEnum.CLICK, ()=>{
             if(ContextMenu.isVisible){
                 return;
             }
-            let url = UrlParam.setGetter({'PlayerHash': self.audioClip.soundHash});
-            if(url != location.pathname+location.search){
-                history.pushState(null,null,url);
-                popPage();
-            }
             
-
             if(audio.currentAudioClip == null){
-                audio.play(self.audioClip);
+                audio.play(this.audioClip);
                 return;
             }
-            if(self.audioClip.equals(audio.currentAudioClip)){
+            if(this.audioClip.equals(audio.currentAudioClip)){
                 if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
                     audio.play();
                 } else {
@@ -179,7 +172,7 @@ class AudioClipObject extends HTMLButtonElement{
                 }
                 return;
             } else {
-                audio.play(self.audioClip);
+                audio.play(this.audioClip);
             }
         });
     }
@@ -662,28 +655,65 @@ class AudioSlideList extends HTMLElement {
 customElements.define('sw-audio-slide-list', AudioSlideList);
 
 class AudioSlideItem extends HTMLButtonElement {
+
+    _audioClip = new AudioClip;
+    /**
+     * @var {AudioClip}
+     */
+     set audioClip(value){
+        this.setAudioClip(value);
+    }
+    get audioClip(){
+        return this._audioClip;
+    }
+
+
     constructor() {
         super();
-        this.img = document.createElement('img');
-        this.soundTitle = document.createElement('p');
+        this._image = document.createElement('img');
+        this._titleObject = document.createElement('p');
+        this.setDefaultEventListener();
     }
 
     connectedCallback() {
-        this.appendChild(this.img);
-        this.appendChild(this.soundTitle);
+        this.appendChild(this._image);
+        this.appendChild(this._titleObject);
     }
-    set src(value) {
-        this.img.src = value;
-    }
-    get src() {
-        return this.img.src;
-    }
+    
+    setDefaultEventListener(){
+        this.addEventListener(MouseEventEnum.CLICK, ()=>{
+            if(ContextMenu.isVisible){
+                return;
+            }
 
-    set title(value) {
-        this.soundTitle.innerText = value;
+            if(audio.currentAudioClip == null){
+                audio.play(this.audioClip);
+                return;
+            }
+            if(this.audioClip.equals(audio.currentAudioClip)){
+                if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
+                    audio.play();
+                } else {
+                    if(audio.currentPlayState === AudioPlayStateEnum.PLAY || audio.currentPlayState !== AudioPlayStateEnum.STOP ){
+                        audio.pause();
+                    }
+                }
+                return;
+            } else {
+                audio.play(this.audioClip);
+            }
+        });
     }
-    get title() {
-        return this.soundTitle.innerText;
+    
+    /**
+     * @param {AudioClip} audioClip 
+     */
+     setAudioClip(audioClip){
+        if(audioClip.soundHash === this._audioClip.soundHash) return;
+        this._image.src = BASE.HOME+'img/album_art.php?media_hash='+audioClip.albumKey;
+        this._audioClip = audioClip;
+        this._titleObject.innerText = audioClip.title;
+        this._titleObject.setAttribute('hint', audioClip.title);
     }
 }
 
