@@ -9,6 +9,15 @@ const audioParamSave=()=>{
     localStorageMap.set('audioParam', saveParams);
 };
 
+const audioParamLoad=()=>{
+    let localStorageMap = new BaseFrameWork.Storage.Application.LocalStorageMap();
+    let audioParam = localStorageMap.get('audioParam');
+    let audioParams = JSON.parse(audioParam);
+    audio.audio.volume = audioParams.volume;
+    audio.loopMode = audioParams.loopMode;
+    audio.loadGiveUpTime = audioParams.loadGiveUpTime;
+};
+
 
 class SearchBox extends HTMLElement{
     _searchBox = document.createElement('input');
@@ -707,6 +716,7 @@ customElements.define('sw-audio-slide-item', AudioSlideItem, {extends: "button"}
 
         
     };
+    window.addEventListener('load', audioParamLoad);
     window.addEventListener('load', mainMenu);
     window.addEventListener('load', ()=>{
         let audioController = document.createElement('sw-audio-controller');
