@@ -36,12 +36,28 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         return parent::getDtoCache()[SoundLinkTable::ALBUM_HASH];
     }
 
+    public function setAlbumTitle($albumTitle) {
+        parent::putDtoCache(SoundLinkTable::ALBUM_TITLE, $albumTitle);
+    }
+
+    public function getAlbumTitle(){
+        return parent::getDtoCache()[SoundLinkTable::ALBUM_TITLE];
+    }
+
     public function setArtistId($artistId) {
         parent::putDtoCache(SoundLinkTable::ARTIST_ID, $artistId);
     }
 
     public function getArtistId(){
         return parent::getDtoCache()[SoundLinkTable::ARTIST_ID];
+    }
+
+    public function setArtistName($artistName) {
+        parent::putDtoCache(SoundLinkTable::ARTIST_NAME, $artistName);
+    }
+
+    public function getArtistName() {
+        return parent::getDtoCache()[SoundLinkTable::ARTIST_NAME];
     }
 
     public function setTrackNo($trackNo) {

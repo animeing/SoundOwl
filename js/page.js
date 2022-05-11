@@ -48,7 +48,7 @@ class TopPageLayout extends LayoutBase{
                     audioClip.title = response['title'];
                     audioClip.artist = response['artist_name'];
                     audioClip.album = response['album']['album_title'];
-                    audioClip.albumKey = response['album']['album_key'];
+                    audioClip.albumKey = response['album']['album_hash'];
                     audioClip.no = listNo;
                     item.audioClip = audioClip;
                     list.add(audioClip);
@@ -94,7 +94,7 @@ class SearchSoundLayout extends LayoutBase {
                     audioClip.title = response['title'];
                     audioClip.artist = response['artist_name'];
                     audioClip.album = response['album']['album_title'];
-                    audioClip.albumKey = response['album']['album_key'];
+                    audioClip.albumKey = response['album']['album_hash'];
                     audioClip.no = listNo;
                     item.audioClip = audioClip;
                     list.add(audioClip);

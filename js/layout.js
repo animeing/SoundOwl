@@ -1,3 +1,4 @@
+
 const audioParamSave=()=>{
     let localStorageMap = new BaseFrameWork.Storage.Application.LocalStorageMap();
     let saveParams = JSON.stringify(
@@ -157,7 +158,7 @@ class AudioClipObject extends HTMLButtonElement{
             if(ContextMenu.isVisible){
                 return;
             }
-            
+
             if(audio.currentAudioClip == null){
                 audio.play(this.audioClip);
                 return;

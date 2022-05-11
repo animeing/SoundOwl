@@ -81,8 +81,10 @@ if(!file_exists(LOCK_PATH)) {
                     if($registedArtistDto === false) {
                         $artistDto = $artistDao->insertArtistTable($artist);
                         $soundLinkDto->setArtistId($artistDto->getArtistId());
+                        $soundLinkDto->setArtistName($artistDto->getArtistName());
                     } else {
                         $soundLinkDto->setArtistId($registedArtistDto->getArtistId());
+                        $soundLinkDto->setArtistName($registedArtistDto->getArtistName());
                     }
                 }
             }
@@ -109,10 +111,9 @@ if(!file_exists(LOCK_PATH)) {
                             $albumDto->setArtLength($albumArtData['datalength']);
                         }
                         $albumDao->insert($albumDto);
-                        $soundLinkDto->setAlbumHash($albumDto->getAlbumKey());
-                    } else {
-                        $soundLinkDto->setAlbumHash($albumDto->getAlbumKey());
                     }
+                    $soundLinkDto->setAlbumHash($albumDto->getAlbumKey());
+                    $soundLinkDto->setAlbumTitle($albumDto->getTitle());
                 }
             }
             {

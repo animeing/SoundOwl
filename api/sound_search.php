@@ -6,16 +6,16 @@ header("Content-Type: text/json");
 
 $soundList = [];
 if(isset($_POST['SearchWord'])) {
-    $soundDataDao = new SoundDataDao;
-    $soundDataListDtos = $soundDataDao->getWordSearchSounds($_POST['SearchWord']);
-    foreach ($soundDataListDtos as $soundDataListDto) {
+    $soundLinkDao = new SoundLinkDao;
+    $soundLinkListDtos = $soundLinkDao->getWordSearchSounds($_POST['SearchWord']);
+    foreach ($soundLinkListDtos as $soundLinkListDto) {
         $soundList[] = array(
-            SoundDataView::SOUND_HASH=>ComplessUtil::compless($soundDataListDto->getSoundHash()),
-            SoundDataView::TITLE=>$soundDataListDto->getTitle(),
-            SoundDataView::ARTIST_NAME=>$soundDataListDto->getArtistName(),
+            SoundLinkTable::SOUND_HASH=>ComplessUtil::compless($soundLinkListDto->getSoundHash()),
+            SoundLinkTable::TITLE=>$soundLinkListDto->getTitle(),
+            SoundLinkTable::ARTIST_NAME=>$soundLinkListDto->getArtistName(),
             'album'=>array(
-                SoundDataView::ALBUM_KEY=>ComplessUtil::compless($soundDataListDto->getAlbumKey()),
-                SoundDataView::ALBUM_TITLE=>$soundDataListDto->getAlbumTitle()
+                SoundLinkTable::ALBUM_HASH=>ComplessUtil::compless($soundLinkListDto->getAlbumHash()),
+                SoundLinkTable::ALBUM_TITLE=>$soundLinkListDto->getAlbumTitle()
             )
         );
     }
