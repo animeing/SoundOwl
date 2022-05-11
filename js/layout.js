@@ -1,4 +1,4 @@
-
+'use strict';
 const audioParamSave=()=>{
     let localStorageMap = new BaseFrameWork.Storage.Application.LocalStorageMap();
     let saveParams = JSON.stringify(

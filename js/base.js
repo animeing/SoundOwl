@@ -1,5 +1,4 @@
-window.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
-
+'use strict';
 const BASE = {
     DOMAIN:'',
     SAVE_PATH:'/',
@@ -2677,7 +2676,6 @@ addBottomEvent(window);
 window.addEventListener('load', ()=>{
     document.body.appendChild(fixed);
     ContextMenu.removeEventSet();
-    contentDom = document.getElementById('body');
     Array.prototype.forEach.call(document.getElementsByTagName('a'), element=>{
         LinkAction(element);
     });

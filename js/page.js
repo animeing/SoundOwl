@@ -1,4 +1,4 @@
-
+'use strict';
 (()=>{
     window.layoutBase = document.createElement('div');
     window.layoutBase.classList.add('layout-base');
@@ -152,7 +152,7 @@ function popPage() {
 }
 
 const toGetParamMap=getParam=>{
-    getterNewParam = new Array();
+    let getterNewParam = new Array();
     for (const key of getParam) {
         getterNewParam[key[0]] = decodeURI(key[1]);
     }
