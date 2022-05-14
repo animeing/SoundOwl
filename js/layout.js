@@ -13,6 +13,9 @@ const audioParamSave=()=>{
 const audioParamLoad=()=>{
     let localStorageMap = new BaseFrameWork.Storage.Application.LocalStorageMap();
     let audioParam = localStorageMap.get('audioParam');
+    if(audioParam == null) {
+        return;
+    }
     let audioParams = JSON.parse(audioParam);
     audio.audio.volume = audioParams.volume;
     audio.loopMode = audioParams.loopMode;
@@ -738,12 +741,7 @@ customElements.define('sw-audio-slide-item', AudioSlideItem, {extends: "button"}
         let dropdownMenu = document.createElement('ul', {is:'sw-dropdown'});
         dropdownMenu.classList.add('header-item', 'nonselectable');
         dropdownMenu.displayName = 'Menu';
-        dropdownMenu.dropdownObject.classList.add('icon');
         menu.appendChild(dropdownMenu);
-        dropdownMenu.addItem('File Setting', ()=>{
-            history.pushState(null, null, BASE.HOME+'?page=file_setting');
-            popPage();
-        });
 
         
     };
