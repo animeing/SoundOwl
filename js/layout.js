@@ -742,6 +742,10 @@ customElements.define('sw-audio-slide-item', AudioSlideItem, {extends: "button"}
         dropdownMenu.classList.add('header-item', 'nonselectable');
         dropdownMenu.displayName = 'Menu';
         menu.appendChild(dropdownMenu);
+        dropdownMenu.addItem('File Setting', ()=>{
+            history.pushState(null, null, BASE.HOME+'?page=file_setting');
+            popPage();
+        });
 
         
     };
