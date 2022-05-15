@@ -1415,41 +1415,6 @@ class VerticalProgressComposite extends ProgressComposite{
 
 customElements.define('sw-v-progress', VerticalProgressComposite);
 
-/**
- * @deprecated
- */
-class SpanObject extends WebObject{
-    get tagName(){
-        return 'span';
-    }
-}
-
-/**
- * @deprecated
- */
-class InputObject extends WebObject{
-    
-    constructor(){
-        super();
-        super.object.type = this.type;
-    }
-
-    get tagName(){
-        return 'input';
-    }
-    
-    get type(){
-        return 'text';
-    }
-
-    set value(value){
-        this.object.value = value;
-    }
-    
-    get value(){
-        return this.object.value;
-    }
-}
 
 class ComboBoxObject extends WebObject{
 
@@ -1534,16 +1499,6 @@ class OptionObject extends HTMLOptionElement{
 }
 
 customElements.define('sw-option', OptionObject, {extends:'option'});
-
-/**
- * @deprecated
- */
-class ButtonObject extends InputObject{
-
-    get type(){
-        return 'button';
-    }
-}
 
 class MessageWindow extends HTMLElement{
     _messageElement = document.createElement('p');
