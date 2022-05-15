@@ -81,7 +81,9 @@ class AudioClipObject extends HTMLButtonElement{
 
     constructor(){
         super();
-        
+    }
+
+    initalize() {
         let alubumArtFrame = document.createElement('div');
         alubumArtFrame.classList.add('alubm');
         this._image = document.createElement('img');
@@ -185,7 +187,7 @@ class AudioClipObject extends HTMLButtonElement{
      * @param {AudioClip} audioClip 
      */
     setAudioClip(audioClip){
-        if(audioClip.soundHash === this._audioClip.soundHash) return;
+        if(this._audioClip !== undefined && audioClip.soundHash === this._audioClip.soundHash) return;
         this._image.src = BASE.HOME+'img/album_art.php?media_hash='+audioClip.albumKey;
         this._audioClip = audioClip;
         this._titleObject.innerText = audioClip.title;
@@ -339,7 +341,7 @@ class AudioPlayController extends HTMLElement {
                     if(!audio.playList.deepEquals(this._playList.audioClips)){
                         this._playList.removeAll();
                         for (const iterator of audio.playList) {
-                            let audioClipObject = document.createElement('button',{is:'sw-audioclip'});
+                            let audioClipObject = document.createCustomElement('button', AudioClipObject, {is:'sw-audioclip'});
                             audioClipObject.enableDragMove();
                             audioClipObject.setAttribute('d-group', 'playlist');
                             audioClipObject.setContextMenu(function *(){
@@ -674,16 +676,16 @@ class AudioSlideItem extends HTMLButtonElement {
 
     constructor() {
         super();
+    }
+    
+    initalize() {
         this._image = document.createElement('img');
         this._titleObject = document.createElement('p');
         this.setDefaultEventListener();
-    }
-
-    connectedCallback() {
         this.appendChild(this._image);
         this.appendChild(this._titleObject);
     }
-    
+
     setDefaultEventListener(){
         this.addEventListener(MouseEventEnum.CLICK, ()=>{
             if(ContextMenu.isVisible){
@@ -713,7 +715,7 @@ class AudioSlideItem extends HTMLButtonElement {
      * @param {AudioClip} audioClip 
      */
      setAudioClip(audioClip){
-        if(audioClip.soundHash === this._audioClip.soundHash) return;
+        if(this._audioClip !== undefined && audioClip.soundHash === this._audioClip.soundHash) return;
         this._image.src = BASE.HOME+'img/album_art.php?media_hash='+audioClip.albumKey;
         this._audioClip = audioClip;
         this._titleObject.innerText = audioClip.title;
@@ -738,7 +740,7 @@ customElements.define('sw-audio-slide-item', AudioSlideItem, {extends: "button"}
         searchBox.classList.add('searchbox');
         menu.appendChild(searchBox);
         
-        let dropdownMenu = document.createElement('ul', {is:'sw-dropdown'});
+        let dropdownMenu = document.createCustomElement('ul', DropDownElement, {is:'sw-dropdown'});
         dropdownMenu.classList.add('header-item', 'nonselectable');
         dropdownMenu.displayName = 'Menu';
         menu.appendChild(dropdownMenu);

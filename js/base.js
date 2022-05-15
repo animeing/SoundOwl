@@ -1683,11 +1683,11 @@ class ULObject extends WebObject{
 class LIButtonObject extends HTMLLIElement{
     constructor(){
         super();
-        this.menuItem = document.createElement('input');
-        this.menuItem.type = 'button';
     }
 
-    connectedCallback(){
+    initalize() {
+        this.menuItem = document.createElement('input');
+        this.menuItem.type = 'button';
         this.appendChild(this.menuItem);
     }
 }
@@ -1696,13 +1696,19 @@ customElements.define('sw-libutton', LIButtonObject, {extends:'li'});
 
 class DropDownElement extends HTMLUListElement{
     _dropdownNameObject = null;
-    list = new WebObjectList(this);
     constructor(){
         super();
+    }
+
+    initalize() {
+        this.list = new WebObjectList(this);
         this.dropdownObject = document.createElement('li');
     }
 
     set dropdownObject(value){
+        if(value == undefined) {
+            return;
+        }
         if(this.dropdownObject != null){
             this.dropdownObject.destory();
         }
@@ -1723,6 +1729,9 @@ class DropDownElement extends HTMLUListElement{
     }
 
     get displayName(){
+        if(this.dropdownObject == undefined) {
+            return undefined;
+        }
         return this.dropdownObject.innerText;
     }
     connectedCallback(){
@@ -1737,10 +1746,10 @@ class DropDownElement extends HTMLUListElement{
         /**
          * @type {LIButtonObject}
          */
-        let menuItem = document.createElement('li', {is:'sw-libutton'});
+        let menuItem = document.createCustomElement('li', LIButtonObject,{is:'sw-libutton'});
+        this.list.add(menuItem);
         menuItem.menuItem.value = value;
         menuItem.menuItem.onclick = onclick;
-        this.list.add(menuItem);
     }
 }
 
@@ -2687,3 +2696,39 @@ window.addEventListener('popstate', (e)=>{
 }, !1);
 
 var audio = new AudioPlayer;
+
+document.createCustomElement=(tagName, constructor, options=array())=>{
+    let element = document.createElement(tagName, options);
+    let classPropertys = Object.getOwnPropertyNames(constructor.prototype);
+
+    let shouldActions = {initalize:false,connected:false};
+    //create Tag check (一部ブラウザにて正しくCustomElementが作られない問題があるため、チェックを行い、不備を訂正する)
+    for(const valuePosition in classPropertys) {
+        if(element[classPropertys[valuePosition]] == undefined) {
+            let descript = Object.getOwnPropertyDescriptor(constructor.prototype ,classPropertys[valuePosition]);
+            if(descript.hasOwnProperty('value')) {
+                element[classPropertys[valuePosition]] = constructor.prototype[classPropertys[valuePosition]];
+                if(classPropertys[valuePosition] == 'connectedCallback') {
+                    shouldActions.connected = true;
+                }
+            }
+            if(descript.hasOwnProperty('get') || descript.hasOwnProperty('set')) {
+                Object.defineProperty(element, classPropertys[valuePosition], descript);
+            }
+        }
+        if(classPropertys[valuePosition] == 'initalize') {
+            shouldActions.initalize = true;
+        }
+    }
+    if(shouldActions.initalize){
+        element.initalize();
+    }
+    if(shouldActions.connected){   
+        const observer = new MutationObserver(()=>{
+            element.connectedCallback();
+        });
+        observer.observe(element, {subtree: true, childList: true});
+
+    }
+    return element;
+};

@@ -40,7 +40,7 @@ class TopPageLayout extends LayoutBase{
                 let listNo = 0;
                 let list = new BaseFrameWork.List();
                 for (const response of e) {
-                    let item = document.createElement('button',{is:'sw-audio-slide-item'});
+                    let item = document.createCustomElement('button', AudioSlideItem, {is:'sw-audio-slide-item'});
                     this.playCountList.add(item);
                     
                     let audioClip = new AudioClip();
@@ -86,7 +86,7 @@ class SearchSoundLayout extends LayoutBase {
                 let listNo = 0;
                 let list = new BaseFrameWork.List();
                 for (const response of e) {         
-                    let item = document.createElement('button',{is:'sw-audioclip'});           
+                    let item = document.createCustomElement('button', AudioClipObject, {is:'sw-audioclip'});           
                     currentAudioListObject.add(item);
 
                     let audioClip = new AudioClip();
