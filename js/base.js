@@ -1246,16 +1246,6 @@ class WebObject{
     }
 }
 
-/**
- * @deprecated
- */
-class DivObject extends WebObject{
-
-    get tagName(){
-        return 'div';
-    }
-}
-
 class ProgressComposite extends HTMLElement{
     eventSupport = new EventTarget;
     _max = 0;
@@ -1603,14 +1593,14 @@ class MessageButtonWindow extends MessageWindow {
     _buttonNameList = new BaseFrameWork.List;
     constructor(){
         super();
-        this.buttonFrame = new DivObject;
+        this.buttonFrame = document.createElement('div');
         this._buttonNameList.eventSupport.addEventListener('change',()=>this.changeButtonList());
     }
 
     connectedCallback(){
         super.connectedCallback();
         this.createButtonBlock();
-        this.appendObject(this.buttonFrame);
+        this.appendChild(this.buttonFrame);
     }
 
     /**
@@ -1625,7 +1615,7 @@ class MessageButtonWindow extends MessageWindow {
      * @private
      */
     changeButtonList(){
-        this.buttonFrame.removeAll();
+        this.buttonFrame.destoryChildren();
         for (const buttonName of this._buttonNameList) {
             this.addButton(buttonName);
         }
