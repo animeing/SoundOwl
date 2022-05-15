@@ -2604,6 +2604,13 @@ const addBottomEvent = (element)=>{
 };
 
 addBottomEvent(window);
+window.addEventListener('load', ()=>{
+    Array.prototype.forEach.call(document.getElementsByClassName('page-title'), element=>{
+        if(element.tagName.toLowerCase() == 'a'){
+            element.href = BASE.HOME;
+        }
+    });
+});
 
 window.addEventListener('load', ()=>{
     document.body.appendChild(fixed);
