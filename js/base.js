@@ -2723,12 +2723,5 @@ document.createCustomElement=(tagName, constructor, options=array())=>{
     if(shouldActions.initalize){
         element.initalize();
     }
-    if(shouldActions.connected){   
-        const observer = new MutationObserver(()=>{
-            element.connectedCallback();
-        });
-        observer.observe(element, {subtree: true, childList: true});
-
-    }
     return element;
 };
