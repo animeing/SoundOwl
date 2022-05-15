@@ -359,11 +359,11 @@ class DragMoveEvent extends Event{
                     return;
                 }
                 let menuFunction = e=>{
-                    ContextMenu.contextMenu.removeAll();
+                    ContextMenu.contextMenu.destoryChildren();
                     let iterator = contextMenuCreateIterator(this);
                     if(iterator != null){
                         for (const contextMenu of iterator) {
-                            ContextMenu.contextMenu.list.add(contextMenu);
+                            ContextMenu.contextMenu.appendChild(contextMenu);
                         }
                     }
                     ContextMenu.visible(e);
@@ -1646,34 +1646,6 @@ class MessageButtonWindow extends MessageWindow {
 
 customElements.define('sw-message-button', MessageButtonWindow);
 
-/**
- * @deprecated
- */
-class ULObject extends WebObject{
-    constructor(){
-        super();
-        this.list = new WebObjectList(this);
-    }
-
-    /**
-     * @readonly
-     */
-    get value(){
-        return this.list;
-    }
-
-    /**
-     * valueはreadonlyです。
-     */
-    set value(value){
-        throw UnsupportedOperationException;
-    }
-
-    get tagName(){
-        return 'ul';
-    }
-}
-
 class LIButtonObject extends HTMLLIElement{
     constructor(){
         super();
@@ -2092,7 +2064,7 @@ const _history = {
 
 const ContextMenu = {
     isVisible: false,
-    contextMenu: new ULObject,
+    contextMenu: document.createElement('ul'),
     position: new DisplayPoint,
     /**
      * @param {Element} baseElement
@@ -2111,7 +2083,7 @@ const ContextMenu = {
         }
         ContextMenu.baseElement = document.createElement('div');
         ContextMenu.baseElement.id='context-menu';
-        ContextMenu.baseElement.appendObject(this.contextMenu);
+        ContextMenu.baseElement.appendChild(this.contextMenu);
         document.html().append(ContextMenu.baseElement);
         ContextMenu.setPosition(e);
         ContextMenu.isVisible=true;
@@ -2126,7 +2098,7 @@ const ContextMenu = {
         let disableAction = ()=>{
             if(ContextMenu.isVisible){
                 ContextMenu.remove();
-                ContextMenu.contextMenu.list.removeAll();
+                ContextMenu.contextMenu.destoryChildren();
             }
         };
         document.html().addEventListener(MouseEventEnum.CLICK,disableAction, !1);

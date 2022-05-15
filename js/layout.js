@@ -312,7 +312,7 @@ class AudioPlayController extends HTMLElement {
         this.currentSoundInfoFrame.classList.add('sound-info-frame');
         {
             let copy = (val, e)=>{
-                ContextMenu.contextMenu.removeAll();
+                ContextMenu.contextMenu.destoryChildren();
                 {
                     let copy = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
                     copy.menuItem.value = 'Copy to clipboard';
@@ -326,7 +326,7 @@ class AudioPlayController extends HTMLElement {
                         window.open();
                         window.close(1e3);
                     };
-                    ContextMenu.contextMenu.list.add(copy);
+                    ContextMenu.contextMenu.appendChild(copy);
                 }
                 ContextMenu.visible(e);
             };
@@ -438,7 +438,7 @@ class AudioPlayController extends HTMLElement {
                 this._playList.parent.classList.toggle('height-hide');
             });
             playListIcon.addEventListener('contextmenu', e=>{
-                ContextMenu.contextMenu.removeAll();
+                ContextMenu.contextMenu.destoryChildren();
                 {
                     let openClose = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
                     if(this._playList.parent.classList.contains('height-hide')){
@@ -449,7 +449,7 @@ class AudioPlayController extends HTMLElement {
                     openClose.menuItem.onclick=e=>{
                         this._playList.parent.classList.toggle('height-hide');
                     };
-                    ContextMenu.contextMenu.list.add(openClose);
+                    ContextMenu.contextMenu.appendChild(openClose);
                 }
                 ContextMenu.visible(e);
             });
@@ -464,7 +464,7 @@ class AudioPlayController extends HTMLElement {
                 audioParamSave();
             };
             volumeIcon.addEventListener('contextmenu', e=>{
-                ContextMenu.contextMenu.removeAll();
+                ContextMenu.contextMenu.destoryChildren();
                 {
                     let volumeUp = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
                     volumeUp.menuItem.value = 'Volume Up (+10%)';
@@ -472,7 +472,7 @@ class AudioPlayController extends HTMLElement {
                         this._volumeObject.value+=.1;
                         volumeChangeEventAction();
                     };
-                    ContextMenu.contextMenu.list.add(volumeUp);
+                    ContextMenu.contextMenu.appendChild(volumeUp);
                 }
                 {
                     let volumeDown = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
@@ -481,7 +481,7 @@ class AudioPlayController extends HTMLElement {
                         this._volumeObject.value-=.1;
                         volumeChangeEventAction();
                     };
-                    ContextMenu.contextMenu.list.add(volumeDown);
+                    ContextMenu.contextMenu.appendChild(volumeDown);
                 }
                 ContextMenu.visible(e);
             });
@@ -538,7 +538,7 @@ class AudioPlayController extends HTMLElement {
             this.canvas.run();
             openIcon.addEventListener(MouseEventEnum.CLICK, musicCanvasEvent);
             openIcon.addEventListener('contextmenu',e=>{
-                ContextMenu.contextMenu.removeAll();
+                ContextMenu.contextMenu.destoryChildrenren();
                 {
                     let soundOpenClose = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
                     if(openIcon.value === ''){
@@ -549,7 +549,7 @@ class AudioPlayController extends HTMLElement {
                     soundOpenClose.menuItem.onclick=e=>{
                         musicCanvasEvent();
                     };
-                    ContextMenu.contextMenu.list.add(soundOpenClose);
+                    ContextMenu.contextMenu.appendChild(soundOpenClose);
                 }
                 ContextMenu.visible(e);
             });
