@@ -725,16 +725,16 @@ customElements.define('sw-audio-slide-item', AudioSlideItem, {extends: "button"}
     const mainMenu=()=>{
         let menu = document.getElementById('main-menu');
         menu.innerHTML = '';
-        const searchBox = document.createElement('sw-searchbox');
-        searchBox.searchEvent = value =>{
+        window.searchBox = document.createElement('sw-searchbox');
+        window.searchBox.searchEvent = value =>{
             let url = UrlParam.setGetter({'SearchWord': value,'page': 'search'}, location.pathname);
             if(url != location.pathname+location.search) {
                 history.pushState(null, null, url);
                 popPage();
             }
         }
-        searchBox.classList.add('searchbox');
-        menu.appendChild(searchBox);
+        window.searchBox.classList.add('searchbox');
+        menu.appendChild(window.searchBox);
         
         let dropdownMenu = document.createCustomElement('ul', DropDownElement, {is:'sw-dropdown'});
         dropdownMenu.classList.add('header-item', 'nonselectable');

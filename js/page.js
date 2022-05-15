@@ -79,7 +79,7 @@ class SearchSoundLayout extends LayoutBase {
             let currentAudioListObject = new PlacementList();
 
             let soundSearch = new SoundSearchAction();
-            console.log(searchWord);
+            window.searchBox.value = searchWord;
             soundSearch.formDataMap.append('SearchWord', searchWord);
             soundSearch.httpRequestor.addEventListener('success', event => {
                 let e = event.detail.response;
