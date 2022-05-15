@@ -538,7 +538,7 @@ class AudioPlayController extends HTMLElement {
             this.canvas.run();
             openIcon.addEventListener(MouseEventEnum.CLICK, musicCanvasEvent);
             openIcon.addEventListener('contextmenu',e=>{
-                ContextMenu.contextMenu.destoryChildrenren();
+                ContextMenu.contextMenu.destoryChildren();
                 {
                     let soundOpenClose = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
                     if(openIcon.value === ''){
