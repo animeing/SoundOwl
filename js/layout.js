@@ -311,14 +311,14 @@ class AudioPlayController extends HTMLElement {
         this.currentSoundInfoFrame = document.createElement('p');
         this.currentSoundInfoFrame.classList.add('sound-info-frame');
         {
-            let copy = e=>{
+            let copy = (val, e)=>{
                 ContextMenu.contextMenu.removeAll();
                 {
-                    let copy = document.createElement('li', {is:'sw-libutton'});
+                    let copy = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
                     copy.menuItem.value = 'Copy to clipboard';
-                    copy.menuItem.onclick = ()=>{
+                    copy.menuItem.onclick = () =>{
                         let window = document.createElement('sw-message-box');
-                        if(new ClipBoard().set(e)){
+                        if(new ClipBoard().set(val)){
                             window.value = 'Copied it.';
                         } else {
                             window.value = 'Copy failed.';
@@ -329,7 +329,6 @@ class AudioPlayController extends HTMLElement {
                     ContextMenu.contextMenu.list.add(copy);
                 }
                 ContextMenu.visible(e);
-                e.stopPropagation();
             };
             let frameAppend = this.currentSoundInfoFrame.appendChild.bind(this.currentSoundInfoFrame);
             {
@@ -362,7 +361,7 @@ class AudioPlayController extends HTMLElement {
             {
                 this.currentSoundTitle = document.createElement('span');
                 this.currentSoundTitle.classList.add('audio-play-item');
-                this.currentSoundTitle.addEventListener('contextmenu', ()=>{copy(this.currentSoundTitle.innerText);});
+                this.currentSoundTitle.addEventListener('contextmenu', e=>{copy(this.currentSoundTitle.innerText, e);});
                 frameAppend(this.currentSoundTitle);
             }
             {
@@ -374,7 +373,7 @@ class AudioPlayController extends HTMLElement {
             {
                 this.currentUpLoader = document.createElement('span');
                 this.currentUpLoader.classList.add('audio-play-item');
-                this.currentUpLoader.addEventListener('contextmenu', ()=>{copy(this.currentUpLoader.innerText);});
+                this.currentUpLoader.addEventListener('contextmenu', e=>{copy(this.currentUpLoader.innerText, e);});
                 frameAppend(this.currentUpLoader);
             }
             {
@@ -441,7 +440,7 @@ class AudioPlayController extends HTMLElement {
             playListIcon.addEventListener('contextmenu', e=>{
                 ContextMenu.contextMenu.removeAll();
                 {
-                    let openClose = document.createElement('li', {is:'sw-libutton'});
+                    let openClose = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
                     if(this._playList.parent.classList.contains('height-hide')){
                         openClose.menuItem.value = 'Open';
                     } else {
@@ -453,7 +452,6 @@ class AudioPlayController extends HTMLElement {
                     ContextMenu.contextMenu.list.add(openClose);
                 }
                 ContextMenu.visible(e);
-                e.stopPropagation();
             });
         }
         {
@@ -468,7 +466,7 @@ class AudioPlayController extends HTMLElement {
             volumeIcon.addEventListener('contextmenu', e=>{
                 ContextMenu.contextMenu.removeAll();
                 {
-                    let volumeUp = document.createElement('li', {is:'sw-libutton'});
+                    let volumeUp = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
                     volumeUp.menuItem.value = 'Volume Up (+10%)';
                     volumeUp.menuItem.onclick=e=>{
                         this._volumeObject.value+=.1;
@@ -477,7 +475,7 @@ class AudioPlayController extends HTMLElement {
                     ContextMenu.contextMenu.list.add(volumeUp);
                 }
                 {
-                    let volumeDown = document.createElement('li', {is:'sw-libutton'});
+                    let volumeDown = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
                     volumeDown.menuItem.value = 'Volume Down (-10%)';
                     volumeDown.menuItem.onclick=e=>{
                         this._volumeObject.value-=.1;
@@ -486,7 +484,6 @@ class AudioPlayController extends HTMLElement {
                     ContextMenu.contextMenu.list.add(volumeDown);
                 }
                 ContextMenu.visible(e);
-                e.stopPropagation();
             });
             volumeIcon.setAttribute('hint', 'Volume');
             this._volumeObject.max = 1;
@@ -543,7 +540,7 @@ class AudioPlayController extends HTMLElement {
             openIcon.addEventListener('contextmenu',e=>{
                 ContextMenu.contextMenu.removeAll();
                 {
-                    let soundOpenClose = document.createElement('li', {is:'sw-libutton'});
+                    let soundOpenClose = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
                     if(openIcon.value === ''){
                         soundOpenClose.menuItem.value = 'Open';
                     } else {
@@ -555,7 +552,6 @@ class AudioPlayController extends HTMLElement {
                     ContextMenu.contextMenu.list.add(soundOpenClose);
                 }
                 ContextMenu.visible(e);
-                e.stopPropagation();
             });
 
             

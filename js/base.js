@@ -642,7 +642,11 @@ class WebObjectList extends BaseFrameWork.List{
      */
     removeAll(){
         super.removeAll();
-        this.parent.destoryChildren();
+        if(this.parent instanceof WebObject){
+            this.parent.removeAll();
+        } else if (this.parent instanceof HTMLElement) {
+            this.parent.destoryChildren();
+        }
     }
 
     /**
@@ -1503,7 +1507,7 @@ class ComboBoxObject extends WebObject{
      * @param {String} displayName 
      */
     addOption(value, displayName){
-        const option = document.createElement('option', {is:'sw-option'});
+        const option = document.createCustomElement('option', OptionObject, {is:'sw-option'});
         option.value = value;
         option.displayName = displayName;
         this.optionList.add(option);
@@ -1703,6 +1707,7 @@ class DropDownElement extends HTMLUListElement{
     initalize() {
         this.list = new WebObjectList(this);
         this.dropdownObject = document.createElement('li');
+        this.classList.add('dropdown');
     }
 
     set dropdownObject(value){
@@ -1733,9 +1738,6 @@ class DropDownElement extends HTMLUListElement{
             return undefined;
         }
         return this.dropdownObject.innerText;
-    }
-    connectedCallback(){
-        this.classList.add('dropdown');
     }
 
     /**
@@ -2111,7 +2113,9 @@ const ContextMenu = {
      * @param {Event} e 
      */
     visible(e){
-        e.preventDefault();
+        if(e.preventDefault != undefined){
+            e.preventDefault();
+        }
         if(ContextMenu.isVisible){
             ContextMenu.remove();
         }
@@ -2121,7 +2125,9 @@ const ContextMenu = {
         document.html().append(ContextMenu.baseElement);
         ContextMenu.setPosition(e);
         ContextMenu.isVisible=true;
-        e.stopImmediatePropagation();
+        if(e.stopImmediatePropagation != undefined){
+            e.stopImmediatePropagation();
+        }
     },
     /**
      * @private
