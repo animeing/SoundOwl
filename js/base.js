@@ -17,6 +17,55 @@ BaseFrameWork.Draw.Figure={};
 BaseFrameWork.Draw.Figure.Module={};
 BaseFrameWork.Draw.Module={};
 
+BaseFrameWork.defineCustomElement=(tagName, constructor, options={})=>{
+    if(BaseFrameWork.registoryElement == undefined){
+        BaseFrameWork.registoryElement = new Map;
+    }
+    customElements.define(tagName, constructor, options);
+    BaseFrameWork.registoryElement.set(tagName, {name:tagName, class:constructor, tagOptions:options});
+}
+
+BaseFrameWork.createCustomElement=(tagName)=>{
+    if(BaseFrameWork.registoryElement == undefined) {
+        return document.createElement(tagName);
+    }
+    let tagSettings = BaseFrameWork.registoryElement.get(tagName);
+    if(tagSettings == undefined) {
+        return document.createElement(tagName);
+    }
+    let element = null;
+    if(tagSettings.tagOptions == {}){
+        element = document.createElement(tagName)
+    } else {
+        element = document.createElement(tagSettings.tagOptions.extends, {is:tagName});
+    }
+    let classPropertys = Object.getOwnPropertyNames(tagSettings.class.prototype);
+
+    let shouldActions = {initalize:false,connected:false};
+    //create Tag check (一部ブラウザにて正しくCustomElementが作られない問題があるため、チェックを行い、不備を訂正する)
+    for(const valuePosition in classPropertys) {
+        if(element[classPropertys[valuePosition]] == undefined) {
+            let descript = Object.getOwnPropertyDescriptor(tagSettings.class.prototype ,classPropertys[valuePosition]);
+            if(descript.hasOwnProperty('value')) {
+                element[classPropertys[valuePosition]] = tagSettings.class.prototype[classPropertys[valuePosition]];
+                if(classPropertys[valuePosition] == 'connectedCallback') {
+                    shouldActions.connected = true;
+                }
+            }
+            if(descript.hasOwnProperty('get') || descript.hasOwnProperty('set')) {
+                Object.defineProperty(element, classPropertys[valuePosition], descript);
+            }
+        }
+        if(classPropertys[valuePosition] == 'initalize') {
+            shouldActions.initalize = true;
+        }
+    }
+    if(shouldActions.initalize){
+        element.initalize();
+    }
+    return element;
+};
+
 
 BaseFrameWork.Draw.Point2D=class {
     constructor(){
@@ -1462,7 +1511,7 @@ class ComboBoxObject extends WebObject{
      * @param {String} displayName 
      */
     addOption(value, displayName){
-        const option = document.createCustomElement('option', OptionObject, {is:'sw-option'});
+        const option = BaseFrameWork.createCustomElement('sw-option');
         option.value = value;
         option.displayName = displayName;
         this.optionList.add(option);
@@ -1498,7 +1547,7 @@ class OptionObject extends HTMLOptionElement{
     }
 }
 
-customElements.define('sw-option', OptionObject, {extends:'option'});
+BaseFrameWork.defineCustomElement('sw-option', OptionObject, {extends:'option'});
 
 class MessageWindow extends HTMLElement{
     _messageElement = document.createElement('p');
@@ -1613,7 +1662,7 @@ class LIButtonObject extends HTMLLIElement{
     }
 }
 
-customElements.define('sw-libutton', LIButtonObject, {extends:'li'});
+BaseFrameWork.defineCustomElement('sw-libutton', LIButtonObject, {extends:'li'});
 
 class DropDownElement extends HTMLUListElement{
     _dropdownNameObject = null;
@@ -1665,14 +1714,14 @@ class DropDownElement extends HTMLUListElement{
         /**
          * @type {LIButtonObject}
          */
-        let menuItem = document.createCustomElement('li', LIButtonObject,{is:'sw-libutton'});
+        let menuItem = BaseFrameWork.createCustomElement('sw-libutton');
         this.list.add(menuItem);
         menuItem.menuItem.value = value;
         menuItem.menuItem.onclick = onclick;
     }
 }
 
-customElements.define('sw-dropdown', DropDownElement, {extends: 'ul'});
+BaseFrameWork.defineCustomElement('sw-dropdown', DropDownElement, {extends: 'ul'});
 
 
 /**
@@ -2626,32 +2675,3 @@ window.addEventListener('popstate', (e)=>{
 }, !1);
 
 var audio = new AudioPlayer;
-
-document.createCustomElement=(tagName, constructor, options=array())=>{
-    let element = document.createElement(tagName, options);
-    let classPropertys = Object.getOwnPropertyNames(constructor.prototype);
-
-    let shouldActions = {initalize:false,connected:false};
-    //create Tag check (一部ブラウザにて正しくCustomElementが作られない問題があるため、チェックを行い、不備を訂正する)
-    for(const valuePosition in classPropertys) {
-        if(element[classPropertys[valuePosition]] == undefined) {
-            let descript = Object.getOwnPropertyDescriptor(constructor.prototype ,classPropertys[valuePosition]);
-            if(descript.hasOwnProperty('value')) {
-                element[classPropertys[valuePosition]] = constructor.prototype[classPropertys[valuePosition]];
-                if(classPropertys[valuePosition] == 'connectedCallback') {
-                    shouldActions.connected = true;
-                }
-            }
-            if(descript.hasOwnProperty('get') || descript.hasOwnProperty('set')) {
-                Object.defineProperty(element, classPropertys[valuePosition], descript);
-            }
-        }
-        if(classPropertys[valuePosition] == 'initalize') {
-            shouldActions.initalize = true;
-        }
-    }
-    if(shouldActions.initalize){
-        element.initalize();
-    }
-    return element;
-};

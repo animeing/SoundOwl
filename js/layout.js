@@ -199,7 +199,7 @@ class AudioClipObject extends HTMLButtonElement{
     }
 }
 
-customElements.define('sw-audioclip', AudioClipObject, {extends: "button"});
+BaseFrameWork.defineCustomElement('sw-audioclip', AudioClipObject, {extends: "button"});
 
 /**
  * @singleton
@@ -314,7 +314,7 @@ class AudioPlayController extends HTMLElement {
             let copy = (val, e)=>{
                 ContextMenu.contextMenu.destoryChildren();
                 {
-                    let copy = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
+                    let copy = BaseFrameWork.createCustomElement('sw-libutton');
                     copy.menuItem.value = 'Copy to clipboard';
                     copy.menuItem.onclick = () =>{
                         let window = document.createElement('sw-message-box');
@@ -340,7 +340,7 @@ class AudioPlayController extends HTMLElement {
                     if(!audio.playList.deepEquals(this._playList.audioClips)){
                         this._playList.removeAll();
                         for (const iterator of audio.playList) {
-                            let audioClipObject = document.createCustomElement('button', AudioClipObject, {is:'sw-audioclip'});
+                            let audioClipObject = BaseFrameWork.createCustomElement('sw-audioclip');
                             audioClipObject.enableDragMove();
                             audioClipObject.setAttribute('d-group', 'playlist');
                             audioClipObject.setContextMenu(function *(){
@@ -440,7 +440,7 @@ class AudioPlayController extends HTMLElement {
             playListIcon.addEventListener('contextmenu', e=>{
                 ContextMenu.contextMenu.destoryChildren();
                 {
-                    let openClose = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
+                    let openClose = BaseFrameWork.createCustomElement('sw-libutton');
                     if(this._playList.parent.classList.contains('height-hide')){
                         openClose.menuItem.value = 'Open';
                     } else {
@@ -466,7 +466,7 @@ class AudioPlayController extends HTMLElement {
             volumeIcon.addEventListener('contextmenu', e=>{
                 ContextMenu.contextMenu.destoryChildren();
                 {
-                    let volumeUp = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
+                    let volumeUp = BaseFrameWork.createCustomElement('sw-libutton');
                     volumeUp.menuItem.value = 'Volume Up (+10%)';
                     volumeUp.menuItem.onclick=e=>{
                         this._volumeObject.value+=.1;
@@ -475,7 +475,7 @@ class AudioPlayController extends HTMLElement {
                     ContextMenu.contextMenu.appendChild(volumeUp);
                 }
                 {
-                    let volumeDown = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
+                    let volumeDown = BaseFrameWork.createCustomElement('sw-libutton');
                     volumeDown.menuItem.value = 'Volume Down (-10%)';
                     volumeDown.menuItem.onclick=e=>{
                         this._volumeObject.value-=.1;
@@ -540,7 +540,7 @@ class AudioPlayController extends HTMLElement {
             openIcon.addEventListener('contextmenu',e=>{
                 ContextMenu.contextMenu.destoryChildren();
                 {
-                    let soundOpenClose = document.createCustomElement('li', LIButtonObject, {is:'sw-libutton'});
+                    let soundOpenClose = BaseFrameWork.createCustomElement('sw-libutton');
                     if(openIcon.value === ''){
                         soundOpenClose.menuItem.value = 'Open';
                     } else {
@@ -719,7 +719,7 @@ class AudioSlideItem extends HTMLButtonElement {
     }
 }
 
-customElements.define('sw-audio-slide-item', AudioSlideItem, {extends: "button"});
+BaseFrameWork.defineCustomElement('sw-audio-slide-item', AudioSlideItem, {extends: "button"});
 
 (()=>{
     const mainMenu=()=>{
@@ -736,7 +736,7 @@ customElements.define('sw-audio-slide-item', AudioSlideItem, {extends: "button"}
         window.searchBox.classList.add('searchbox');
         menu.appendChild(window.searchBox);
         
-        let dropdownMenu = document.createCustomElement('ul', DropDownElement, {is:'sw-dropdown'});
+        let dropdownMenu = BaseFrameWork.createCustomElement('sw-dropdown');
         dropdownMenu.classList.add('header-item', 'nonselectable');
         dropdownMenu.displayName = 'Menu';
         menu.appendChild(dropdownMenu);
