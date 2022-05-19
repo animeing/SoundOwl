@@ -25,6 +25,12 @@ class SoundSearchAction extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
+class SiteStatus extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'site_status.php', BaseFrameWork.Network.HttpRequestType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+    }
+}
+
 class TopPageLayout extends LayoutBase{
     constructor() {
         super();
