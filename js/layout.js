@@ -744,6 +744,39 @@ BaseFrameWork.defineCustomElement('sw-audio-slide-item', AudioSlideItem, {extend
             history.pushState(null, null, BASE.HOME+'?page=file_setting');
             popPage();
         });
+        dropdownMenu.addItem('Audio regist', ()=>{
+            let siteStatus = new SiteStatus();
+            siteStatus.httpRequestor.addEventListener('success', event=>{
+                let data = event.detail.response;
+                if(toBoolean(data['regist_status'])) {
+                    let messageButtonWindow = new MessageButtonWindow();
+                    messageButtonWindow.value = `Already in progress.
+                    Sound registrations : ${data['regist_data_count']['sound']}
+                    Album registrations : ${data['regist_data_count']['album']}
+                    Artist registrations : ${data['regist_data_count']['artist']}
+                    `;
+                    messageButtonWindow.addItem('Close', ()=>{
+                        messageButtonWindow.close();
+                    });
+                    messageButtonWindow.open();
+                    return;
+                }
+                let soundRegist = new SoundRegist();
+                soundRegist.httpRequestor.addEventListener('success', event=>{
+                    let data = event.detail.response;
+                    let messageButtonWindow = new MessageButtonWindow();
+                    messageButtonWindow.value = `Processing of [Audio regist] is complete.
+                    Sound registrations : ${data['count']}
+                    `;
+                    messageButtonWindow.addItem('Close', ()=>{
+                        messageButtonWindow.close();
+                    });
+                    messageButtonWindow.open();
+                });
+                soundRegist.execute();
+            });
+            siteStatus.execute();
+        });
 
         
     };

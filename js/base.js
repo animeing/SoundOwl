@@ -229,7 +229,7 @@ const toBoolean=(data)=> {
     if(data === true || data === false) {
         return data;
     }
-    return data.toLowerCase() === 'true';
+    return String(data).toLowerCase() === 'true';
 };
 
 class DisplayPoint extends BaseFrameWork.Draw.Point2D{

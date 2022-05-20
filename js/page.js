@@ -27,9 +27,16 @@ class SoundSearchAction extends BaseFrameWork.Network.RequestServerBase {
 
 class SiteStatus extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
-        super(null, BASE.API+'site_status.php', BaseFrameWork.Network.HttpRequestType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+        super(null, BASE.API+'site_status.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
 }
+
+class SoundRegist extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'sound_regist.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+    }
+}
+
 
 class TopPageLayout extends LayoutBase{
     constructor() {
