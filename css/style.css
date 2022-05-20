@@ -485,6 +485,10 @@ header ~ .layout-base{
   background: var(--itemfcbgcolor);
 }
 
+.audio-list {
+  overflow-x: hidden;
+}
+
 .audio-item.audio-list-nowplaying{
   background: var(--subcolor);
 }
