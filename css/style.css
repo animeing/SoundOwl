@@ -486,7 +486,7 @@ header ~ .layout-base{
 }
 
 .audio-list {
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .audio-item.audio-list-nowplaying{
