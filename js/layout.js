@@ -774,6 +774,12 @@ BaseFrameWork.defineCustomElement('sw-audio-slide-item', AudioSlideItem, {extend
                     messageButtonWindow.open();
                 });
                 soundRegist.execute();
+                let messageButtonWindow = new MessageButtonWindow();
+                messageButtonWindow.value = `Process [Audio regist] started.`;
+                messageButtonWindow.addItem('Close', ()=>{
+                    messageButtonWindow.close();
+                });
+                messageButtonWindow.open();
             });
             siteStatus.execute();
         });
