@@ -6,6 +6,7 @@ interface SoundLinkTable {
 
     const SOUND_HASH = 'sound_hash';
     const TITLE = 'title';
+    const LYRICS = 'lyrics';
     const GENRE = 'genre';
     const ALBUM_HASH = 'album_hash';
     const ALBUM_TITLE = 'album_title';
