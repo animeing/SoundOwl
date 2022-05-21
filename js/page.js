@@ -162,6 +162,9 @@ function popPage() {
     if(getterParam.page == 'file_setting') {
         setTitle('File Setting');
     }
+    if(getterParam.SearchWord != undefined){
+        window.searchBox.value = decodeURI(getterParam.SearchWord);
+    }
 }
 
 const toGetParamMap=getParam=>{
