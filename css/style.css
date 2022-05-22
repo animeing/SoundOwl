@@ -723,6 +723,7 @@ header ~ .layout-base{
 
 sw-audio-slide-list{
   overflow-x: scroll;
+  overflow-y: hidden;
   display: block;
 }
 
