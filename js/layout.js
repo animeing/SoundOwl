@@ -536,6 +536,46 @@ class AudioPlayController extends HTMLElement {
             this.canvas = new CanvasAudioAnalizer;
             this.canvas.connect(audio.audioContext, audio.source);
             this.canvas.run();
+            this.canvas._obj.addEventListener('contextmenu', e=>{
+                let lyricsView = BaseFrameWork.createCustomElement('sw-libutton');
+                lyricsView.menuItem.value = 'Lyrics';
+                lyricsView.menuItem.onclick=e=>{
+                    this.classList.remove('analyser');
+                    this.classList.add('lyrics');
+                }
+                ContextMenu.contextMenu.appendChild(lyricsView);
+            });
+            this.lyrics = document.createElement('div');
+            audio.eventSupport.addEventListener('audio_info_loaded', ()=>{
+                this.lyrics.destoryChildren();
+                if( audio.data.lyrics == undefined) {
+                    ContextMenu.visible(e);
+                    return;
+                }
+                for (const iterator of audio.data.lyrics.split('\r\n')) {
+                    if(iterator == '') {
+                        this.lyrics.appendChild(document.createElement('br'));
+                        continue;
+                    }
+                    let parm = document.createElement('p');
+                    parm.innerText = iterator;
+                    this.lyrics.appendChild(parm);
+                }
+                ContextMenu.visible(e);
+            });
+            this.lyrics.addEventListener('contextmenu', e=>{
+                ContextMenu.contextMenu.destoryChildren();
+                let visualizerView = BaseFrameWork.createCustomElement('sw-libutton');
+                visualizerView.menuItem.value = 'Visualizer';
+                
+                visualizerView.menuItem.onclick=e=>{
+                    this.classList.add('analyser');
+                    this.classList.remove('lyrics');
+                }
+                ContextMenu.contextMenu.appendChild(visualizerView);
+                ContextMenu.visible(e);
+            });
+            this.lyrics.classList.add('lyrics-view');
             openIcon.addEventListener(MouseEventEnum.CLICK, musicCanvasEvent);
             openIcon.addEventListener('contextmenu',e=>{
                 ContextMenu.contextMenu.destoryChildren();
@@ -576,6 +616,8 @@ class AudioPlayController extends HTMLElement {
         this.appendChild(this._audioProgress);
         this.appendChild(this._volumeObject);
         this.appendObject(this.canvas);
+        this.classList.add('analyser');
+        this.appendChild(this.lyrics);
         this._audioProgress.addEventListener(MouseEventEnum.MOUSE_MOVE, e=>{
             let positionTime = 0;
             if(!isNaN(this._audioProgress.mousePositionvalue(e))){

@@ -605,15 +605,18 @@ header ~ .layout-base{
 }
 
 
-.audio-controller-playlist::-webkit-scrollbar{
+.audio-controller-playlist::-webkit-scrollbar,
+.lyrics-view::-webkit-scrollbar {
   width: 4px;
 }
 
-.audio-controller-playlist::-webkit-scrollbar-track{
+.audio-controller-playlist::-webkit-scrollbar-track
+.lyrics-view::-webkit-scrollbar-track{
   border-radius: 2px;
 }
 
-.audio-controller-playlist:hover::-webkit-scrollbar-thumb{
+.audio-controller-playlist:hover::-webkit-scrollbar-thumb,
+.lyrics-view:hover::-webkit-scrollbar-thumb{
   background: gray;
   border-radius: 2px;
 }
@@ -673,10 +676,20 @@ header ~ .layout-base{
   display: none;
 }
 
-.current-sound-controller-fill-layout .analyser-view{
+.lyrics-view {
+  width: 100%;
+  display: none;
+  overflow-y: scroll;
+  margin: 5px;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+.current-sound-controller-fill-layout.analyser .analyser-view,
+.current-sound-controller-fill-layout.lyrics .lyrics-view {
   display: block;
   width: calc(100% - 3.5em);
-  height: calc(100% - 45px);
+  height: calc(100% - 50px);
 }
 
 /**

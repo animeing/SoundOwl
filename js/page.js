@@ -37,6 +37,12 @@ class SoundRegist extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
+class SoundInfomation extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'sound_data.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
+    }
+}
+
 
 class TopPageLayout extends LayoutBase{
     constructor() {

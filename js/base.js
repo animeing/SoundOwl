@@ -1187,7 +1187,15 @@ BaseFrameWork.Network.RequestServerBase=class {
     }
     
     execute(){
-        this.httpRequestor.open(this.type, this.path, this._async);
+        if(this.type == BaseFrameWork.Network.HttpRequestType.GET) {
+            let param = {};
+            for(let key of this.formDataMap.keys()){
+                param[key] = this.formDataMap.get(key);
+            }
+            this.httpRequestor.open(this.type, UrlParam.setGetter(param, this.path), this._async);
+        } else {
+            this.httpRequestor.open(this.type, this.path, this._async);
+        }
         this.httpRequestor.responseType=this.responseType;
         if(this.requestHeader != null && this.requestHeader.size > 0){
             for(let key of this.requestHeader.keys()){
@@ -2272,6 +2280,16 @@ class AudioPlayer{
         this.eventSupport = new EventTarget;
         this.audioUpdateEvent = new CustomEvent('update');
         this.audioUpdatedEvent = new CustomEvent('updated');
+        this.data = {};
+        this.eventSupport.addEventListener('play', ()=>{
+            let request = new SoundInfomation();
+            request.httpRequestor.addEventListener('success', event=>{
+                this.data = event.detail.response;
+                this.eventSupport.dispatchEvent(new CustomEvent('audio_info_loaded'));
+            });
+            request.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
+            request.execute();
+        });
         this.loadGiveUpTime = 10000;
         this.audio.onerror = ()=> {
             console.log("Error " + this.audio.error.code + "; details: " + this.audio.error.message);
