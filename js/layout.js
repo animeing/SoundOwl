@@ -210,7 +210,7 @@ BaseFrameWork.defineCustomElement('sw-audioclip', AudioClipObject, {extends: "bu
     constructor(){
         super(document.createElement('div'));
         this.parent.classList.add('layout-base', 'audio-list');
-        audio.eventSupport.addEventListener('update',()=>{
+        let letDataChange = ()=>{
             if(this.currentNowPlayingSoundObject != null && this.currentNowPlayingSoundObject.audioClip != null &&
                 this.currentNowPlayingSoundObject.audioClip.equals(audio.currentAudioClip)){
                     return;
@@ -224,7 +224,11 @@ BaseFrameWork.defineCustomElement('sw-audioclip', AudioClipObject, {extends: "bu
                     break;
                 }
             }
-        });
+        };
+        let observer = new MutationObserver(letDataChange);
+        observer.observe(this.parent, {attributes:true});
+        audio.eventSupport.addEventListener('play',letDataChange);
+
     }
 
     copyChilds(){
@@ -335,6 +339,13 @@ class AudioPlayController extends HTMLElement {
                 this._playList = new PlacementList();
                 this._playList.parent.classList.add('audio-controller-playlist', 'height-hide');
                 frameAppend(this._playList.parent);
+                let observer = new MutationObserver(()=>{
+                    let audioElement = document.querySelector('.audio-controller-playlist .audio-list-nowplaying');
+                    if(audioElement){
+                        this._playList.parent.scroll({top: audioElement.offsetTop-42});
+                    }
+                });
+                observer.observe(this._playList.parent, {childList:true,attributes:true,subtree: true});
                 audio.eventSupport.addEventListener('play', ()=>{
                     
                     if(!audio.playList.deepEquals(this._playList.audioClips)){
@@ -537,6 +548,7 @@ class AudioPlayController extends HTMLElement {
             this.canvas.connect(audio.audioContext, audio.source);
             this.canvas.run();
             this.canvas._obj.addEventListener('contextmenu', e=>{
+                ContextMenu.contextMenu.destoryChildren();
                 let lyricsView = BaseFrameWork.createCustomElement('sw-libutton');
                 lyricsView.menuItem.value = 'Lyrics';
                 lyricsView.menuItem.onclick=e=>{
@@ -561,7 +573,7 @@ class AudioPlayController extends HTMLElement {
                     parm.innerText = iterator;
                     this.lyrics.appendChild(parm);
                 }
-                ContextMenu.visible(e);
+                this.lyrics.scroll({top: 0});
             });
             this.lyrics.addEventListener('contextmenu', e=>{
                 ContextMenu.contextMenu.destoryChildren();

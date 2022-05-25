@@ -2281,7 +2281,7 @@ class AudioPlayer{
         this.audioUpdateEvent = new CustomEvent('update');
         this.audioUpdatedEvent = new CustomEvent('updated');
         this.data = {};
-        this.eventSupport.addEventListener('play', ()=>{
+        this.eventSupport.addEventListener('audioSet', ()=>{
             let request = new SoundInfomation();
             request.httpRequestor.addEventListener('success', event=>{
                 this.data = event.detail.response;
@@ -2479,6 +2479,7 @@ class AudioPlayer{
     }
 
     audioDeployment(){
+        this.eventSupport.dispatchEvent(new CustomEvent('audioSet'));
         this.audio.src = this.currentAudioClip.src;
     }
 
