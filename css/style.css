@@ -440,6 +440,11 @@ header ~ .layout-base{
   object-fit: contain;
 }
 
+sw-audio-slide-list img,
+.alubm > img{
+  border: 1px solid var(--itemfcbgcolor);
+}
+
 .layout-box{
   padding: 5px 5px;
   width: calc(100% - 250px);
