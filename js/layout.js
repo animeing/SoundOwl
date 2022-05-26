@@ -406,6 +406,19 @@ class AudioPlayController extends HTMLElement {
             beforeIcon.type = 'button';
             beforeIcon.classList.add('audio-controller-parts', 'icon');
             cntAppndObj(beforeIcon);
+            beforeIcon.addEventListener(MouseEventEnum.CLICK, ()=>{
+                if(ContextMenu.isVisible)return;
+                let currentIndex = audio.playList.equalFindIndex(audio.currentAudioClip);
+                let beforeAudioClip = audio.playList.get(--currentIndex);
+                if(beforeAudioClip == null){
+                    return;
+                }
+                audio.setCurrentAudioClip(beforeAudioClip);
+                if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+                    audio.play(beforeAudioClip);
+                }
+                audio.audio.currentTime = 0;
+            });
         }
         {
             let playIcon = document.createElement('input');
@@ -436,6 +449,17 @@ class AudioPlayController extends HTMLElement {
             nextIcon.type = 'button';
             nextIcon.classList.add('audio-controller-parts', 'icon');
             cntAppndObj(nextIcon);
+            nextIcon.addEventListener(MouseEventEnum.CLICK, ()=>{
+                let nextAudioClip = audio.nextClip();
+                if(nextAudioClip == null){
+                    return;
+                }
+                audio.setCurrentAudioClip(nextAudioClip);
+                if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+                    audio.play(nextAudioClip);
+                }
+                audio.audio.currentTime = 0;
+            });
         }
         {
             let playListIcon = document.createElement('input');
