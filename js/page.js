@@ -1,9 +1,4 @@
 'use strict';
-(()=>{
-    window.layoutBase = document.createElement('div');
-    window.layoutBase.classList.add('layout-base');
-    window.addEventListener('load',popPage);
-})();
 
 class LayoutBase {
     constructor() {
@@ -138,40 +133,199 @@ class SearchSoundLayout extends LayoutBase {
 
 let currentPage = '';
 
-//何かいい書き方がある気がする。。。
-function popPage() {
-    if(window.layoutBase.parentNode == undefined) {
-        document.body.appendChild(window.layoutBase);
-    }
-    let getterParam = toGetParamMap(UrlParam.getGetter());
-    if(getterParam.page == undefined) {
-        getterParam.page = 'Top';
-    }
-    if(getterParam.SearchWord == undefined) {
-        getterParam.SearchWord = '';
-    }
-    let isChangePage = currentPage != getterParam.page+getterParam.SearchWord;
-    currentPage = getterParam.page+getterParam.SearchWord;
-    if(getterParam.page == 'Top') {
-        setTitle('');
-        if(isChangePage) {
-            new TopPageLayout();
+const SlideList = {
+    template: `
+    <sw-audio-slide-list>
+        <div>
+            <button v-for="item in requestData()" @click="click(item)">
+                <img loading='lazy' :src="createImageSrc(item.albumKey)">
+                <p :hint="item.title">{{ item.title }}</p>
+            </button>
+        </div>
+    </sw-audio-slide-list>`,
+    
+    data() {
+        return {soundClips:[]};
+    },
+    methods:{
+        requestData(){
+            if(this.soundClips.length == 0) {
+                let playCountAction = new PlayCountAction();
+                
+                let listNo = 0;
+                playCountAction.httpRequestor.addEventListener('success', event=>{
+                    for (const response of event.detail.response) {
+                        let audioClip = new AudioClip();
+                        audioClip.soundHash = response['sound_hash'];
+                        audioClip.title = response['title'];
+                        audioClip.artist = response['artist_name'];
+                        audioClip.album = response['album']['album_title'];
+                        audioClip.albumKey = response['album']['album_hash'];
+                        audioClip.no = listNo;
+                        listNo++;
+                        this.soundClips.push(audioClip);
+                    }
+                });
+                playCountAction.execute();
+                return this.soundClips;
+            } else {
+                return this.soundClips;
+            }
+        },
+        createImageSrc(albumKey) {
+            return `${BASE.HOME}img/album_art.php?media_hash=`+albumKey;
+        },
+        click(soundClip){
+            if(ContextMenu.isVisible){
+                return;
+            }
+            audio.playList.removeAll();
+            for(const audioclip of this.soundClips) {
+                audio.playList.add(audioclip);
+            }
+            if(audio.currentAudioClip == null){
+                audio.play(soundClip);
+                return;
+            }            
+            if(soundClip.equals(audio.currentAudioClip)){
+                if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
+                    audio.play();
+                } else {
+                    if(audio.currentPlayState === AudioPlayStateEnum.PLAY || audio.currentPlayState !== AudioPlayStateEnum.STOP ){
+                        audio.pause();
+                    }
+                }
+                return;
+            } else {
+                audio.play(soundClip);
+            }
         }
+    },
+    computeds:{}
+};
+const SlideComponet = {
+    template:
+    `
+    <div>
+        <p>{{title}}</p>
+        <SlideList></SlideList>
+    </div>
+    `,
+    components:{
+        SlideList
+    },
+    data(){
+        return {title:'Sound Top 20'}
     }
-    if(getterParam.page == 'search') {
-        
-        if(isChangePage) {
-            new SearchSoundLayout(getterParam.SearchWord);
-        }
+};
 
+
+const Search = {
+    template:`
+    <div class='audio-list'>
+        <button v-for="item in requestData()" :class='audioItemClass(item)' @click="click(item)">
+            <SoundClipComponent :sound-clip='item'></SoundClipComponent>
+        </button>
+    </div>
+    `,
+    data() {
+        return {soundClips:[], currentPlaySoundClip:audio.currentAudioClip};
+    },
+    components:{
+        SoundClipComponent
+    },
+    methods:{
+        requestData(){
+            if(this.soundClips.length == 0) {
+                let soundSearch = new SoundSearchAction();
+
+                window.searchBox.value = this.$route.query.SearchWord;
+                soundSearch.formDataMap.append('SearchWord', window.searchBox.value);
+                let listNo = 0;
+                soundSearch.httpRequestor.addEventListener('success', event=>{
+                    for (const response of event.detail.response) {
+                        let audioClip = new AudioClip();
+                        audioClip.soundHash = response['sound_hash'];
+                        audioClip.title = response['title'];
+                        audioClip.artist = response['artist_name'];
+                        audioClip.album = response['album']['album_title'];
+                        audioClip.albumKey = response['album']['album_hash'];
+                        audioClip.no = listNo;
+                        listNo++;
+                        this.soundClips.push(audioClip);
+                    }
+                });
+                soundSearch.execute();
+                return this.soundClips;
+            } else {
+                return this.soundClips;
+            }
+        },
+        click(soundClip){
+            if(ContextMenu.isVisible){
+                return;
+            }
+            audio.playList.removeAll();
+            for(const audioclip of this.soundClips) {
+                audio.playList.add(audioclip);
+            }
+            if(audio.currentAudioClip == null){
+                audio.play(soundClip);
+                return;
+            }
+            if(soundClip.equals(audio.currentAudioClip)){
+                if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
+                    audio.play();
+                } else {
+                    if(audio.currentPlayState === AudioPlayStateEnum.PLAY || audio.currentPlayState !== AudioPlayStateEnum.STOP ){
+                        audio.pause();
+                    }
+                }
+                return;
+            } else {
+                audio.play(soundClip);
+            }
+        },
+        audioItemClass(soundClip) {
+            if(this.currentPlaySoundClip == null){
+                return 'audio-item';
+            }
+            return 'audio-item'+(this.currentPlaySoundClip.equals(soundClip)?' audio-list-nowplaying':'');
+        }
+    },
+    created(){
+        audio.eventSupport.addEventListener('audioSet',()=>{
+            this.currentPlaySoundClip = audio.currentAudioClip;
+        });
+    },
+    watch: {
+        $route(to, from) {
+            if(to.query.SearchWord != from.query.SearchWord){
+                this.soundClips.splice(0);
+            }
+        }
     }
-    if(getterParam.page == 'file_setting') {
-        setTitle('File Setting');
-    }
-    if(getterParam.SearchWord != undefined){
-        window.searchBox.value = decodeURI(getterParam.SearchWord);
-    }
-}
+};
+
+const router = new VueRouter({
+    routes: [
+        {
+            path: '/',
+            component: SlideComponet
+        },
+        {
+            path: '/search',
+            name:'search',
+            component: Search
+        }
+    ]
+});
+window.addEventListener('load', ()=>{
+    let vue = new Vue({
+        el:'#base',
+        router
+    });
+});
 
 const toGetParamMap=getParam=>{
     let getterNewParam = new Array();

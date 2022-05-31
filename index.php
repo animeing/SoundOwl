@@ -14,6 +14,8 @@ require_once(dirname(__FILE__).'/parts/loader.php');
   src: url(img/fontisto.php);
 }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://unpkg.com/vue-router@3.0.7/dist/vue-router.js"></script>
     <style>
 <?php
 echo StringUtil::deleteNonCss(file_get_contents(dirname(__FILE__).'/css/style.css'));
@@ -35,5 +37,12 @@ echo StringUtil::deleteNonCss(file_get_contents(dirname(__FILE__).'/css/dark-mod
 
 		</span>
 	</header>
+    <div id="controller" class="audio-play-controller analyser">
+        <audio-controller></audio-controller>
+    </div>
+    <div id="base" class="layout-base">
+        <router-view></router-view>
+    </div>
+
 </body>
 </html>

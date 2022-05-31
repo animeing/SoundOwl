@@ -1304,7 +1304,6 @@ class WebObject{
 }
 
 class ProgressComposite extends HTMLElement{
-    eventSupport = new EventTarget;
     _max = 0;
     _min = 0;
     _value = 0;
@@ -1316,34 +1315,49 @@ class ProgressComposite extends HTMLElement{
         this.progress = document.createElement`div`;
         this.addEventListener('mousedown',()=>{
             this.isProgressManualMove = !0;
-            this.eventSupport.dispatch('change');
-            this.eventSupport.dispatch('changingValue');
+            this.dispatch('change');
+            this.dispatch('changingValue');
         });
         this.addEventListener('mouseout',(e)=>{
             if(e.relatedTarget !== this.object && e.relatedTarget !== this.progress && this.isProgressManualMove){
-                this.eventSupport.dispatch('changingValue');
-                this.eventSupport.dispatch('change');
+                this.dispatch('changingValue');
+                this.dispatch('change');
                 this.isProgressManualMove = !1;
             }
         });
         this.addEventListener('mouseup',()=>{
             if(this.readOnly) return;
             this.isProgressManualMove = !1;
-            this.eventSupport.dispatch('changed');
+            this.dispatch('changed');
         }, !0);
         this.addEventListener('mousemove',(e)=>{
             if(this.readOnly) return;
             if(this.isProgressManualMove){
                 this.mouseMove(e);
-                this.eventSupport.dispatch('changingValue');
+                this.dispatch('changingValue');
             }
         });
         this.addEventListener('click',(e)=>{
             if(this.readOnly) return;
             this.mouseMove(e);
-            this.eventSupport.dispatch('changingValue');
+            this.dispatch('changingValue');
         });
     }
+    static get observedAttributes() {
+        return ['value', 'max', 'min', ];
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if('value' == name) {
+            this.value = Number(newValue);
+        }
+        if('max' == name) {
+            this.max = Number(newValue);
+        }
+        if('min' == name) {
+            this.min = Number(newValue);
+        }
+      }
 
     /**
      * @protected
@@ -1357,7 +1371,7 @@ class ProgressComposite extends HTMLElement{
     }
 
     mouseMove(event){
-        this.value = (this.getOffset(event) / this.clientWidth * this.range) + this.min;
+        this.setAttribute('value', (this.getOffset(event) / this.clientWidth * this.range) + this.min);
     }
 
     getOffset(event){
@@ -1372,15 +1386,15 @@ class ProgressComposite extends HTMLElement{
             return
         }
         if(this.max < value){
-            this.value = this.max;
+            this.setAttribute('value', this.max);
         }
         if(this.min > value){
-            this.value = this.min;
+            this.setAttribute('value', this.min);
         }
         if(this.progress != undefined){
             this.progress.style.transform = this.scaleStyle;
         }
-        this.eventSupport.dispatch('valueSet');
+        this.dispatch('valueSet');
     }
 
     get scaleStyle(){
@@ -1459,7 +1473,7 @@ class VerticalProgressComposite extends ProgressComposite{
     }
 
     mouseMove(event){
-        this.value = (this.getOffset(event) / this.clientHeight * this.range) + this.min;
+        this.setAttribute('value', (this.getOffset(event) / this.clientHeight * this.range) + this.min);
     }
 
     getOffset(event){
@@ -1773,15 +1787,14 @@ BaseFrameWork.Draw.Module.CanvasBase=class extends WebObject{
         return this._canvasObjectList;
     }
     run(){
-        let self = this;
         this.renderFunction = (t)=>{
-            self.render();
+            this.render();
         };
         this.animationId = requestAnimationFrame(()=>{
-            self.awake();
-            self.reset();
-            self.start();
-            self.renderFunction();
+            this.awake();
+            this.reset();
+            this.start();
+            this.renderFunction();
         });
     }
     clear(){
@@ -1987,6 +2000,7 @@ class CanvasAudioAnalizer extends BaseFrameWork.Draw.Canvas2D{
 
         super.render();
     };
+
     /**
      * 
      * @param {AudioContext} audioContext 
@@ -2062,9 +2076,8 @@ const LinkAction = (tag)=>{
     tag.onclick = (e)=>{
         e.preventDefault();
         let link = tag.getAttribute('href');
-        history.pushState(null,null,link);
+        router.push(link);
         setTitle('');
-        popPage();
     };
 };
 
@@ -2267,7 +2280,6 @@ class AudioPlayer{
     _currentAudioClip = null;
     constructor(){
         this.audio = new Audio;
-        this.stateInit();
         this.audioContext = new AudioContext;
         this.source = this.audioContext.createMediaElementSource(this.audio);
         this.source.connect(this.audioContext.destination);
@@ -2278,9 +2290,14 @@ class AudioPlayer{
         this.loopMode = AudioLoopModeEnum.NON_LOOP;
         this.currentPlayState = AudioPlayStateEnum.STOP;
         this.eventSupport = new EventTarget;
+        this.stateInit();
         this.audioUpdateEvent = new CustomEvent('update');
         this.audioUpdatedEvent = new CustomEvent('updated');
         this.data = {};
+        this.loadGiveUpTime = 10000;
+        this.audio.onerror = ()=> {
+            console.log("Error " + this.audio.error.code + "; details: " + this.audio.error.message);
+        };
         this.eventSupport.addEventListener('audioSet', ()=>{
             let request = new SoundInfomation();
             request.httpRequestor.addEventListener('success', event=>{
@@ -2290,10 +2307,6 @@ class AudioPlayer{
             request.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
             request.execute();
         });
-        this.loadGiveUpTime = 10000;
-        this.audio.onerror = ()=> {
-            console.log("Error " + this.audio.error.code + "; details: " + this.audio.error.message);
-        };
         this.setUpdate();
     }
 
@@ -2588,7 +2601,7 @@ class AudioPlayer{
             }
             this.audio.play();
             this.currentPlayState = AudioPlayStateEnum.PLAY;
-            this.eventSupport.dispatchEvent(new CustomEvent('play'))
+            this.eventSupport.dispatchEvent(new CustomEvent('play'));
         } finally {
             this.setUpdate();
         }
@@ -2596,6 +2609,7 @@ class AudioPlayer{
     pause(){
         this.audio.pause();
         this.currentPlayState = AudioPlayStateEnum.PAUSE;
+        this.eventSupport.dispatchEvent(new CustomEvent('pause'));
     }
     stop(){
         if(this.audio.src == null){
@@ -2604,6 +2618,7 @@ class AudioPlayer{
         this.audio.pause();
         this.audio.currentTime = 0;
         this.currentPlayState = AudioPlayStateEnum.STOP;
+        this.eventSupport.dispatchEvent(new CustomEvent('stop'));
     }
 }
 
@@ -2683,14 +2698,7 @@ window.addEventListener('load', ()=>{
 window.addEventListener('load', ()=>{
     document.body.appendChild(fixed);
     ContextMenu.removeEventSet();
-    Array.prototype.forEach.call(document.getElementsByTagName('a'), element=>{
-        LinkAction(element);
-    });
 
 }, !0);
-
-window.addEventListener('popstate', (e)=>{
-    popPage(e);
-}, !1);
 
 var audio = new AudioPlayer;

@@ -264,7 +264,7 @@ class AudioProgressComposite extends ProgressComposite{
         super();
         audio.eventSupport.addEventListener('update',()=>{
             let audioBuffer = audio.audio.buffered;
-            while(this.children[0] != this.progress && audioBuffer.length+1 != this.children.length){
+            while((this.children[0] != undefined && this.children[0] != this.progress) && audioBuffer.length+1 != this.children.length){
                 const element = this.children[0];
                 this.removeChild(element);
             }
@@ -724,7 +724,9 @@ class AudioSlideList extends HTMLElement {
     }
     
     connectedCallback() {
-        this.append(this.frame);
+        if(this.children.length == 0){
+            this.append(this.frame);
+        }
     }
     add(element) {
         this.frame.appendChild(element);
@@ -734,43 +736,66 @@ class AudioSlideList extends HTMLElement {
 
 customElements.define('sw-audio-slide-list', AudioSlideList);
 
-class AudioSlideItem extends HTMLButtonElement {
 
-    _audioClip = new AudioClip;
-    /**
-     * @var {AudioClip}
-     */
-     set audioClip(value){
-        this.setAudioClip(value);
+const SoundClipComponent = {
+    template:`
+    <div>
+        <div class="alubm">
+            <img loading='lazy' :src="createImageSrc(soundClip.albumKey)">
+        </div>
+        <div class='layout-box'>
+            <p class='audio-title' :hint='soundClip.title'>{{soundClip.title}}</p>
+            <p class='audio-uploader'>
+                <span class='audio-infomation' :hint='soundClip.artist'>{{soundClip.artist}}</span>
+            </p>
+            <p class='audio-infomation audio-discription' :hint='soundClip.album'>{{soundClip.album}}</p>
+        </div>
+    </div>
+    `,
+    props:{
+        'soundClip':{
+            type:AudioClip
+        }
+    },
+    methods:{
+        createImageSrc(albumKey) {
+            return `${BASE.HOME}img/album_art.php?media_hash=`+albumKey;
+        },
     }
-    get audioClip(){
-        return this._audioClip;
-    }
+};
 
-
-    constructor() {
-        super();
-    }
-    
-    initalize() {
-        this._image = document.createElement('img');
-        this._titleObject = document.createElement('p');
-        this.setDefaultEventListener();
-        this.appendChild(this._image);
-        this.appendChild(this._titleObject);
-    }
-
-    setDefaultEventListener(){
-        this.addEventListener(MouseEventEnum.CLICK, ()=>{
+const CurrentAudioList = {
+    template:`
+    <div :class="audioFrameClass()">
+        <button v-for="item in soundClips" :class='audioItemClass(item)' @click="click(item)">
+            <SoundClipComponent :sound-clip='item'></SoundClipComponent>
+        </button>
+    </div>
+    `,
+    props:{
+        'isView':{
+            type:Boolean
+        }
+    },
+    data() {
+        return {
+            soundClips:[],
+            currentPlaySoundClip:new AudioClip
+        };
+    },
+    components:{
+        SoundClipComponent
+    },
+    methods:{
+        click(soundClip){
             if(ContextMenu.isVisible){
                 return;
             }
-
             if(audio.currentAudioClip == null){
-                audio.play(this.audioClip);
+                audio.play(soundClip);
                 return;
             }
-            if(this.audioClip.equals(audio.currentAudioClip)){
+            if(soundClip.equals(audio.currentAudioClip)){
                 if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
                     audio.play();
                 } else {
@@ -780,24 +805,365 @@ class AudioSlideItem extends HTMLButtonElement {
                 }
                 return;
             } else {
-                audio.play(this.audioClip);
+                audio.play(soundClip);
             }
+        },
+        audioItemClass(soundClip) {
+            if(this.currentPlaySoundClip == null){
+                return 'audio-item';
+            }
+            return 'audio-item'+(this.currentPlaySoundClip.equals(soundClip)?' audio-list-nowplaying':'');
+        },
+        audioFrameClass() {
+            return 'layout-base audio-list audio-controller-playlist'+(this.isView?'':' height-hide');
+        }
+    },
+    created(){
+        audio.eventSupport.addEventListener('audioSet',()=>{
+            this.soundClips = audio.playList.array;
+            this.currentPlaySoundClip = audio.currentAudioClip;
         });
-    }
-    
-    /**
-     * @param {AudioClip} audioClip 
-     */
-     setAudioClip(audioClip){
-        if(this._audioClip !== undefined && audioClip.soundHash === this._audioClip.soundHash) return;
-        this._image.src = BASE.HOME+'img/album_art.php?media_hash='+audioClip.albumKey;
-        this._audioClip = audioClip;
-        this._titleObject.innerText = audioClip.title;
-        this._titleObject.setAttribute('hint', audioClip.title);
+        this.soundClips = audio.playList.array;
     }
 }
 
-BaseFrameWork.defineCustomElement('sw-audio-slide-item', AudioSlideItem, {extends: "button"});
+const AudioIconControl = {
+    template:`
+    <span class="audio-play-item audio-play-item-controller">
+        <input type="button" value="" class="audio-controller-parts icon">
+        <input type="button" value="" @click="beforeIconClick()" class="audio-controller-parts icon">
+        <input type="button" :value="playIcon" @click="playIconClick()" class="audio-controller-parts icon">
+        <input type="button" value="" @click="nextIconClick()" class="audio-controller-parts icon">
+        <input type="button" value="" @click="togglePlayListView()" class="audio-controller-parts icon">
+        <input type="button" value="" @click="audioViewOpen()" class="audio-controller-parts icon">
+        <input type="button" value="" @click="toggleControllerFillView()" class="audio-controller-parts icon">
+    </span>
+    `,
+    data(){
+        return {
+            playIcon: '',
+            audioPlayState:audio.currentAudioClip
+        }
+    },
+    methods:{
+        playIconClick(){
+            if(ContextMenu.isVisible)return;
+            if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+                audio.pause();
+            } else {
+                audio.play();
+            }
+        },
+        beforeIconClick(){
+            if(ContextMenu.isVisible)return;
+            let currentIndex = audio.playList.equalFindIndex(audio.currentAudioClip);
+            let beforeAudioClip = audio.playList.get(--currentIndex);
+            if(beforeAudioClip == null)return;
+            audio.setCurrentAudioClip(beforeAudioClip);
+            if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+                audio.play(beforeAudioClip);
+            }
+            audio.audio.currentTime = 0;
+        },
+        nextIconClick(){
+            let nextAudioClip = audio.nextClip();
+            if(nextAudioClip == null)return;
+            audio.setCurrentAudioClip(nextAudioClip);
+            if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+                audio.play(nextAudioClip);
+            }
+            audio.audio.currentTime = 0;
+        },
+        togglePlayListView() {
+            this.$emit('togglePlayListView');
+        },
+        toggleControllerFillView() {
+            this.$emit('toggleControllerFillView');
+        },
+        audioViewOpen(){
+            this.$emit('toggleVolumeView');
+        }
+    },
+    created(){
+        audio.eventSupport.addEventListener('play', ()=>{
+            this.audioPlayState = audio.currentPlayState;
+            //PauseIcon
+            this.playIcon = '';
+        });
+        audio.eventSupport.addEventListener('stop', ()=>{
+            this.audioPlayState = audio.currentPlayState;
+            //PlayIcon
+            this.playIcon = '';
+        });
+        audio.eventSupport.addEventListener('pause',()=>{
+            this.audioPlayState = audio.currentPlayState;
+            //PlayIcon
+            this.playIcon = '';
+        });
+        audio.eventSupport.addEventListener('update', ()=>{
+            this.durationTime = audio.audio.duration;
+            this.playTime = audio.audio.currentTime;
+        });
+    }
+}
+
+const AudioCanvas = {
+    template:`
+        <canvas class="analyser-view"
+            :width="width"
+            :height="height"
+            @click.right.prevent="contextCanvasMenu()"
+            v-if="isVisibleAnalyser" ></canvas>
+
+        <div
+            class="lyrics-view"
+            @click.right.prevent="contextCanvasMenu()"
+            v-else>{{lyrics}}</div>
+    `,
+    data() {
+        return {
+            width:window.innerWidth - 56,
+            height:window.innerHeight - 45,
+            isVisibleAnalyser:true,
+            lyrics:''
+        };
+    },
+    props:{
+        'isView':{
+            type:Boolean
+        }
+    },
+    watch:{
+        isView(){
+            this.resize();
+        }
+    },
+    methods: {
+        contextCanvasMenu() {
+            ContextMenu.contextMenu.destoryChildren();
+            let lyricsView = BaseFrameWork.createCustomElement('sw-libutton');
+            if(this.isVisibleAnalyser) {
+                lyricsView.menuItem.value = 'Lyrics';
+            } else {
+                lyricsView.menuItem.value = 'Visualizer';
+            }
+            lyricsView.menuItem.onclick=e=>{
+                this.isVisibleAnalyser = !this.isVisibleAnalyser;
+                this.$emit('toggleView');
+            }
+            ContextMenu.contextMenu.appendChild(lyricsView);
+        },
+        resize() {
+            this.width = window.innerWidth - 56;
+            this.height = window.innerHeight - 45;
+        },
+        clear() {
+            this.ctx.clearRect(
+                0,
+                0,
+                this.$el.width,
+                this.$el.height
+            );
+        },
+        reset() {
+            for (const canvasObject of this.canvasObjects) {
+                canvasObject.renderObjectBase();
+            }
+        },
+        earlyRender() {
+
+        },
+        render() {
+            if(this.analyser != null){
+                let leng = this.analyser.frequencyBinCount;
+                this.spectrums = new Uint8Array(leng);
+                this.analyser.getByteFrequencyData(this.spectrums);
+            }
+            for (const canvasObject of this.canvasObjects) {
+                canvasObject.update();
+            }
+        },
+        lateRender() {
+
+        }
+    },
+    created(){
+        window.addEventListener('resize', ()=>{
+            this.resize();
+        });
+        audio.eventSupport.addEventListener('audio_info_loaded', ()=>{
+            this.lyrics = '';
+            if( audio.data.lyrics == undefined) {
+                ContextMenu.visible(e);
+                return;
+            }
+            this.lyrics = audio.data.lyrics;
+            this.$el.scroll({top: 0});
+        });
+    },
+    mounted() {
+        this.ctx = this.$el.getContext('2d');
+        let run = ()=>{
+            this.clear();
+            this.reset();
+            this.earlyRender();
+            this.render();
+            this.lateRender();
+            this.animationId = requestAnimationFrame(run);
+        };
+        this.animationId = requestAnimationFrame(run);
+        this.canvasObjects = new BaseFrameWork.List();
+        this.analyser = audio.audioContext.createAnalyser();
+        this.analyser.fftSize = 1<<7+1;
+        audio.source.connect(this.analyser);
+        let filter = audio.audioContext.createBiquadFilter();
+        filter.type = 'allpass';
+        audio.source.connect(filter);
+        
+        let leng = this.analyser.frequencyBinCount;
+        this.spectrums = new Uint8Array(leng);
+        this.analyser.smoothingTimeConstant = .5;
+        this.analyser.getByteFrequencyData(this.spectrums);
+        for(let createCount = 0, len = this.spectrums.length; createCount < len; createCount++){
+            let box = new BaseFrameWork.Draw.Figure.BoxCanvasObject2D;
+            box.update = async ()=>{
+                if(this.spectrums != null){
+                    box.transform.position.x = (createCount+1)*(this.$el.width / (len+4));
+                    box.transform.position.y = 0;
+                    box.transform.scale.x = (this.$el.width / len) >> 1;
+                    box.transform.scale.y = (this.spectrums[createCount] / 0xff ) * (this.$el.height >> 1);
+                }
+            };
+            box.fcontext(this.ctx);
+            let scale = new BaseFrameWork.Draw.Point2D;
+            scale.x = this.$el.width;
+            scale.y = this.$el.height;
+            box.canvasScale = scale;
+            this.canvasObjects.add(box);
+        }
+    }
+
+};
+
+const AudioController = {
+    template:`
+        <div>
+            <p class='sound-info-frame'>
+                <CurrentAudioList :is-view='isAudioList'></CurrentAudioList>
+                <span class='audio-play-item'>{{currentPlaySoundClip.title}}</span>
+                <span class="audio-play-item nonselectable">-</span>
+                <span class="audio-play-item">{{currentPlaySoundClip.album}}</span>
+                <AudioIconControl @togglePlayListView='togglePlayListView' @toggleControllerFillView='toggleControllerFillView' @toggleVolumeView='toggleVolumeView'></AudioIconControl>
+            </p>
+            <span class="progress-times progress-time nonselectable">{{progressText()}}</span>
+            <sw-audio-progress class="progress-times" :hint="playTimeString" :value="playTime" :max="durationTime" min="0" v-on:changingValue="changeingPlayPoint" v-on:changed="changedPlayPoint" v-on:mousemove="hint"></sw-audio-progress>
+            <sw-v-progress :class="volumeClass()" :value="volume" max="1" min="0" v-on:changingValue="changeVolume"></sw-v-progress>
+            <AudioCanvas :is-view='isFillLayout' @toggleView='toggleView'></AudioCanvas>
+        </div>
+    `,
+    components:{
+        CurrentAudioList,
+        AudioIconControl,
+        AudioCanvas
+    },
+    data(){
+        return {
+            currentPlaySoundClip:(audio.currentAudioClip != null?audio.currentAudioClip:new AudioClip),
+            durationTime:0,
+            playTime:0,
+            isAudioList:false,
+            isVolumeViewOpen:true,
+            volume:1,
+            playTimeString:'',
+            isFillLayout:false,
+            isVisibleAnalyser:true
+        };
+    },
+    created(){
+        audio.eventSupport.addEventListener('audioSet',()=>{
+            this.currentPlaySoundClip = audio.currentAudioClip;
+        });
+        audio.eventSupport.addEventListener('update', ()=>{
+            this.playTime = audio.audio.currentTime;
+            this.durationTime = audio.audio.duration;
+            this.volume = audio.audio.volume;
+        });
+    },
+    methods:{
+        toggleView() {
+            this.$el.parentNode.classList.toggle('analyser');
+            this.$el.parentNode.classList.toggle('lyrics');
+        },
+        isPlaying() {
+            return audio.currentPlayState === AudioPlayStateEnum.PLAY && audio.isPlaying;
+        },
+        progressText(){
+            let durationText = timeToText(this.durationTime);
+            let currentText = timeToText(this.playTime);
+            return currentText['min']+':'+currentText['sec']+'/'+durationText['min']+':'+durationText['sec'];
+        },
+        togglePlayListView() {
+            this.isAudioList = !this.isAudioList;
+        },
+        toggleControllerFillView() {
+            document.getElementById('controller').classList.toggle('current-sound-controller-fill-layout');
+            this.isFillLayout = !this.isFillLayout;
+        },
+        toggleVolumeView() {
+            this.isVolumeViewOpen =! this.isVolumeViewOpen;
+        },
+        volumeClass(){
+            let classList = 'audio-controller-volume vertical-progress';
+            return classList+(this.isVolumeViewOpen?' hide':'');
+        },
+        changeVolume(event) {
+            audio.audio.volume = event.target.value;
+        },
+        changedPlayPoint(event){
+            audio.updateLockAccess = true;
+            let rePoint = audio.currentPlayState;
+            audio.stop();
+            let target = event.target;
+            if(event.target.mousePositionvalue == undefined){
+                target = event.target.parentNode;
+            }
+            audio.audio.currentTime = parseFloat(target._value);
+            if(rePoint == AudioPlayStateEnum.PLAY){
+                setTimeout(()=>{
+                    audio.play();
+                },1);
+            }
+            audio.updateLockAccess = false;
+        },
+        changeingPlayPoint(event) {
+            let target = event.target;
+            if(event.target.mousePositionvalue == undefined){
+                target = event.target.parentNode;
+            }
+            audio.audio.currentTime = target._value;
+            if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+                audio.audio.pause();
+            }
+        },
+        hint(event){
+            let positionTime = 0;
+            let target = event.target;
+            if(event.target.mousePositionvalue == undefined){
+                target = event.target.parentNode;
+            }
+            if(!isNaN(target.mousePositionvalue(event))) {
+                positionTime = target.mousePositionvalue(event);
+            }
+            let textTime = timeToText(positionTime);
+            this.playTimeString = textTime['min']+':'+textTime['sec'];
+        }
+    }
+};
+
+window.addEventListener('load', ()=>{
+    Vue.component('audio-controller', AudioController);
+    let vue = new Vue({ el: '#controller' });
+});
 
 (()=>{
     const mainMenu=()=>{
@@ -805,11 +1171,7 @@ BaseFrameWork.defineCustomElement('sw-audio-slide-item', AudioSlideItem, {extend
         menu.innerHTML = '';
         window.searchBox = document.createElement('sw-searchbox');
         window.searchBox.searchEvent = value =>{
-            let url = UrlParam.setGetter({'SearchWord': value,'page': 'search'}, location.pathname);
-            if(url != location.pathname+location.search) {
-                history.pushState(null, null, url);
-                popPage();
-            }
+            router.push({name:'search', query: {SearchWord: value}});
         }
         window.searchBox.classList.add('searchbox');
         menu.appendChild(window.searchBox);
@@ -820,7 +1182,7 @@ BaseFrameWork.defineCustomElement('sw-audio-slide-item', AudioSlideItem, {extend
         menu.appendChild(dropdownMenu);
         dropdownMenu.addItem('File Setting', ()=>{
             history.pushState(null, null, BASE.HOME+'?page=file_setting');
-            popPage();
+            // popPage();
         });
         dropdownMenu.addItem('Audio regist', ()=>{
             let siteStatus = new SiteStatus();
@@ -866,10 +1228,7 @@ BaseFrameWork.defineCustomElement('sw-audio-slide-item', AudioSlideItem, {extend
     };
     window.addEventListener('load', audioParamLoad);
     window.addEventListener('load', mainMenu);
-    window.addEventListener('load', ()=>{
-        let audioController = document.createElement('sw-audio-controller');
-        document.body.appendChild(audioController);
-    });
+    
 
 })();
 
