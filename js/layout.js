@@ -824,6 +824,15 @@ const CurrentAudioList = {
             this.currentPlaySoundClip = audio.currentAudioClip;
         });
         this.soundClips = audio.playList.array;
+    },
+    mounted() {
+        let observer = new MutationObserver(()=>{
+            let audioElement = document.querySelector('.audio-controller-playlist .audio-list-nowplaying');
+            if(audioElement){
+                this.$el.scroll({top: audioElement.offsetTop-42});
+            }
+        });
+        observer.observe(this.$el, {childList:true,attributes:true,subtree: true});
     }
 }
 
