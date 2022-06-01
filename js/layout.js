@@ -936,6 +936,20 @@ const AudioCanvas = {
     watch:{
         isView(){
             this.resize();
+        },
+        isVisibleAnalyser(){
+            this.$nextTick(()=>{
+                if(this.isVisibleAnalyser) {
+                    this.ctx = this.$el.getContext('2d');
+                    this.animationId = requestAnimationFrame(this.run);
+                    for (const box of this.canvasObjects) {
+                        box.fcontext(this.ctx);
+                    }
+                } else {
+                    cancelAnimationFrame(this.animationId);
+                    this.$el.scroll({top: 0});
+                }
+            });
         }
     },
     methods: {
@@ -952,6 +966,14 @@ const AudioCanvas = {
                 this.$emit('toggleView');
             }
             ContextMenu.contextMenu.appendChild(lyricsView);
+        },
+        run(){
+            this.clear();
+            this.reset();
+            this.earlyRender();
+            this.render();
+            this.lateRender();
+            this.animationId = requestAnimationFrame(this.run);
         },
         resize() {
             this.width = window.innerWidth - 56;
@@ -998,20 +1020,11 @@ const AudioCanvas = {
                 return;
             }
             this.lyrics = audio.data.lyrics;
-            this.$el.scroll({top: 0});
         });
     },
     mounted() {
         this.ctx = this.$el.getContext('2d');
-        let run = ()=>{
-            this.clear();
-            this.reset();
-            this.earlyRender();
-            this.render();
-            this.lateRender();
-            this.animationId = requestAnimationFrame(run);
-        };
-        this.animationId = requestAnimationFrame(run);
+        this.animationId = requestAnimationFrame(this.run);
         this.canvasObjects = new BaseFrameWork.List();
         this.analyser = audio.audioContext.createAnalyser();
         this.analyser.fftSize = 1<<7+1;
