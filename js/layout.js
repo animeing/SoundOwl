@@ -1140,6 +1140,7 @@ const AudioController = {
         },
         changeVolume(event) {
             audio.audio.volume = event.target.value;
+            audioParamSave();
         },
         changedPlayPoint(event){
             audio.updateLockAccess = true;
