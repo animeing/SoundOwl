@@ -1079,7 +1079,7 @@ const AudioController = {
             </p>
             <span class="progress-times progress-time nonselectable">{{progressText()}}</span>
             <sw-audio-progress class="progress-times" :hint="playTimeString" :value="playTime" :max="durationTime" min="0" v-on:changingValue="changeingPlayPoint" v-on:changed="changedPlayPoint" v-on:mousemove="hint"></sw-audio-progress>
-            <sw-v-progress :class="volumeClass()" :value="volume" max="1" min="0" v-on:changingValue="changeVolume"></sw-v-progress>
+            <sw-v-progress :class="volumeClass()" :value="volume" max="1" min="0" v-on:changingValue="changeVolume" v-on:wheel="volumeAction"></sw-v-progress>
             <AudioCanvas :is-view='isFillLayout' @toggleView='toggleView'></AudioCanvas>
         </div>
     `,
@@ -1108,10 +1108,16 @@ const AudioController = {
         audio.eventSupport.addEventListener('update', ()=>{
             this.playTime = audio.audio.currentTime;
             this.durationTime = audio.audio.duration;
-            this.volume = audio.audio.volume;
         });
+        this.volume = audio.audio.volume;
     },
     methods:{
+        volumeAction(e) {
+            e.preventDefault();
+            this.volume -= e.deltaY/1e4;
+            audio.audio.volume = this.volume;
+            audioParamSave();
+        },
         toggleView() {
             this.$el.parentNode.classList.toggle('analyser');
             this.$el.parentNode.classList.toggle('lyrics');
@@ -1139,7 +1145,8 @@ const AudioController = {
             return classList+(this.isVolumeViewOpen?' hide':'');
         },
         changeVolume(event) {
-            audio.audio.volume = event.target.value;
+            this.volume = event.target.getAttribute('value');
+            audio.audio.volume = this.volume;
             audioParamSave();
         },
         changedPlayPoint(event){
@@ -1249,7 +1256,7 @@ window.addEventListener('load', ()=>{
 
         
     };
-    window.addEventListener('load', audioParamLoad);
+    window.addEventListener('DOMContentLoaded', audioParamLoad);
     window.addEventListener('load', mainMenu);
     
 
