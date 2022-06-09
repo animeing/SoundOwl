@@ -748,7 +748,8 @@ const SoundClipComponent = {
             <p class='audio-uploader'>
                 <span class='audio-infomation' :hint='soundClip.artist'>{{soundClip.artist}}</span>
             </p>
-            <p class='audio-infomation audio-discription' :hint='soundClip.album'>{{soundClip.album}}</p>
+            <a v-show='hasAlbumData' class='audio-infomation audio-discription' style='display: block;' v-on:click.stop.prevent.capture='albumClipClick()' :hint='soundClip.album'>{{soundClip.album}}</a>
+            <p v-show='!hasAlbumData' class='audio-infomation audio-discription' style='display: block;'>{{soundClip.album}}</p>
         </div>
     </div>
     `,
@@ -757,10 +758,25 @@ const SoundClipComponent = {
             type:AudioClip
         }
     },
+    data() {
+        return {
+            hasAlbumData:true
+        }
+    },
     methods:{
         createImageSrc(albumKey) {
             return `${BASE.HOME}img/album_art.php?media_hash=`+albumKey;
         },
+
+        albumClipClick() {
+            if(ContextMenu.isVisible){
+                return;
+            }
+            router.push({name:'alubum', query: {AlbumHash: this.soundClip.albumKey}});
+        }
+    },
+    mounted() {
+        this.hasAlbumData = this.soundClip.albumKey != undefined && this.soundClip.albumKey != '';
     }
 };
 
@@ -1074,7 +1090,7 @@ const AudioController = {
                 <CurrentAudioList :is-view='isAudioList'></CurrentAudioList>
                 <span class='audio-play-item'>{{currentPlaySoundClip.title}}</span>
                 <span class="audio-play-item nonselectable">-</span>
-                <span class="audio-play-item">{{currentPlaySoundClip.album}}</span>
+                <a href='#' class="audio-play-item" v-on:click.stop.prevent='albumClick()'>{{currentPlaySoundClip.album}}</a>
                 <AudioIconControl @togglePlayListView='togglePlayListView' @toggleControllerFillView='toggleControllerFillView' @toggleVolumeView='toggleVolumeView'></AudioIconControl>
             </p>
             <span class="progress-times progress-time nonselectable">{{progressText()}}</span>
@@ -1117,6 +1133,12 @@ const AudioController = {
             this.volume -= e.deltaY/1e4;
             audio.audio.volume = this.volume;
             audioParamSave();
+        },
+        albumClick() {
+            if(ContextMenu.isVisible || this.currentPlaySoundClip.albumKey == ''){
+                return;
+            }
+            router.push({name:'alubum', query: {AlbumHash: this.currentPlaySoundClip.albumKey}});
         },
         toggleView() {
             this.$el.parentNode.classList.toggle('analyser');

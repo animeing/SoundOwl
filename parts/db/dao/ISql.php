@@ -5,14 +5,16 @@ interface ISql {
 	const ALL_COLUMN = " * ";
 	const COUNT_1 = " COUNT(1) ";
 	const COUNT_ASTER = " COUNT(*) AS COUNTER ";
-	const COUNT = " COUNT ";
+	const COUNT = " COUNT";
+	const COMMA = ",";
+	const SUM = " SUM";
 	const SELECT = " SELECT ";
 	const FROM = " FROM ";
 	const WHERE = " WHERE ";
 	const EQUAL_AND = " = ? AND ";
 	const EQUAL_OR = " = ? OR ";
 	const EQUAL_PARAM = " = ? ";
-	const GROUP_BY = " GROUP_BY ";
+	const GROUP_BY = " GROUP BY ";
 	const ORDER_BY = " ORDER BY ";
 	const DESC = " DESC ";
 	const ASC = " ASC ";
@@ -47,6 +49,7 @@ interface ISql {
 	const SYSTIMESAMP = " SYSTIMESAMP ";
 	const BRACKET_OPEN = " ( ";
 	const BRACKET_END = " ) ";
+	const LENGTH = " LENGTH ";
 	const LIKE = " LIKE ? ";
 	const LIKE_OR = " LIKE ? OR ";
 	const LIKE_AND = " LIKE ? AND ";

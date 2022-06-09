@@ -29,6 +29,22 @@ class SoundLinkDao extends SqlCreater implements SoundLinkTable {
         );
     }
 
+    function getAlbumPlayCountDesc($limit = 20) {
+        $ALBUM_PLAY_COUNT = ' album_play_count ';
+        return $this->toDtoList(
+            $this->execute(
+                $this::SELECT.
+                    $this::ALL_COLUMN.' , '.
+                    $this::SUM.'('.$this::PLAY_COUNT.$this::BRACKET_END.$ALBUM_PLAY_COUNT.
+                $this::FROM.$this::TABLE_NAME.
+                $this::GROUP_BY.$this::ALBUM_HASH.
+                $this::ORDER_BY.$ALBUM_PLAY_COUNT.
+                $this::LIMIT,
+                array($limit)
+            )
+        );
+    }
+
     /**
      * @return SoundLinkDto[]
      */
@@ -41,4 +57,18 @@ class SoundLinkDao extends SqlCreater implements SoundLinkTable {
             )
         );
     }
+
+    public function getAlbumSounds($albumHash) {
+        return $this->toDtoList(
+            $this->execute(
+                $this->whereQuery(
+                    $this::ALBUM_HASH.$this::EQUAL_PARAM.
+                    $this::ORDER_BY.$this::LENGTH.$this::BRACKET_OPEN.$this::TRACK_NO.$this::BRACKET_END.
+                    $this::COMMA.$this::TRACK_NO
+                ),
+                array($albumHash)
+            )
+        );
+    }
+
 }

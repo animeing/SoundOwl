@@ -13,10 +13,23 @@ class PlayCountAction extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
+class AlbumCountAction extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'album_count_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
+
+    }
+}
+
 class SoundSearchAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'sound_search.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
 
+    }
+}
+
+class AlbumListAction extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'album_sounds.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
     }
 }
 
@@ -137,7 +150,7 @@ const SlideList = {
     template: `
     <sw-audio-slide-list>
         <div>
-            <button v-for="item in requestData()" @click="click(item)">
+            <button v-for="item in data" @click="click(item)">
                 <img loading='lazy' :src="createImageSrc(item.albumKey)">
                 <p :hint="item.title">{{ item.title }}</p>
             </button>
@@ -145,10 +158,78 @@ const SlideList = {
     </sw-audio-slide-list>`,
     
     data() {
-        return {soundClips:[]};
+        return {
+            data:[]
+        };
+    },
+    props:{
+        dataRequest:{
+            type:Function
+        },
+        onClick:{
+            type:Function
+        }
     },
     methods:{
-        requestData(){
+        createImageSrc(albumKey) {
+            return `${BASE.HOME}img/album_art.php?media_hash=`+albumKey;
+        },
+        click(soundClip){
+            if(this.onClick) {
+                this.onClick(soundClip);
+            }
+            return;
+        }
+    },
+    created(){
+        this.data = this.dataRequest();
+    },
+    computeds:{}
+};
+const SlideComponet = {
+    template:
+    `
+    <div class="box">
+        <p>{{slideTitle}}</p>
+        <SlideList :on-click='itemClick' :data-request='dataRequest'></SlideList>
+    </div>
+    `,
+    props:{
+        slideTitle:{
+            type:String
+        },
+        dataRequest:{
+            type:Function
+        },
+        itemClick:{
+            type:Function
+        }
+    },
+    components:{
+        SlideList
+    }
+};
+
+const Home = {
+    template:`
+    <div>
+        <SlideComponet :slide-title="soundTop20" :data-request="soundCountRequest" :item-click="soundClipClick"></SlideComponet>
+        <SlideComponet :slide-title="albumTop20" :data-request="albumCountRequest" :item-click="albumClipClick"></SlideComponet>
+    </div>
+    `,
+    data() {
+        return {
+            soundTop20:'Sound Top 20',
+            albumTop20:'Album Top 20',
+            soundClips:[],
+            albumData:[]
+        };
+    },
+    components:{
+        SlideComponet
+    },
+    methods:{
+        soundCountRequest(){
             if(this.soundClips.length == 0) {
                 let playCountAction = new PlayCountAction();
                 
@@ -172,10 +253,21 @@ const SlideList = {
                 return this.soundClips;
             }
         },
-        createImageSrc(albumKey) {
-            return `${BASE.HOME}img/album_art.php?media_hash=`+albumKey;
+        albumCountRequest(){
+            if(this.albumData.length == 0) {
+                let albumCountAction = new AlbumCountAction;
+                albumCountAction.httpRequestor.addEventListener('success', event=>{
+                    for (const response of event.detail.response) {
+                        this.albumData.push(response);
+                    }
+                });
+                albumCountAction.execute();
+                return this.albumData;
+            } else {
+                return this.albumData;
+            }
         },
-        click(soundClip){
+        soundClipClick(soundClip){
             if(ContextMenu.isVisible){
                 return;
             }
@@ -199,26 +291,106 @@ const SlideList = {
             } else {
                 audio.play(soundClip);
             }
+        },
+        albumClipClick(albumClip) {
+            if(ContextMenu.isVisible){
+                return;
+            }
+            router.push({name:'alubum', query: {AlbumHash: albumClip.albumKey}});
+
         }
-    },
-    computeds:{}
-};
-const SlideComponet = {
-    template:
-    `
-    <div>
-        <p>{{title}}</p>
-        <SlideList></SlideList>
-    </div>
-    `,
-    components:{
-        SlideList
-    },
-    data(){
-        return {title:'Sound Top 20'}
     }
 };
 
+const AlbumList = {
+    template:`
+    <div class='audio-list'>
+        <button v-for="item in requestData()" :class='audioItemClass(item)' @click="click(item)">
+            <SoundClipComponent :sound-clip='item'></SoundClipComponent>
+        </button>
+    </div>
+    `,
+    data() {
+        return {
+            soundClips:[],
+            currentPlaySoundClip:audio.currentAudioClip,
+            albumHash:null
+        };
+    },
+    components:{
+        SoundClipComponent
+    },
+    methods:{
+        requestData(){
+            if(this.soundClips.length == 0) {
+                let soundSearch = new AlbumListAction();
+
+                soundSearch.formDataMap.append('AlbumHash', this.$route.query.AlbumHash);
+                let listNo = 0;
+                soundSearch.httpRequestor.addEventListener('success', event=>{
+                    for (const response of event.detail.response) {
+                        let audioClip = new AudioClip();
+                        audioClip.soundHash = response['sound_hash'];
+                        audioClip.title = response['title'];
+                        audioClip.artist = response['artist_name'];
+                        audioClip.album = response['album']['album_title'];
+                        audioClip.albumKey = response['album']['album_hash'];
+                        audioClip.no = listNo;
+                        listNo++;
+                        this.soundClips.push(audioClip);
+                    }
+                });
+                soundSearch.execute();
+                return this.soundClips;
+            } else {
+                return this.soundClips;
+            }
+        },
+        click(soundClip){
+            if(ContextMenu.isVisible){
+                return;
+            }
+            audio.playList.removeAll();
+            for(const audioclip of this.soundClips) {
+                audio.playList.add(audioclip);
+            }
+            if(audio.currentAudioClip == null){
+                audio.play(soundClip);
+                return;
+            }
+            if(soundClip.equals(audio.currentAudioClip)){
+                if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
+                    audio.play();
+                } else {
+                    if(audio.currentPlayState === AudioPlayStateEnum.PLAY || audio.currentPlayState !== AudioPlayStateEnum.STOP ){
+                        audio.pause();
+                    }
+                }
+                return;
+            } else {
+                audio.play(soundClip);
+            }
+        },
+        audioItemClass(soundClip) {
+            if(this.currentPlaySoundClip == null){
+                return 'audio-item';
+            }
+            return 'audio-item'+(this.currentPlaySoundClip.equals(soundClip)?' audio-list-nowplaying':'');
+        }
+    },
+    created(){
+        audio.eventSupport.addEventListener('audioSet',()=>{
+            this.currentPlaySoundClip = audio.currentAudioClip;
+        });
+    },
+    watch: {
+        $route(to, from) {
+            if(to.query.AlbumHash != from.query.AlbumHash){
+                this.soundClips.splice(0);
+            }
+        }
+    }
+};
 
 const Search = {
     template:`
@@ -311,7 +483,12 @@ const router = new VueRouter({
     routes: [
         {
             path: '/',
-            component: SlideComponet
+            component: Home
+        },
+        {
+            path:'/album',
+            name:'alubum',
+            component: AlbumList
         },
         {
             path: '/search',

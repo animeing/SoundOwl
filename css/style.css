@@ -318,6 +318,10 @@ sw-message-button > div > input[type="button"]:hover{
   display: none;
 }
 
+.box {
+  margin-bottom: 50px;
+}
+
 /*******************************************************
  * layout
  ******************************************************/
