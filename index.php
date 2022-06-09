@@ -32,7 +32,7 @@ echo StringUtil::deleteNonCss(file_get_contents(dirname(__FILE__).'/css/dark-mod
 </head>
 <body>
 	<header>
-		<a href="#" class="page-title" title="Home">SoundOwl</a>
+		<a href="#" name="home" class="page-title" title="Home">SoundOwl</a>
 		<span id="main-menu">
 
 		</span>

@@ -2075,8 +2075,8 @@ class MenuItem {
 const LinkAction = (tag)=>{
     tag.onclick = (e)=>{
         e.preventDefault();
-        let link = tag.getAttribute('href');
-        router.push(link);
+        let link = tag.getAttribute('name');
+        router.push({name:link});
         setTitle('');
     };
 };
@@ -2690,7 +2690,7 @@ addBottomEvent(window);
 window.addEventListener('load', ()=>{
     Array.prototype.forEach.call(document.getElementsByClassName('page-title'), element=>{
         if(element.tagName.toLowerCase() == 'a'){
-            element.href = BASE.HOME;
+            LinkAction(element);
         }
     });
 });
