@@ -51,6 +51,11 @@ class SoundInfomation extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
+class AlbumListAction extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'album_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
+    }
+}
 
 class TopPageLayout extends LayoutBase{
     constructor() {
@@ -479,9 +484,70 @@ const Search = {
     }
 };
 
+const AlbumClipComponent = {
+    template:`
+    <div>
+        <div class="alubm">
+            <img loading='lazy' :src="createImageSrc(albumClip.album_key)">
+        </div>
+        <div class='layout-box'>
+            <p class='audio-title' :hint='albumClip.title'>{{albumClip.title}}</p>
+            <p class='audio-uploader'>
+                <span class='audio-infomation' :hint='albumClip.artist.artist_name'>{{albumClip.artist.artist_name}}</span>
+            </p>
+        </div>
+    </div>
+    `,
+    props:{
+        'albumClip':{
+        }
+    },
+    methods:{
+        createImageSrc(albumKey) {
+            return `${BASE.HOME}img/album_art.php?media_hash=`+albumKey;
+        }
+    },
+};
+
 const AlbumList = {
+    template:`
+    <div class='audio-list'>
+        <button v-for="item in requestData()" class='audio-item' @click="click(item)">
+            <AlbumClipComponent :album-clip='item'></AlbumClipComponent>
+        </button>
+    </div>
+    `,
+    components:{
+        AlbumClipComponent
+    },
+    data() {
+        return {albumClips:[], currentPlaySoundClip:audio.currentAudioClip};
+    },
+    methods:{
+        requestData(){
+            if(this.albumClips.length == 0){
+                let albumAction = new AlbumListAction;
+                albumAction.httpRequestor.addEventListener('success', event=>{
+                    for (const response of event.detail.response) {
+                        this.albumClips.push(response);
+                    }
+                });
+                albumAction.execute();
+                return this.albumClips;
+            } else {
+                return this.albumClips;
+            }
+        },
+        click(albumClip) {
+            if(ContextMenu.isVisible){
+                return;
+            }
+            router.push({name:'album', query: {AlbumHash: albumClip.album_key}});
+        }
+    }
 
 };
+
 
 const router = new VueRouter({
     routes: [
@@ -489,6 +555,11 @@ const router = new VueRouter({
             path: '/',
             name: 'home',
             component: Home
+        },
+        {
+            path:'/album_list',
+            name: 'album_list',
+            component: AlbumList
         },
         {
             path:'/album',

@@ -1233,7 +1233,7 @@ window.addEventListener('load', ()=>{
         dropdownMenu.displayName = 'Menu';
         menu.appendChild(dropdownMenu);
         dropdownMenu.addItem('Album List', ()=>{
-            router.push({name:''});
+            router.push({name:'album_list'});
         });
         dropdownMenu.addItem('File Setting', ()=>{
             history.pushState(null, null, BASE.HOME+'?page=file_setting');
