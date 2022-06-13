@@ -27,7 +27,7 @@ class SoundSearchAction extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
-class AlbumListAction extends BaseFrameWork.Network.RequestServerBase {
+class AlbumSoundListAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'album_sounds.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
     }
@@ -296,13 +296,13 @@ const Home = {
             if(ContextMenu.isVisible){
                 return;
             }
-            router.push({name:'alubum', query: {AlbumHash: albumClip.albumKey}});
+            router.push({name:'album', query: {AlbumHash: albumClip.albumKey}});
 
         }
     }
 };
 
-const AlbumList = {
+const AlbumSoundList = {
     template:`
     <div class='audio-list'>
         <button v-for="item in requestData()" :class='audioItemClass(item)' @click="click(item)">
@@ -323,7 +323,7 @@ const AlbumList = {
     methods:{
         requestData(){
             if(this.soundClips.length == 0) {
-                let soundSearch = new AlbumListAction();
+                let soundSearch = new AlbumSoundListAction();
 
                 soundSearch.formDataMap.append('AlbumHash', this.$route.query.AlbumHash);
                 let listNo = 0;
@@ -479,6 +479,10 @@ const Search = {
     }
 };
 
+const AlbumList = {
+
+};
+
 const router = new VueRouter({
     routes: [
         {
@@ -488,8 +492,8 @@ const router = new VueRouter({
         },
         {
             path:'/album',
-            name:'alubum',
-            component: AlbumList
+            name:'album',
+            component: AlbumSoundList
         },
         {
             path: '/search',

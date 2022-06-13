@@ -84,12 +84,12 @@ class AudioClipObject extends HTMLButtonElement{
     }
 
     initalize() {
-        let alubumArtFrame = document.createElement('div');
-        alubumArtFrame.classList.add('alubm');
+        let albumArtFrame = document.createElement('div');
+        albumArtFrame.classList.add('alubm');
         this._image = document.createElement('img');
         this._image.setAttribute('loading', 'lazy');
-        alubumArtFrame.appendChild(this._image);
-        this.appendChild(alubumArtFrame);
+        albumArtFrame.appendChild(this._image);
+        this.appendChild(albumArtFrame);
 
         let frameObject = document.createElement('div');
         this.appendChild(frameObject);
@@ -772,7 +772,7 @@ const SoundClipComponent = {
             if(ContextMenu.isVisible){
                 return;
             }
-            router.push({name:'alubum', query: {AlbumHash: this.soundClip.albumKey}});
+            router.push({name:'album', query: {AlbumHash: this.soundClip.albumKey}});
         }
     },
     mounted() {
@@ -1138,7 +1138,7 @@ const AudioController = {
             if(ContextMenu.isVisible || this.currentPlaySoundClip.albumKey == ''){
                 return;
             }
-            router.push({name:'alubum', query: {AlbumHash: this.currentPlaySoundClip.albumKey}});
+            router.push({name:'album', query: {AlbumHash: this.currentPlaySoundClip.albumKey}});
         },
         toggleView() {
             this.$el.parentNode.classList.toggle('analyser');
@@ -1232,6 +1232,9 @@ window.addEventListener('load', ()=>{
         dropdownMenu.classList.add('header-item', 'nonselectable');
         dropdownMenu.displayName = 'Menu';
         menu.appendChild(dropdownMenu);
+        dropdownMenu.addItem('Album List', ()=>{
+            router.push({name:''});
+        });
         dropdownMenu.addItem('File Setting', ()=>{
             history.pushState(null, null, BASE.HOME+'?page=file_setting');
             // popPage();
