@@ -20,6 +20,14 @@ class AlbumDao extends SqlCreater implements AlbumTable{
         );
     }
 
+    function rageSelect($start, $end) {
+        $paramArray = array();
+        $paramArray[] = $end;
+        $paramArray[] = $start;
+        return $this->toDtoList(
+            $this->execute($this->selectQuery().$this::LIMIT_OFFSET, $paramArray));
+    }
+    
     function hasRegistedAlbum($albumTitle, $artistName) {
         foreach($this->findAlbumIdAndArtistId($albumTitle, sha1($artistName)) as $albumDto) {
             if($albumDto->getAlbumKey() == sha1($albumTitle).sha1($artistName)) {

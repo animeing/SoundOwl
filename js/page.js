@@ -53,7 +53,7 @@ class SoundInfomation extends BaseFrameWork.Network.RequestServerBase {
 
 class AlbumListAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
-        super(null, BASE.API+'album_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
+        super(null, BASE.API+'album_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
 }
 
@@ -512,26 +512,44 @@ const AlbumClipComponent = {
 const AlbumList = {
     template:`
     <div class='audio-list'>
-        <button v-for="item in requestData()" class='audio-item' @click="click(item)">
+        <button v-for="item in albumClips" class='audio-item' @click="click(item)">
             <AlbumClipComponent :album-clip='item'></AlbumClipComponent>
         </button>
     </div>
     `,
+    props:{
+        'scroll':{
+            type:Number,
+            require: false,
+            default:0
+        }
+    },
     components:{
         AlbumClipComponent
     },
     data() {
-        return {albumClips:[], currentPlaySoundClip:audio.currentAudioClip};
+        return {
+            albumClips:[],
+            currentPlaySoundClip:audio.currentAudioClip,
+            start:0,
+            isMoreLoad:true
+        };
     },
     methods:{
         requestData(){
-            if(this.albumClips.length == 0){
+            if(this.isMoreLoad){
+                this.isMoreLoad = false;
                 let albumAction = new AlbumListAction;
+                albumAction.formDataMap.append('Start', this.start);
                 albumAction.httpRequestor.addEventListener('success', event=>{
                     for (const response of event.detail.response) {
+                        this.isMoreLoad = true;
                         this.albumClips.push(response);
+                        this.start++;
                     }
                 });
+                albumAction.formDataMap.set('start', this.start);
+                albumAction.formDataMap.set('end', this.start+50);
                 albumAction.execute();
                 return this.albumClips;
             } else {
@@ -543,7 +561,17 @@ const AlbumList = {
                 return;
             }
             router.push({name:'album', query: {AlbumHash: albumClip.album_key}});
+        },
+        bottomEvent() {
+            this.requestData();
         }
+    },
+    mounted() {
+        window.addEventListener('bottom', this.bottomEvent);
+        this.requestData();
+    },
+    unmounted()  {
+        window.removeEventListener('bottom', this.bottomEvent);
     }
 
 };
