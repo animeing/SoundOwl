@@ -541,7 +541,6 @@ const AlbumList = {
                 if(this.isMoreLoad){
                     this.isMoreLoad = false;
                     let albumAction = new AlbumListAction;
-                    albumAction.formDataMap.append('Start', this.start);
                     albumAction.httpRequestor.addEventListener('success', event=>{
                         for (const response of event.detail.response) {
                             this.isMoreLoad = true;
