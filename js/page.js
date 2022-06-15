@@ -536,25 +536,30 @@ const AlbumList = {
         };
     },
     methods:{
-        requestData(){
-            if(this.isMoreLoad){
-                this.isMoreLoad = false;
-                let albumAction = new AlbumListAction;
-                albumAction.formDataMap.append('Start', this.start);
-                albumAction.httpRequestor.addEventListener('success', event=>{
-                    for (const response of event.detail.response) {
-                        this.isMoreLoad = true;
-                        this.albumClips.push(response);
-                        this.start++;
-                    }
-                });
-                albumAction.formDataMap.set('start', this.start);
-                albumAction.formDataMap.set('end', this.start+50);
-                albumAction.execute();
-                return this.albumClips;
-            } else {
-                return this.albumClips;
-            }
+        async requestData(){
+            return await new Promise((resolve, reject)=>{
+                if(this.isMoreLoad){
+                    this.isMoreLoad = false;
+                    let albumAction = new AlbumListAction;
+                    albumAction.formDataMap.append('Start', this.start);
+                    albumAction.httpRequestor.addEventListener('success', event=>{
+                        for (const response of event.detail.response) {
+                            this.isMoreLoad = true;
+                            this.albumClips.push(response);
+                            this.start++;
+                        }
+                        resolve();
+                    });
+                    albumAction.httpRequestor.addEventListener('error', event=>{
+                        reject();
+                    });
+                    albumAction.formDataMap.set('start', this.start);
+                    albumAction.formDataMap.set('end', this.start+50);
+                    albumAction.execute();
+                }
+            }).then(()=>{
+                this.searchLock = false;
+            });
         },
         click(albumClip) {
             if(ContextMenu.isVisible){
