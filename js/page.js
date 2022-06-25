@@ -57,51 +57,6 @@ class AlbumListAction extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
-class TopPageLayout extends LayoutBase{
-    constructor() {
-        super();
-        {
-            let frame = document.createElement('div');
-            let titleElement = document.createElement('p');
-            titleElement.innerText = 'Play Top 20';
-            frame.appendChild(titleElement);
-            this.playCountList = document.createElement('sw-audio-slide-list');
-            let playCountAction = new PlayCountAction();
-            playCountAction.httpRequestor.addEventListener('success', event=>{
-                let e = event.detail.response;
-                let listNo = 0;
-                let list = new BaseFrameWork.List();
-                for (const response of e) {
-                    let item = BaseFrameWork.createCustomElement('sw-audio-slide-item');
-                    this.playCountList.add(item);
-                    
-                    let audioClip = new AudioClip();
-                    audioClip.soundHash = response['sound_hash'];
-                    audioClip.title = response['title'];
-                    audioClip.artist = response['artist_name'];
-                    audioClip.album = response['album']['album_title'];
-                    audioClip.albumKey = response['album']['album_hash'];
-                    audioClip.no = listNo;
-                    item.audioClip = audioClip;
-                    list.add(audioClip);
-                    listNo++;
-                    item.addEventListener(MouseEventEnum.CLICK, e=>{
-                        if(ContextMenu.isVisible){
-                            return;
-                        }
-                        audio.playList.removeAll();
-                        for(const audioclip of list) {
-                            audio.playList.add(audioclip);
-                        }
-                    }, !0);
-                }
-            });
-            playCountAction.execute();
-            frame.appendChild(this.playCountList)
-            window.layoutBase.appendChild(frame);
-        }
-    }
-}
 
 class SearchSoundLayout extends LayoutBase {
     
@@ -518,10 +473,17 @@ const AlbumList = {
     </div>
     `,
     props:{
-        'scroll':{
-            type:Number,
+        albumClips:{
+            type:Array,
             require: false,
-            default:0
+            default: ()=>{
+                let cache = new BaseFrameWork.Storage.Application.SessionStorageMap;
+                let albumClipsCache = cache.get('albumList');
+                if(albumClipsCache == null) {
+                    return []
+                }
+                return JSON.parse(albumClipsCache);
+            }
         }
     },
     components:{
@@ -529,11 +491,15 @@ const AlbumList = {
     },
     data() {
         return {
-            albumClips:[],
             currentPlaySoundClip:audio.currentAudioClip,
-            start:0,
+            start: this.albumClips.length,
             isMoreLoad:true
         };
+    },
+    cpmputed: {
+        getAlbumClips(){
+            return this.albumClips;
+        }
     },
     methods:{
         async requestData(){
@@ -553,11 +519,13 @@ const AlbumList = {
                         reject();
                     });
                     albumAction.formDataMap.set('start', this.start);
-                    albumAction.formDataMap.set('end', this.start+50);
+                    albumAction.formDataMap.set('end', 50);
                     albumAction.execute();
                 }
             }).then(()=>{
-                this.searchLock = false;
+                let albumClipsCache = JSON.stringify(this.albumClips);
+                let cache = new BaseFrameWork.Storage.Application.SessionStorageMap;
+                cache.set('albumList', albumClipsCache);
             });
         },
         click(albumClip) {
@@ -572,10 +540,13 @@ const AlbumList = {
     },
     mounted() {
         window.addEventListener('bottom', this.bottomEvent);
-        this.requestData();
+        if(this.albumClips.length == 0){
+            this.requestData();
+        }
     },
-    unmounted()  {
+    beforeRouteLeave(to, from, next)  {
         window.removeEventListener('bottom', this.bottomEvent);
+        next();
     }
 
 };
