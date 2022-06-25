@@ -1,11 +1,5 @@
 'use strict';
 
-class LayoutBase {
-    constructor() {
-        window.layoutBase.destoryChildren();
-    }
-}
-
 class PlayCountAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'play_count_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
@@ -58,51 +52,6 @@ class AlbumListAction extends BaseFrameWork.Network.RequestServerBase {
 }
 
 
-class SearchSoundLayout extends LayoutBase {
-    
-    constructor(searchWord) {
-        super();
-        {
-            let currentAudioListObject = new PlacementList();
-
-            let soundSearch = new SoundSearchAction();
-            window.searchBox.value = searchWord;
-            soundSearch.formDataMap.append('SearchWord', searchWord);
-            soundSearch.httpRequestor.addEventListener('success', event => {
-                let e = event.detail.response;
-                let listNo = 0;
-                let list = new BaseFrameWork.List();
-                for (const response of e) {         
-                    let item = BaseFrameWork.createCustomElement('sw-audioclip');           
-                    currentAudioListObject.add(item);
-
-                    let audioClip = new AudioClip();
-                    audioClip.soundHash = response['sound_hash'];
-                    audioClip.title = response['title'];
-                    audioClip.artist = response['artist_name'];
-                    audioClip.album = response['album']['album_title'];
-                    audioClip.albumKey = response['album']['album_hash'];
-                    audioClip.no = listNo;
-                    item.audioClip = audioClip;
-                    list.add(audioClip);
-                    listNo++;
-                    item.addEventListener(MouseEventEnum.CLICK, e=>{
-                        if(ContextMenu.isVisible){
-                            return;
-                        }
-                        audio.playList.removeAll();
-                        for(const audioclip of list) {
-                            audio.playList.add(audioclip);
-                        }
-
-                    }, !0);
-                }
-            });
-            soundSearch.execute();
-            window.layoutBase.appendChild(currentAudioListObject.parent);
-        }
-    }
-}
 
 let currentPage = '';
 
