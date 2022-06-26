@@ -254,7 +254,7 @@ class InputParam extends HTMLElement {
         if('value' == name) {
             this._input.value = newValue;
         }
-        if('title' == name) {
+        if('data-title' == name) {
             this._title.innerText = newValue;
         }
         if('type' == name) {
@@ -279,7 +279,7 @@ class InputParam extends HTMLElement {
         return this._title.innerText;
     }
     set title(title) {
-        this.setAttribute('title', title);
+        this.setAttribute('data-title', title);
     }
 
     get type() {
