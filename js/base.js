@@ -1066,23 +1066,20 @@ const UrlParam = {
 };
 
 class ClipBoard {
-    constructor(){
-        this.clipDataElement = document.createElement('textarea');
-        this.clipDataElement.classList.add = 'hideElement';
-        this.body = document.html();
-        this.body.appendChild(this.clipDataElement);
+    static set(str) {
+        if(navigator.clipboard){
+            navigator.clipboard.writeText(str);
+            return true;
+        } else {
+            return false;
+        }
     }
-    /**
-     * 
-     * @param {string} data 
-     * @returns {bool} isComplete
-     */
-    set(data){
-        this.clipDataElement.textContent = data;
-        this.clipDataElement.select();
-        let command = document.execCommand('copy');
-        this.body.removeChild(this.clipDataElement);
-        return command;
+    static get(element) {
+        if(navigator.clipboard){
+            navigator.clipboard.readText().then(text=>{
+                element.value = text;
+            });
+        }
     }
 }
 BaseFrameWork.Network.HttpRequestType=class {

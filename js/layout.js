@@ -40,6 +40,25 @@ class SearchBox extends HTMLElement{
             }
             this.searchEvent(this.searchBox.value);
         });
+        this.searchBox.addEventListener('contextmenu', ()=>{
+            ContextMenu.contextMenu.destoryChildren();
+            {
+                let copy = BaseFrameWork.createCustomElement('sw-libutton');
+                copy.menuItem.value = 'Copy';
+                copy.menuItem.onclick = ()=>{
+                    ClipBoard.set(this.searchBox.value);
+                };
+                ContextMenu.contextMenu.appendChild(copy);
+            }
+            {
+                let paste = BaseFrameWork.createCustomElement('sw-libutton');
+                paste.menuItem.value = 'Paste';
+                paste.menuItem.onclick = ()=>{
+                    ClipBoard.get(this.searchBox);
+                }
+                ContextMenu.contextMenu.appendChild(paste);
+            }
+        });
     }
     
     connectedCallback(){
@@ -206,6 +225,25 @@ class InputParam extends HTMLElement {
         super();
         this._title = document.createElement('span');
         this._input = document.createElement('input');
+        this._input.addEventListener('contextmenu', ()=>{
+            ContextMenu.contextMenu.destoryChildren();
+            {
+                let copy = BaseFrameWork.createCustomElement('sw-libutton');
+                copy.menuItem.value = 'Copy';
+                copy.menuItem.onclick = ()=>{
+                    ClipBoard.set(this._input.value);
+                };
+                ContextMenu.contextMenu.appendChild(copy);
+            }
+            {
+                let paste = BaseFrameWork.createCustomElement('sw-libutton');
+                paste.menuItem.value = 'Paste';
+                paste.menuItem.onclick = ()=>{
+                    ClipBoard.get(this._input);
+                }
+                ContextMenu.contextMenu.appendChild(paste);
+            }
+        });
     }
     
     static get observedAttributes() {
@@ -421,7 +459,7 @@ class AudioPlayController extends HTMLElement {
                     copy.menuItem.value = 'Copy to clipboard';
                     copy.menuItem.onclick = () =>{
                         let window = document.createElement('sw-message-box');
-                        if(new ClipBoard().set(val)){
+                        if(ClipBoard.set(val)){
                             window.value = 'Copied it.';
                         } else {
                             window.value = 'Copy failed.';
