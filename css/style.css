@@ -336,6 +336,17 @@ header{
    top: 0;
 }
 
+input[type='button'].button {
+  background: inherit;
+  border-radius: 10px;
+  border: 1px solid var(--fontcolor);
+  padding: 10px;
+}
+
+input[type='button'].button:hover {
+  background: var(--subcolor);
+}
+
  #main-menu{
    position: absolute;
    right: 0;
@@ -743,6 +754,28 @@ sw-audio-slide-list img,
   position: fixed;
   bottom: 0.1em
 }
+
+.block > .title{
+  min-width: 10em;
+  width: fit-content;
+  display: inline-block;
+  border-bottom: 2px solid var(--subfontcolor);
+  margin-bottom: 10px;
+  font-size: 1.2em;
+}
+
+.block > *:not(.title) {
+  margin: 0 20px;
+}
+
+.block > sw-input-param{
+  padding-bottom: 10px;
+}
+
+.block {
+  margin-bottom: 10px;
+}
+
 
 sw-audio-slide-list{
   overflow-x: scroll;

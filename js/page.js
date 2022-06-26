@@ -33,12 +33,6 @@ class SiteStatus extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
-class SoundRegist extends BaseFrameWork.Network.RequestServerBase {
-    constructor() {
-        super(null, BASE.API+'sound_regist.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
-    }
-}
-
 class SoundInfomation extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'sound_data.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
@@ -51,7 +45,23 @@ class AlbumListAction extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
+class GetSetting extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'get_setting.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
+    }
+}
 
+class UpdateSetting extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'update_setting.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+    }
+}
+
+class SoundRegistAction extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'sound_regist.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+    }
+}
 
 let currentPage = '';
 
@@ -497,7 +507,93 @@ const AlbumList = {
         window.removeEventListener('bottom', this.bottomEvent);
         next();
     }
+};
 
+const DataRegist = {
+    template:`
+    <div>
+        <div class="block">
+            <p class="title">DB</p>
+            <sw-input-param title="DSN" type="text" :value="dsn" name="db_dsn"></sw-input-param>
+            <sw-input-param title="User" type="text" :value="user" name="db_user"></sw-input-param>
+            <sw-input-param title="Password" type="password" :value="pass" name="db_pass"></sw-input-param>
+        </div>
+        <div class="block">
+            <p class="title">Sound</p>
+            <sw-input-param title="Sound Directory" type="text" :value="sound" name="sound_directory"></sw-input-param>
+        </div>
+        <input type="button" class="button" value="setting update" @click="settingUpdate">
+        <input type="button" class="button" value="sound regist" @click="soundRegist">
+    </div>
+    `,
+    data() {
+        return {
+            dsn:'',
+            user:'',
+            pass:'',
+            sound:'',
+        };
+    },
+    methods:{
+        settingUpdate(){
+            let updateSetting = new UpdateSetting;
+            updateSetting.httpRequestor.addEventListener('success', event=>{
+                let message = new MessageWindow;
+                message.value = "Updated.";
+                message.open();
+                message.close(500);
+            });
+
+            for(const element of Array.prototype.slice.call(document.getElementsByTagName('sw-input-param'))){
+                console.log(element);
+                updateSetting.formDataMap.set(element.name, element.value);
+            }
+            
+            updateSetting.execute();
+        },
+        async soundRegist() {
+            await new Promise((resolve, reject)=>{
+                let siteStatus = new SiteStatus();
+                siteStatus.httpRequestor.addEventListener('success', event=>{
+                    let data = event.detail.response;
+                    if(toBoolean(data['regist_status'])) {
+                        reject();
+                    } else {
+                        resolve();
+                    }
+                });
+                siteStatus.execute();
+            }).then(()=>{
+                let soundRegistAction = new SoundRegistAction
+                soundRegistAction.httpRequestor.addEventListener('success', event=>{
+                    let messageButtonWindow = new MessageButtonWindow();
+                    messageButtonWindow.value = 'Sound Registed.';
+                    messageButtonWindow.addItem('Close', ()=>{
+                        messageButtonWindow.close();
+                    });
+                    messageButtonWindow.open();
+                });
+                soundRegistAction.execute();
+                let messageButtonWindow = new MessageButtonWindow();
+                messageButtonWindow.value = 'Sound Registing.';
+                messageButtonWindow.addItem('Close', ()=>{
+                    messageButtonWindow.close();
+                });
+                messageButtonWindow.open();
+            });
+        }
+    },
+    mounted() {
+        let getSettingAction = new GetSetting;
+        getSettingAction.httpRequestor.addEventListener('success', event=>{
+            this.dsn = event.detail.response.db_dsn;
+            this.user = event.detail.response.db_user;
+            this.pass = event.detail.response.db_pass;
+            this.sound = event.detail.response.sound_directory;
+        });
+        getSettingAction.execute();
+
+    },
 };
 
 
@@ -522,6 +618,11 @@ const router = new VueRouter({
             path: '/search',
             name:'search',
             component: Search
+        },
+        {
+            path: '/regist',
+            name: 'regist',
+            component: DataRegist
         }
     ]
 });

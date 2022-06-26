@@ -6,6 +6,7 @@
     <util>utils/browserUtil/BrowserUtil.php</util>
     <util>utils/fileUtil/IMimeType.php</util>
     <util>utils/fileUtil/FileUtil.php</util>
+    <util>utils/fileUtil/IniWrite.php</util>
 
     <base>db/dao/ISql.php</base>
     <base>db/connector/Connector.php</base>

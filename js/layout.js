@@ -201,6 +201,105 @@ class AudioClipObject extends HTMLButtonElement{
 
 BaseFrameWork.defineCustomElement('sw-audioclip', AudioClipObject, {extends: "button"});
 
+class InputParam extends HTMLElement {
+    constructor() {
+        super();
+        this._title = document.createElement('span');
+        this._input = document.createElement('input');
+    }
+    
+    static get observedAttributes() {
+        return ['value', 'title', 'type', 'name', 'readonly'];
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if('value' == name) {
+            this._input.value = newValue;
+        }
+        if('title' == name) {
+            this._title.innerText = newValue;
+        }
+        if('type' == name) {
+            this._input.type = newValue;
+        }
+        if('name' == name) {
+            this._input.name = newValue;
+        }
+        if('readonly' == name) {
+            this._input.readOnly = newValue;
+        }
+    }
+
+    get value(){
+        return this._input.value;
+    }
+    set value(val) {
+        this.setAttribute('value', val);
+    }
+
+    get title() {
+        return this._title.innerText;
+    }
+    set title(title) {
+        this.setAttribute('title', title);
+    }
+
+    get type() {
+        return this._input.type;
+    }
+    set type(type) {
+        this.setAttribute('type', type);
+    }
+
+    get name() {
+        return this._input.name;
+    }
+    set name(name) {
+        this.setAttribute('name', name);
+    }
+
+    get readOnly() {
+        return this._input.readOnly;
+    }
+    set readOnly(readOnly) {
+        this.setAttribute('readonly', readOnly);
+    }
+    
+    connectedCallback(){
+        let shadow = this.attachShadow({mode: 'closed'});
+        shadow.appendChild(this._title);
+        shadow.appendChild(this._input);
+        let style = document.createElement('style');
+        style.innerHTML = `
+        :host {
+            display: block;
+        }
+        
+        span{
+            min-width: 10em;
+            width: fit-content;
+            display: inline-block;
+            border-bottom: 2px solid var(--subfontcolor);
+            margin-bottom: 10px;
+        }
+          
+        input{
+            background-color: var(--playerbgcolor);
+            width: 100%;
+            border-radius: 5px;
+            font-size: 1em;
+            height: 23px;
+            color: var(--fontcolor);
+            -webkit-text-fill-color: var(--fontcolor);
+            border: none;
+            padding: 5px;
+        }`;
+        shadow.appendChild(style);
+    }
+}
+BaseFrameWork.defineCustomElement('sw-input-param', InputParam);
+
+
 /**
  * @singleton
  * @template AudioClipObject
@@ -1240,43 +1339,7 @@ window.addEventListener('load', ()=>{
             // popPage();
         });
         dropdownMenu.addItem('Audio regist', ()=>{
-            let siteStatus = new SiteStatus();
-            siteStatus.httpRequestor.addEventListener('success', event=>{
-                let data = event.detail.response;
-                if(toBoolean(data['regist_status'])) {
-                    let messageButtonWindow = new MessageButtonWindow();
-                    messageButtonWindow.value = `Already in progress.
-                    Sound registrations : ${data['regist_data_count']['sound']}
-                    Album registrations : ${data['regist_data_count']['album']}
-                    Artist registrations : ${data['regist_data_count']['artist']}
-                    `;
-                    messageButtonWindow.addItem('Close', ()=>{
-                        messageButtonWindow.close();
-                    });
-                    messageButtonWindow.open();
-                    return;
-                }
-                let soundRegist = new SoundRegist();
-                soundRegist.httpRequestor.addEventListener('success', event=>{
-                    let data = event.detail.response;
-                    let messageButtonWindow = new MessageButtonWindow();
-                    messageButtonWindow.value = `Processing of [Audio regist] is complete.
-                    Sound registrations : ${data['count']}
-                    `;
-                    messageButtonWindow.addItem('Close', ()=>{
-                        messageButtonWindow.close();
-                    });
-                    messageButtonWindow.open();
-                });
-                soundRegist.execute();
-                let messageButtonWindow = new MessageButtonWindow();
-                messageButtonWindow.value = `Process [Audio regist] started.`;
-                messageButtonWindow.addItem('Close', ()=>{
-                    messageButtonWindow.close();
-                });
-                messageButtonWindow.open();
-            });
-            siteStatus.execute();
+            router.push({name:'regist'});
         });
 
         

@@ -8,7 +8,9 @@ define("PARTS_DIRECTORY", INCLUDE_PATH.'/parts/');
 
 define("PAGE_PROTOCOL",(empty($_SERVER["HTTPS"]) ? "http://" : "https://"));
 
-$setting = parse_ini_file(PARTS_DIRECTORY.'setting.ini');
+define("SETTING_INI", PARTS_DIRECTORY.'setting.ini');
+
+$setting = parse_ini_file(SETTING_INI);
 
 define("DB_DSN", $setting['db_dsn']);
 
