@@ -1133,38 +1133,43 @@ BaseFrameWork.Network.RequestServerBase=class {
                 if(this.httpRequestor.readyState !== this.httpRequestor.DONE){
                     return;
                 }
+                let response = this.httpRequestor.response;
+                if(!this._async && this.responseType != BaseFrameWork.Network.HttpResponseType.TEXT) {
+                    if(this.responseType == BaseFrameWork.Network.HttpResponseType.JSON) {
+                        response = JSON.parse(this.httpRequestor.response);
+                    } else if(this.responseType == BaseFrameWork.Network.HttpResponseType.BLOB){
+                        response = new  Blob(this.httpRequestor.response, { type: 'application/octet-binary' });
+                    }
+                    //全てのresponseTypeに対応はしていない。
+                }
                 if((this.httpRequestor.status >= 200 && this.httpRequestor.status < 300)) {
                     this.httpRequestor.dispatchEvent(new CustomEvent('success',{
                         detail:{
-                            response : this.httpRequestor.response
+                            response : response
                         }
                     }));
-                    return;
                 } else if (this.httpRequestor.status >= 300 && this.httpRequestor.status < 400) {
                     this.httpRequestor.dispatchEvent(new CustomEvent('redirect',{
                         detail:{
-                            response : this.httpRequestor.response
+                            response : response
                         }
                     }));
-                    return;
                 } else {
                     if(this.httpRequestor.status === 418) {
                         this.httpRequestor.dispatchEvent(new CustomEvent('error',
                             {
                                 detail:{
-                                    response : this.httpRequestor.response,
+                                    response : response,
                                     message:'Server is a teapot. So I refused to make coffee. See "Hyper Text Coffee Pot Control Protocol" for details.'
                                 }
                             }
                         ));
-                        return;
                     } else {
                         this.httpRequestor.dispatchEvent(new CustomEvent('error',{
                             detail:{
-                                response : this.httpRequestor.response
+                                response : response
                             }
                         }));
-                        return;
                     }
                 }
             });
@@ -1193,7 +1198,9 @@ BaseFrameWork.Network.RequestServerBase=class {
         } else {
             this.httpRequestor.open(this.type, this.path, this._async);
         }
-        this.httpRequestor.responseType=this.responseType;
+        if(this._async){
+            this.httpRequestor.responseType=this.responseType;
+        }
         if(this.requestHeader != null && this.requestHeader.size > 0){
             for(let key of this.requestHeader.keys()){
                 this.httpRequestor.setRequestHeader(key, this.requestHeader.get(key));

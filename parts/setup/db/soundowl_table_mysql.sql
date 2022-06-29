@@ -9,7 +9,7 @@
 -- テーブルの構造 `album`
 --
 
-CREATE TABLE `album` (
+CREATE TABLE IF NOT EXISTS `album` (
   `album_key` text NOT NULL,
   `album_id` text NOT NULL,
   `title` text NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE `album` (
 -- テーブルの構造 `artist`
 --
 
-CREATE TABLE `artist` (
+CREATE TABLE IF NOT EXISTS `artist` (
   `artist_id` text NOT NULL,
   `artist_name` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -36,7 +36,7 @@ CREATE TABLE `artist` (
 -- テーブルの構造 `sound_link`
 --
 
-CREATE TABLE `sound_link` (
+CREATE TABLE IF NOT EXISTS `sound_link` (
   `sound_hash` text NOT NULL,
   `title` text NOT NULL,
   `genre` text NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE `sound_link` (
 -- テーブルの構造 `sound_play_history`
 --
 
-CREATE TABLE `sound_play_history` (
+CREATE TABLE IF NOT EXISTS `sound_play_history` (
   `id` int(11) NOT NULL,
   `sound_hash` text NOT NULL,
   `play_date` datetime NOT NULL

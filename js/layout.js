@@ -247,7 +247,7 @@ class InputParam extends HTMLElement {
     }
     
     static get observedAttributes() {
-        return ['value', 'title', 'type', 'name', 'readonly'];
+        return ['value', 'data-title', 'type', 'name', 'readonly'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {

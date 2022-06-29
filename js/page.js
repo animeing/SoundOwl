@@ -32,6 +32,12 @@ class SiteStatus extends BaseFrameWork.Network.RequestServerBase {
         super(null, BASE.API+'site_status.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
 }
+class LockStatus extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'lock_status.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+    }
+}
+
 
 class SoundInfomation extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
@@ -60,6 +66,12 @@ class UpdateSetting extends BaseFrameWork.Network.RequestServerBase {
 class SoundRegistAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'sound_regist.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+    }
+}
+
+class SetupDataBase extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'setup_database_table.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
 }
 
@@ -509,30 +521,54 @@ const AlbumList = {
     }
 };
 
-const DataRegist = {
+const SettingFormComponent = {
     template:`
     <div>
         <div class="block">
             <p class="title">DB</p>
-            <sw-input-param title="DSN" type="text" :value="dsn" name="db_dsn"></sw-input-param>
-            <sw-input-param title="User" type="text" :value="user" name="db_user"></sw-input-param>
-            <sw-input-param title="Password" type="password" :value="pass" name="db_pass"></sw-input-param>
+            <sw-input-param data-title="IP Address" type="text" :value="ip" name="db_ip_address"></sw-input-param>
+            <sw-input-param data-title="DB Name" type="text" :value="dbName" name="db_name"></sw-input-param>
+            <sw-input-param data-title="User" type="text" :value="user" name="db_user"></sw-input-param>
+            <sw-input-param data-title="Password" type="password" :value="pass" name="db_pass"></sw-input-param>
         </div>
         <div class="block">
             <p class="title">Sound</p>
-            <sw-input-param title="Sound Directory" type="text" :value="sound" name="sound_directory"></sw-input-param>
+            <sw-input-param data-title="Sound Directory" type="text" :value="sound" name="sound_directory"></sw-input-param>
         </div>
-        <input type="button" class="button" value="setting update" @click="settingUpdate">
-        <input type="button" class="button" value="sound regist" @click="soundRegist">
     </div>
     `,
     data() {
         return {
-            dsn:'',
+            ip:'',
+            dbName:'',
             user:'',
             pass:'',
             sound:'',
         };
+    },
+    mounted() {
+        let getSettingAction = new GetSetting;
+        getSettingAction.httpRequestor.addEventListener('success', event=>{
+            this.ip = event.detail.response.db_ip_address;
+            this.dbName = event.detail.response.db_name;
+            this.user = event.detail.response.db_user;
+            this.pass = event.detail.response.db_pass;
+            this.sound = event.detail.response.sound_directory;
+        });
+        getSettingAction.execute();
+    }
+};
+
+const DataRegist = {
+    template:`
+    <div>
+        <SettingFormComponent></SettingFormComponent>
+        <input type="button" class="button" value="setting update" @click="settingUpdate">
+        <input type="button" class="button" value="sound regist" @click="soundRegist">
+    </div>
+    `,
+    components:{
+        SettingFormComponent
     },
     methods:{
         settingUpdate(){
@@ -582,20 +618,129 @@ const DataRegist = {
                 messageButtonWindow.open();
             });
         }
-    },
-    mounted() {
-        let getSettingAction = new GetSetting;
-        getSettingAction.httpRequestor.addEventListener('success', event=>{
-            this.dsn = event.detail.response.db_dsn;
-            this.user = event.detail.response.db_user;
-            this.pass = event.detail.response.db_pass;
-            this.sound = event.detail.response.sound_directory;
-        });
-        getSettingAction.execute();
-
-    },
+    }
 };
 
+const SetUp = {
+    template:`
+    <div>
+        <SettingFormComponent></SettingFormComponent>
+        <input type="button" class="button" value="SetUp" @click="setUp">
+    </div>
+    `,
+    components:{
+        SettingFormComponent
+    },
+    methods:{
+        
+        async setUp() {
+            await new Promise((resolve, reject)=>{
+                let lockStatus = new LockStatus();
+                lockStatus.sourceAsync = !1;
+                lockStatus.httpRequestor.addEventListener('success', event=>{
+                    let data = event.detail.response;
+                    if(toBoolean(data['regist_status'])) {
+                        reject();
+                    } else {
+                        let messageButtonWindow = new MessageButtonWindow();
+                        messageButtonWindow.value = 'Setup start.';
+                        messageButtonWindow.addItem('Close', ()=>{
+                            messageButtonWindow.close();
+                        });
+                        messageButtonWindow.open();
+                        resolve();
+                    }
+                });
+                let messageButtonWindow = new MessageButtonWindow();
+                messageButtonWindow.value = 'StatusCheck Start.';
+                messageButtonWindow.addItem('Close', ()=>{
+                    messageButtonWindow.close();
+                });
+                messageButtonWindow.open();
+                lockStatus.execute();
+            }).then(()=>{
+                let updateSetting = new UpdateSetting;
+                updateSetting.sourceAsync = !1;
+                updateSetting.httpRequestor.addEventListener('success', event=>{
+                    console.log('setting complate.')
+                    let messageButtonWindow = new MessageButtonWindow();
+                    messageButtonWindow.value = "Setting complete.";
+                    messageButtonWindow.addItem('Close', ()=>{
+                        messageButtonWindow.close();
+                    });
+                    messageButtonWindow.open();
+                    return;
+                });
+    
+                for(const element of Array.prototype.slice.call(document.getElementsByTagName('sw-input-param'))){
+                    console.log(element);
+                    updateSetting.formDataMap.set(element.name, element.value);
+                }
+                
+                let messageButtonWindow = new MessageButtonWindow();
+                messageButtonWindow.value = "Setting start.";
+                messageButtonWindow.addItem('Close', ()=>{
+                    messageButtonWindow.close();
+                });
+                messageButtonWindow.open();
+                updateSetting.execute();
+            }).then(()=>{
+                let createTableAction = new SetupDataBase;
+                createTableAction.sourceAsync = !1;
+                createTableAction.httpRequestor.addEventListener('success', event=>{
+                    let data = event.detail.response;
+                    if(data.status == 'error') {
+                        let messageButtonWindow = new MessageButtonWindow();
+                        messageButtonWindow.value = `Create DB Error
+                        Code : ${data.errorNo}`;
+                        messageButtonWindow.addItem('Close', ()=>{
+                            messageButtonWindow.close();
+                        });
+                        messageButtonWindow.open();
+                    } else if(data.status == 'success'){
+                        
+                        let messageButtonWindow = new MessageButtonWindow();
+                        messageButtonWindow.value = `Created DB`;
+                        messageButtonWindow.addItem('Close', ()=>{
+                            messageButtonWindow.close();
+                        });
+                        messageButtonWindow.open();
+                        return;
+                    }
+                });
+                let messageButtonWindow = new MessageButtonWindow();
+                messageButtonWindow.value = "DB Create start.";
+                messageButtonWindow.addItem('Close', ()=>{
+                    messageButtonWindow.close();
+                });
+                messageButtonWindow.open();
+                createTableAction.execute();
+            }).then(()=>{
+                //即座にデータを入れようとすると失敗するので1秒後に実行する
+                setTimeout(()=>{
+                    let soundRegistAction = new SoundRegistAction
+                    soundRegistAction.sourceAsync = !1;
+                    soundRegistAction.httpRequestor.addEventListener('success', event=>{
+                        let messageButtonWindow = new MessageButtonWindow();
+                        messageButtonWindow.value = 'Sound Registed.';
+                        messageButtonWindow.addItem('Close', ()=>{
+                            messageButtonWindow.close();
+                        });
+                        messageButtonWindow.open();
+                        return;
+                    });
+                    let messageButtonWindow = new MessageButtonWindow();
+                    messageButtonWindow.value = 'Sound Registing.';
+                    messageButtonWindow.addItem('Close', ()=>{
+                        messageButtonWindow.close();
+                    });
+                    messageButtonWindow.open();
+                    soundRegistAction.execute();
+                }, 1000);
+            }).catch(()=>{});
+        }
+    }
+}
 
 const router = new VueRouter({
     routes: [
@@ -623,6 +768,11 @@ const router = new VueRouter({
             path: '/regist',
             name: 'regist',
             component: DataRegist
+        },
+        {
+            path: '/setup',
+            name: 'setup',
+            component: SetUp
         }
     ]
 });
