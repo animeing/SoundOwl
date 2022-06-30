@@ -719,7 +719,6 @@ const SetUp = {
                 //即座にデータを入れようとすると失敗するので1秒後に実行する
                 setTimeout(()=>{
                     let soundRegistAction = new SoundRegistAction
-                    soundRegistAction.sourceAsync = !1;
                     soundRegistAction.httpRequestor.addEventListener('success', event=>{
                         let messageButtonWindow = new MessageButtonWindow();
                         messageButtonWindow.value = 'Sound Registed.';
