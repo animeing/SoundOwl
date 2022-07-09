@@ -706,7 +706,7 @@ const ArtistList = {
             }).then(()=>{
                 let artistClipsCache = JSON.stringify(this.artistClips);
                 let cache = new BaseFrameWork.Storage.Application.SessionStorageMap;
-                cache.set('albumList', artistClipsCache);
+                cache.set('artistList', artistClipsCache);
             });
         },
         click(artistClip) {
