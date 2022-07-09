@@ -30,7 +30,9 @@ class ArtistDao extends SqlCreater implements ArtistTable {
         $paramArray[] = $end;
         $paramArray[] = $start;
         return $this->toDtoList(
-            $this->execute($this->selectQuery().$this::LIMIT_OFFSET, $paramArray));
+            $this->execute($this->selectQuery().$this::ORDER_BY.$this::BRACKET_OPEN.$this::ARTIST_NAME.$this::BRACKET_END.
+            $this::LIMIT_OFFSET, $paramArray)
+        );
     }
     
     function hasRegistedArtist($artistName) {
