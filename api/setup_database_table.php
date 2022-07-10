@@ -32,7 +32,7 @@ if($mysqli->connect_error) {
     }
 }
 {
-    $createTable = file_get_contents(dirname(dirname(__FILE__)).'\parts\setup\db\soundowl_table_mysql.sql');
+    $createTable = file_get_contents(dirname(dirname(__FILE__)).'/parts/setup/db/soundowl_table_mysql.sql');
     if($mysqli->multi_query($createTable) === false){
         echo json_encode(array(
             'status'=>'error', 
