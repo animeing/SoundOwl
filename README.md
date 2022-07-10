@@ -12,7 +12,9 @@ Intranet内でブラウザが入っているPCがあれば視聴できること�
 * Server
   * Apache
 * DB
-  * MySQL...(だと思っていた時期が私にもありました。)
+  * MariaDB
+* その他
+　* PHP8.1
 
 ## Install
 * git clone https://github.com/animeing/SoundOwl.git /var/www/html
@@ -20,5 +22,4 @@ Intranet内でブラウザが入っているPCがあれば視聴できること�
 * apt install -y composer
 * composer install
 * systemctl restart apache2
-・・・・～・・・・
 
