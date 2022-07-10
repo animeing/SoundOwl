@@ -14,7 +14,7 @@ Intranet内でブラウザが入っているPCがあれば視聴できること�
 * DB
   * MariaDB
 * その他
-　* PHP8.1
+  * PHP8.1
 
 ## Install
 * git clone https://github.com/animeing/SoundOwl.git /var/www/html
