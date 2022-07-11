@@ -23,6 +23,7 @@ Intranet内でブラウザが入っているPCがあれば視聴できること�
 * composer install
 * systemctl restart apache2
 * ブラウザにて https://localhost/#/setup にアクセス
-<img src="https://user-images.githubusercontent.com/24301121/178284171-61d9077c-6517-4666-9d65-8187f935de9c.png" width="10%">
+<img src="https://user-images.githubusercontent.com/24301121/178284171-61d9077c-6517-4666-9d65-8187f935de9c.png" width="100%">
+
 * Databaseのデータを入力
 * SetUpボタンを押してしばらく待つ(対象の曲数によっては数日を要する場合がありますが、そのSetUp中も利用することは可能です。)
