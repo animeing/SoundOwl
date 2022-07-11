@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS `album` (
   `album_key` text NOT NULL,
   `album_id` text NOT NULL,
   `title` text NOT NULL,
-  `artist_id` text NOT NULL,
-  `album_art` longblob NOT NULL,
-  `art_mime` text NOT NULL,
+  `artist_id` text ,
+  `album_art` longblob ,
+  `art_mime` text ,
   `art_length` bigint(255) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -39,14 +39,14 @@ CREATE TABLE IF NOT EXISTS `artist` (
 CREATE TABLE IF NOT EXISTS `sound_link` (
   `sound_hash` text NOT NULL,
   `title` text NOT NULL,
-  `genre` text NOT NULL,
-  `lyrics` text NOT NULL,
-  `album_hash` text NOT NULL,
-  `album_title` text NOT NULL,
-  `artist_id` text NOT NULL,
-  `artist_name` text NOT NULL,
-  `track_no` text NOT NULL,
-  `play_count` int(11) NOT NULL,
+  `genre` text ,
+  `lyrics` text ,
+  `album_hash` text ,
+  `album_title` text ,
+  `artist_id` text ,
+  `artist_name` text ,
+  `track_no` text ,
+  `play_count` int(11) NOT NULL DEFAULT 0,
   `data_link` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
