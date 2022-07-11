@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `album` (
   `artist_id` text ,
   `album_art` longblob ,
   `art_mime` text ,
-  `art_length` bigint(255) NOT NULL DEFAULT 0
+  `art_length` bigint(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
