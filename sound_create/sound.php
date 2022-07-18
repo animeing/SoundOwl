@@ -63,13 +63,6 @@ if (isset($_SERVER["HTTP_RANGE"])){
     header("Content-Range: bytes 0-".(filesize(path)-1)."/".filesize(path) );
     header("HTTP/1.1 200 OK");
 
-    ob_start();
-    if($file = fopen(path, 'rb')) {
-        echo fread($file, '8192');
-        ob_flush();
-    }
-    ob_flush();
-    fclose($file);
-    ob_end_clean();
+    readfile($file);
 }
 exit;
