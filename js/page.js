@@ -75,6 +75,12 @@ class SetupDataBase extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
+class SoundPlayedAction extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'action/sound_played.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
+    }
+}
+
 let currentPage = '';
 
 const SlideList = {
