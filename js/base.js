@@ -2471,14 +2471,13 @@ class AudioPlayer{
                     }
                 }
                 if(!this.isLoading && (this.audio.currentTime === this.audio.duration)){
-                    let playedAction = new SoundPlayedAction;
-                    playedAction.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
-                    playedAction.execute();
                     let clip = this.autoNextClip;
                     if(clip == null)
                     {
                         return;
-                    }
+                    }let playedAction = new SoundPlayedAction;
+                    playedAction.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
+                    playedAction.execute();
                     this.play(clip);
                 }
             }
