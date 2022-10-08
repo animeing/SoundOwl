@@ -2472,12 +2472,14 @@ class AudioPlayer{
                 }
                 if(!this.isLoading && (this.audio.currentTime === this.audio.duration)){
                     let clip = this.autoNextClip;
-                    if(clip == null)
-                    {
-                        return;
-                    }let playedAction = new SoundPlayedAction;
+                    let playedAction = new SoundPlayedAction;
                     playedAction.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
                     playedAction.execute();
+                    if(clip == null)
+                    {
+                        this.currentPlayState = AudioPlayStateEnum.STOP;
+                        return;
+                    }
                     this.play(clip);
                 }
             }
