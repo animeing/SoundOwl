@@ -106,9 +106,9 @@ if(!file_exists(LOCK_PATH)) {
                         }
                         if(isset($id3Analyze['comments']) && isset($id3Analyze['comments']['picture'][0])) {
                             $albumArtData = $id3Analyze['comments']['picture'][0];
-                            $albumDto->setAlbumArt($albumArtData['data']);
-                            $albumDto->setArtMime($albumArtData['image_mime']);
-                            $albumDto->setArtLength($albumArtData['datalength']);
+                            $albumDto->setAlbumArt(isset($albumArtData['data'])?$albumArtData['data']:'');
+                            $albumDto->setArtMime(isset($albumArtData['image_mime'])?$albumArtData['image_mime']:'');
+                            $albumDto->setArtLength(isset($albumArtData['datalength'])?$albumArtData['datalength']:'');
                         }
                         $albumDao->insert($albumDto);
                     }

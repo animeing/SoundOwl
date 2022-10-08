@@ -51,6 +51,18 @@ class AlbumListAction extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
+class ArtistListAction extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'artist_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+    }
+}
+
+class ArtistSoundListAction extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'artist_sounds.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+    }
+}
+
 class GetSetting extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'get_setting.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
@@ -239,6 +251,96 @@ const Home = {
     }
 };
 
+const ArtistSoundList = {
+    template:`
+    <div class='audio-list'>
+        <button v-for="item in requestData()" :class='audioItemClass(item)' @click="click(item)">
+            <SoundClipComponent :sound-clip='item'></SoundClipComponent>
+        </button>
+    </div>
+    `,
+    data() {
+        return {
+            soundClips:[],
+            currentPlaySoundClip:audio.currentAudioClip,
+            albumHash:null
+        };
+    },
+    components:{
+        SoundClipComponent
+    },
+    methods:{
+        requestData(){
+            if(this.soundClips.length == 0) {
+                let soundSearch = new ArtistSoundListAction();
+
+                soundSearch.formDataMap.append('ArtistHash', this.$route.query.ArtistHash);
+                let listNo = 0;
+                soundSearch.httpRequestor.addEventListener('success', event=>{
+                    for (const response of event.detail.response) {
+                        let audioClip = new AudioClip();
+                        audioClip.soundHash = response['sound_hash'];
+                        audioClip.title = response['title'];
+                        audioClip.artist = response['artist_name'];
+                        audioClip.album = response['album']['album_title'];
+                        audioClip.albumKey = response['album']['album_hash'];
+                        audioClip.no = listNo;
+                        listNo++;
+                        this.soundClips.push(audioClip);
+                    }
+                });
+                soundSearch.execute();
+                return this.soundClips;
+            } else {
+                return this.soundClips;
+            }
+        },
+        click(soundClip){
+            if(ContextMenu.isVisible){
+                return;
+            }
+            audio.playList.removeAll();
+            for(const audioclip of this.soundClips) {
+                audio.playList.add(audioclip);
+            }
+            if(audio.currentAudioClip == null){
+                audio.play(soundClip);
+                return;
+            }
+            if(soundClip.equals(audio.currentAudioClip)){
+                if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
+                    audio.play();
+                } else {
+                    if(audio.currentPlayState === AudioPlayStateEnum.PLAY || audio.currentPlayState !== AudioPlayStateEnum.STOP ){
+                        audio.pause();
+                    }
+                }
+                return;
+            } else {
+                audio.play(soundClip);
+            }
+        },
+        audioItemClass(soundClip) {
+            if(this.currentPlaySoundClip == null){
+                return 'audio-item';
+            }
+            return 'audio-item'+(this.currentPlaySoundClip.equals(soundClip)?' audio-list-nowplaying':'');
+        }
+    },
+    created(){
+        audio.eventSupport.addEventListener('audioSet',()=>{
+            this.currentPlaySoundClip = audio.currentAudioClip;
+        });
+    },
+    watch: {
+        $route(to, from) {
+            if(to.query.AlbumHash != from.query.AlbumHash){
+                this.soundClips.splice(0);
+            }
+        }
+    }
+}
+
 const AlbumSoundList = {
     template:`
     <div class='audio-list'>
@@ -416,6 +518,28 @@ const Search = {
     }
 };
 
+const ArtistClipComponent = {
+    template:`
+    <div>
+        <div class="alubm">
+            <img loading='lazy' :src="createImageSrc(artistClip.album.album_key)">
+        </div>
+        <div class='layout-box'>
+            <p class="audio-title" :hint='artistClip.artist_name'>{{artistClip.artist_name}}</p>
+        </div>
+    </div>
+    `,
+    props:{
+        'artistClip':{
+        }
+    },
+    methods:{
+        createImageSrc(albumKey) {
+            return `${BASE.HOME}img/album_art.php?media_hash=`+albumKey;
+        }
+    }
+}
+
 const AlbumClipComponent = {
     template:`
     <div>
@@ -525,6 +649,93 @@ const AlbumList = {
         window.removeEventListener('bottom', this.bottomEvent);
         next();
     }
+};
+
+const ArtistList = {
+    template:`
+    <div class='audio-list'>
+        <button v-for="item in artistClips" class='audio-item' @click="click(item)">
+            <ArtistClipComponent :artistClip='item'></ArtistClipComponent>
+        </button>
+    </div>
+    `,
+    props:{
+        artistClips:{
+            type:Array,
+            require: false,
+            default: ()=>{
+                let cache = new BaseFrameWork.Storage.Application.SessionStorageMap;
+                let artistClipsCache = cache.get('artistList');
+                if(artistClipsCache == null) {
+                    return [];
+                }
+                return JSON.parse(artistClipsCache);
+            }
+        }
+    },
+    components:{
+        ArtistClipComponent
+    },
+    data() {
+        return {
+            currentPlaySoundClip:audio.currentAudioClip,
+            start: this.artistClips.length,
+            isMoreLoad: true
+        }
+    },
+    cpmputed: {
+        getArtistClips() {
+            return this.artistClips;
+        }
+    },
+    methods:{
+        async requestData(){
+            return await new Promise((resolve, reject)=>{
+                if(this.isMoreLoad){
+                    this.isMoreLoad = false;
+                }
+                let artistAction = new ArtistListAction;
+                artistAction.httpRequestor.addEventListener('success', event=>{
+                    for (const response of event.detail.response) {
+                        this.isMoreLoad = true;
+                        this.artistClips.push(response);
+                        this.start++;
+                    }
+                    resolve();
+                });
+                artistAction.httpRequestor.addEventListener('error', ()=>{
+                    reject();
+                });
+                artistAction.formDataMap.set('start', this.start);
+                artistAction.formDataMap.set('end', 50);
+                artistAction.execute();
+            }).then(()=>{
+                let artistClipsCache = JSON.stringify(this.artistClips);
+                let cache = new BaseFrameWork.Storage.Application.SessionStorageMap;
+                cache.set('artistList', artistClipsCache);
+            });
+        },
+        click(artistClip) {
+            if(ContextMenu.isVisible){ 
+                return;
+            }
+            router.push({name:'artist', query: {ArtistHash: artistClip.artist_id}});
+        },
+        bottomEvent() {
+            this.requestData();
+        }
+    },
+    mounted() {
+        window.addEventListener('bottom', this.bottomEvent);
+        if(this.artistClips.length == 0) {
+            this.requestData();
+        }
+    },
+    beforeRouteLeave(to, from, next) {
+        window.removeEventListener('bottom', this.bottomEvent);
+        next();
+    }
+
 };
 
 const SettingFormComponent = {
@@ -725,7 +936,6 @@ const SetUp = {
                 //即座にデータを入れようとすると失敗するので1秒後に実行する
                 setTimeout(()=>{
                     let soundRegistAction = new SoundRegistAction
-                    soundRegistAction.sourceAsync = !1;
                     soundRegistAction.httpRequestor.addEventListener('success', event=>{
                         let messageButtonWindow = new MessageButtonWindow();
                         messageButtonWindow.value = 'Sound Registed.';
@@ -761,9 +971,19 @@ const router = new VueRouter({
             component: AlbumList
         },
         {
+            path:'/artist_list',
+            name:'artist_list',
+            component: ArtistList
+        },
+        {
             path:'/album',
             name:'album',
             component: AlbumSoundList
+        },
+        {
+            path:'/artist',
+            name:'artist',
+            component:ArtistSoundList
         },
         {
             path: '/search',

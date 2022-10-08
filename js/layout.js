@@ -1369,12 +1369,11 @@ window.addEventListener('load', ()=>{
         dropdownMenu.classList.add('header-item', 'nonselectable');
         dropdownMenu.displayName = 'Menu';
         menu.appendChild(dropdownMenu);
+        dropdownMenu.addItem('Artist List', ()=>{
+            router.push({name:'artist_list'});
+        });
         dropdownMenu.addItem('Album List', ()=>{
             router.push({name:'album_list'});
-        });
-        dropdownMenu.addItem('File Setting', ()=>{
-            history.pushState(null, null, BASE.HOME+'?page=file_setting');
-            // popPage();
         });
         dropdownMenu.addItem('Audio regist', ()=>{
             router.push({name:'regist'});

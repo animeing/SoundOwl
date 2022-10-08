@@ -71,4 +71,17 @@ class SoundLinkDao extends SqlCreater implements SoundLinkTable {
         );
     }
 
+    public function getArtistSounds($artistHash) {
+        return $this->toDtoList(
+            $this->execute(
+                $this->whereQuery(
+                    $this::ARTIST_ID.$this::EQUAL_PARAM.
+                    $this::ORDER_BY.$this::LENGTH.$this::BRACKET_OPEN.$this::TRACK_NO.$this::BRACKET_END.
+                    $this::COMMA.$this::TRACK_NO
+                ),
+                array($artistHash)
+            )
+        );
+    }
+
 }

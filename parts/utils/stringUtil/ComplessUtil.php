@@ -29,7 +29,7 @@ final class ComplessUtil{
                 $data = substr($data, 1);
                 $option .="-";
             }
-            $data = ComplessUtil::dec2dohex(hexdec($data));
+            $data = ComplessUtil::dec2dohex(@hexdec($data));
             $ret .= $option.$data;
         }
         return $ret;

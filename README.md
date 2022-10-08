@@ -12,6 +12,18 @@ Intranet内でブラウザが入っているPCがあれば視聴できること�
 * Server
   * Apache
 * DB
-  * MySQL
+  * MariaDB
+* その他
+  * PHP8.1
 
+## Install
+* git clone https://github.com/animeing/SoundOwl.git /var/www/html
+* apt install -y php-xml
+* apt install -y composer
+* composer install
+* systemctl restart apache2
+* ブラウザにて http://<ServerのIPAddress>/#/setup にアクセス
+<img src="https://user-images.githubusercontent.com/24301121/178284171-61d9077c-6517-4666-9d65-8187f935de9c.png" width="100%">
 
+* Databaseの情報と音源の存在するフォルダを入力
+* SetUpボタンを押してしばらく待つ(対象の曲数によっては数日を要する場合がありますが、そのSetUp中も利用することは可能です。)
