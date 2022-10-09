@@ -2438,15 +2438,18 @@ class AudioPlayer{
                         this.play(audioClip);
                         this.errorTime = null;
                     };
+                    let playError = () => {
+                        if(this.audioState == AudioStateEnum.ERROR){
+                            let errorWindow = new MessageWindow;
+                            errorWindow.value='Sound load missing.\nPlease check network.';
+                            errorWindow.close(1000);
+                        }
+                    };
                     if(this.isError){
                         if(this.errorTime == null){
                             this.errorTime = setTimeout(()=>{
                                 if(this.audioState != AudioStateEnum.STALLED){
-                                    if(this.audioState == AudioStateEnum.ERROR){
-                                        let errorWindow = new MessageWindow;
-                                        errorWindow.value='Sound load missing.\nPlease check network.';
-                                        errorWindow.close(1000);
-                                    }
+                                    playError();
                                     return;
                                 }
                                 return com();
@@ -2457,11 +2460,7 @@ class AudioPlayer{
                             if(this.errorTime == null){
                                 this.errorTime = setTimeout(()=>{
                                     if(this.audioState != AudioStateEnum.STALLED){
-                                        if(this.audioState == AudioStateEnum.ERROR){
-                                            let errorWindow = new MessageWindow;
-                                            errorWindow.value='Sound load missing.\nPlease check network.';
-                                            errorWindow.close(1000);
-                                        }
+                                        playError();
                                         return;
                                     }
                                     return com();
