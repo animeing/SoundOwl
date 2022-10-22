@@ -10,6 +10,9 @@ $soundcountList = new SoundLinkDao;
 $ret = array();
 
 foreach($soundcountList->getAlbumPlayCountDesc() as $albumPlayCountItem) {
+    if($albumPlayCountItem->getAlbumHash() == null || $albumPlayCountItem->getAlbumHash() == '') {
+        continue;
+    }
     $ret[] = array(
         "title"=>$albumPlayCountItem->getAlbumTitle(),
         "albumKey"=>ComplessUtil::compless($albumPlayCountItem->getAlbumHash())
