@@ -1307,71 +1307,90 @@ class WebObject{
     }
 }
 
-class ProgressComposite extends HTMLElement{
-    _max = 0;
-    _min = 0;
-    _value = 0;
-    constructor(){
+class ProgressComposite extends HTMLElement {
+    constructor() {
         super();
-        this.mousePosition = new MousePosition(this);
+
+        // Properties
+        this._max = 0;
+        this._min = 0;
+        this._value = 0;
         this.readOnly = false;
-        this.isManualMoving = !1;
-        this.progress = document.createElement`div`;
-        this.addEventListener('mousedown',()=>{
-            this.isProgressManualMove = !0;
+        this.isProgressManualMove = false;
+        this.progress = document.createElement('div');
+        this.mousePosition = new MousePosition(this);
+
+        // Event listeners
+        this.attachEventListeners();
+    }
+
+    attachEventListeners() {
+        this.addEventListener('mousedown', () => {
+            this.isProgressManualMove = true;
             this.dispatch('change');
             this.dispatch('changingValue');
         });
-        this.addEventListener('mouseout',(e)=>{
-            if(e.relatedTarget !== this.object && e.relatedTarget !== this.progress && this.isProgressManualMove){
+
+        this.addEventListener('mouseout', (e) => {
+            if (e.relatedTarget !== this.progress && this.isProgressManualMove) {
                 this.dispatch('changingValue');
                 this.dispatch('change');
-                this.isProgressManualMove = !1;
+                this.isProgressManualMove = false;
             }
         });
-        this.addEventListener('mouseup',()=>{
-            if(this.readOnly) return;
-            this.isProgressManualMove = !1;
+
+        this.addEventListener('mouseup', () => {
+            if (this.readOnly) return;
+            this.isProgressManualMove = false;
             this.dispatch('changed');
-        }, !0);
-        this.addEventListener('mousemove',(e)=>{
-            if(this.readOnly) return;
-            if(this.isProgressManualMove){
+        }, true);
+
+        this.addEventListener('mousemove', (e) => {
+            if (this.readOnly) return;
+            if (this.isProgressManualMove) {
                 this.mouseMove(e);
                 this.dispatch('changingValue');
             }
         });
-        this.addEventListener('click',(e)=>{
-            if(this.readOnly) return;
+
+        this.addEventListener('click', (e) => {
+            if (this.readOnly) return;
             this.mouseMove(e);
             this.dispatch('changingValue');
         });
     }
+
     static get observedAttributes() {
-        return ['value', 'max', 'min', ];
+        return ['value', 'max', 'min'];
     }
+
 
     attributeChangedCallback(name, oldValue, newValue) {
-        if('value' == name) {
-            this.value = Number(newValue);
+        switch(name) {
+            case 'value':
+                this.queueValueUpdate(Number(newValue));
+                break;
+            case 'max':
+                this._max = Number(newValue);
+                this.queueValueUpdate(this._pendingValue);
+                break;
+            case 'min':
+                this._min = Number(newValue);
+                this.queueValueUpdate(this._pendingValue);
+                break;
         }
-        if('max' == name) {
-            this.max = Number(newValue);
-        }
-        if('min' == name) {
-            this.min = Number(newValue);
-        }
-      }
-
-    /**
-     * @protected
-     */
-    connectedCallback(){
-        this.appendChild(this.progress);
     }
 
-    mousePositionvalue(event){
-        return (this.getOffset(event) / this.clientWidth * this.range) + this.min;
+    queueValueUpdate(newValue) {
+        this._pendingValue = newValue;
+        clearTimeout(this._valueUpdateTimeout);
+        this._valueUpdateTimeout = setTimeout(() => {
+            this.value = this._pendingValue;
+        });
+    }
+
+    connectedCallback() {
+        this.appendChild(this.progress);
     }
 
     mouseMove(event) {
@@ -1379,89 +1398,71 @@ class ProgressComposite extends HTMLElement{
         this.value = Math.min(Math.max(proposedValue, this.min), this.max);
     }
 
-    getOffset(event){
+    mousePositionvalue(event) {
+        return (this.getOffset(event) / this.clientWidth * this.range) + this.min;
+    }
+
+    getOffset(event) {
         return this.mousePosition.localMousePosition(event).x;
     }
-    /**
-     * 
-     * @param {Number} value 
-     */
-    update(value = this.value){
-        if(this.max === this.min){
-            return
+
+    update(value = this.value) {
+        if (this.max === this.min) {
+            return;
         }
-        if(this.max < value){
-            this.setAttribute('value', this.max);
-        }
-        if(this.min > value){
-            this.setAttribute('value', this.min);
-        }
-        if(this.progress != undefined){
+
+        this._value = Math.min(Math.max(value, this.min), this.max);
+        
+        if (this.progress) {
             this.progress.style.transform = this.scaleStyle;
         }
         this.dispatch('valueSet');
     }
 
-    get scaleStyle(){
+    get scaleStyle() {
         return `scaleX(${this.per})`;
     }
-    
-    /**
-     * @param {number} value
-     */
-    get value(){
+
+    get value() {
         return this._value;
     }
 
-    /**
-     * @param {number} value
-     */
-    set value(value){
-        if(this._value == value || isNaN(value)){
-            return;
-        }
-        this._value = value;
-        this.update(value);
+    set value(value) {
+        const validValue = isNaN(value) ? this._value : value;
+        this.update(validValue);
     }
 
-
-    /**
-     * @param {number} max
-     */
-    get max(){
+    get max() {
         return this._max;
     }
 
-    /**
-     * @param {number} max
-     */
-    set max(max){
-        if(this.min >= max || this.max == max || isNaN(max)) return;
-        this._max = max;
-        this.update();
+    set max(value) {
+        const validMax = isNaN(value) ? this._max : value;
+        if (this._min < validMax) {
+            this._max = validMax;
+            this.update();
+        }
     }
 
-    get min(){
+    get min() {
         return this._min;
     }
 
-    set min(min){
-        if(min >= this.max || this.min == min || isNaN(min)) return;
-        this._min = min;
-        this.update()
-    }
-
-    get per(){
-        if(this.max == 0){
-            return 0;
+    set min(value) {
+        const validMin = isNaN(value) ? this._min : value;
+        if (validMin < this._max) {
+            this._min = validMin;
+            this.update();
         }
-        return ((this.value-this.min) / this.range);
     }
 
-    get range(){
+    get per() {
+        return this.range === 0 ? 0 : ((this.value - this.min) / this.range);
+    }
+
+    get range() {
         return this.max - this.min;
     }
-
 }
 
 customElements.define('sw-h-progress', ProgressComposite);
