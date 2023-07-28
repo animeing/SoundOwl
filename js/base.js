@@ -2326,62 +2326,31 @@ class AudioPlayer{
     set currentAudioClip(currentAudioClip){
         this._currentAudioClip = currentAudioClip;
     }
-
-    stateInit(){
-        let instance = this;
-        this.audioState = AudioStateEnum.PAUSE;
-        this.audio.addEventListener(AudioStateEnum.ABORT,()=>{
-            instance.audioState = AudioStateEnum.ABORT;
-        });
-        this.audio.addEventListener(AudioStateEnum.CAN_PLAY,()=>{
-            instance.audioState = AudioStateEnum.CAN_PLAY;
-        });
-        this.audio.addEventListener(AudioStateEnum.CAN_PLAY_THROUGH,()=>{
-            instance.audioState = AudioStateEnum.CAN_PLAY_THROUGH;
-        });
-        this.audio.addEventListener(AudioStateEnum.EMPTIED,()=>{
-            instance.audioState = AudioStateEnum.EMPTIED;
-        });
-        this.audio.addEventListener(AudioStateEnum.ENDED,()=>{
-            instance.audioState = AudioStateEnum.ENDED;
-        });
-        this.audio.addEventListener(AudioStateEnum.ERROR,()=>{
-            instance.audioState = AudioStateEnum.ERROR;
-        });
-        this.audio.addEventListener(AudioStateEnum.LOADED_DATA,()=>{
-            instance.audioState = AudioStateEnum.LOADED_DATA;
-        });
-        this.audio.addEventListener(AudioStateEnum.LOADED_METADATA,()=>{
-            instance.audioState = AudioStateEnum.LOADED_METADATA;
-        });
-        this.audio.addEventListener(AudioStateEnum.LOAD_START,()=>{
-            instance.audioState = AudioStateEnum.LOAD_START;
-        });
-        this.audio.addEventListener(AudioStateEnum.PAUSE,()=>{
-            instance.audioState = AudioStateEnum.PAUSE;
-        });
-        this.audio.addEventListener(AudioStateEnum.PLAYING,()=>{
-            instance.audioState = AudioStateEnum.PLAYING;
-        });
-        this.audio.addEventListener(AudioStateEnum.PROGRESS,()=>{
-            instance.audioState = AudioStateEnum.PROGRESS;
-        });
-        this.audio.addEventListener(AudioStateEnum.STALLED,()=>{
-            instance.audioState = AudioStateEnum.STALLED;
-        });
-        this.audio.addEventListener(AudioStateEnum.SUSPEND,()=>{
-            instance.audioState = AudioStateEnum.SUSPEND;
-        });
-        this.audio.addEventListener(AudioStateEnum.WAITING,()=>{
-            instance.audioState = AudioStateEnum.WAITING;
-        });
-        this.audio.addEventListener(AudioPlayStateEnum.PLAY,()=>{
-            instance.audioPlayState = AudioPlayStateEnum.PLAY;
-        });
-        this.audio.addEventListener(AudioPlayStateEnum.PAUSE,()=>{
-            instance.audioPlayState = AudioPlayStateEnum.PAUSE;
-        });
+    
+    stateInit() {
+        const audioStates = [
+            AudioStateEnum.ABORT, AudioStateEnum.CAN_PLAY, AudioStateEnum.CAN_PLAY_THROUGH, 
+            AudioStateEnum.EMPTIED, AudioStateEnum.ENDED, AudioStateEnum.ERROR, 
+            AudioStateEnum.LOADED_DATA, AudioStateEnum.LOADED_METADATA, AudioStateEnum.LOAD_START, 
+            AudioStateEnum.PAUSE, AudioStateEnum.PLAYING, AudioStateEnum.PROGRESS, 
+            AudioStateEnum.STALLED, AudioStateEnum.SUSPEND, AudioStateEnum.WAITING
+        ];
+    
+        const audioPlayStates = [AudioPlayStateEnum.PLAY, AudioPlayStateEnum.PAUSE];
+    
+        for (const state of audioStates) {
+            this.audio.addEventListener(state, () => {
+                this.audioState = state;
+            });
+        }
+    
+        for (const playState of audioPlayStates) {
+            this.audio.addEventListener(playState, () => {
+                this.audioPlayState = playState;
+            });
+        }
     }
+    
 
     updateLockAccess = false;
 
