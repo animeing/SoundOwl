@@ -37,6 +37,7 @@ if (isset($_SERVER["HTTP_RANGE"])){
     $contentLength  = $rangeLimit - $rangeOffset + 1;
     header("Content-Length: {$contentLength}");
     header("Keep-Alive: timeout=10, max{$contentLength}");
+    set_time_limit(0);
     $contentPointer = fopen(path, "rb");
     fseek($contentPointer, $rangeOffset);
     $load = 8192;
@@ -46,7 +47,6 @@ if (isset($_SERVER["HTTP_RANGE"])){
     $limitLength = $contentLength;
     @ob_end_clean();
     while($counter < $loop && !connection_aborted()){
-        set_time_limit(0);
         if($limitLength-$load >= 0){
             $load = $limitLength;
         }
