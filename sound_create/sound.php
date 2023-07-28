@@ -61,7 +61,7 @@ if (isset($_SERVER["HTTP_RANGE"])){
     header("Keep-Alive: timeout=15");
     header('Content-Length: ' . filesize(path) );
     header("Content-Range: bytes 0-".(filesize(path)-1)."/".filesize(path) );
-    header("HTTP/1.1 200 OK");
+    http_response_code(200);
 
     readfile($file);
 }
