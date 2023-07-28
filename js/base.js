@@ -1374,8 +1374,9 @@ class ProgressComposite extends HTMLElement{
         return (this.getOffset(event) / this.clientWidth * this.range) + this.min;
     }
 
-    mouseMove(event){
-        this.setAttribute('value', (this.getOffset(event) / this.clientWidth * this.range) + this.min);
+    mouseMove(event) {
+        const proposedValue = this.mousePositionvalue(event);
+        this.value = Math.min(Math.max(proposedValue, this.min), this.max);
     }
 
     getOffset(event){
