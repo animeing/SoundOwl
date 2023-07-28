@@ -1,8 +1,4 @@
-<Files ~ "^\.(htaccess|htpasswd)$">
-order allow,deny
-deny from all
-</Files>
-<Files ~ "\.(ini)$">
+<Files ~ "^\.(htaccess|htpasswd|ini)$">
 order allow,deny
 deny from all
 </Files>
