@@ -1178,7 +1178,6 @@ const AudioCanvas = {
         audio.eventSupport.addEventListener('audio_info_loaded', ()=>{
             this.lyrics = '';
             if( audio.data.lyrics == undefined) {
-                ContextMenu.visible(e);
                 return;
             }
             this.lyrics = audio.data.lyrics;
