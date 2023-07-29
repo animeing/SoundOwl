@@ -148,19 +148,24 @@ const Rand = (min, max)=> {
 };
 
 const Base64 = {
-    encode: (str)=> {
+    encode: (str) => {
         if(str == null){
-            return ;
+            return;
         }
-        return btoa(unescape(encodeURIComponent(str)));
+        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+            return String.fromCharCode(Number('0x' + p1));
+        }));
     },
-    decode: (str)=> {
+    decode: (str) => {
         if(str == null){
-            return ;
+            return;
         }
-        return decodeURIComponent(escape(atob(str)));
+        return decodeURIComponent(Array.prototype.map.call(atob(str), (c) => {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
     }
 };
+
 
 class MouseEventEnum {
     /**
