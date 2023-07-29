@@ -2502,64 +2502,52 @@ class AudioPlayer{
     /**
      * @private
      */
-    get autoNextClip(){
-        if(this.currentAudioClip == null) {
+    get autoNextClip() {
+        if (this.currentAudioClip == null) {
             return this.playList.get(0);
         }
-        switch(this.loopMode){
+        switch (this.loopMode) {
             case AudioLoopModeEnum.AUDIO_LOOP:
-            {
                 return this.currentAudioClip;
-            }
             case AudioLoopModeEnum.NON_LOOP:
             case AudioLoopModeEnum.TRACK_LOOP:
-            {
                 return this.nextClip();
-            }
         }
         return undefined;
     }
-    nextClip(){
-        let clipIndex = -1;
-        for (let position = 0; position < this.playList.length; position++) {
-            const element = this.playList.get(position);
-            if(element != null && this.currentAudioClip != null && element.soundHash == this.currentAudioClip.soundHash){
-                clipIndex = position;
-                break;
-            }
-            
-        }
-        if(this.currentAudioClip == null){
+    
+    nextClip() {
+        if (this.currentAudioClip == null) {
             return this.playList.get(0);
         }
-        if(clipIndex === -1){
+    
+        const clipIndex = this.playList.gets().findIndex(clip => clip != null && this.currentAudioClip != null && clip.soundHash == this.currentAudioClip.soundHash);
+    
+        if (clipIndex === -1) {
             return this.currentAudioClip;
         }
-        let nextClip = null;
-        for(let position = clipIndex+1; position < this.playList.length; position++){
-            nextClip = this.playList.get(position);
-            if(nextClip != null){
-                break;
-            }
-        };
-        if(nextClip == undefined){
-            switch (this.loopMode) {
-                case AudioLoopModeEnum.AUDIO_LOOP:
-                {
-                    return this.currentAudioClip;
-                }
-                case AudioLoopModeEnum.NON_LOOP:
-                {
-                    return undefined;
-                }
-                case AudioLoopModeEnum.TRACK_LOOP:
-                {
-                    return this.playList.get(0);
-                }
-            }
+    
+        const nextClip = this.playList.gets().slice(clipIndex + 1).find(clip => clip != null);
+        
+        if (nextClip) {
+            return nextClip;
+        } else {
+            return this.handleNoNextClip();
         }
-        return nextClip;
     }
+    
+    handleNoNextClip() {
+        switch (this.loopMode) {
+            case AudioLoopModeEnum.AUDIO_LOOP:
+                return this.currentAudioClip;
+            case AudioLoopModeEnum.NON_LOOP:
+                return undefined;
+            case AudioLoopModeEnum.TRACK_LOOP:
+                return this.playList.get(0);
+        }
+    }
+    
+
     play(audioClip = undefined){
         this.setStopUpdate();
         try{
