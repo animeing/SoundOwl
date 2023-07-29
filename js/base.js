@@ -504,136 +504,163 @@ class DragMoveEvent extends Event{
 /**
  * @template T
  */
-BaseFrameWork.List=class {
+BaseFrameWork.List = class {
     /**
-     * @param {Array} array
+     * コンストラクタ: Listクラスのインスタンスを初期化します。
+     * @param {Array} array - 初期化に使用する配列（オプショナル）
      */
-    constructor(array = []){
-        this.eventSupport = new EventTarget;
-        this.array = array;
-    }
-    
-    /**
-     * @returns {T[]}
-     */
-    gets(){
-        return this.array;
+    constructor(array = []) {
+        this.eventSupport = new EventTarget();
+        this.array = array.copy();
     }
 
-    get length(){
-        return this.gets().length;
+    /**
+     * 現在の配列を返します。
+     * @returns {Array} 現在の配列のコピー
+     */
+    gets() {
+        return this.array.copy();
     }
 
-    *[Symbol.iterator](){
-        for(const value of this.gets()){
+    /**
+     * 現在の配列の長さを返します。
+     * @returns {number} 配列の長さ
+     */
+    get length() {
+        return this.array.length;
+    }
+
+    /**
+     * 現在の配列のイテレータを返します。
+     */
+    *[Symbol.iterator]() {
+        for (const value of this.array) {
             yield value;
         }
     }
 
-    copy(){
-        return new BaseFrameWork.List(this.gets().copy());
-    }
-    
     /**
-     * @param {List|Array|Iterator} list
+     * 現在の配列のコピーを持つ新しいListインスタンスを返します。
+     * @returns {List} 新しいListインスタンス
      */
-    addAll(list){
+    copy() {
+        return new List(this.gets());
+    }
+
+    /**
+     * 複数の要素を現在の配列に追加します。
+     * @param {List|Array|Iterator} list - 追加する要素のリスト
+     */
+    addAll(list) {
         for (const iterator of list) {
             this.add(iterator);
         }
     }
 
     /**
-     * adding data
-     * @param {T} value 
-     * @param {Number} index start = 0
+     * 配列に新しい要素を追加します。
+     * @param {any} value - 追加する要素
+     * @param {Number} index - 追加する位置（オプショナル、デフォルトは配列の末尾）
      */
-    add(value, index = this.length){
-        if(this.length === index){
-            this.gets()[index] = value;
-        } else {
-            this.gets().splice(index, 0, value);
-        }
+    add(value, index = this.length) {
+        this.array.splice(index, 0, value);
         this.eventSupport.dispatch('change');
     }
+
     /**
-     * remove data
-     * @param {T} value 
+     * 配列から指定の要素を削除します。
+     * @param {any} value - 削除する要素
      */
-    remove(value){
-        for(let data in this.gets()){
-            if(value === this.gets()[data]){
-                delete this.gets()[data];
-                this.eventSupport.dispatch('change');
-                return;
-            }
+    remove(value) {
+        const index = this.array.indexOf(value);
+        if (index !== -1) {
+            this.array.splice(index, 1);
+            this.eventSupport.dispatch('change');
         }
     }
+
     /**
-     * @param {Number} index
-     * @returns {T}
+     * 配列の指定位置の要素を取得します。
+     * @param {Number} index - 取得する要素の位置
+     * @returns {any} 指定位置の要素
      */
-    get(index){
-        return this.gets()[index];
+    get(index) {
+        return this.array[index];
     }
+
     /**
-     * remove all data
+     * 配列のすべての要素を削除します。
      */
-    removeAll(){
+    removeAll() {
         this.array = [];
+        this.eventSupport.dispatch('change');
     }
 
     /**
-     * 
-     * @param {T} value 
-     * @returns {Number}
+     * 指定した要素の位置（インデックス）を返します。
+     * @param {any} value - 検索する要素
+     * @returns {Number} 指定した要素の位置（見つからない場合は-1）
      */
-    equalFindIndex(value){
-        return this.gets().findIndex(item => item === value);
+    equalFindIndex(value) {
+        return this.array.findIndex(item => item === value);
     }
 
-    deepEquals(value){
-        try{
-            if(this.length !== value.length){
+    /**
+     * 他のリストと内容が完全に一致するかどうかを判断します。
+     * @param {List} value - 比較対象のリスト
+     * @returns {boolean} 2つのリストの内容が完全に一致する場合はtrue、それ以外はfalse
+     */
+    deepEquals(value) {
+        if (this.length !== value.length) {
+            return false;
+        }
+
+        for (let index = 0; index < this.array.length; index++) {
+            if (this.array[index] !== value.get(index)) {
                 return false;
             }
-            const selfArray = this.gets();
-            const otherArray = value.gets();
-            for (let index = 0; index < selfArray.length; index++) {
-                if(selfArray[index] !== otherArray[index]){
-                    return false;
-                }
-            }
-            return true;
-        }catch(e){
-            return false;    
         }
-    }
-    
-    count(){
-        return Object.keys(this.gets()).length;
-    }
-    /**
-     * Overwrites the current value.
-     * @param {T} value 
-     * @param {Number} index 
-     */
-    replace(value, index){
-        this.gets().splice(index, 1, value);
+
+        return true;
     }
 
     /**
-     * @param {T} target 
-     * @param {T} change 
+     * 配列の要素数を返します。
+     * @returns {number} 配列の要素数
      */
-    swap(target, change){
-        let targetIndex = this.equalFindIndex(target);
-        let changeIndex = this.equalFindIndex(change);
-        this.replace(target, changeIndex);
-        this.replace(change, targetIndex);
-        this.eventSupport.dispatch('swap');
+    count() {
+        return this.array.length;
+    }
+
+    /**
+     * 配列の指定位置の要素を新しい要素で上書きします。
+     * @param {any} value - 新しい要素
+     * @param {Number} index - 上書きする位置
+     */
+    replace(value, index) {
+        if (index >= 0 && index < this.array.length) {
+            this.array[index] = value;
+            this.eventSupport.dispatch('change');
+        }
+    }
+
+    /**
+     * 2つの要素の位置を交換（スワップ）します。
+     * @param {any} target - 位置を交換する1つ目の要素
+     * @param {any} change - 位置を交換する2つ目の要素
+     */
+    swap(target, change) {
+        const targetIndex = this.equalFindIndex(target);
+        const changeIndex = this.equalFindIndex(change);
+
+        if (targetIndex !== -1 && changeIndex !== -1) {
+            this.array[targetIndex] = change;
+            this.array[changeIndex] = target;
+            this.eventSupport.dispatch('swap');
+        }
     }
 };
+
 
 /**
  * This List is not allowed to be null or undefined.
