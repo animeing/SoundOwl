@@ -268,10 +268,10 @@ class DragMoveEvent extends Event{
     let currentHintObject = null;
     window.addEventListener(MouseEventEnum.OVER, (e)=>{
         const dom = document.elementFromPoint(e.clientX, e.clientY);
-        if(dom == null || (!dom.hasAttribute`hint` && !dom.hasAttribute`title`)){
+        if(dom == null || !dom.hasAttribute`hint`){
             return;
         }
-        let hintText = dom.getAttribute`hint` || dom.getAttribute`title`;
+        let hintText = dom.getAttribute`hint`;
         hint.classList.add`hint-box`;
         hint.innerText = hintText;
         if(!hint.hasParent()){
