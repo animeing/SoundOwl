@@ -541,15 +541,15 @@ BaseFrameWork.List = class {
 
     /**
      * 現在の配列のコピーを持つ新しいListインスタンスを返します。
-     * @returns {List} 新しいListインスタンス
+     * @returns {BaseFrameWork.List} 新しいListインスタンス
      */
     copy() {
-        return new List(this.gets());
+        return new BaseFrameWork.List(this.gets());
     }
 
     /**
      * 複数の要素を現在の配列に追加します。
-     * @param {List|Array|Iterator} list - 追加する要素のリスト
+     * @param {BaseFrameWork.List|Array|Iterator} list - 追加する要素のリスト
      */
     addAll(list) {
         for (const iterator of list) {
