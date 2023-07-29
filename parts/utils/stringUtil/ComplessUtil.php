@@ -3,81 +3,66 @@
  * あんまり圧縮されない。。。。
  */
 final class ComplessUtil{
-    private function __construct(){
-    }
+    private function __construct() {}
 
     const TABLE = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@,.<>[]:;!$()";
-    
-    /**
-     * @param string $str
-     * @return string
-     */
+
     public static function compless($str){
-        if($str == null) {
+        if(!$str) {
             $str = '';
         }
-        $bb = str_split($str, 9);
-        $ret = '';
-        foreach ($bb as $key => $value) {
-            $data = "";
-            if (mb_strlen($ret) > 0 && $bb[$key] != "") {
-                $ret.='_';
-            }
-            $data = $value;
-            $option = "";
-            while (substr($data, 0 ,1) === '0') {
-                $data = substr($data, 1);
-                $option .="-";
-            }
-            $data = ComplessUtil::dec2dohex(@hexdec($data));
-            $ret .= $option.$data;
+        $chunks = str_split($str, 9);
+        $result = [];
+
+        foreach ($chunks as $chunk) {
+            $data = ltrim($chunk, '0');
+            $prefix = str_repeat("-", strlen($chunk) - strlen($data));
+            $encoded = self::dec2dohex(hexdec($data));
+            $result[] = $prefix . $encoded;
         }
-        return $ret;
+
+        return implode('_', $result);
     }
 
-    /**
-     * @param string $str
-     * @return string
-     */
     public static function decompless($str){
-        $bb = explode ("_", $str);
-        $ret = "";
-        foreach ($bb as $key => $value) {
-            $data = $value;
-            $option = "";
-            while (substr($data, 0, 1) === '-') {
-                $data = substr($data, 1);
-                $option .="0";
-            }
-            $ret .= $option.dechex(ComplessUtil::dohex2dec($data));
+        $chunks = explode("_", $str);
+        $result = [];
+
+        foreach ($chunks as $chunk) {
+            $data = ltrim($chunk, '-');
+            $prefix = str_repeat("0", strlen($chunk) - strlen($data));
+            $decoded = dechex(self::dohex2dec($data));
+            $result[] = $prefix . $decoded;
         }
-        return $ret;
+
+        return implode('', $result);
     }
-    
+
     protected static function dec2dohex($dec) {
-        $HASHTABLE = ComplessUtil::TABLE;
         $result = '';
-        $size = mb_strlen($HASHTABLE);
+        $tableLength = strlen(self::TABLE);
+
         while ($dec > 0) {
-            $mod = $dec % $size;
-            $result = $HASHTABLE[$mod] . $result;
-            $dec = ($dec - $mod) / $size;
+            $mod = $dec % $tableLength;
+            $result = self::TABLE[$mod] . $result;
+            $dec = ($dec - $mod) / $tableLength;
         }
+        
         return $result;
     }
-    
+
     protected static function dohex2dec($dohex) {
-        $HASHTABLE = ComplessUtil::TABLE;
-        $len = mb_strlen($dohex);
-        $size = mb_strlen($HASHTABLE);
+        $len = strlen($dohex);
+        $tableLength = strlen(self::TABLE);
         $result = 0;
-        for ($i = 0; $i < $len; ++$i) {
-            for ($j = 0; $j < $size; ++$j) {
-                if ($HASHTABLE[$j] == $dohex[$i]) {
-                    @$result += ($j * pow($size, $len - $i - 1));
-                }
+
+        for ($i = 0; $i < $len; $i++) {
+            $index = strpos(self::TABLE, $dohex[$i]);
+            if ($index !== false) {
+                $result += $index * pow($tableLength, $len - $i - 1);
             }
         }
+        
         return $result;
     }
 }
