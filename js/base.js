@@ -18,18 +18,18 @@ BaseFrameWork.Draw.Figure.Module={};
 BaseFrameWork.Draw.Module={};
 
 BaseFrameWork.defineCustomElement=(tagName, constructor, options={})=>{
-    if(BaseFrameWork.registoryElement == undefined){
-        BaseFrameWork.registoryElement = new Map;
+    if(BaseFrameWork.registryElement == undefined){
+        BaseFrameWork.registryElement = new Map;
     }
     customElements.define(tagName, constructor, options);
-    BaseFrameWork.registoryElement.set(tagName, {name:tagName, class:constructor, tagOptions:options});
+    BaseFrameWork.registryElement.set(tagName, {name:tagName, class:constructor, tagOptions:options});
 }
 
 BaseFrameWork.createCustomElement=(tagName)=>{
-    if(BaseFrameWork.registoryElement == undefined) {
+    if(BaseFrameWork.registryElement == undefined) {
         return document.createElement(tagName);
     }
-    let tagSettings = BaseFrameWork.registoryElement.get(tagName);
+    let tagSettings = BaseFrameWork.registryElement.get(tagName);
     if(tagSettings == undefined) {
         return document.createElement(tagName);
     }
