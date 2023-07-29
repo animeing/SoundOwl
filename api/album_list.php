@@ -7,7 +7,7 @@ header("Content-Type: text/json");
 $albumList = [];
 $albumDao = new AlbumDao;
 $artistDao = new ArtistDao;
-foreach($albumDao->rageSelect(BrowserUtil::getPostParam('start'), BrowserUtil::getPostParam('end')) as $albumDto) {
+foreach($albumDao->rangeSelect(BrowserUtil::getPostParam('start'), BrowserUtil::getPostParam('end')) as $albumDto) {
     $artistDto = $artistDao->find($albumDto->getArtistId())[0];
     $albumList[] = array(
         AlbumTable::ALBUM_KEY=>ComplessUtil::compless($albumDto->getAlbumKey()),

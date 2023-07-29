@@ -29,7 +29,7 @@ class AlbumDao extends SqlCreater implements AlbumTable{
         );
     }
 
-    function rageSelect($start, $end) {
+    function rangeSelect($start, $end) {
         $paramArray = array();
         $paramArray[] = $end;
         $paramArray[] = $start;
