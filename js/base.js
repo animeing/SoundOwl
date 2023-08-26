@@ -1339,6 +1339,113 @@ class WebObject{
     }
 }
 
+class SwResize extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this.isResizing = false;
+    this.startX = 0;
+    this.startY = 0;
+    this.startWidth = 0;
+    this.startHeight = 0;
+  }
+
+  connectedCallback() {
+    this.updateHandle();
+  }
+
+  static get observedAttributes() {
+    return ['resize-direction'];
+  }
+
+  attributeChangedCallback(attrName, oldVal, newVal) {
+    if (attrName === 'resize-direction') {
+      this.updateHandle();
+    }
+  }
+
+  updateHandle() {
+    const direction = this.getAttribute('resize-direction') || 'bottom-right';
+    const directions = direction.split(' ');
+
+    const styles = `
+      :host {
+        display: block;
+        position: relative;
+      }
+
+      .handle {
+        width: 10px;
+        height: 10px;
+        background-color: #000;
+        position: absolute;
+      }
+
+      ${directions.includes('bottom-right') ? '.handle.bottom-right { bottom: 0; right: 0; cursor: nwse-resize; }' : ''}
+      ${directions.includes('bottom-left') ? '.handle.bottom-left { bottom: 0; left: 0; cursor: nesw-resize; }' : ''}
+      ${directions.includes('top-right') ? '.handle.top-right { top: 0; right: 0; cursor: nesw-resize; }' : ''}
+      ${directions.includes('top-left') ? '.handle.top-left { top: 0; left: 0; cursor: nwse-resize; }' : ''}
+    `;
+
+    const template = `
+      <style>${styles}</style>
+      <slot></slot>
+      ${directions.map(dir => `<div class="handle ${dir}"></div>`).join('')}
+    `;
+
+    this.shadowRoot.innerHTML = template;
+
+    directions.forEach(dir => {
+      const handle = this.shadowRoot.querySelector(`.handle.${dir}`);
+      handle.addEventListener('mousedown', e => this.startResize(e, dir));
+      document.addEventListener('mousemove', e => this.resize(e, dir));
+      document.addEventListener('mouseup', e => this.stopResize(e));
+    });
+  }
+
+  startResize(e, direction) {
+    this.isResizing = true;
+    this.startX = e.pageX;
+    this.startY = e.pageY;
+    this.startWidth = parseInt(document.defaultView.getComputedStyle(this).width, 10);
+    this.startHeight = parseInt(document.defaultView.getComputedStyle(this).height, 10);
+  }
+
+  resize(e, direction) {
+    if (!this.isResizing) return;
+
+    let dx = e.pageX - this.startX;
+    let dy = e.pageY - this.startY;
+
+    switch (direction) {
+      case 'bottom-right':
+        this.style.width = `${this.startWidth + dx}px`;
+        this.style.height = `${this.startHeight + dy}px`;
+        break;
+      case 'bottom-left':
+        this.style.width = `${this.startWidth - dx}px`;
+        this.style.height = `${this.startHeight + dy}px`;
+        break;
+      case 'top-right':
+        this.style.width = `${this.startWidth + dx}px`;
+        this.style.height = `${this.startHeight - dy}px`;
+        break;
+      case 'top-left':
+        this.style.width = `${this.startWidth - dx}px`;
+        this.style.height = `${this.startHeight - dy}px`;
+        break;
+    }
+
+    const event = new Event('resize');
+    this.dispatchEvent(event);
+  }
+
+  stopResize(e) {
+    this.isResizing = false;
+  }
+}
+customElements.define('sw-resize', SwResize);
+
 class ProgressComposite extends HTMLElement {
     constructor() {
         super();
