@@ -621,29 +621,31 @@ sw-audio-slide-list img,
   bottom: 3em;
   right: 0;
   width: 50%;
-  overflow-y: scroll;
+  overflow: hidden;
+  user-select: none;
 }
 
+.audio-list-frame{
+  height: calc(100% - 29px);
+}
 
-.audio-controller-playlist::-webkit-scrollbar,
+.audio-list-frame::-webkit-scrollbar,
 .lyrics-view::-webkit-scrollbar {
   width: 4px;
 }
 
-.audio-controller-playlist::-webkit-scrollbar-track
+.audio-list-frame::-webkit-scrollbar-track
 .lyrics-view::-webkit-scrollbar-track{
   border-radius: 2px;
 }
 
-.audio-controller-playlist:hover::-webkit-scrollbar-thumb,
+.audio-list-frame:hover::-webkit-scrollbar-thumb,
 .lyrics-view:hover::-webkit-scrollbar-thumb{
   background: gray;
   border-radius: 2px;
 }
 
-.audio-controller-playlist::before{
-  content: 'Play list';
-  display: block;
+.play-list-title {
   text-align: center;
   border-bottom: 1px solid var(--basecolor);
   font-size: 1.2em;
