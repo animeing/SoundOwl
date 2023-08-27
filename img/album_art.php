@@ -3,7 +3,6 @@
 error_reporting(E_ALL & ~E_WARNING);
 
 require(dirname(__DIR__).'/parts/loader.php');
-header('X-Link', dirname(__DIR__).'/img/blank-image.png');
 if(!isset($_GET["media_hash"])) {
     $mime = mime_content_type(dirname(__DIR__).'/img/blank-image.png');
     header("Accept: {$mime}");

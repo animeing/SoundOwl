@@ -917,13 +917,17 @@ const SoundClipComponent = {
     }
 };
 
+
 const CurrentAudioList = {
     template:`
-    <div :class="audioFrameClass()">
-        <button v-for="item in soundClips" :class='audioItemClass(item)' @click="click(item)">
-            <SoundClipComponent :sound-clip='item'></SoundClipComponent>
-        </button>
-    </div>
+    <sw-resize :class="audioFrameClass()" resize-direction='top-left'>
+        <p class='play-list-title'>Play List</p>
+        <div :class="audioListClass()" id='current-audio-list' style='overflow-y: scroll;' >
+            <button v-for="item in soundClips" drag-item :class='audioItemClass(item)' @click="click(item)" class="draggable-item">
+                <SoundClipComponent :sound-clip='item'></SoundClipComponent>
+            </button>
+	</div>
+    </sw-resize>
     `,
     props:{
         'isView':{
@@ -968,8 +972,11 @@ const CurrentAudioList = {
             return 'audio-item'+(this.currentPlaySoundClip.equals(soundClip)?' audio-list-nowplaying':'');
         },
         audioFrameClass() {
-            return 'layout-base audio-list audio-controller-playlist'+(this.isView?'':' height-hide');
-        }
+            return 'audio-controller-playlist'+(this.isView?'':' height-hide');
+        },
+	    audioListClass() {
+            return 'layout-base audio-list audio-list-frame'+(this.isView?'':' height-hide');
+	    }
     },
     created(){
         audio.eventSupport.addEventListener('audioSet',()=>{
@@ -982,12 +989,13 @@ const CurrentAudioList = {
         let observer = new MutationObserver(()=>{
             let audioElement = document.querySelector('.audio-controller-playlist .audio-list-nowplaying');
             if(audioElement){
-                this.$el.scroll({top: audioElement.offsetTop-42});
+                document.getElementById('current-audio-list').scroll({top: audioElement.offsetTop-42});
             }
         });
         observer.observe(this.$el, {childList:true,attributes:true,subtree: true});
     }
 }
+
 
 const AudioIconControl = {
     template:`
@@ -1178,7 +1186,6 @@ const AudioCanvas = {
         audio.eventSupport.addEventListener('audio_info_loaded', ()=>{
             this.lyrics = '';
             if( audio.data.lyrics == undefined) {
-                ContextMenu.visible(e);
                 return;
             }
             this.lyrics = audio.data.lyrics;

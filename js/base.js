@@ -18,18 +18,18 @@ BaseFrameWork.Draw.Figure.Module={};
 BaseFrameWork.Draw.Module={};
 
 BaseFrameWork.defineCustomElement=(tagName, constructor, options={})=>{
-    if(BaseFrameWork.registoryElement == undefined){
-        BaseFrameWork.registoryElement = new Map;
+    if(BaseFrameWork.registryElement == undefined){
+        BaseFrameWork.registryElement = new Map;
     }
     customElements.define(tagName, constructor, options);
-    BaseFrameWork.registoryElement.set(tagName, {name:tagName, class:constructor, tagOptions:options});
+    BaseFrameWork.registryElement.set(tagName, {name:tagName, class:constructor, tagOptions:options});
 }
 
 BaseFrameWork.createCustomElement=(tagName)=>{
-    if(BaseFrameWork.registoryElement == undefined) {
+    if(BaseFrameWork.registryElement == undefined) {
         return document.createElement(tagName);
     }
-    let tagSettings = BaseFrameWork.registoryElement.get(tagName);
+    let tagSettings = BaseFrameWork.registryElement.get(tagName);
     if(tagSettings == undefined) {
         return document.createElement(tagName);
     }
@@ -148,19 +148,24 @@ const Rand = (min, max)=> {
 };
 
 const Base64 = {
-    encode: (str)=> {
+    encode: (str) => {
         if(str == null){
-            return ;
+            return;
         }
-        return btoa(unescape(encodeURIComponent(str)));
+        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+            return String.fromCharCode(Number('0x' + p1));
+        }));
     },
-    decode: (str)=> {
+    decode: (str) => {
         if(str == null){
-            return ;
+            return;
         }
-        return decodeURIComponent(escape(atob(str)));
+        return decodeURIComponent(Array.prototype.map.call(atob(str), (c) => {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
     }
 };
+
 
 class MouseEventEnum {
     /**
@@ -268,10 +273,10 @@ class DragMoveEvent extends Event{
     let currentHintObject = null;
     window.addEventListener(MouseEventEnum.OVER, (e)=>{
         const dom = document.elementFromPoint(e.clientX, e.clientY);
-        if(dom == null || (!dom.hasAttribute`hint` && !dom.hasAttribute`title`)){
+        if(dom == null || !dom.hasAttribute`hint`){
             return;
         }
-        let hintText = dom.getAttribute`hint` || dom.getAttribute`title`;
+        let hintText = dom.getAttribute`hint`;
         hint.classList.add`hint-box`;
         hint.innerText = hintText;
         if(!hint.hasParent()){
@@ -504,136 +509,163 @@ class DragMoveEvent extends Event{
 /**
  * @template T
  */
-BaseFrameWork.List=class {
+BaseFrameWork.List = class {
     /**
-     * @param {Array} array
+     * コンストラクタ: Listクラスのインスタンスを初期化します。
+     * @param {Array} array - 初期化に使用する配列（オプショナル）
      */
-    constructor(array = []){
-        this.eventSupport = new EventTarget;
-        this.array = array;
-    }
-    
-    /**
-     * @returns {T[]}
-     */
-    gets(){
-        return this.array;
+    constructor(array = []) {
+        this.eventSupport = new EventTarget();
+        this.array = array.copy();
     }
 
-    get length(){
-        return this.gets().length;
+    /**
+     * 現在の配列を返します。
+     * @returns {Array} 現在の配列のコピー
+     */
+    gets() {
+        return this.array.copy();
     }
 
-    *[Symbol.iterator](){
-        for(const value of this.gets()){
+    /**
+     * 現在の配列の長さを返します。
+     * @returns {number} 配列の長さ
+     */
+    get length() {
+        return this.array.length;
+    }
+
+    /**
+     * 現在の配列のイテレータを返します。
+     */
+    *[Symbol.iterator]() {
+        for (const value of this.array) {
             yield value;
         }
     }
 
-    copy(){
-        return new BaseFrameWork.List(this.gets().copy());
-    }
-    
     /**
-     * @param {List|Array|Iterator} list
+     * 現在の配列のコピーを持つ新しいListインスタンスを返します。
+     * @returns {BaseFrameWork.List} 新しいListインスタンス
      */
-    addAll(list){
+    copy() {
+        return new BaseFrameWork.List(this.gets());
+    }
+
+    /**
+     * 複数の要素を現在の配列に追加します。
+     * @param {BaseFrameWork.List|Array|Iterator} list - 追加する要素のリスト
+     */
+    addAll(list) {
         for (const iterator of list) {
             this.add(iterator);
         }
     }
 
     /**
-     * adding data
-     * @param {T} value 
-     * @param {Number} index start = 0
+     * 配列に新しい要素を追加します。
+     * @param {any} value - 追加する要素
+     * @param {Number} index - 追加する位置（オプショナル、デフォルトは配列の末尾）
      */
-    add(value, index = this.length){
-        if(this.length === index){
-            this.gets()[index] = value;
-        } else {
-            this.gets().splice(index, 0, value);
-        }
+    add(value, index = this.length) {
+        this.array.splice(index, 0, value);
         this.eventSupport.dispatch('change');
     }
+
     /**
-     * remove data
-     * @param {T} value 
+     * 配列から指定の要素を削除します。
+     * @param {any} value - 削除する要素
      */
-    remove(value){
-        for(let data in this.gets()){
-            if(value === this.gets()[data]){
-                delete this.gets()[data];
-                this.eventSupport.dispatch('change');
-                return;
-            }
+    remove(value) {
+        const index = this.array.indexOf(value);
+        if (index !== -1) {
+            this.array.splice(index, 1);
+            this.eventSupport.dispatch('change');
         }
     }
+
     /**
-     * @param {Number} index
-     * @returns {T}
+     * 配列の指定位置の要素を取得します。
+     * @param {Number} index - 取得する要素の位置
+     * @returns {any} 指定位置の要素
      */
-    get(index){
-        return this.gets()[index];
+    get(index) {
+        return this.array[index];
     }
+
     /**
-     * remove all data
+     * 配列のすべての要素を削除します。
      */
-    removeAll(){
+    removeAll() {
         this.array = [];
+        this.eventSupport.dispatch('change');
     }
 
     /**
-     * 
-     * @param {T} value 
-     * @returns {Number}
+     * 指定した要素の位置（インデックス）を返します。
+     * @param {any} value - 検索する要素
+     * @returns {Number} 指定した要素の位置（見つからない場合は-1）
      */
-    equalFindIndex(value){
-        return this.gets().findIndex(item => item === value);
+    equalFindIndex(value) {
+        return this.array.findIndex(item => item === value);
     }
 
-    deepEquals(value){
-        try{
-            if(this.length !== value.length){
+    /**
+     * 他のリストと内容が完全に一致するかどうかを判断します。
+     * @param {List} value - 比較対象のリスト
+     * @returns {boolean} 2つのリストの内容が完全に一致する場合はtrue、それ以外はfalse
+     */
+    deepEquals(value) {
+        if (this.length !== value.length) {
+            return false;
+        }
+
+        for (let index = 0; index < this.array.length; index++) {
+            if (this.array[index] !== value.get(index)) {
                 return false;
             }
-            const selfArray = this.gets();
-            const otherArray = value.gets();
-            for (let index = 0; index < selfArray.length; index++) {
-                if(selfArray[index] !== otherArray[index]){
-                    return false;
-                }
-            }
-            return true;
-        }catch(e){
-            return false;    
         }
-    }
-    
-    count(){
-        return Object.keys(this.gets()).length;
-    }
-    /**
-     * Overwrites the current value.
-     * @param {T} value 
-     * @param {Number} index 
-     */
-    replace(value, index){
-        this.gets().splice(index, 1, value);
+
+        return true;
     }
 
     /**
-     * @param {T} target 
-     * @param {T} change 
+     * 配列の要素数を返します。
+     * @returns {number} 配列の要素数
      */
-    swap(target, change){
-        let targetIndex = this.equalFindIndex(target);
-        let changeIndex = this.equalFindIndex(change);
-        this.replace(target, changeIndex);
-        this.replace(change, targetIndex);
-        this.eventSupport.dispatch('swap');
+    count() {
+        return this.array.length;
+    }
+
+    /**
+     * 配列の指定位置の要素を新しい要素で上書きします。
+     * @param {any} value - 新しい要素
+     * @param {Number} index - 上書きする位置
+     */
+    replace(value, index) {
+        if (index >= 0 && index < this.array.length) {
+            this.array[index] = value;
+            this.eventSupport.dispatch('change');
+        }
+    }
+
+    /**
+     * 2つの要素の位置を交換（スワップ）します。
+     * @param {any} target - 位置を交換する1つ目の要素
+     * @param {any} change - 位置を交換する2つ目の要素
+     */
+    swap(target, change) {
+        const targetIndex = this.equalFindIndex(target);
+        const changeIndex = this.equalFindIndex(change);
+
+        if (targetIndex !== -1 && changeIndex !== -1) {
+            this.array[targetIndex] = change;
+            this.array[changeIndex] = target;
+            this.eventSupport.dispatch('swap');
+        }
     }
 };
+
 
 /**
  * This List is not allowed to be null or undefined.
@@ -1307,160 +1339,269 @@ class WebObject{
     }
 }
 
-class ProgressComposite extends HTMLElement{
-    _max = 0;
-    _min = 0;
-    _value = 0;
-    constructor(){
+class SwResize extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this.isResizing = false;
+    this.startX = 0;
+    this.startY = 0;
+    this.startWidth = 0;
+    this.startHeight = 0;
+  }
+
+  connectedCallback() {
+    this.updateHandle();
+  }
+
+  static get observedAttributes() {
+    return ['resize-direction'];
+  }
+
+  attributeChangedCallback(attrName, oldVal, newVal) {
+    if (attrName === 'resize-direction') {
+      this.updateHandle();
+    }
+  }
+
+  updateHandle() {
+    const direction = this.getAttribute('resize-direction') || 'bottom-right';
+    const directions = direction.split(' ');
+
+    const styles = `
+      :host {
+        display: block;
+        position: relative;
+      }
+
+      .handle {
+        width: 10px;
+        height: 10px;
+        background-color: #000;
+        position: absolute;
+      }
+
+      ${directions.includes('bottom-right') ? '.handle.bottom-right { bottom: 0; right: 0; cursor: nwse-resize; }' : ''}
+      ${directions.includes('bottom-left') ? '.handle.bottom-left { bottom: 0; left: 0; cursor: nesw-resize; }' : ''}
+      ${directions.includes('top-right') ? '.handle.top-right { top: 0; right: 0; cursor: nesw-resize; }' : ''}
+      ${directions.includes('top-left') ? '.handle.top-left { top: 0; left: 0; cursor: nwse-resize; }' : ''}
+    `;
+
+    const template = `
+      <style>${styles}</style>
+      <slot></slot>
+      ${directions.map(dir => `<div class="handle ${dir}"></div>`).join('')}
+    `;
+
+    this.shadowRoot.innerHTML = template;
+
+    directions.forEach(dir => {
+      const handle = this.shadowRoot.querySelector(`.handle.${dir}`);
+      handle.addEventListener('mousedown', e => this.startResize(e, dir));
+      document.addEventListener('mousemove', e => this.resize(e, dir));
+      document.addEventListener('mouseup', e => this.stopResize(e));
+    });
+  }
+
+  startResize(e, direction) {
+    this.isResizing = true;
+    this.startX = e.pageX;
+    this.startY = e.pageY;
+    this.startWidth = parseInt(document.defaultView.getComputedStyle(this).width, 10);
+    this.startHeight = parseInt(document.defaultView.getComputedStyle(this).height, 10);
+  }
+
+  resize(e, direction) {
+    if (!this.isResizing) return;
+
+    let dx = e.pageX - this.startX;
+    let dy = e.pageY - this.startY;
+
+    switch (direction) {
+      case 'bottom-right':
+        this.style.width = `${this.startWidth + dx}px`;
+        this.style.height = `${this.startHeight + dy}px`;
+        break;
+      case 'bottom-left':
+        this.style.width = `${this.startWidth - dx}px`;
+        this.style.height = `${this.startHeight + dy}px`;
+        break;
+      case 'top-right':
+        this.style.width = `${this.startWidth + dx}px`;
+        this.style.height = `${this.startHeight - dy}px`;
+        break;
+      case 'top-left':
+        this.style.width = `${this.startWidth - dx}px`;
+        this.style.height = `${this.startHeight - dy}px`;
+        break;
+    }
+
+    const event = new Event('resize');
+    this.dispatchEvent(event);
+  }
+
+  stopResize(e) {
+    this.isResizing = false;
+  }
+}
+customElements.define('sw-resize', SwResize);
+
+class ProgressComposite extends HTMLElement {
+    constructor() {
         super();
-        this.mousePosition = new MousePosition(this);
+
+        // Properties
+        this._max = 0;
+        this._min = 0;
+        this._value = 0;
         this.readOnly = false;
-        this.isManualMoving = !1;
-        this.progress = document.createElement`div`;
-        this.addEventListener('mousedown',()=>{
-            this.isProgressManualMove = !0;
+        this.isProgressManualMove = false;
+        this.progress = document.createElement('div');
+        this.mousePosition = new MousePosition(this);
+
+        // Event listeners
+        this.attachEventListeners();
+    }
+
+    attachEventListeners() {
+        this.addEventListener('mousedown', () => {
+            this.isProgressManualMove = true;
             this.dispatch('change');
             this.dispatch('changingValue');
         });
-        this.addEventListener('mouseout',(e)=>{
-            if(e.relatedTarget !== this.object && e.relatedTarget !== this.progress && this.isProgressManualMove){
+
+        this.addEventListener('mouseout', (e) => {
+            if (e.relatedTarget !== this.progress && this.isProgressManualMove) {
                 this.dispatch('changingValue');
                 this.dispatch('change');
-                this.isProgressManualMove = !1;
+                this.isProgressManualMove = false;
             }
         });
-        this.addEventListener('mouseup',()=>{
-            if(this.readOnly) return;
-            this.isProgressManualMove = !1;
+
+        this.addEventListener('mouseup', () => {
+            if (this.readOnly) return;
+            this.isProgressManualMove = false;
             this.dispatch('changed');
-        }, !0);
-        this.addEventListener('mousemove',(e)=>{
-            if(this.readOnly) return;
-            if(this.isProgressManualMove){
+        }, true);
+
+        this.addEventListener('mousemove', (e) => {
+            if (this.readOnly) return;
+            if (this.isProgressManualMove) {
                 this.mouseMove(e);
                 this.dispatch('changingValue');
             }
         });
-        this.addEventListener('click',(e)=>{
-            if(this.readOnly) return;
+
+        this.addEventListener('click', (e) => {
+            if (this.readOnly) return;
             this.mouseMove(e);
             this.dispatch('changingValue');
         });
     }
+
     static get observedAttributes() {
-        return ['value', 'max', 'min', ];
+        return ['value', 'max', 'min'];
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-        if('value' == name) {
-            this.value = Number(newValue);
-        }
-        if('max' == name) {
-            this.max = Number(newValue);
-        }
-        if('min' == name) {
-            this.min = Number(newValue);
-        }
-      }
 
-    /**
-     * @protected
-     */
-    connectedCallback(){
+    attributeChangedCallback(name, oldValue, newValue) {
+        switch(name) {
+            case 'value':
+                this.queueValueUpdate(Number(newValue));
+                break;
+            case 'max':
+                this._max = Number(newValue);
+                this.queueValueUpdate(this._pendingValue);
+                break;
+            case 'min':
+                this._min = Number(newValue);
+                this.queueValueUpdate(this._pendingValue);
+                break;
+        }
+    }
+
+    queueValueUpdate(newValue) {
+        this._pendingValue = newValue;
+        clearTimeout(this._valueUpdateTimeout);
+        this._valueUpdateTimeout = setTimeout(() => {
+            this.value = this._pendingValue;
+        });
+    }
+
+    connectedCallback() {
         this.appendChild(this.progress);
     }
 
-    mousePositionvalue(event){
+    mouseMove(event) {
+        const proposedValue = this.mousePositionvalue(event);
+        this.value = Math.min(Math.max(proposedValue, this.min), this.max);
+    }
+
+    mousePositionvalue(event) {
         return (this.getOffset(event) / this.clientWidth * this.range) + this.min;
     }
 
-    mouseMove(event){
-        this.setAttribute('value', (this.getOffset(event) / this.clientWidth * this.range) + this.min);
-    }
-
-    getOffset(event){
+    getOffset(event) {
         return this.mousePosition.localMousePosition(event).x;
     }
-    /**
-     * 
-     * @param {Number} value 
-     */
-    update(value = this.value){
-        if(this.max === this.min){
-            return
+
+    update(value = this.value) {
+        if (this.max === this.min) {
+            return;
         }
-        if(this.max < value){
-            this.setAttribute('value', this.max);
-        }
-        if(this.min > value){
-            this.setAttribute('value', this.min);
-        }
-        if(this.progress != undefined){
+
+        this._value = Math.min(Math.max(value, this.min), this.max);
+        
+        if (this.progress) {
             this.progress.style.transform = this.scaleStyle;
         }
         this.dispatch('valueSet');
     }
 
-    get scaleStyle(){
+    get scaleStyle() {
         return `scaleX(${this.per})`;
     }
-    
-    /**
-     * @param {number} value
-     */
-    get value(){
+
+    get value() {
         return this._value;
     }
 
-    /**
-     * @param {number} value
-     */
-    set value(value){
-        if(this._value == value || isNaN(value)){
-            return;
-        }
-        this._value = value;
-        this.update(value);
+    set value(value) {
+        const validValue = isNaN(value) ? this._value : value;
+        this.update(validValue);
     }
 
-
-    /**
-     * @param {number} max
-     */
-    get max(){
+    get max() {
         return this._max;
     }
 
-    /**
-     * @param {number} max
-     */
-    set max(max){
-        if(this.min >= max || this.max == max || isNaN(max)) return;
-        this._max = max;
-        this.update();
+    set max(value) {
+        const validMax = isNaN(value) ? this._max : value;
+        if (this._min < validMax) {
+            this._max = validMax;
+            this.update();
+        }
     }
 
-    get min(){
+    get min() {
         return this._min;
     }
 
-    set min(min){
-        if(min >= this.max || this.min == min || isNaN(min)) return;
-        this._min = min;
-        this.update()
-    }
-
-    get per(){
-        if(this.max == 0){
-            return 0;
+    set min(value) {
+        const validMin = isNaN(value) ? this._min : value;
+        if (validMin < this._max) {
+            this._min = validMin;
+            this.update();
         }
-        return ((this.value-this.min) / this.range);
     }
 
-    get range(){
+    get per() {
+        return this.range === 0 ? 0 : ((this.value - this.min) / this.range);
+    }
+
+    get range() {
         return this.max - this.min;
     }
-
 }
 
 customElements.define('sw-h-progress', ProgressComposite);
@@ -2324,62 +2465,31 @@ class AudioPlayer{
     set currentAudioClip(currentAudioClip){
         this._currentAudioClip = currentAudioClip;
     }
-
-    stateInit(){
-        let instance = this;
-        this.audioState = AudioStateEnum.PAUSE;
-        this.audio.addEventListener(AudioStateEnum.ABORT,()=>{
-            instance.audioState = AudioStateEnum.ABORT;
-        });
-        this.audio.addEventListener(AudioStateEnum.CAN_PLAY,()=>{
-            instance.audioState = AudioStateEnum.CAN_PLAY;
-        });
-        this.audio.addEventListener(AudioStateEnum.CAN_PLAY_THROUGH,()=>{
-            instance.audioState = AudioStateEnum.CAN_PLAY_THROUGH;
-        });
-        this.audio.addEventListener(AudioStateEnum.EMPTIED,()=>{
-            instance.audioState = AudioStateEnum.EMPTIED;
-        });
-        this.audio.addEventListener(AudioStateEnum.ENDED,()=>{
-            instance.audioState = AudioStateEnum.ENDED;
-        });
-        this.audio.addEventListener(AudioStateEnum.ERROR,()=>{
-            instance.audioState = AudioStateEnum.ERROR;
-        });
-        this.audio.addEventListener(AudioStateEnum.LOADED_DATA,()=>{
-            instance.audioState = AudioStateEnum.LOADED_DATA;
-        });
-        this.audio.addEventListener(AudioStateEnum.LOADED_METADATA,()=>{
-            instance.audioState = AudioStateEnum.LOADED_METADATA;
-        });
-        this.audio.addEventListener(AudioStateEnum.LOAD_START,()=>{
-            instance.audioState = AudioStateEnum.LOAD_START;
-        });
-        this.audio.addEventListener(AudioStateEnum.PAUSE,()=>{
-            instance.audioState = AudioStateEnum.PAUSE;
-        });
-        this.audio.addEventListener(AudioStateEnum.PLAYING,()=>{
-            instance.audioState = AudioStateEnum.PLAYING;
-        });
-        this.audio.addEventListener(AudioStateEnum.PROGRESS,()=>{
-            instance.audioState = AudioStateEnum.PROGRESS;
-        });
-        this.audio.addEventListener(AudioStateEnum.STALLED,()=>{
-            instance.audioState = AudioStateEnum.STALLED;
-        });
-        this.audio.addEventListener(AudioStateEnum.SUSPEND,()=>{
-            instance.audioState = AudioStateEnum.SUSPEND;
-        });
-        this.audio.addEventListener(AudioStateEnum.WAITING,()=>{
-            instance.audioState = AudioStateEnum.WAITING;
-        });
-        this.audio.addEventListener(AudioPlayStateEnum.PLAY,()=>{
-            instance.audioPlayState = AudioPlayStateEnum.PLAY;
-        });
-        this.audio.addEventListener(AudioPlayStateEnum.PAUSE,()=>{
-            instance.audioPlayState = AudioPlayStateEnum.PAUSE;
-        });
+    
+    stateInit() {
+        const audioStates = [
+            AudioStateEnum.ABORT, AudioStateEnum.CAN_PLAY, AudioStateEnum.CAN_PLAY_THROUGH, 
+            AudioStateEnum.EMPTIED, AudioStateEnum.ENDED, AudioStateEnum.ERROR, 
+            AudioStateEnum.LOADED_DATA, AudioStateEnum.LOADED_METADATA, AudioStateEnum.LOAD_START, 
+            AudioStateEnum.PAUSE, AudioStateEnum.PLAYING, AudioStateEnum.PROGRESS, 
+            AudioStateEnum.STALLED, AudioStateEnum.SUSPEND, AudioStateEnum.WAITING
+        ];
+    
+        const audioPlayStates = [AudioPlayStateEnum.PLAY, AudioPlayStateEnum.PAUSE];
+    
+        for (const state of audioStates) {
+            this.audio.addEventListener(state, () => {
+                this.audioState = state;
+            });
+        }
+    
+        for (const playState of audioPlayStates) {
+            this.audio.addEventListener(playState, () => {
+                this.audioPlayState = playState;
+            });
+        }
     }
+    
 
     updateLockAccess = false;
 
@@ -2531,64 +2641,52 @@ class AudioPlayer{
     /**
      * @private
      */
-    get autoNextClip(){
-        if(this.currentAudioClip == null) {
+    get autoNextClip() {
+        if (this.currentAudioClip == null) {
             return this.playList.get(0);
         }
-        switch(this.loopMode){
+        switch (this.loopMode) {
             case AudioLoopModeEnum.AUDIO_LOOP:
-            {
                 return this.currentAudioClip;
-            }
             case AudioLoopModeEnum.NON_LOOP:
             case AudioLoopModeEnum.TRACK_LOOP:
-            {
                 return this.nextClip();
-            }
         }
         return undefined;
     }
-    nextClip(){
-        let clipIndex = -1;
-        for (let position = 0; position < this.playList.length; position++) {
-            const element = this.playList.get(position);
-            if(element != null && this.currentAudioClip != null && element.soundHash == this.currentAudioClip.soundHash){
-                clipIndex = position;
-                break;
-            }
-            
-        }
-        if(this.currentAudioClip == null){
+    
+    nextClip() {
+        if (this.currentAudioClip == null) {
             return this.playList.get(0);
         }
-        if(clipIndex === -1){
+    
+        const clipIndex = this.playList.gets().findIndex(clip => clip != null && this.currentAudioClip != null && clip.soundHash == this.currentAudioClip.soundHash);
+    
+        if (clipIndex === -1) {
             return this.currentAudioClip;
         }
-        let nextClip = null;
-        for(let position = clipIndex+1; position < this.playList.length; position++){
-            nextClip = this.playList.get(position);
-            if(nextClip != null){
-                break;
-            }
-        };
-        if(nextClip == undefined){
-            switch (this.loopMode) {
-                case AudioLoopModeEnum.AUDIO_LOOP:
-                {
-                    return this.currentAudioClip;
-                }
-                case AudioLoopModeEnum.NON_LOOP:
-                {
-                    return undefined;
-                }
-                case AudioLoopModeEnum.TRACK_LOOP:
-                {
-                    return this.playList.get(0);
-                }
-            }
+    
+        const nextClip = this.playList.gets().slice(clipIndex + 1).find(clip => clip != null);
+        
+        if (nextClip) {
+            return nextClip;
+        } else {
+            return this.handleNoNextClip();
         }
-        return nextClip;
     }
+    
+    handleNoNextClip() {
+        switch (this.loopMode) {
+            case AudioLoopModeEnum.AUDIO_LOOP:
+                return this.currentAudioClip;
+            case AudioLoopModeEnum.NON_LOOP:
+                return undefined;
+            case AudioLoopModeEnum.TRACK_LOOP:
+                return this.playList.get(0);
+        }
+    }
+    
+
     play(audioClip = undefined){
         this.setStopUpdate();
         try{

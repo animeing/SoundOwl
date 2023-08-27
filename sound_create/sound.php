@@ -1,9 +1,9 @@
 <?php
-
-error_reporting(E_ALL & ~E_WARNING);
 require(dirname(__DIR__).'/parts/loader.php');
 
-$decrypted = ComplessUtil::decompless((urldecode($_GET["media_hash"])));
+$media_hash = $_GET["media_hash"] ?? '';
+$decrypted = ComplessUtil::decompless(urldecode($media_hash));
+
 $soundLinkDao = new SoundLinkDao;
 $soundDto = null;
 foreach($soundLinkDao->find($decrypted) as $findSoundLinkDto) {
@@ -12,46 +12,47 @@ foreach($soundLinkDao->find($decrypted) as $findSoundLinkDto) {
         break;
     }
 }
+
 if($soundDto == null) {
-    return;
+    http_response_code(404);
+    exit;
 }
+
+define("PATH", $soundDto->getDataLink());
+$mime_type = mime_content_type(PATH);
+$fileSize = filesize(PATH);
+
 header("Accept-Ranges: bytes"); 
 header("ETag: \"" .(sha1($decrypted))."\"" );
-define("path", $soundDto->getDataLink());
-$mime_type = mime_content_type(path);
 header("Accept: {$mime_type}");
 header("Content-type: {$mime_type}");
 
+$rangeOffset = 0;
+$rangeLimit = $fileSize - 1;
+
 if (isset($_SERVER["HTTP_RANGE"])){
     list($rangeOffset, $rangeLimit) = sscanf($_SERVER['HTTP_RANGE'], "bytes=%d-%d");
-    if($rangeLimit == ""){
-        $rangeLimit = filesize(path)-1;
-    }
-    if($rangeOffset != 0){
-        http_response_code (206);
-    } else {
-        http_response_code (200);
-    }
-    $contentRange = sprintf("bytes %d-%d/%d", $rangeOffset, $rangeLimit, filesize(path));
+    $rangeLimit = $rangeLimit != "" ? $rangeLimit : $fileSize - 1;
+    http_response_code ($rangeOffset != 0 ? 206 : 200);
+    $contentRange = sprintf("bytes %d-%d/%d", $rangeOffset, $rangeLimit, $fileSize);
     header("Content-Range: {$contentRange}");
     $contentLength  = $rangeLimit - $rangeOffset + 1;
     header("Content-Length: {$contentLength}");
     header("Keep-Alive: timeout=10, max{$contentLength}");
-    $contentPointer = fopen(path, "rb");
+    set_time_limit(0);
+    $contentPointer = fopen(PATH, "rb");
     fseek($contentPointer, $rangeOffset);
     $load = 8192;
-    $loop = ceil($rangeLimit / $load);
+    $loop = ceil(($rangeLimit - $rangeOffset + 1) / $load);
     $counter = 0;
     $bf="";
     $limitLength = $contentLength;
     @ob_end_clean();
     while($counter < $loop && !connection_aborted()){
-        set_time_limit(0);
-        if($limitLength-$load >= 0){
-            $load = $limitLength;
-        }
+        $load = min($limitLength, $load);
         $bf = fread($contentPointer, $load);
         echo $bf;
+        $limitLength -= $load;
         $counter++;
     }
     @flush();
@@ -59,10 +60,8 @@ if (isset($_SERVER["HTTP_RANGE"])){
     fclose($contentPointer);
 } else {
     header("Keep-Alive: timeout=15");
-    header('Content-Length: ' . filesize(path) );
-    header("Content-Range: bytes 0-".(filesize(path)-1)."/".filesize(path) );
-    header("HTTP/1.1 200 OK");
-
-    readfile($file);
+    header('Content-Length: ' . $fileSize );
+    header("Content-Range: bytes 0-".($fileSize-1)."/".$fileSize );
+    http_response_code(200);
+    readfile(PATH);
 }
-exit;

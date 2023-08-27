@@ -37,6 +37,7 @@ class SoundLinkDao extends SqlCreater implements SoundLinkTable {
                     $this::ALL_COLUMN.' , '.
                     $this::SUM.'('.$this::PLAY_COUNT.$this::BRACKET_END.$ALBUM_PLAY_COUNT.
                 $this::FROM.$this::TABLE_NAME.
+                $this::WHERE.SoundLinkTable::ALBUM_TITLE.' IS NOT NULL '.
                 $this::GROUP_BY.$this::ALBUM_HASH.
                 $this::ORDER_BY.$ALBUM_PLAY_COUNT.$this::DESC.
                 $this::LIMIT,

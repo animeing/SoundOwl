@@ -1,21 +1,7 @@
-<Files ~ "^\.(htaccess|htpasswd)$">
+<Files ~ "^\.(htaccess|htpasswd|ini)$">
 order allow,deny
 deny from all
 </Files>
-<Files ~ "\.(ini)$">
-order allow,deny
-deny from all
-</Files>
-Header unset X-Powered-By
-Header unset Server
-Header always set X-UA-Compatible "IE=edge,chrome=1"
-Header always set Vary Origin
-Header always set X-XSS-Protection "1; mode=block"
-Header always set X-Content-Type-Options "nosniff"
-Header always set X-Frame-Options DENY
-Header always set X-Download-Options: noopen
-Header always set X-Robots-Tag "noindex,nofollow,noarchive,nosnippet,noodp"
-
 
 <ifModule mod_expires.c>
 
@@ -28,9 +14,19 @@ Header always set X-Robots-Tag "noindex,nofollow,noarchive,nosnippet,noodp"
 </IfModule>
 
 <IfModule mod_headers.c>
-<FilesMatch "\.(ico|jpe?g|png|gif|svg|swf|pdf|ttf|woff|otf|eot)$">
-    Header set Cache-Control "max-age=604800, public"
-</FilesMatch>
+
+ Header unset X-Powered-By
+ Header unset Server
+ Header always set X-UA-Compatible "IE=edge,chrome=1"
+ Header always set Vary Origin
+ Header always set X-Content-Type-Options "nosniff"
+ Header always set X-Frame-Options DENY
+ Header always set X-Download-Options: noopen
+ Header always set X-Robots-Tag "noindex,nofollow,noarchive,nosnippet,noodp"
+
+ <FilesMatch "\.(ico|jpe?g|png|gif|svg|swf|pdf|ttf|woff|otf|eot)$">
+   Header set Cache-Control "max-age=604800, public"
+ </FilesMatch>
 
 </ifModule>
 
