@@ -923,7 +923,7 @@ const CurrentAudioList = {
     <sw-resize :class="audioFrameClass()" resize-direction='top-left'>
         <p class='play-list-title'>Play List</p>
         <div :class="audioListClass()" id='current-audio-list' style='overflow-y: scroll;' >
-            <button v-for="item in soundClips" drag-item :class='audioItemClass(item)' @click="click(item)" class="draggable-item">
+            <button v-for="item in soundClips" drag-item  @click.right.prevent="contextMenu(item)" :class='audioItemClass(item)' @click="click(item)" class="draggable-item">
                 <SoundClipComponent :sound-clip='item'></SoundClipComponent>
             </button>
 	</div>
@@ -964,6 +964,22 @@ const CurrentAudioList = {
             } else {
                 audio.play(soundClip);
             }
+        },
+        contextMenu(soundClip) {
+            ContextMenu.contextMenu.destoryChildren();
+            let remove = BaseFrameWork.createCustomElement('sw-libutton');
+            remove.menuItem.onclick=e=>{
+                for (const playListSoundClip of audio.playList) {
+                    if(!playListSoundClip.equals(soundClip)) {
+                        continue;
+                    }
+                    audio.playList.remove(playListSoundClip);
+                    break;
+                }
+                this.soundClips = audio.playList.array;
+            };
+            remove.menuItem.value = 'remove';
+            ContextMenu.contextMenu.appendChild(remove);
         },
         audioItemClass(soundClip) {
             if(this.currentPlaySoundClip == null){
