@@ -976,7 +976,6 @@ const CurrentAudioList = {
                     audio.playList.remove(playListSoundClip);
                     break;
                 }
-                this.soundClips = audio.playList.array;
             };
             remove.menuItem.value = 'remove';
             ContextMenu.contextMenu.appendChild(remove);
@@ -1009,6 +1008,9 @@ const CurrentAudioList = {
             }
         });
         observer.observe(this.$el, {childList:true,attributes:true,subtree: true});
+	audio.playList.eventSupport.addEventListner('change',()=>{
+	    this.soundClips = audio.playList.array;
+	});
     }
 }
 
