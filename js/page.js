@@ -99,7 +99,7 @@ const SlideList = {
     template: `
     <sw-audio-slide-list>
         <div>
-            <button v-for="item in data" @click="click(item)">
+            <button v-for="item in data" @click.right.prevent="contextmenu(item)" @click="click(item)">
                 <img loading='lazy' :src="createImageSrc(item.albumKey)">
                 <p :hint="item.title">{{ item.title }}</p>
             </button>
@@ -117,6 +117,9 @@ const SlideList = {
         },
         onClick:{
             type:Function
+        },
+        contextMenu:{
+            type:Function
         }
     },
     methods:{
@@ -128,6 +131,12 @@ const SlideList = {
                 this.onClick(soundClip);
             }
             return;
+        },
+        contextmenu(item){
+            if(!this.contextMenu) {
+                return;
+            }
+            this.contextMenu(item);
         }
     },
     created(){
@@ -140,7 +149,7 @@ const SlideComponet = {
     `
     <div class="box">
         <p>{{slideTitle}}</p>
-        <SlideList :on-click='itemClick' :data-request='dataRequest'></SlideList>
+        <SlideList :on-click='itemClick' :context-menu='contextmenu' :data-request='dataRequest'></SlideList>
     </div>
     `,
     props:{
@@ -154,6 +163,14 @@ const SlideComponet = {
             type:Function
         }
     },
+    methods:{
+        contextmenu(item){
+            if(!this.contextMenu) {
+                return;
+            }
+            this.contextMenu(item);
+        }
+    },
     components:{
         SlideList
     }
@@ -162,7 +179,7 @@ const SlideComponet = {
 const Home = {
     template:`
     <div>
-        <SlideComponet :slide-title="soundTop20" :data-request="soundCountRequest" :item-click="soundClipClick"></SlideComponet>
+        <SlideComponet :slide-title="soundTop20" :data-request="soundCountRequest" :context-menu="soundContext" :item-click="soundClipClick"></SlideComponet>
         <SlideComponet :slide-title="albumTop20" :data-request="albumCountRequest" :item-click="albumClipClick"></SlideComponet>
     </div>
     `,
@@ -240,6 +257,20 @@ const Home = {
             } else {
                 audio.play(soundClip);
             }
+        },
+        soundContext:(soundClip)=>{
+            ContextMenu.contextMenu.destoryChildren();
+            let addNextSound = BaseFrameWork.createCustomElement('sw-libutton');
+            addNextSound.menuItem.onclick=e=>{
+                if(audio.currentAudioClip == undefined) {
+                    audio.playList.add(soundClip, 0);
+                    return;
+                }
+                let appendPosition = audio.playList.equalFindIndex(audio.currentAudioClip);
+                audio.playList.add(soundClip, appendPosition+1);
+            };
+            addNextSound.menuItem.value = 'Add to playlist';
+            ContextMenu.contextMenu.appendChild(addNextSound);
         },
         albumClipClick(albumClip) {
             if(ContextMenu.isVisible){
@@ -434,7 +465,7 @@ const AlbumSoundList = {
 const Search = {
     template:`
     <div class='audio-list'>
-        <button v-for="item in requestData()" :class='audioItemClass(item)' @click="click(item)">
+        <button v-for="item in requestData()" :class='audioItemClass(item)' @click.right.prevent="soundContext(item)" @click="click(item)">
             <SoundClipComponent :sound-clip='item'></SoundClipComponent>
         </button>
     </div>
@@ -471,6 +502,20 @@ const Search = {
             } else {
                 return this.soundClips;
             }
+        },
+        soundContext:(soundClip)=>{
+            ContextMenu.contextMenu.destoryChildren();
+            let addNextSound = BaseFrameWork.createCustomElement('sw-libutton');
+            addNextSound.menuItem.onclick=e=>{
+                if(audio.currentAudioClip == undefined) {
+                    audio.playList.add(soundClip, 0);
+                    return;
+                }
+                let appendPosition = audio.playList.equalFindIndex(audio.currentAudioClip);
+                audio.playList.add(soundClip, appendPosition+1);
+            };
+            addNextSound.menuItem.value = 'Add to playlist';
+            ContextMenu.contextMenu.appendChild(addNextSound);
         },
         click(soundClip){
             if(ContextMenu.isVisible){
