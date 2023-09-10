@@ -161,6 +161,9 @@ const SlideComponet = {
         },
         itemClick:{
             type:Function
+        },
+        contextMenu:{
+            type:Function
         }
     },
     methods:{
