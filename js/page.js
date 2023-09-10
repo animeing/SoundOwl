@@ -535,6 +535,7 @@ const Search = {
                     updateSoundinfoAction.httpRequestor.addEventListener('success', event=>{
                         let messageWindow = new MessageWindow;
                         messageWindow.value = `Updated sound infomation ${soundClip.artist} - ${soundClip.title}`;
+                        messageWindow.open();
                         messageWindow.close(1000);
                     });
                     updateSoundinfoAction.execute();
