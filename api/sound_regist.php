@@ -52,9 +52,9 @@ if(!file_exists(LOCK_PATH)) {
         $soundDao = new SoundLinkDao();
         $artistDao = new ArtistDao();
         $albumDao = new AlbumDao();
-        FileUtil::fileListAction(SOUND_DIRECTORY, function($file) {
+        function registSoundData($file) {
             global $artistDao, $albumDao, $soundDao;
-            if(hasRegistedSound($file) || !preg_match('/\.mp3|\.m4a|\.wav|\.ogg|\.flac]/', $file)){
+            if(!preg_match('/\.mp3|\.m4a|\.wav|\.ogg|\.flac]/', $file)){
                 return;
             }
             $soundLinkDto = new SoundLinkDto();
@@ -111,6 +111,14 @@ if(!file_exists(LOCK_PATH)) {
                             $albumDto->setArtLength(isset($albumArtData['datalength'])?$albumArtData['datalength']:'');
                         }
                         $albumDao->insert($albumDto);
+                    } else {
+                        if(isset($id3Analyze['comments']) && isset($id3Analyze['comments']['picture'][0])) {
+                            $albumArtData = $id3Analyze['comments']['picture'][0];
+                            $albumDto->setAlbumArt(isset($albumArtData['data'])?$albumArtData['data']:'');
+                            $albumDto->setArtMime(isset($albumArtData['image_mime'])?$albumArtData['image_mime']:'');
+                            $albumDto->setArtLength(isset($albumArtData['datalength'])?$albumArtData['datalength']:'');
+                        }
+                        $albumDao->update($albumDto);
                     }
                     $soundLinkDto->setAlbumHash($albumDto->getAlbumKey());
                     $soundLinkDto->setAlbumTitle($albumDto->getTitle());
@@ -138,14 +146,29 @@ if(!file_exists(LOCK_PATH)) {
                 }
             }
             {
-                $soundLinkDto->setPlayCount(0);
-            }
-            {
                 $soundLinkDto->setDataLink($file);
                 $soundLinkDto->setSoundHash(sha1($file));
             }
-            $soundDao->insert($soundLinkDto);
-        });
+            $soundDtos = $soundDao->find(sha1($file));
+            if(count($soundDtos) == 0){
+                $soundLinkDto->setPlayCount(0);
+                $soundDao->insert($soundLinkDto);
+            } else {
+                $soundLinkDto->setPlayCount($soundDtos[0]->getPlayCount());
+                $soundDao->update($soundLinkDto);
+            }
+        }
+        if(isset($_GET['soundhash'])) {
+            $decompless = ComplessUtil::decompless($_GET['soundhash']);
+            $soundLinkDto = $soundDao->find($decompless);
+            registSoundData($soundLinkDto[0]->getDataLink());
+        } else {
+            FileUtil::fileListAction(SOUND_DIRECTORY, function ($file){
+                if(!hasRegistedSound($file)){
+                    registSoundData($file);
+                }
+            });
+        }
     } finally {
         unlink(LOCK_PATH);
     }

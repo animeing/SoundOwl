@@ -81,6 +81,12 @@ class SoundRegistAction extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
+class UpdateSoundInfomationAction extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'sound_regist.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
+    }
+}
+
 class SetupDataBase extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'setup_database_table.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
@@ -133,6 +139,7 @@ const SlideList = {
             return;
         },
         contextmenu(item){
+            ContextMenu.contextMenu.destoryChildren();
             if(!this.contextMenu) {
                 return;
             }
@@ -262,7 +269,6 @@ const Home = {
             }
         },
         soundContext:(soundClip)=>{
-            ContextMenu.contextMenu.destoryChildren();
             let addNextSound = BaseFrameWork.createCustomElement('sw-libutton');
             addNextSound.menuItem.onclick=e=>{
                 if(audio.currentAudioClip == undefined) {
@@ -508,17 +514,35 @@ const Search = {
         },
         soundContext:(soundClip)=>{
             ContextMenu.contextMenu.destoryChildren();
-            let addNextSound = BaseFrameWork.createCustomElement('sw-libutton');
-            addNextSound.menuItem.onclick=e=>{
-                if(audio.currentAudioClip == undefined) {
-                    audio.playList.add(soundClip, 0);
-                    return;
-                }
-                let appendPosition = audio.playList.equalFindIndex(audio.currentAudioClip);
-                audio.playList.add(soundClip, appendPosition+1);
-            };
-            addNextSound.menuItem.value = 'Add to playlist';
-            ContextMenu.contextMenu.appendChild(addNextSound);
+            {
+                let addNextSound = BaseFrameWork.createCustomElement('sw-libutton');
+                addNextSound.menuItem.onclick=e=>{
+                    if(audio.currentAudioClip == undefined) {
+                        audio.playList.add(soundClip, 0);
+                        return;
+                    }
+                    let appendPosition = audio.playList.equalFindIndex(audio.currentAudioClip);
+                    audio.playList.add(soundClip, appendPosition+1);
+                };
+                addNextSound.menuItem.value = 'Add to playlist';
+                ContextMenu.contextMenu.appendChild(addNextSound);
+            }
+            {
+                let updateSoundData = BaseFrameWork.createCustomElement('sw-libutton');
+                updateSoundData.menuItem.onclick=e=>{
+                    let updateSoundinfoAction = new UpdateSoundInfomationAction;
+                    updateSoundinfoAction.formDataMap.append('soundhash', soundClip.soundHash);
+                    updateSoundinfoAction.httpRequestor.addEventListener('success', event=>{
+                        let messageWindow = new MessageWindow;
+                        messageWindow.value = `Updated sound infomation ${soundClip.artist} - ${soundClip.title}`;
+                        messageWindow.close(1000);
+                    });
+                    updateSoundinfoAction.execute();
+                };
+                updateSoundData.menuItem.value = 'Information update';
+                ContextMenu.contextMenu.appendChild(updateSoundData);
+            }
+            
         },
         click(soundClip){
             if(ContextMenu.isVisible){
