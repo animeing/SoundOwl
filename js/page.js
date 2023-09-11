@@ -384,7 +384,7 @@ const ArtistSoundList = {
 const AlbumSoundList = {
     template:`
     <div class='audio-list'>
-        <button v-for="item in requestData()" :class='audioItemClass(item)' @click="click(item)">
+        <button v-for="item in requestData()" :class='audioItemClass(item)' @click.right.prevent="soundContext(item)" @click="click(item)">
             <SoundClipComponent :sound-clip='item'></SoundClipComponent>
         </button>
     </div>
@@ -400,6 +400,22 @@ const AlbumSoundList = {
         SoundClipComponent
     },
     methods:{
+        soundContext:(soundClip)=>{
+            ContextMenu.contextMenu.destoryChildren();
+            {
+                let addNextSound = BaseFrameWork.createCustomElement('sw-libutton');
+                addNextSound.menuItem.onclick=e=>{
+                    if(audio.currentAudioClip == undefined) {
+                        audio.playList.add(soundClip, 0);
+                        return;
+                    }
+                    let appendPosition = audio.playList.equalFindIndex(audio.currentAudioClip);
+                    audio.playList.add(soundClip, appendPosition+1);
+                };
+                addNextSound.menuItem.value = 'Add to playlist';
+                ContextMenu.contextMenu.appendChild(addNextSound);
+            }
+        },
         requestData(){
             if(this.soundClips.length == 0) {
                 let soundSearch = new AlbumSoundListAction();
