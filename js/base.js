@@ -1817,6 +1817,25 @@ class MessageButtonWindow extends MessageWindow {
 
 customElements.define('sw-message-button', MessageButtonWindow);
 
+class InputMessageButtonWindow extends MessageButtonWindow {
+    constructor(){
+        super();
+        this.inputFrame = document.createElement('div');
+        this.inputText = document.createElement('input');
+        this.inputText.type = 'text';
+    }
+
+    connectedCallback(){
+        this.appendChild(this._messageElement);
+        this.inputFrame.appendChild(this.inputText);
+        this.appendChild(this.inputFrame);
+        super.createButtonBlock();
+        this.appendChild(this.buttonFrame);
+    }
+}
+
+customElements.define('sw-save-message', InputMessageButtonWindow);
+
 class LIButtonObject extends HTMLLIElement{
     constructor(){
         super();
