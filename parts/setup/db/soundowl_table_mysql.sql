@@ -118,7 +118,7 @@ ALTER TABLE `sound_play_history`
 --
 ALTER TABLE `playlist`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `ix01` (`play_list`) USING HASH;
+  ADD KEY `play_list` (`play_list`(768));
 
 --
 -- ダンプしたテーブルの AUTO_INCREMENT
