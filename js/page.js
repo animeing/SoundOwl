@@ -415,6 +415,22 @@ const AlbumSoundList = {
                 addNextSound.menuItem.value = 'Add to playlist';
                 ContextMenu.contextMenu.appendChild(addNextSound);
             }
+            {
+                let updateSoundData = BaseFrameWork.createCustomElement('sw-libutton');
+                updateSoundData.menuItem.onclick=e=>{
+                    let updateSoundinfoAction = new UpdateSoundInfomationAction;
+                    updateSoundinfoAction.formDataMap.append('soundhash', soundClip.soundHash);
+                    updateSoundinfoAction.httpRequestor.addEventListener('success', event=>{
+                        let messageWindow = new MessageWindow;
+                        messageWindow.value = `Updated sound infomation ${soundClip.artist} - ${soundClip.title}`;
+                        messageWindow.open();
+                        messageWindow.close(1000);
+                    });
+                    updateSoundinfoAction.execute();
+                };
+                updateSoundData.menuItem.value = 'Information update';
+                ContextMenu.contextMenu.appendChild(updateSoundData);
+            }
         },
         requestData(){
             if(this.soundClips.length == 0) {
