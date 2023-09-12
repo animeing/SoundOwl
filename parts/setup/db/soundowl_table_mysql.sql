@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS `sound_play_history` (
 CREATE TABLE  IF NOT EXISTS `playlist` (
   `id` int(11) NOT NULL,
   `play_list` text NOT NULL,
+  `sound_point` int(11) NOT NULL,
   `sound_hash` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
