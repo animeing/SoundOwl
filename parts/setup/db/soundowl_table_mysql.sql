@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS `artist` (
 
 CREATE TABLE IF NOT EXISTS `sound_link` (
   `sound_hash` text NOT NULL,
+  `add_time` datetime NOT NULL DEFAULT '1970-01-01 00:00:00',
   `title` text NOT NULL,
   `genre` text ,
   `lyrics` text ,
