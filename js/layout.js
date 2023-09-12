@@ -1019,7 +1019,7 @@ const CurrentAudioList = {
             }
         });
         observer.observe(this.$el, {childList:true,attributes:true,subtree: true});
-	audio.playList.eventSupport.addEventListner('change',()=>{
+	audio.playList.eventSupport.addEventListener('change',()=>{
 	    this.soundClips = audio.playList.array;
 	});
     }
