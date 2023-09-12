@@ -45,6 +45,12 @@ class SoundInfomation extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
+class SoundAddTimeListAction extends BaseFrameWork.Network.RequestServerBase {
+    constructor() {
+        super(null, BASE.API+'sound_addtime_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+    }
+}
+
 class AlbumListAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'album_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
@@ -189,6 +195,7 @@ const SlideComponet = {
 const Home = {
     template:`
     <div>
+        <SlideComponet :slide-title="'New Sounds 40'" :data-request="newSoundRequest" :context-menu="soundContext" :item-click="newSoundClipClick"></SlideComponet>
         <SlideComponet :slide-title="soundTop20" :data-request="soundCountRequest" :context-menu="soundContext" :item-click="soundClipClick"></SlideComponet>
         <SlideComponet :slide-title="albumTop20" :data-request="albumCountRequest" :item-click="albumClipClick"></SlideComponet>
     </div>
@@ -205,6 +212,29 @@ const Home = {
         SlideComponet
     },
     methods:{
+        newSoundRequest() {
+            if(this.newSoundClips.length == 0) {
+                let newSoundAction = new SoundAddTimeListAction();
+                let listNo = 0;
+                newSoundAction.httpRequestor.addEventListener('success', event=>{
+                    for (const response of event.detail.response) {
+                        let audioClip = new AudioClip();
+                        audioClip.soundHash = response['sound_hash'];
+                        audioClip.title = response['title'];
+                        audioClip.artist = response['artist_name'];
+                        audioClip.album = response['album']['album_title'];
+                        audioClip.albumKey = response['album']['album_hash'];
+                        audioClip.no = listNo;
+                        listNo++;
+                        this.newSoundClips.push(audioClip);
+                    }
+                });
+                newSoundAction.execute();
+                return this.newSoundClips;
+            } else {
+                return this.newSoundClips;
+            }
+        },
         soundCountRequest(){
             if(this.soundClips.length == 0) {
                 let playCountAction = new PlayCountAction();
@@ -241,6 +271,31 @@ const Home = {
                 return this.albumData;
             } else {
                 return this.albumData;
+            }
+        },
+        newSoundClipClick(soundClip) {
+            if(ContextMenu.isVisible){
+                return;
+            }
+            audio.playList.removeAll();
+            for(const audioclip of this.newSoundClips) {
+                audio.playList.add(audioclip);
+            }
+            if(audio.currentAudioClip == null){
+                audio.play(soundClip);
+                return;
+            }            
+            if(soundClip.equals(audio.currentAudioClip)){
+                if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
+                    audio.play();
+                } else {
+                    if(audio.currentPlayState === AudioPlayStateEnum.PLAY || audio.currentPlayState !== AudioPlayStateEnum.STOP ){
+                        audio.pause();
+                    }
+                }
+                return;
+            } else {
+                audio.play(soundClip);
             }
         },
         soundClipClick(soundClip){
