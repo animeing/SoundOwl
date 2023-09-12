@@ -12,6 +12,14 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         return parent::getDtoCache()[SoundLinkTable::SOUND_HASH];
     }
 
+    public function setAddTime($addTime){
+        parent::putDtoCache(SoundLinkTable::ADD_TIME, $addTime);
+    }
+
+    public function getAddTime() {
+        return parent::getDtoCache()[SoundLinkTable::ADD_TIME];
+    }
+
     public function setTitle($title){
         parent::putDtoCache(SoundLinkTable::TITLE, $title);
     }
