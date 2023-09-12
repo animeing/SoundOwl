@@ -227,12 +227,14 @@ sw-v-progress > div{
 }
 
 #context-menu,sw-message-box,
-sw-message-button{
+sw-message-button,
+sw-save-message{
   background: var(--subcolor);
 }
 
 sw-message-box,
-sw-message-button{
+sw-message-button,
+sw-save-message{
   left: 0;
   top: 0px;
   width: 100%;
@@ -246,16 +248,31 @@ sw-message-button{
 
 sw-message-box,
 sw-message-button,
+sw-save-message,
 sw-message-box > * ,
-sw-message-button > *{
+sw-message-button > *,
+sw-save-message > *{
   user-select: none;
   transition: all 300ms 0s ease;
 }
 
 sw-message-box > *,
-sw-message-button > *{
+sw-message-button > *,
+sw-save-message > *{
   padding: 0;
   border: none;
+}
+
+sw-save-message > div > input[type="text"] {
+  background: var(--playerfcbgcolor);
+  font-size: 1em;
+  vertical-align: top;
+  height: 25px;
+  width: 400px;
+  margin: 10px;
+  border-radius: 5px;
+  padding: 0 5px;
+  cursor: text;
 }
 
 .hint-box{
@@ -286,7 +303,8 @@ sw-message-button > *{
 }
 
 sw-message-box > div > input[type="button"],
-sw-message-button > div > input[type="button"]{
+sw-message-button > div > input[type="button"],
+sw-save-message > div > input[type="button"] {
   background: rgba(0,0,0,0);
   border-radius: 1.5rem;
   border: 1px solid #8e8e8e;
@@ -296,7 +314,8 @@ sw-message-button > div > input[type="button"]{
 }
 
 sw-message-box > div > input[type="button"]:hover,
-sw-message-button > div > input[type="button"]:hover{
+sw-message-button > div > input[type="button"]:hover,
+sw-save-message > div > input[type="button"]:hover{
   background: rgba(131, 131, 131, 0.932);
 }
 
