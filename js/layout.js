@@ -920,8 +920,8 @@ const SoundClipComponent = {
 
 const CurrentAudioList = {
     template:`
-    <sw-resize :class="audioFrameClass()" resize-direction='top-left'>
-        <p class='play-list-title'>Play List</p>
+    <sw-resize :class="audioFrameClass()" resize-direction='top-left' >
+        <p class='play-list-title' @click.right.prevent="contextmenu()">Play List</p>
         <div :class="audioListClass()" id='current-audio-list' style='overflow-y: scroll;' >
             <button v-for="item in soundClips" drag-item  @click.right.prevent="contextMenu(item)" :class='audioItemClass(item)' @click="click(item)" class="draggable-item">
                 <SoundClipComponent :sound-clip='item'></SoundClipComponent>
@@ -944,6 +944,17 @@ const CurrentAudioList = {
         SoundClipComponent
     },
     methods:{
+        contextmenu(){
+            ContextMenu.contextMenu.destoryChildren();
+            {
+                let clearPlaylist = BaseFrameWork.createCustomElement('sw-libutton');
+                clearPlaylist.menuItem.onclick=e=>{
+                    audio.playList.removeAll();
+                };
+                clearPlaylist.menuItem.value = 'Clear playlist';
+                ContextMenu.contextMenu.appendChild(clearPlaylist);
+            }
+        },
         click(soundClip){
             if(ContextMenu.isVisible){
                 return;
