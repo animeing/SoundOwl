@@ -963,6 +963,39 @@ const CurrentAudioList = {
                 clearPlaylist.menuItem.value = 'Clear playlist';
                 ContextMenu.contextMenu.appendChild(clearPlaylist);
             }
+            {
+                let savePlaylist = BaseFrameWork.createCustomElement('sw-libutton');
+                savePlaylist.menuItem.onclick=e=>{
+                    let messageWindow = document.createElement('sw-save-message');
+                    messageWindow.value = 'Do you want to save the playlist?\nPlease enter the playlist name.';
+                    messageWindow.addItem('OK',()=>{
+                        let playlistName = messageWindow.inputText.value;                        
+                        let action = new class extends BaseFrameWork.Network.RequestServerBase {
+                            constructor() {
+                                super(null, BASE.API+'playlist_action.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+                            }
+                        }
+                        action.formDataMap.append('method', 'create');
+                        action.formDataMap.append('playlist_name', playlistName);
+                        let soundHash = [];
+                        for (const soundClip of this.soundClips) {
+                            soundHash.push(soundClip.soundHash);
+                            action.formDataMap.append('sounds[]', soundClip.soundHash);
+                        }
+                            action.httpRequestor.addEventListener('success', ()=>{
+                            messageWindow.close();
+                        });
+                        action.execute();
+
+                    });
+                    messageWindow.addItem('CANCEL',()=>{
+                        messageWindow.close();
+                    });
+                    messageWindow.open();
+                }
+                savePlaylist.menuItem.value = 'Save playlist';
+                ContextMenu.contextMenu.appendChild(savePlaylist);
+            }
             if(event !== undefined) {
                 ContextMenu.visible(event);
             }
