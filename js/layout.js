@@ -951,6 +951,10 @@ const CurrentAudioList = {
     methods:{
         contextmenu(event = undefined){
             ContextMenu.contextMenu.destoryChildren();
+            if(event !== undefined && ContextMenu.isVisible) {
+                ContextMenu.remove();
+                return;
+            }
             {
                 let clearPlaylist = BaseFrameWork.createCustomElement('sw-libutton');
                 clearPlaylist.menuItem.onclick=e=>{
@@ -958,6 +962,9 @@ const CurrentAudioList = {
                 };
                 clearPlaylist.menuItem.value = 'Clear playlist';
                 ContextMenu.contextMenu.appendChild(clearPlaylist);
+            }
+            if(event !== undefined) {
+                ContextMenu.visible(event);
             }
         },
         click(soundClip){
