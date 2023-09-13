@@ -834,3 +834,16 @@ sw-audio-slide-list > div > button > img{
   width: 225px;
   height: 225px;
 }
+
+.menu-icon-frame {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  height: 2em;
+  right: 0px;
+}
+
+.menu-icon{
+  height: inherit;
+  background: inherit;
+}
