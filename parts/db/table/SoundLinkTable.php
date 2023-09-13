@@ -5,6 +5,7 @@ interface SoundLinkTable {
     const PRIMARY_KEY = 'sound_hash';
 
     const SOUND_HASH = 'sound_hash';
+    const ADD_TIME = 'add_time';
     const TITLE = 'title';
     const LYRICS = 'lyrics';
     const GENRE = 'genre';

@@ -152,6 +152,7 @@ if(!file_exists(LOCK_PATH)) {
             $soundDtos = $soundDao->find(sha1($file));
             if(count($soundDtos) == 0){
                 $soundLinkDto->setPlayCount(0);
+                $soundLinkDto->setAddTime(date("Y-m-d H:i:s", filemtime($file)));
                 $soundDao->insert($soundLinkDto);
             } else {
                 $soundLinkDto->setPlayCount($soundDtos[0]->getPlayCount());

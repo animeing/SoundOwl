@@ -16,6 +16,17 @@ class SoundLinkDao extends SqlCreater implements SoundLinkTable {
             )
         );
     }
+
+    
+    function SoundFileTimeDesc($limit = 40) {
+        return $this->toDtoList(
+            $this->execute(
+                $this->selectQuery().$this::ORDER_BY.$this::ADD_TIME.$this::DESC.$this::LIMIT,
+                array($limit)
+            )
+        );
+    }
+    
     
     /**
      * @return SoundLinkDto[]

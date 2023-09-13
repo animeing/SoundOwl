@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS `artist` (
 
 CREATE TABLE IF NOT EXISTS `sound_link` (
   `sound_hash` text NOT NULL,
+  `add_time` datetime NOT NULL DEFAULT '1970-01-01 00:00:00',
   `title` text NOT NULL,
   `genre` text ,
   `lyrics` text ,
@@ -60,6 +61,17 @@ CREATE TABLE IF NOT EXISTS `sound_play_history` (
   `id` int(11) NOT NULL,
   `sound_hash` text NOT NULL,
   `play_date` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- テーブルの構造 `playlist`
+--
+
+CREATE TABLE  IF NOT EXISTS `playlist` (
+  `id` int(11) NOT NULL,
+  `play_list` text NOT NULL,
+  `sound_point` int(11) NOT NULL,
+  `sound_hash` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
@@ -96,11 +108,47 @@ ALTER TABLE `sound_play_history`
   ADD PRIMARY KEY (`id`);
 
 --
--- ダンプしたテーブルの AUTO_INCREMENT
---
-
---
 -- テーブルの AUTO_INCREMENT `sound_play_history`
 --
 ALTER TABLE `sound_play_history`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+
+--
+-- テーブルのインデックス `playlist`
+--
+ALTER TABLE `playlist`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `play_list` (`play_list`(768));
+
+--
+-- ダンプしたテーブルの AUTO_INCREMENT
+--
+
+--
+-- テーブルの AUTO_INCREMENT `playlist`
+--
+ALTER TABLE `playlist`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- ビュー用の構造 `v_playlist`
+--
+CREATE VIEW v_playlist(play_list,sound_point,sound_hash,title,genre,lyrics,album_hash,album_title,artist_id,artist_name,track_no,play_count,data_link) AS 
+SELECT
+playlist.play_list,
+playlist.sound_point,
+sound_link.sound_hash,
+sound_link.title,
+sound_link.genre,
+sound_link.lyrics,
+sound_link.album_hash,
+sound_link.album_title,
+sound_link.artist_id,
+sound_link.artist_name,
+sound_link.track_no,
+sound_link.play_count,
+sound_link.data_link
+FROM playlist LEFT JOIN sound_link ON sound_link.sound_hash = playlist.sound_hash;
+
+

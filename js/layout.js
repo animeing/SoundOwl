@@ -921,6 +921,11 @@ const SoundClipComponent = {
 const CurrentAudioList = {
     template:`
     <sw-resize :class="audioFrameClass()" resize-direction='top-left' >
+        <span class='menu-icon-frame'>
+            <button class='menu-icon' @click="contextmenu($event)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="29" height="24" viewBox="0 0 29 24"><path fill="currentColor" d="M1.334 2.666h26.665l.037.001a1.334 1.334 0 1 0 0-2.668L27.997 0h.002H1.334a1.334 1.334 0 0 0-.002 2.666h.002zm26.665 2.667H1.334a1.334 1.334 0 0 0-.002 2.666h26.667l.037.001a1.334 1.334 0 1 0 0-2.668l-.039.001zm0 5.334H1.334a1.334 1.334 0 0 0-.002 2.666h26.667a1.334 1.334 0 0 0 .002-2.666zm0 10.666H1.334a1.334 1.334 0 0 0-.002 2.666h26.667a1.334 1.334 0 0 0 .002-2.666zm0-5.333H1.334a1.334 1.334 0 0 0-.002 2.666h26.667A1.334 1.334 0 0 0 28.001 16z"/></svg>
+            </button>
+        </span>
         <p class='play-list-title' @click.right.prevent="contextmenu()">Play List</p>
         <div :class="audioListClass()" id='current-audio-list' style='overflow-y: scroll;' >
             <button v-for="item in soundClips" drag-item  @click.right.prevent="contextMenu(item)" :class='audioItemClass(item)' @click="click(item)" class="draggable-item">
@@ -944,8 +949,12 @@ const CurrentAudioList = {
         SoundClipComponent
     },
     methods:{
-        contextmenu(){
+        contextmenu(event = undefined){
             ContextMenu.contextMenu.destoryChildren();
+            if(event !== undefined && ContextMenu.isVisible) {
+                ContextMenu.remove();
+                return;
+            }
             {
                 let clearPlaylist = BaseFrameWork.createCustomElement('sw-libutton');
                 clearPlaylist.menuItem.onclick=e=>{
@@ -953,6 +962,42 @@ const CurrentAudioList = {
                 };
                 clearPlaylist.menuItem.value = 'Clear playlist';
                 ContextMenu.contextMenu.appendChild(clearPlaylist);
+            }
+            {
+                let savePlaylist = BaseFrameWork.createCustomElement('sw-libutton');
+                savePlaylist.menuItem.onclick=e=>{
+                    let messageWindow = document.createElement('sw-save-message');
+                    messageWindow.value = 'Do you want to save the playlist?\nPlease enter the playlist name.';
+                    messageWindow.addItem('OK',()=>{
+                        let playlistName = messageWindow.inputText.value;                        
+                        let action = new class extends BaseFrameWork.Network.RequestServerBase {
+                            constructor() {
+                                super(null, BASE.API+'playlist_action.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+                            }
+                        }
+                        action.formDataMap.append('method', 'create');
+                        action.formDataMap.append('playlist_name', playlistName);
+                        let soundHash = [];
+                        for (const soundClip of this.soundClips) {
+                            soundHash.push(soundClip.soundHash);
+                            action.formDataMap.append('sounds[]', soundClip.soundHash);
+                        }
+                            action.httpRequestor.addEventListener('success', ()=>{
+                            messageWindow.close();
+                        });
+                        action.execute();
+
+                    });
+                    messageWindow.addItem('CANCEL',()=>{
+                        messageWindow.close();
+                    });
+                    messageWindow.open();
+                }
+                savePlaylist.menuItem.value = 'Save playlist';
+                ContextMenu.contextMenu.appendChild(savePlaylist);
+            }
+            if(event !== undefined) {
+                ContextMenu.visible(event);
             }
         },
         click(soundClip){
@@ -1019,7 +1064,7 @@ const CurrentAudioList = {
             }
         });
         observer.observe(this.$el, {childList:true,attributes:true,subtree: true});
-	audio.playList.eventSupport.addEventListner('change',()=>{
+        audio.playList.eventSupport.addEventListener('change',()=>{
 	    this.soundClips = audio.playList.array;
 	});
     }
