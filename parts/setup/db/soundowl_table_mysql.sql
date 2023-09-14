@@ -121,6 +121,8 @@ ALTER TABLE `playlist`
   ADD PRIMARY KEY (`id`),
   ADD KEY `play_list` (`play_list`(768));
 
+ALTER TABLE `playlist`
+  ADD UNIQUE KEY `Uni_Playlist` (`play_list`,`sound_point`) USING HASH;
 --
 -- ダンプしたテーブルの AUTO_INCREMENT
 --

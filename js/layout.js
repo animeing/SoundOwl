@@ -977,12 +977,10 @@ const CurrentAudioList = {
                         }
                         action.formDataMap.append('method', 'create');
                         action.formDataMap.append('playlist_name', playlistName);
-                        let soundHash = [];
                         for (const soundClip of this.soundClips) {
-                            soundHash.push(soundClip.soundHash);
                             action.formDataMap.append('sounds[]', soundClip.soundHash);
                         }
-                            action.httpRequestor.addEventListener('success', ()=>{
+                        action.httpRequestor.addEventListener('success', ()=>{
                             messageWindow.close();
                         });
                         action.execute();
