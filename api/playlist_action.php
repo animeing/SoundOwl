@@ -17,6 +17,7 @@ if($_POST['method'] == 'create') {
         http_response_code(400);
         return;
     }
+    (new PlayListDao())->removePlayList($_POST['playlist_name']);
     foreach ($_POST['sounds'] as $key => $value) {
         $playlist = new PlayListDto();
         $playlist->setPlayList($_POST['playlist_name']);
