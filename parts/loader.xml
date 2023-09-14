@@ -19,5 +19,6 @@
     <data table="ArtistTable.php" dto="ArtistDto.php" dao="ArtistDao.php" />
     <data table="SoundDataView.php" dto="SoundDataDto.php" dao="SoundDataDao.php" />
     <data table="PlayListTable.php" dto="PlayListDto.php" dao="PlayListDao.php" />
+    <data table="VPlaylistTable.php" dto="VPlaylistDto.php" dao="VPlaylistDao.php" />
 
 </scripts>
