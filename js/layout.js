@@ -1089,7 +1089,7 @@ const CurrentAudioList = {
 const AudioIconControl = {
     template:`
     <span class="audio-play-item audio-play-item-controller">
-        <input type="button" value="" class="audio-controller-parts icon">
+        <input type="button" :data-hint="loopName" value="" @click="repeatIconClick()" class="audio-controller-parts icon">
         <input type="button" value="" @click="beforeIconClick()" class="audio-controller-parts icon">
         <input type="button" :value="playIcon" @click="playIconClick()" class="audio-controller-parts icon">
         <input type="button" value="" @click="nextIconClick()" class="audio-controller-parts icon">
@@ -1101,10 +1101,41 @@ const AudioIconControl = {
     data(){
         return {
             playIcon: '',
-            audioPlayState:audio.currentAudioClip
+            audioPlayState:audio.currentAudioClip,
+            loopName:''
         }
     },
     methods:{
+        repeatIconClick(){
+            switch(audio.loopMode) {
+                case AudioLoopModeEnum.NON_LOOP:{
+                    audio.loopMode = AudioLoopModeEnum.TRACK_LOOP;
+                    break;
+                }
+                case AudioLoopModeEnum.TRACK_LOOP:{
+                    audio.loopMode = AudioLoopModeEnum.AUDIO_LOOP;
+                    break;
+                }
+                case AudioLoopModeEnum.AUDIO_LOOP:{
+                    audio.loopMode = AudioLoopModeEnum.NON_LOOP;
+                    break;
+                }
+            }
+            this.loopName = this.repeatName();
+        },
+        repeatName() {
+            switch(audio.loopMode) {
+                case AudioLoopModeEnum.NON_LOOP:{
+                    return 'No loop';
+                }
+                case AudioLoopModeEnum.TRACK_LOOP:{
+                    return 'Track loop';
+                }
+                case AudioLoopModeEnum.AUDIO_LOOP:{
+                    return 'Audio loop';
+                }
+            }
+        },
         playIconClick(){
             if(ContextMenu.isVisible)return;
             if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
@@ -1163,6 +1194,7 @@ const AudioIconControl = {
             this.durationTime = audio.audio.duration;
             this.playTime = audio.audio.currentTime;
         });
+        this.loopName = this.repeatName();
     }
 }
 
