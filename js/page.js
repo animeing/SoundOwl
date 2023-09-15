@@ -1162,6 +1162,12 @@ const router = new VueRouter({
         }
     ]
 });
+
+router.beforeEach((to, from, next)=>{
+    next();
+    document.getElementById('view-name').innerText = router.currentRoute.name;
+});
+
 window.addEventListener('load', ()=>{
     let vue = new Vue({
         el:'#base',
