@@ -205,7 +205,8 @@ const Home = {
             soundTop20:'Sound Top 20',
             albumTop20:'Album Top 20',
             soundClips:[],
-            albumData:[]
+            albumData:[],
+            newSoundClips:[]
         };
     },
     components:{
