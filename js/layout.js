@@ -62,7 +62,7 @@ class SearchBox extends HTMLElement{
     }
     
     connectedCallback(){
-        this.setAttribute('hint', 'Search box');
+        this.setAttribute('data-hint', 'Search box');
         this.searchIcon.classList.add('icon');
         this.appendChild(this.searchIcon);
         this.appendChild(this.searchBox);
@@ -210,11 +210,11 @@ class AudioClipObject extends HTMLButtonElement{
         this._image.src = BASE.HOME+'img/album_art.php?media_hash='+audioClip.albumKey;
         this._audioClip = audioClip;
         this._titleObject.innerText = audioClip.title;
-        this._titleObject.setAttribute('hint', audioClip.title);
+        this._titleObject.setAttribute('data-hint', audioClip.title);
         this._artist.innerText = audioClip.artist;
-        this._artist.setAttribute('hint', audioClip.artist);
+        this._artist.setAttribute('data-hint', audioClip.artist);
         this._albumObject.innerText = audioClip.album;
-        this._albumObject.setAttribute('hint', audioClip.album);
+        this._albumObject.setAttribute('data-hint', audioClip.album);
     }
 }
 
@@ -561,10 +561,10 @@ class AudioPlayController extends HTMLElement {
             let playIcon = document.createElement('input');
             audio.eventSupport.addEventListener('update',()=>{
                 if(audio.currentPlayState === AudioPlayStateEnum.PLAY && audio.isPlaying){
-                    playIcon.setAttribute('hint', 'Pause');
+                    playIcon.setAttribute('data-hint', 'Pause');
                     playIcon.value = '';
                 } else {
-                    playIcon.setAttribute('hint', 'Play');
+                    playIcon.setAttribute('data-hint', 'Play');
                     playIcon.value = '';
                 }
             });
@@ -657,7 +657,7 @@ class AudioPlayController extends HTMLElement {
                 }
                 ContextMenu.visible(e);
             });
-            volumeIcon.setAttribute('hint', 'Volume');
+            volumeIcon.setAttribute('data-hint', 'Volume');
             this._volumeObject.max = 1;
             this._volumeObject.min = 0;
             this._volumeObject.classList.add('hide');
@@ -797,17 +797,17 @@ class AudioPlayController extends HTMLElement {
                 positionTime = this._audioProgress.mousePositionvalue(e);
             }
             let textTime = timeToText(positionTime);
-            this._audioProgress.setAttribute('hint', textTime['min']+':'+textTime['sec']);
+            this._audioProgress.setAttribute('data-hint', textTime['min']+':'+textTime['sec']);
         });
         
         this._audioProgress.eventSupport.addEventListener('valueSet',()=>{
             this.progressTextElement.innerText = this.progressText();
             if(audio.currentAudioClip != null){
                 this.currentSoundTitle.innerText = audio.currentAudioClip.title == null ? '' : audio.currentAudioClip.title;
-                this.currentSoundTitle.setAttribute('hint', this.currentSoundTitle.innerText);
+                this.currentSoundTitle.setAttribute('data-hint', this.currentSoundTitle.innerText);
                 setTitle(this.currentSoundTitle.innerText);
                 this.currentUpLoader.innerText = audio.currentAudioClip.artist;
-                this.currentUpLoader.setAttribute('hint',this.currentUpLoader.innerText);
+                this.currentUpLoader.setAttribute('data-hint',this.currentUpLoader.innerText);
             }
         });
         let audioPlayState = audio.audioPlayState;
@@ -881,9 +881,9 @@ const SoundClipComponent = {
             <img loading='lazy' :src="createImageSrc(soundClip.albumKey)">
         </div>
         <div class='layout-box'>
-            <p class='audio-title' :hint='soundClip.title'>{{soundClip.title}}</p>
+            <p class='audio-title' :data-hint='soundClip.title'>{{soundClip.title}}</p>
             <p class='audio-uploader'>
-                <span class='audio-infomation' :hint='soundClip.artist'>{{soundClip.artist}}</span>
+                <span class='audio-infomation' :data-hint='soundClip.artist'>{{soundClip.artist}}</span>
             </p>
             <a v-show='hasAlbumData' class='audio-infomation audio-discription' style='display: block;' v-on:click.stop.prevent.capture='albumClipClick()' :hint='soundClip.album'>{{soundClip.album}}</a>
             <p v-show='!hasAlbumData' class='audio-infomation audio-discription' style='display: block;'>{{soundClip.album}}</p>
@@ -1327,7 +1327,7 @@ const AudioController = {
                 <AudioIconControl @togglePlayListView='togglePlayListView' @toggleControllerFillView='toggleControllerFillView' @toggleVolumeView='toggleVolumeView'></AudioIconControl>
             </p>
             <span class="progress-times progress-time nonselectable">{{progressText()}}</span>
-            <sw-audio-progress class="progress-times" :hint="playTimeString" :value="playTime" :max="durationTime" min="0" v-on:changingValue="changeingPlayPoint" v-on:changed="changedPlayPoint" v-on:mousemove="hint"></sw-audio-progress>
+            <sw-audio-progress class="progress-times" :data-hint="playTimeString" :value="playTime" :max="durationTime" min="0" v-on:changingValue="changeingPlayPoint" v-on:changed="changedPlayPoint" v-on:mousemove="hint"></sw-audio-progress>
             <sw-v-progress :class="volumeClass()" :value="volume" max="1" min="0" v-on:changingValue="changeVolume" v-on:wheel="volumeAction"></sw-v-progress>
             <AudioCanvas :is-view='isFillLayout' @toggleView='toggleView'></AudioCanvas>
         </div>

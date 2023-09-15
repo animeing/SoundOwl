@@ -113,7 +113,7 @@ const SlideList = {
         <div>
             <button v-for="item in data" @click.right.prevent="contextmenu(item)" @click="click(item)">
                 <img loading='lazy' :src="createImageSrc(item.albumKey)">
-                <p :hint="item.title">{{ item.title }}</p>
+                <p :data-hint="item.title">{{ item.title }}</p>
             </button>
         </div>
     </sw-audio-slide-list>`,
@@ -686,7 +686,7 @@ const ArtistClipComponent = {
             <img loading='lazy' :src="createImageSrc(artistClip.album.album_key)">
         </div>
         <div class='layout-box'>
-            <p class="audio-title" :hint='artistClip.artist_name'>{{artistClip.artist_name}}</p>
+            <p class="audio-title" :data-hint='artistClip.artist_name'>{{artistClip.artist_name}}</p>
         </div>
     </div>
     `,
@@ -708,9 +708,9 @@ const AlbumClipComponent = {
             <img loading='lazy' :src="createImageSrc(albumClip.album_key)">
         </div>
         <div class='layout-box'>
-            <p class='audio-title' :hint='albumClip.title'>{{albumClip.title}}</p>
+            <p class='audio-title' :data-hint='albumClip.title'>{{albumClip.title}}</p>
             <p class='audio-uploader'>
-                <span class='audio-infomation' :hint='albumClip.artist.artist_name'>{{albumClip.artist.artist_name}}</span>
+                <span class='audio-infomation' :data-hint='albumClip.artist.artist_name'>{{albumClip.artist.artist_name}}</span>
             </p>
         </div>
     </div>
@@ -1193,7 +1193,7 @@ router.beforeEach((to, from, next)=>{
     next();
     let viewNameElement = document.getElementById('view-name');
     viewNameElement.innerText = router.currentRoute.meta.title;
-    viewNameElement.setAttribute('hint', router.currentRoute.meta.title);
+    viewNameElement.setAttribute('data-hint', router.currentRoute.meta.title);
 });
 
 window.addEventListener('load', ()=>{
