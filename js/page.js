@@ -1123,49 +1123,74 @@ const router = new VueRouter({
         {
             path: '/',
             name: 'home',
-            component: Home
+            component: Home,
+            meta:{
+                title:'Home'
+            }
         },
         {
             path:'/album_list',
             name: 'album_list',
-            component: AlbumList
+            component: AlbumList,
+            meta:{
+                title:'Album List'
+            }
         },
         {
             path:'/artist_list',
             name:'artist_list',
-            component: ArtistList
+            component: ArtistList,
+            meta:{
+                title:'Artist List'
+            }
         },
         {
             path:'/album',
             name:'album',
-            component: AlbumSoundList
+            component: AlbumSoundList,
+            meta:{
+                title:'Album'
+            }
         },
         {
             path:'/artist',
             name:'artist',
-            component:ArtistSoundList
+            component:ArtistSoundList,
+            meta:{
+                title:'Artist'
+            }
         },
         {
             path: '/search',
             name:'search',
-            component: Search
+            component: Search,
+            meta:{
+                title:'Search'
+            }
         },
         {
             path: '/regist',
             name: 'regist',
-            component: DataRegist
+            component: DataRegist,
+            meta:{
+                title:'Regist'
+            }
         },
         {
             path: '/setup',
             name: 'setup',
-            component: SetUp
+            component: SetUp,
+            meta:{
+                title:'Setup'
+            }
         }
     ]
 });
 
+
 router.beforeEach((to, from, next)=>{
     next();
-    document.getElementById('view-name').innerText = router.currentRoute.name;
+    document.getElementById('view-name').innerText = router.currentRoute.meta.title;
 });
 
 window.addEventListener('load', ()=>{
