@@ -113,7 +113,7 @@ const SlideList = {
         <div>
             <button v-for="item in data" @click.right.prevent="contextmenu(item)" @click="click(item)">
                 <img loading='lazy' :src="createImageSrc(item.albumKey)">
-                <p :hint="item.title">{{ item.title }}</p>
+                <p :data-hint="item.title">{{ item.title }}</p>
             </button>
         </div>
     </sw-audio-slide-list>`,
@@ -205,7 +205,8 @@ const Home = {
             soundTop20:'Sound Top 20',
             albumTop20:'Album Top 20',
             soundClips:[],
-            albumData:[]
+            albumData:[],
+            newSoundClips:[]
         };
     },
     components:{
@@ -685,7 +686,7 @@ const ArtistClipComponent = {
             <img loading='lazy' :src="createImageSrc(artistClip.album.album_key)">
         </div>
         <div class='layout-box'>
-            <p class="audio-title" :hint='artistClip.artist_name'>{{artistClip.artist_name}}</p>
+            <p class="audio-title" :data-hint='artistClip.artist_name'>{{artistClip.artist_name}}</p>
         </div>
     </div>
     `,
@@ -707,9 +708,9 @@ const AlbumClipComponent = {
             <img loading='lazy' :src="createImageSrc(albumClip.album_key)">
         </div>
         <div class='layout-box'>
-            <p class='audio-title' :hint='albumClip.title'>{{albumClip.title}}</p>
+            <p class='audio-title' :data-hint='albumClip.title'>{{albumClip.title}}</p>
             <p class='audio-uploader'>
-                <span class='audio-infomation' :hint='albumClip.artist.artist_name'>{{albumClip.artist.artist_name}}</span>
+                <span class='audio-infomation' :data-hint='albumClip.artist.artist_name'>{{albumClip.artist.artist_name}}</span>
             </p>
         </div>
     </div>
@@ -1123,45 +1124,78 @@ const router = new VueRouter({
         {
             path: '/',
             name: 'home',
-            component: Home
+            component: Home,
+            meta:{
+                title:'Home'
+            }
         },
         {
             path:'/album_list',
             name: 'album_list',
-            component: AlbumList
+            component: AlbumList,
+            meta:{
+                title:'Album List'
+            }
         },
         {
             path:'/artist_list',
             name:'artist_list',
-            component: ArtistList
+            component: ArtistList,
+            meta:{
+                title:'Artist List'
+            }
         },
         {
             path:'/album',
             name:'album',
-            component: AlbumSoundList
+            component: AlbumSoundList,
+            meta:{
+                title:'Album'
+            }
         },
         {
             path:'/artist',
             name:'artist',
-            component:ArtistSoundList
+            component:ArtistSoundList,
+            meta:{
+                title:'Artist'
+            }
         },
         {
             path: '/search',
             name:'search',
-            component: Search
+            component: Search,
+            meta:{
+                title:'Search'
+            }
         },
         {
             path: '/regist',
             name: 'regist',
-            component: DataRegist
+            component: DataRegist,
+            meta:{
+                title:'Regist'
+            }
         },
         {
             path: '/setup',
             name: 'setup',
-            component: SetUp
+            component: SetUp,
+            meta:{
+                title:'Setup'
+            }
         }
     ]
 });
+
+
+router.beforeEach((to, from, next)=>{
+    next();
+    let viewNameElement = document.getElementById('view-name');
+    viewNameElement.innerText = router.currentRoute.meta.title;
+    viewNameElement.setAttribute('data-hint', router.currentRoute.meta.title);
+});
+
 window.addEventListener('load', ()=>{
     let vue = new Vue({
         el:'#base',
