@@ -968,7 +968,9 @@ const CurrentAudioList = {
                 savePlaylist.menuItem.onclick=e=>{
                     let messageWindow = document.createElement('sw-save-message');
                     messageWindow.value = 'Do you want to save the playlist?\nPlease enter the playlist name.';
+
                     messageWindow.addItem('OK',()=>{
+                        messageWindow.close();
                         let playlistName = messageWindow.inputText.value;                        
                         let action = new class extends BaseFrameWork.Network.RequestServerBase {
                             constructor() {
@@ -980,8 +982,23 @@ const CurrentAudioList = {
                         for (const soundClip of this.soundClips) {
                             action.formDataMap.append('sounds[]', soundClip.soundHash);
                         }
-                        action.httpRequestor.addEventListener('success', ()=>{
-                            messageWindow.close();
+                        action.httpRequestor.addEventListener('success', event=>{
+                            let message = document.createElement('sw-message-button');
+                            message.addItem('OK', ()=>{
+                                message.close();
+                            });
+                            message.value = event.detail.response.detail;
+                            if(event.detail.response.status == 'success'){
+                                message.close(6000);
+                            }
+                        });
+                        action.httpRequestor.addEventListener('error', ()=>{
+                            let message = document.createElement('sw-message-button');
+                            message.addItem('OK', ()=>{
+                                message.close();
+                            });
+                            message.value = `Action error ${action.httpRequestor.status}`;
+                            message.open();
                         });
                         action.execute();
 

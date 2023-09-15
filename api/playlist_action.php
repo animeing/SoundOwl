@@ -17,6 +17,16 @@ if($_POST['method'] == 'create') {
         http_response_code(400);
         return;
     }
+    if(count($_POST['sounds']) == 0) {
+        echo json_encode(
+            array(
+                'status'=>'error',
+                'detail'=>'There are too few sound.'
+            )
+        );
+        return;
+    }
+    (new PlayListDao())->removePlayList($_POST['playlist_name']);
     foreach ($_POST['sounds'] as $key => $value) {
         $playlist = new PlayListDto();
         $playlist->setPlayList($_POST['playlist_name']);
@@ -24,5 +34,11 @@ if($_POST['method'] == 'create') {
         $playlist->setSoundHash(ComplessUtil::decompless($value));
         (new PlayListDao())->insert($playlist);
     }
+    echo json_encode(
+        array(
+            'status'=>'success',
+            'detail'=>'playlist created.'
+        )
+    );
     return;
 }

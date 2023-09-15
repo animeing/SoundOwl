@@ -13,4 +13,12 @@ class PlayListDao extends SqlCreater implements PlayListTable {
             )
         );
     }
+    
+    function removePlayList($name) {
+        $this->execute(
+            $this::DELETE.$this::FROM.$this::TABLE_NAME.$this::WHERE.$this::PLAY_LIST.$this::EQUAL_PARAM,
+            array($name)
+        );
+    }
+
 }
