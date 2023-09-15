@@ -1090,10 +1090,10 @@ const AudioIconControl = {
     template:`
     <span class="audio-play-item audio-play-item-controller">
         <input type="button" :data-hint="loopName" value="" @click="repeatIconClick()" class="audio-controller-parts icon">
-        <input type="button" value="" @click="beforeIconClick()" class="audio-controller-parts icon">
+        <input type="button" data-hint="Back" value="" @click="beforeIconClick()" class="audio-controller-parts icon">
         <input type="button" :value="playIcon" @click="playIconClick()" class="audio-controller-parts icon">
-        <input type="button" value="" @click="nextIconClick()" class="audio-controller-parts icon">
-        <input type="button" value="" @click="togglePlayListView()" class="audio-controller-parts icon">
+        <input type="button" data-hint="Next" value="" @click="nextIconClick()" class="audio-controller-parts icon">
+        <input type="button" data-hint="Playlist" value="" @click="togglePlayListView()" class="audio-controller-parts icon">
         <input type="button" value="" @click="audioViewOpen()" class="audio-controller-parts icon">
         <input type="button" value="" @click="toggleControllerFillView()" class="audio-controller-parts icon">
     </span>
