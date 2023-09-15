@@ -1190,7 +1190,9 @@ const router = new VueRouter({
 
 router.beforeEach((to, from, next)=>{
     next();
-    document.getElementById('view-name').innerText = router.currentRoute.meta.title;
+    let viewNameElement = document.getElementById('view-name');
+    viewNameElement.innerText = router.currentRoute.meta.title;
+    viewNameElement.setAttribute('hint', router.currentRoute.meta.title);
 });
 
 window.addEventListener('load', ()=>{
