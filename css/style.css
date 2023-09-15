@@ -355,6 +355,12 @@ header{
    top: 0;
 }
 
+#view-name {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 0%);
+}
+
 input[type='button'].button {
   background: inherit;
   border-radius: 10px;
