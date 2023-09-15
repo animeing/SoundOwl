@@ -942,6 +942,8 @@ const AudioController = {
                 <CurrentAudioList :is-view='isAudioList'></CurrentAudioList>
                 <span class='audio-play-item'>{{currentPlaySoundClip.title}}</span>
                 <span class="audio-play-item nonselectable">-</span>
+                <span class='audio-play-item'>{{currentPlaySoundClip.artist}}</span>
+                <span class='audio-play-item nonselectable'>-</span>
                 <a href='#' class="audio-play-item" v-on:click.stop.prevent='albumClick()'>{{currentPlaySoundClip.album}}</a>
                 <AudioIconControl @togglePlayListView='togglePlayListView' @toggleControllerFillView='toggleControllerFillView' @toggleVolumeView='toggleVolumeView'></AudioIconControl>
             </p>
