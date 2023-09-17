@@ -678,7 +678,7 @@ const AudioIconControl = {
     <span class="audio-play-item audio-play-item-controller">
         <input type="button" :data-hint="loopName" value="" @click="repeatIconClick()" class="audio-controller-parts icon">
         <input type="button" data-hint="Back" value="" @click="beforeIconClick()" class="audio-controller-parts icon">
-        <input type="button" :value="playIcon" @click="playIconClick()" class="audio-controller-parts icon">
+        <input type="button" :data-hint="actionName" :value="playIcon" @click="playIconClick()" class="audio-controller-parts icon">
         <input type="button" data-hint="Next" value="" @click="nextIconClick()" class="audio-controller-parts icon">
         <input type="button" data-hint="Playlist" value="" @click="togglePlayListView()" class="audio-controller-parts icon">
         <input type="button" value="" @click="audioViewOpen()" class="audio-controller-parts icon">
@@ -689,7 +689,8 @@ const AudioIconControl = {
         return {
             playIcon: '',
             audioPlayState:audio.currentAudioClip,
-            loopName:''
+            loopName:'',
+            actionName:''
         }
     },
     methods:{
@@ -766,21 +767,25 @@ const AudioIconControl = {
             this.audioPlayState = audio.currentPlayState;
             //PauseIcon
             this.playIcon = '';
+            this.actionName = 'Pause';
         });
         audio.eventSupport.addEventListener('stop', ()=>{
             this.audioPlayState = audio.currentPlayState;
             //PlayIcon
             this.playIcon = '';
+            this.actionName = 'Play';
         });
         audio.eventSupport.addEventListener('pause',()=>{
             this.audioPlayState = audio.currentPlayState;
             //PlayIcon
             this.playIcon = '';
+            this.actionName = 'Play';
         });
         audio.eventSupport.addEventListener('update', ()=>{
             this.durationTime = audio.audio.duration;
             this.playTime = audio.audio.currentTime;
         });
+        this.actionName = 'Pause';
         this.loopName = this.repeatName();
     }
 }

@@ -2723,6 +2723,7 @@ class AudioPlayer{
                     this.audioDeployment();
                 }
             }
+            setTitle(this.currentAudioClip.title);
             this.audio.play();
             this.currentPlayState = AudioPlayStateEnum.PLAY;
             this.eventSupport.dispatchEvent(new CustomEvent('play'));

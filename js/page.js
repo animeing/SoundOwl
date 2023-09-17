@@ -1194,6 +1194,7 @@ router.beforeEach((to, from, next)=>{
     let viewNameElement = document.getElementById('view-name');
     viewNameElement.innerText = router.currentRoute.meta.title;
     viewNameElement.setAttribute('data-hint', router.currentRoute.meta.title);
+    setTitle(router.currentRoute.meta.title == 'Home'?'':router.currentRoute.meta.title);
 });
 
 window.addEventListener('load', ()=>{
