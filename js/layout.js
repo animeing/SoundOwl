@@ -337,65 +337,6 @@ class InputParam extends HTMLElement {
 }
 BaseFrameWork.defineCustomElement('sw-input-param', InputParam);
 
-
-/**
- * @singleton
- * @template AudioClipObject
- * @type {BaseFrameWork.List<AudioClipObject>}
- */
- class PlacementList extends WebObjectList{
-    constructor(){
-        super(document.createElement('div'));
-        this.parent.classList.add('layout-base', 'audio-list');
-        let letDataChange = ()=>{
-            if(this.currentNowPlayingSoundObject != null && this.currentNowPlayingSoundObject.audioClip != null &&
-                this.currentNowPlayingSoundObject.audioClip.equals(audio.currentAudioClip)){
-                    return;
-            }
-            Array.prototype.forEach.call(this.parent.getElementsByClassName('audio-list-nowplaying'), item=>{
-                item.classList.remove('audio-list-nowplaying');
-            });
-            for (const audioClipObject of this) {
-                if(audio.currentAudioClip !== null && audio.currentAudioClip.equals(audioClipObject.audioClip)){
-                    audioClipObject.classList.add('audio-list-nowplaying');
-                    break;
-                }
-            }
-        };
-        let observer = new MutationObserver(letDataChange);
-        observer.observe(this.parent, {attributes:true});
-        audio.eventSupport.addEventListener('play',letDataChange);
-
-    }
-
-    copyChilds(){
-        let list = new BaseFrameWork.List;
-        for (const clip of this) {
-            list.add(document.importNode(clip.object, true));
-        }
-        return list;
-    }
-
-    get currentNowPlayingSoundObject(){
-        for (const item of this) {
-            if(item.classList.contains('audio-list-nowplaying')){
-                return item;
-            }
-        }
-        return null;
-    }
-    
-    get audioClips(){
-        let audioClips = new BaseFrameWork.List;
-        for (const audioClipObject of this) {
-            audioClips.add(audioClipObject.audioClip);
-        }
-        return audioClips;
-    }
-
-}
-
-
 class AudioProgressComposite extends ProgressComposite{
     constructor(){
         super();
