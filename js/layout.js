@@ -651,6 +651,7 @@ const AudioIconControl = {
                 }
             }
             this.loopName = this.repeatName();
+            audioParamSave();
         },
         repeatName() {
             switch(audio.loopMode) {
