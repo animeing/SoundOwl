@@ -556,6 +556,10 @@ sw-audio-slide-list img,
   white-space: nowrap;
 }
 
+a.audio-infomation {
+  color: var(--fontcolor);
+}
+
 .audio-uploader{
   font-size: 14.7px;
 }
