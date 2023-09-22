@@ -506,6 +506,10 @@ sw-audio-slide-list img,
   height: 175px;
 }
 
+.audio-item > div {
+  display: flex;
+}
+
 .audio-item-menu{
   background-color: inherit;
   border: 1px solid var(--subcoloraccentcolor);
