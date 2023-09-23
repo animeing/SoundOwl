@@ -413,7 +413,7 @@ const SoundClipComponent = {
             <p class='audio-uploader'>
                 <span class='audio-infomation' :data-hint='soundClip.artist'>{{soundClip.artist}}</span>
             </p>
-            <a v-show='hasAlbumData' class='audio-infomation audio-discription' v-on:click.stop.prevent.capture='albumClipClick()' :hint='soundClip.album'>{{soundClip.album}}</a>
+            <a v-show='hasAlbumData' class='audio-infomation audio-discription' v-on:click.stop.prevent.capture='albumClipClick()' :data-hint='soundClip.album'>{{soundClip.album}}</a>
         </div>
     </div>
     `,
