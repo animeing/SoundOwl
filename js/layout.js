@@ -22,6 +22,24 @@ const audioParamLoad=()=>{
     audio.loadGiveUpTime = audioParams.loadGiveUpTime;
 };
 
+(()=>{
+    const ws = new WebSocket(`ws://localhost:8080`);
+    
+    ws.onopen = function() {
+        //ignore
+    };
+
+    ws.onmessage = function(event) {
+        console.log('メッセージ受信:', event.data);
+    };
+
+    ws.onclose = function() {
+        console.log('接続が閉じられました');
+    };
+})();
+
+
+
 
 class SearchBox extends HTMLElement{
     _searchBox = document.createElement('input');
