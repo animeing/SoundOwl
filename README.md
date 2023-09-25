@@ -23,6 +23,8 @@ Intranet内でブラウザが入っているPCがあれば視聴できること�
 * apt install -y composer
 * composer install
 * systemctl restart apache2
+* screen
+* php /var/www/html/api/sw/server.php
 * ブラウザにて http://<ServerのIPAddress>/#/setup にアクセス
 <img src="https://user-images.githubusercontent.com/24301121/178284171-61d9077c-6517-4666-9d65-8187f935de9c.png" width="100%">
 
