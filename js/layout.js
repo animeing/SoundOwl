@@ -23,7 +23,7 @@ const audioParamLoad=()=>{
 };
 
 (()=>{
-    const ws = new WebSocket(`ws://localhost:8080`);
+    const ws = new WebSocket(`ws://${window.location.hostname}:8080`);
     
     ws.onopen = function() {
         //ignore
