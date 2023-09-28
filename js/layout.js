@@ -23,19 +23,25 @@ const audioParamLoad=()=>{
 };
 
 (()=>{
-    const ws = new WebSocket(`ws://${window.location.hostname}:8080`);
-    
-    ws.onopen = function() {
-        //ignore
-    };
+    const webSocketAction = () =>{
+        const ws = new WebSocket(`ws://${window.location.hostname}:8080`);
+        
+        ws.onopen = function() {
+            //ignore
+        };
 
-    ws.onmessage = function(event) {
-        console.log('メッセージ受信:', event.data);
-    };
+        ws.onmessage = function(event) {
+            console.log('メッセージ受信:', event.data);
+        };
 
-    ws.onclose = function() {
-        console.log('接続が閉じられました');
-    };
+        ws.onclose = function() {
+            console.log('接続が閉じられました');
+            setTimeout(()=>{
+                webSocketAction();
+            }, 1e4);
+        };
+    }
+    webSocketAction();
 })();
 
 
