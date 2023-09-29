@@ -1,9 +1,9 @@
 'use strict';
 const BASE = {
     DOMAIN:'',
-    SAVE_PATH:'/',
-    HOME:'',
-    API:'/api/'
+    SAVE_PATH:window.location.pathname.split('#')[0],
+    HOME:window.location.pathname.split('#')[0],
+    API:window.location.pathname.split('#')[0]+'api/'
 };
 
 const BaseFrameWork={};
