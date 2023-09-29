@@ -24,7 +24,7 @@ const audioParamLoad=()=>{
 
 (()=>{
     const webSocketAction = () =>{
-        const ws = new WebSocket(`ws://${window.location.hostname}:8080`);
+        const ws = new WebSocket(`ws://${BASE.WEBSOCKET}:8080`);
         
         ws.onopen = function() {
             //ignore
