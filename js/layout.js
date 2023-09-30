@@ -28,6 +28,15 @@ const audioParamLoad=()=>{
         const ws = new WebSocket(`ws://${BASE.WEBSOCKET}:8080`);
         
         ws.onopen = function() {
+            if(retryCount >= Initalize.websocket_retry_count){
+                let message = document.createElement('sw-message-button');
+                message.addItem('Close', ()=>{
+                    message.close();
+                });
+                message.value = `Successfully connected to the server.`;
+                message.close(10000);
+                message.open();
+            }
             retryCount = 0;
         };
 
@@ -42,7 +51,6 @@ const audioParamLoad=()=>{
                     
                     let message = document.createElement('sw-message-button');
                     message.addItem('Reconnect', ()=>{
-                        retryCount = 0;
                         webSocketAction();
                         message.close();
                     });
