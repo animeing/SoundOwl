@@ -54,10 +54,10 @@ const audioParamLoad=()=>{
                     return;
                 }
                 webSocketAction();
+                retryCount++;
             }, 1e4);
         };
     }
-    retryCount++;
     webSocketAction();
 })();
 
