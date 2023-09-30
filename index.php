@@ -26,6 +26,11 @@ echo StringUtil::deleteNonCss(file_get_contents(dirname(__FILE__).'/css/style.cs
 echo StringUtil::deleteNonCss(file_get_contents(dirname(__FILE__).'/css/dark-mode.css'));
 ?>
     </style>
+    <script>
+const Initalize = {
+    websocket_retry_count:<?php echo WEBSOCKET_RETRY_COUNT_LIMIT;?>
+};
+    </script>
     <script src="js/base.js"></script>
     <script src="js/layout.js"></script>
     <script src="js/page.js"></script>

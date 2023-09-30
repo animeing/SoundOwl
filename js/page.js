@@ -945,6 +945,10 @@ const SettingFormComponent = {
             <p class="title">Sound</p>
             <sw-input-param data-title="Sound Directory" type="text" :value="sound" name="sound_directory"></sw-input-param>
         </div>
+        <div class="block">
+            <p class="title">WebSocket</p>
+            <sw-input-param data-title="Retry Count Limit" :value="websocketRetryCount" name="websocket_retry_count" type="number" min="0" max="100" pattern="[0-9]"></sw-input-param>
+        </div>
     </div>
     `,
     data() {
@@ -954,6 +958,7 @@ const SettingFormComponent = {
             user:'',
             pass:'',
             sound:'',
+            websocketRetryCount:0
         };
     },
     mounted() {
@@ -964,6 +969,7 @@ const SettingFormComponent = {
             this.user = event.detail.response.db_user;
             this.pass = event.detail.response.db_pass;
             this.sound = event.detail.response.sound_directory;
+            this.websocketRetryCount = event.detail.response.websocket_retry_count;
         });
         getSettingAction.execute();
     }

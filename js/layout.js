@@ -23,20 +23,36 @@ const audioParamLoad=()=>{
 };
 
 (()=>{
+    let retryCount = 0;
     const webSocketAction = () =>{
         const ws = new WebSocket(`ws://${BASE.WEBSOCKET}:8080`);
         
         ws.onopen = function() {
-            //ignore
+            retryCount = 0;
         };
 
         ws.onmessage = function(event) {
-            console.log('メッセージ受信:', event.data);
+            let websocketData = JSON.parse(event.data);
+            Initalize.websocket_retry_count = websocketData.context.websocket_retry_count;
         };
 
         ws.onclose = function() {
-            console.log('接続が閉じられました');
             setTimeout(()=>{
+                if(retryCount <= Initalize.websocket_retry_count){
+                    
+                    let message = document.createElement('sw-message-button');
+                    message.addItem('Reconnect', ()=>{
+                        retryCount = 0;
+                        webSocketAction();
+                        message.close();
+                    });
+                    message.addItem('Close', ()=>{
+                        message.close();
+                    });
+                    message.value = `Failed to connect to the server.`;
+                    message.open();
+                    return;
+                }
                 webSocketAction();
             }, 1e4);
         };
@@ -268,10 +284,34 @@ class InputParam extends HTMLElement {
                 ContextMenu.contextMenu.appendChild(paste);
             }
         });
+        {
+            let val = this._input.value;
+            this._input.addEventListener('input', ()=>{
+                if(!this._input.hasAttribute('pattern')) {
+                    return;
+                }
+                const pattern = new RegExp(this._input.value.pattern);
+                if(!pattern.test('/^'+this._input.value+'$/')) {
+                    this._input.value = val;
+                    return;
+                }
+                if(this._input.value == '') {
+                    this._input.value = val;
+                    return;
+                }
+                if(this._input.hasAttribute('max')) {
+                    this._input.value = Math.min(this._input.value, this._input.max);
+                }
+                if(this._input.hasAttribute('min')) {
+                    this._input.value = Math.max(this._input.value, this._input.min);
+                }
+                val = this._input.value;
+            });
+        }
     }
     
     static get observedAttributes() {
-        return ['value', 'data-title', 'type', 'name', 'readonly'];
+        return ['value', 'data-title', 'type', 'max', 'min', 'pattern','name', 'readonly'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -283,6 +323,15 @@ class InputParam extends HTMLElement {
         }
         if('type' == name) {
             this._input.type = newValue;
+        }
+        if('max' == name) {
+            this._input.setAttribute('max', newValue);
+        }
+        if('min' == name) {
+            this._input.setAttribute('min', newValue);
+        }
+        if('pattern' == name) {
+            this._input.setAttribute('pattern', newValue);
         }
         if('name' == name) {
             this._input.name = newValue;
@@ -311,6 +360,30 @@ class InputParam extends HTMLElement {
     }
     set type(type) {
         this.setAttribute('type', type);
+    }
+
+    get max() {
+        return this._input.max;
+    }
+
+    set max(max) {
+        this.setAttribute('max', max);
+    }
+
+    get min() {
+        return this._input.min;
+    }
+
+    set min(min) {
+        this.setAttribute('min', min);
+    }
+
+    get pattern(){
+        return this._input.pattern;
+    }
+
+    set pattern(pattern){
+        this.setAttribute('pattern', pattern);
     }
 
     get name() {

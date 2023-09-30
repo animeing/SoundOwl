@@ -24,5 +24,7 @@ define("DB_PASSWORD", array_key_exists('db_pass',$setting)?$setting['db_pass']:'
 
 define("SOUND_DIRECTORY", array_key_exists('sound_directory',$setting)?$setting['sound_directory']:'');
 
+define("WEBSOCKET_RETRY_COUNT_LIMIT", array_key_exists('websocket_retry_count', $setting)?$setting['websocket_retry_count'] : 0);
+
 $setting = null;
 
