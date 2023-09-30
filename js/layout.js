@@ -38,7 +38,7 @@ const audioParamLoad=()=>{
 
         ws.onclose = function() {
             setTimeout(()=>{
-                if(retryCount <= Initalize.websocket_retry_count){
+                if(retryCount >= Initalize.websocket_retry_count){
                     
                     let message = document.createElement('sw-message-button');
                     message.addItem('Reconnect', ()=>{
@@ -57,6 +57,7 @@ const audioParamLoad=()=>{
             }, 1e4);
         };
     }
+    retryCount++;
     webSocketAction();
 })();
 
