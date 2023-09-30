@@ -26,5 +26,7 @@ define("SOUND_DIRECTORY", array_key_exists('sound_directory',$setting)?$setting[
 
 define("WEBSOCKET_RETRY_COUNT_LIMIT", array_key_exists('websocket_retry_count', $setting)?$setting['websocket_retry_count'] : 0);
 
+define("WEBSOCKET_RETRY_INTERVAL", array_key_exists('websocket_retry_interval', $setting)? $setting['websocket_retry_interval'] : 10000);
+
 $setting = null;
 

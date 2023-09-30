@@ -948,6 +948,7 @@ const SettingFormComponent = {
         <div class="block">
             <p class="title">WebSocket</p>
             <sw-input-param data-title="Retry Count Limit" :value="websocketRetryCount" name="websocket_retry_count" type="number" min="0" max="100" pattern="[0-9]"></sw-input-param>
+            <sw-input-param data-title="Reconnection Interval (ms)" :value="websocketRetryIntervalMs" name="websocket_retry_interval" type="number" min="0" max="999999" pattern="[0-9]"></sw-input-param>
         </div>
     </div>
     `,
@@ -958,7 +959,8 @@ const SettingFormComponent = {
             user:'',
             pass:'',
             sound:'',
-            websocketRetryCount:0
+            websocketRetryCount:0,
+            websocketRetryIntervalMs:10000
         };
     },
     mounted() {
@@ -969,7 +971,8 @@ const SettingFormComponent = {
             this.user = event.detail.response.db_user;
             this.pass = event.detail.response.db_pass;
             this.sound = event.detail.response.sound_directory;
-            this.websocketRetryCount = event.detail.response.websocket_retry_count;
+            this.websocketRetryCount = event.detail.response.websocket.retry_count;
+            this.websocketRetryIntervalMs = event.detail.response.websocket.retry_interval;
         });
         getSettingAction.execute();
     }

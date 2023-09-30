@@ -42,7 +42,8 @@ const audioParamLoad=()=>{
 
         ws.onmessage = function(event) {
             let websocketData = JSON.parse(event.data);
-            Initalize.websocket_retry_count = websocketData.context.websocket_retry_count;
+            Initalize.websocket_retry_count = websocketData.context.websocket.retry_count;
+            Initalize.websocket_retry_interval = websocketData.context.websocket.retry_interval;
         };
 
         ws.onclose = function() {
@@ -63,7 +64,7 @@ const audioParamLoad=()=>{
                 }
                 webSocketAction();
                 retryCount++;
-            }, 1e4);
+            }, Initalize.websocket_retry_interval);
         };
     }
     webSocketAction();

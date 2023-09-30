@@ -50,8 +50,11 @@ class ServerMessage implements MessageComponentInterface {
                 'artist'=>$this->artistDao->count($this->artistDao->countQuery()),
                 'album'=>$this->albumDao->count($this->albumDao->countQuery())
             ),
-            'websocket_retry_count'=>array_key_exists('websocket_retry_count', $settings)?$settings['websocket_retry_count'] : 0
-            );
+            'websocket'=>array(
+                'retry_count'=>(array_key_exists('websocket_retry_count', $settings)?$settings['websocket_retry_count'] : 0),
+                'retry_interval'=>(array_key_exists('websocket_retry_interval', $settings)?$settings['websocket_retry_interval'] : 10000)
+            )
+        );
     }
 
     public function addHeader($param) {
