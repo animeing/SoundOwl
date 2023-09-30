@@ -971,8 +971,8 @@ const SettingFormComponent = {
             this.user = event.detail.response.db_user;
             this.pass = event.detail.response.db_pass;
             this.sound = event.detail.response.sound_directory;
-            this.websocketRetryCount = event.detail.response.websocket.retry_count;
-            this.websocketRetryIntervalMs = event.detail.response.websocket.retry_interval;
+            this.websocketRetryCount = event.detail.response.websocket_retry_count;
+            this.websocketRetryIntervalMs = event.detail.response.websocket_retry_interval;
         });
         getSettingAction.execute();
     }
