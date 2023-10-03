@@ -653,9 +653,23 @@ a.audio-infomation {
   height: 80vh;
   bottom: 3em;
   right: 0;
-  width: 50%;
+  max-width: 50%;
+  width: 564px;
   overflow: hidden;
   user-select: none;
+}
+
+.audio-controller-playlist .audio-item {
+  height: 97px;
+}
+
+.audio-controller-playlist .audio-item > div > .alubm {
+  width: 108px;
+}
+
+.audio-controller-playlist .audio-item > div >.alubm > img {
+  width: 108px;
+  height: 92px;
 }
 
 .audio-list-frame{
