@@ -10,7 +10,7 @@
 --
 
 CREATE TABLE IF NOT EXISTS `album` (
-  `album_key` text NOT NULL,
+  `album_key` VARCHAR(255) NOT NULL,
   `album_id` text NOT NULL,
   `title` text NOT NULL,
   `artist_id` text ,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `artist` (
 --
 
 CREATE TABLE IF NOT EXISTS `sound_link` (
-  `sound_hash` text NOT NULL,
+  `sound_hash` VARCHAR(255) NOT NULL,
   `add_time` datetime NOT NULL DEFAULT '1970-01-01 00:00:00',
   `title` text NOT NULL,
   `genre` text ,
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `sound_link` (
   `artist_name` text ,
   `track_no` text ,
   `play_count` int(11) NOT NULL DEFAULT 0,
-  `data_link` text NOT NULL
+  `data_link` VARCHAR(4351) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -99,6 +99,7 @@ ALTER TABLE `sound_link`
   ADD KEY `play_count` (`play_count`),
   ADD KEY `album_title` (`album_title`(768)),
   ADD KEY `artist_name` (`artist_name`(768)),
+  ADD KEY `data_link` (`data_link`(768)),
   ADD KEY `lyrics` (`lyrics`(768));
 
 --
