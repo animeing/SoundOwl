@@ -134,6 +134,12 @@ ALTER TABLE `playlist`
 ALTER TABLE `playlist`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
+
+
+ALTER TABLE playlist
+ADD FOREIGN KEY (sound_hash) REFERENCES sound_link(sound_hash)
+ON DELETE CASCADE;
+
 --
 -- ビュー用の構造 `v_playlist`
 --
