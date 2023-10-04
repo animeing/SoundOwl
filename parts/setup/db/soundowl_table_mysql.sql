@@ -140,6 +140,12 @@ ALTER TABLE playlist
 ADD FOREIGN KEY (sound_hash) REFERENCES sound_link(sound_hash)
 ON DELETE CASCADE;
 
+
+
+ALTER TABLE sound_play_history
+ADD FOREIGN KEY (sound_hash) REFERENCES sound_link(sound_hash)
+ON DELETE CASCADE;
+
 --
 -- ビュー用の構造 `v_playlist`
 --
