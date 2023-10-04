@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS `sound_link` (
 
 CREATE TABLE IF NOT EXISTS `sound_play_history` (
   `id` int(11) NOT NULL,
-  `sound_hash` text NOT NULL,
+  `sound_hash` varchar(255) NOT NULL,
   `play_date` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
