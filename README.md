@@ -20,6 +20,7 @@ Intranet内でブラウザが入っているPCがあれば視聴できること�
 * apt install -y screen
 * git clone https://github.com/animeing/SoundOwl.git /var/www/html
 * apt install -y php-xml
+* apt install -y php8.1-gd
 * apt install -y composer
 * composer install
 * systemctl restart apache2
