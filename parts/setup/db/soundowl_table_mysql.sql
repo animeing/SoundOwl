@@ -70,13 +70,35 @@ CREATE TABLE IF NOT EXISTS `sound_play_history` (
 CREATE TABLE  IF NOT EXISTS `playlist` (
   `id` int(11) NOT NULL,
   `sound_point` int(11) NOT NULL,
-  `play_list` text NOT NULL,
+  `play_list` varchar(255) NOT NULL,
   `sound_hash` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- ダンプしたテーブルのインデックス
 --
+
+--
+-- テーブルの構造 `playlist_data`
+--
+
+CREATE TABLE `playlist_data` (
+  `play_list` varchar(255) NOT NULL,
+  `art` mediumblob,
+  `create_datetime` datetime NOT NULL DEFAULT current_timestamp(),
+  `update_datetime` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- ダンプしたテーブルのインデックス
+--
+
+--
+-- テーブルのインデックス `playlist_data`
+--
+ALTER TABLE `playlist_data`
+  ADD PRIMARY KEY (`play_list`);
+COMMIT;
 
 --
 -- テーブルのインデックス `album`
@@ -120,6 +142,7 @@ ALTER TABLE `sound_play_history`
 --
 ALTER TABLE `playlist`
   ADD PRIMARY KEY (`id`),
+  ADD INDEX `idx_playlist_play_list` (`play_list`),
   ADD KEY `play_list` (`play_list`(768));
 
 ALTER TABLE `playlist`
@@ -144,6 +167,13 @@ ON DELETE CASCADE;
 
 ALTER TABLE sound_play_history
 ADD FOREIGN KEY (sound_hash) REFERENCES sound_link(sound_hash)
+ON DELETE CASCADE;
+
+
+
+ALTER TABLE playlist
+ADD FOREIGN KEY (play_list) REFERENCES playlist_data(play_list) 
+ON UPDATE CASCADE 
 ON DELETE CASCADE;
 
 --
