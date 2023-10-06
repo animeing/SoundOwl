@@ -50,6 +50,22 @@ abstract class SqlCreater extends Connector implements ISql{
         return ISql::DELETE.ISql::FROM.$this::TABLE_NAME.ISql::WHERE.$this::PRIMARY_KEY.ISql::EQUAL_PARAM;
     }
 
+    function upsert($dto) {
+        $isUpdate = false;
+        foreach ($this->find($dto->getPrimaryKey()) as $value) {
+            if($value->getPrimaryKey() == $dto->getPrimaryKey()){
+                $isUpdate = true;
+                break;
+            }
+        }
+        if($isUpdate) {
+            $this->update($dto);
+        } else {
+            $this->insert($dto);
+        }
+        
+    }
+
     protected function insertQuery($dto){
         $sql = ISql::INSERT.ISql::INTO.$this::TABLE_NAME.ISql::BRACKET_OPEN;
         $values = "";
