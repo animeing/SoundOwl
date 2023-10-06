@@ -12,6 +12,53 @@ if(!isset($_POST['method'])) {
     return;
 }
 
+
+function createImageData() {
+
+    function addImage($currentImg, $addImg, $paintPointX, $paintPointY) {
+        imagecopyresampled($currentImg, $addImg, $paintPointX, $paintPointY, 0, 0, 150, 150, imagesx($addImg), imagesy($addImg));
+    }
+    
+    $VPlaylistDao = new VPlaylistDao;
+
+    $playlistDatas = array_reverse($VPlaylistDao->getAlbumArts($_POST['playlist_name'], 5));
+
+    $albumDao = new AlbumDao;
+
+    $newImage = imagecreatetruecolor(200, 200);
+
+    $pointx = 105;
+    $pointy = 105;
+    foreach ($playlistDatas as $playlistData) {
+        $albumDto = null;
+        $pointx -= 21;
+        $pointy -= 21;
+        foreach($albumDao->find($playlistData->getAlbumHash()) as $value) {
+            $albumDto = $value;
+            break;
+        }
+        if($albumDto == null || $albumDto->getArtMime() == null) {
+            continue;
+        }
+        
+        if(strpos($albumDto->getArtMime(),'jpeg') !== false || strpos($albumDto->getArtMime(),'png') !== false) {
+            $imgdata = imagecreatefromstring($albumDto->getAlbumArt());
+            addImage($newImage, $imgdata, $pointx, $pointy);
+            imagedestroy($imgdata);
+
+            continue;
+        } else {
+            continue;
+        }
+    }
+
+    ob_start();
+    imagepng($newImage);
+    imagedestroy($newImage);
+    return ob_get_clean();
+
+}
+
 if($_POST['method'] == 'create') {
     if(!isset($_POST['sounds']) || !isset($_POST['playlist_name'])){
         http_response_code(400);
@@ -27,6 +74,11 @@ if($_POST['method'] == 'create') {
         return;
     }
     (new PlayListDao())->removePlayList($_POST['playlist_name']);
+    $playlistDataDto = new PlaylistDataDto;
+    $playlistDataDto->setPlayList($_POST['playlist_name']);
+    $playlistDataDao = new PlaylistDataDao;
+    $playlistDataDao->upsert($playlistDataDto);
+
     foreach ($_POST['sounds'] as $key => $value) {
         $playlist = new PlayListDto();
         $playlist->setPlayList($_POST['playlist_name']);
@@ -34,6 +86,9 @@ if($_POST['method'] == 'create') {
         $playlist->setSoundHash(ComplessUtil::decompless($value));
         (new PlayListDao())->insert($playlist);
     }
+    $playlistDataDto->setArt(createImageData());
+    $playlistDataDao->upsert($playlistDataDto);
+    
     echo json_encode(
         array(
             'status'=>'success',
@@ -42,3 +97,13 @@ if($_POST['method'] == 'create') {
     );
     return;
 }
+else if($_POST['method'] == 'names') {
+    $playlist = (new PlayListDao())->getPlayListNames();
+    $ret = [];
+    foreach ((new PlayListDao())->getPlayListNames() as $value) {
+        $ret[] = $value->getDtoCache();
+    }
+    echo json_encode($ret);
+}
+
+
