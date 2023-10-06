@@ -711,6 +711,30 @@ const Search = {
     }
 };
 
+const PlaylistClipComponent = {
+    template:`
+    <div>
+        <div class="album">
+            <img loading='lazy' :src="createImageSrc(playlist.play_list)">
+        </div>
+        <div class='layout-box'>
+            <p class="audio-title" :data-hint='playlist.play_list'>{{playlist.play_list}}</p>
+            <p class='audio-uploader'>
+                <span class='audio-infomation' :data-hint='playlist.sound_point'>{{playlist.sound_point}}</span>
+            </p>
+        </div>
+    </div>
+    `,
+    props:{
+        playlist:[]
+    },
+    methods:{
+        createImageSrc(playlistName) {
+            return `${BASE.HOME}img/playlist_art.php?playlist=${playlistName}`;
+        }
+    }
+};
+
 const ArtistClipComponent = {
     template:`
     <div>
@@ -843,6 +867,37 @@ const AlbumList = {
         next();
     }
 };
+
+const PlayListNames = {
+    template:`
+    <div class='audio-list'>
+        <button v-for='item in playlist' class='audio-item'>
+            <PlaylistClipComponent :playlist='item'></PlaylistClipComponent>
+        </button>
+    </div>
+    `,
+    props:{
+        playlist:{
+            type:Array,
+            require: false
+        }
+    },
+    components:{
+        PlaylistClipComponent
+    },
+    mounted() {
+        let action = new class extends BaseFrameWork.Network.RequestServerBase {
+            constructor() {
+                super(null, BASE.API+'playlist_action.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+            }
+        }
+        action.formDataMap.append('method', 'names');
+        action.httpRequestor.addEventListener('success', event=>{
+            this.playlist = event.detail.response;
+        });
+        action.execute();
+    }
+}
 
 const ArtistList = {
     template:`
@@ -1208,6 +1263,14 @@ const router = new VueRouter({
             component: Search,
             meta:{
                 title:'Search'
+            }
+        },
+        {
+            path: '/playlists',
+            name: 'playlists',
+            component: PlayListNames,
+            meta:{
+                title: 'Play List'
             }
         },
         {

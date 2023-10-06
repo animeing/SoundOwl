@@ -1145,6 +1145,9 @@ window.addEventListener('load', ()=>{
         dropdownMenu.addItem('Album List', ()=>{
             router.push({name:'album_list'});
         });
+        dropdownMenu.addItem('Play List',()=>{
+            router.push({name:'playlists'});
+        });
         dropdownMenu.addItem('Audio regist', ()=>{
             router.push({name:'regist'});
         });
