@@ -879,7 +879,10 @@ const PlayListNames = {
     props:{
         playlist:{
             type:Array,
-            require: false
+            require: false,
+            default: ()=>{
+                return [];
+            }
         }
     },
     components:{
@@ -893,7 +896,10 @@ const PlayListNames = {
         }
         action.formDataMap.append('method', 'names');
         action.httpRequestor.addEventListener('success', event=>{
-            this.playlist = event.detail.response;
+            this.playlist.splice(0);
+            for (const response of event.detail.response) {
+                this.playlist.push(response);
+            }
         });
         action.execute();
     }
