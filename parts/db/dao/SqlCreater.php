@@ -130,6 +130,25 @@ abstract class SqlCreater extends Connector implements ISql{
         return true;
     }
 
+    function delete($dto) {
+        $columnData = array();
+        try {
+            foreach(array_keys($dto->getDtoCache()) as $columnName){
+                if($columnName == $this::PRIMARY_KEY) {
+                    continue;
+                }
+            }
+            $columnData[] = $dto->getPrimaryKey();
+            $this->commitExecute(
+                $this->deleteQuery(),
+                $columnData
+            );
+        } catch (Exception $e) {
+            return false;
+        }
+        return true;
+    }
+
 
     abstract function createDto();
 
