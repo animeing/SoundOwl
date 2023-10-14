@@ -24,7 +24,7 @@ class PlayListDao extends SqlCreater implements PlayListTable {
     function getPlayListNames() {
         return $this->toDtoList(
             $this->execute(
-                'SELECT DISTINCT play_list as play_list, max(sound_point)+1 as sound_point from playlist',
+                'SELECT play_list, max(sound_point)+1 as sound_point from playlist group by play_list',
                 array()
             )
         );
