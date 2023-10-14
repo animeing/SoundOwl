@@ -978,7 +978,7 @@ const AlbumList = {
 const PlayListNames = {
     template:`
     <div class='audio-list'>
-        <button v-for='item in playlist' class='audio-item' @click="onclick(item)">
+        <button v-for='item in playlist' class='audio-item' @click="onclick(item)" @click.right.prevent="soundContext(item)">
             <PlaylistClipComponent :playlist='item'></PlaylistClipComponent>
         </button>
     </div>
@@ -996,24 +996,57 @@ const PlayListNames = {
         PlaylistClipComponent
     },
     methods:{
+        soundContext(playlist) {
+
+            let deleted = BaseFrameWork.createCustomElement('sw-libutton');
+            deleted.menuItem.onclick=e=>{
+                
+                let action = new class extends BaseFrameWork.Network.RequestServerBase {
+                    constructor() {
+                        super(null, BASE.API+'playlist_action.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+                    }
+                }
+                action.formDataMap.append('method', 'delete');
+                action.formDataMap.append('name', playlist.play_list);
+                
+                action.httpRequestor.addEventListener('success', event=>{
+                    let message = new MessageWindow;
+                    message.value = `${playlist.play_list} has been deleted.`;
+                    message.open();
+                    message.close(500);
+                    this.getPlaylists();
+                });
+                action.execute();
+
+            };
+            deleted.menuItem.value = 'Deleted';
+            ContextMenu.contextMenu.appendChild(deleted);
+
+
+
+        },
         onclick(playlistData) {
             router.push({name:'playlist_sounds', query: {list: playlistData.play_list}});
+        },
+        getPlaylists() {
+
+            let action = new class extends BaseFrameWork.Network.RequestServerBase {
+                constructor() {
+                    super(null, BASE.API+'playlist_action.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+                }
+            }
+            action.formDataMap.append('method', 'names');
+            action.httpRequestor.addEventListener('success', event=>{
+                this.playlist.splice(0);
+                for (const response of event.detail.response) {
+                    this.playlist.push(response);
+                }
+            });
+            action.execute();
         }
     },
     mounted() {
-        let action = new class extends BaseFrameWork.Network.RequestServerBase {
-            constructor() {
-                super(null, BASE.API+'playlist_action.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
-            }
-        }
-        action.formDataMap.append('method', 'names');
-        action.httpRequestor.addEventListener('success', event=>{
-            this.playlist.splice(0);
-            for (const response of event.detail.response) {
-                this.playlist.push(response);
-            }
-        });
-        action.execute();
+        this.getPlaylists();
     }
 }
 

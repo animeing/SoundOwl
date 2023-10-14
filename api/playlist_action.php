@@ -123,4 +123,14 @@ else if($_POST['method'] == 'sounds'){
     }
     echo json_encode($ret);
 }
-
+else if($_POST['method'] == 'delete') {
+    if(!isset($_POST['name'])) {
+        http_response_code(400);
+        return;
+    }
+    $playlistDataDao = new PlaylistDataDao();
+    foreach($playlistDataDao->find($_POST['name']) as $value){
+        $ret = $playlistDataDao->delete($value);
+    }
+    return;
+}
