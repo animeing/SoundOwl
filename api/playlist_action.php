@@ -105,5 +105,22 @@ else if($_POST['method'] == 'names') {
     }
     echo json_encode($ret);
 }
-
+else if($_POST['method'] == 'sounds'){
+    if(!isset($_POST['name'])) {
+        http_response_code(400);
+        return;
+    }
+    $ret = [];
+    foreach ((new VPlaylistDao())->getPlayListSounds($_POST['name']) as $value) {
+        $dtoDictionary = $value->getDtoCache();
+        if(isset($dtoDictionary['album_hash'])){
+            $dtoDictionary['album_hash'] = ComplessUtil::compless($dtoDictionary['album_hash']);
+        }
+        if(isset($dtoDictionary['sound_hash'])){
+            $dtoDictionary['sound_hash'] = ComplessUtil::compless($dtoDictionary['sound_hash']);
+        }
+        $ret[] = $dtoDictionary;
+    }
+    echo json_encode($ret);
+}
 

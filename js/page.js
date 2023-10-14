@@ -782,6 +782,113 @@ const AlbumClipComponent = {
     },
 };
 
+const PlaylistSoundList = {
+    template:`
+    <div class='audio-list'>
+        <button v-for="item in soundClips" :class='audioItemClass(item)' @click.right.prevent="soundContext(item)" @click="click(item)">
+            <SoundClipComponent :sound-clip='item'></SoundClipComponent>
+        </button>
+    </div>
+    `,
+    data() {
+        return {soundClips:[], currentPlaySoundClip:audio.currentAudioClip};
+    },
+    components:{
+        SoundClipComponent
+    },
+    mounted(){
+        let action = new class extends BaseFrameWork.Network.RequestServerBase {
+            constructor() {
+                super(null, BASE.API+'playlist_action.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+            }
+        }
+        action.formDataMap.append('method', 'sounds');
+        action.formDataMap.append('name', this.$route.query.list);
+        action.httpRequestor.addEventListener('success', event=>{
+            this.soundClips.splice(0);
+            let listNo = 0;
+            for (const response of event.detail.response) {
+                let audioClip = new AudioClip();
+                audioClip.soundHash = response['sound_hash'];
+                audioClip.title = response['title'];
+                audioClip.artist = response['artist_name'];
+                audioClip.album = response['album_title'];
+                audioClip.albumKey = response['album_hash'];
+                audioClip.no = listNo;
+                listNo++;
+                this.soundClips.push(audioClip);
+            }
+        });
+        action.execute();
+    },
+    methods:{
+        soundContext:(soundClip)=>{
+            ContextMenu.contextMenu.destoryChildren();
+            {
+                let addNextSound = BaseFrameWork.createCustomElement('sw-libutton');
+                addNextSound.menuItem.onclick=e=>{
+                    if(audio.currentAudioClip == undefined) {
+                        audio.playList.add(soundClip, 0);
+                        return;
+                    }
+                    let appendPosition = audio.playList.equalFindIndex(audio.currentAudioClip);
+                    audio.playList.add(soundClip, appendPosition+1);
+                };
+                addNextSound.menuItem.value = 'Add to playlist';
+                ContextMenu.contextMenu.appendChild(addNextSound);
+            }
+            {
+                let updateSoundData = BaseFrameWork.createCustomElement('sw-libutton');
+                updateSoundData.menuItem.onclick=e=>{
+                    let updateSoundinfoAction = new UpdateSoundInfomationAction;
+                    updateSoundinfoAction.formDataMap.append('soundhash', soundClip.soundHash);
+                    updateSoundinfoAction.httpRequestor.addEventListener('success', event=>{
+                        let messageWindow = new MessageWindow;
+                        messageWindow.value = `Updated sound infomation ${soundClip.artist} - ${soundClip.title}`;
+                        messageWindow.open();
+                        messageWindow.close(1000);
+                    });
+                    updateSoundinfoAction.execute();
+                };
+                updateSoundData.menuItem.value = 'Information update';
+                ContextMenu.contextMenu.appendChild(updateSoundData);
+            }
+            
+        },
+        click(soundClip){
+            if(ContextMenu.isVisible){
+                return;
+            }
+            audio.playList.removeAll();
+            for(const audioclip of this.soundClips) {
+                audio.playList.add(audioclip);
+            }
+            if(audio.currentAudioClip == null){
+                audio.play(soundClip);
+                return;
+            }
+            if(soundClip.equals(audio.currentAudioClip)){
+                if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
+                    audio.play();
+                } else {
+                    if(audio.currentPlayState === AudioPlayStateEnum.PLAY || audio.currentPlayState !== AudioPlayStateEnum.STOP ){
+                        audio.pause();
+                    }
+                }
+                return;
+            } else {
+                audio.play(soundClip);
+            }
+        },
+        audioItemClass(soundClip) {
+            if(this.currentPlaySoundClip == null){
+                return 'audio-item';
+            }
+            return 'audio-item'+(this.currentPlaySoundClip.equals(soundClip)?' audio-list-nowplaying':'');
+        }
+    }
+};
+
 const AlbumList = {
     template:`
     <div class='audio-list'>
@@ -871,7 +978,7 @@ const AlbumList = {
 const PlayListNames = {
     template:`
     <div class='audio-list'>
-        <button v-for='item in playlist' class='audio-item'>
+        <button v-for='item in playlist' class='audio-item' @click="onclick(item)">
             <PlaylistClipComponent :playlist='item'></PlaylistClipComponent>
         </button>
     </div>
@@ -887,6 +994,11 @@ const PlayListNames = {
     },
     components:{
         PlaylistClipComponent
+    },
+    methods:{
+        onclick(playlistData) {
+            router.push({name:'playlist_sounds', query: {list: playlistData.play_list}});
+        }
     },
     mounted() {
         let action = new class extends BaseFrameWork.Network.RequestServerBase {
@@ -1277,6 +1389,14 @@ const router = new VueRouter({
             component: PlayListNames,
             meta:{
                 title: 'Play List'
+            }
+        },
+        {
+            path: '/playlists/sounds',
+            name: 'playlist_sounds',
+            component: PlaylistSoundList,
+            meta:{
+                title: 'Playlist Sounds'
             }
         },
         {
