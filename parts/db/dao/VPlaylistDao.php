@@ -9,9 +9,9 @@ class VPlaylistDao extends SqlCreater implements VPlaylistTable {
     }
 
     function getPlayListSounds($name) {
-        return $this->toDto(
+        return $this->toDtoList(
             $this->execute(
-                $this->whereQuery(VPlaylistTable::PLAY_LIST.$this::EQUAL_PARAM).$this::ORDER_BY.VPlaylistTable::SOUND_POINT.$this::DESC,
+                $this->whereQuery(VPlaylistTable::PLAY_LIST.$this::EQUAL_PARAM).$this::ORDER_BY.VPlaylistTable::SOUND_POINT.$this::ASC,
                 array($name)
             )
         );
