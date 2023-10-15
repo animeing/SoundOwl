@@ -720,7 +720,7 @@ const PlaylistClipComponent = {
         <div class='layout-box'>
             <p class="audio-title" :data-hint='playlist.play_list'>{{playlist.play_list}}</p>
             <p class='audio-uploader'>
-                <span class='audio-infomation' :data-hint='playlist.sound_point'>{{playlist.sound_point}}</span>
+                <span class='audio-infomation' :data-hint='playlist.sound_point'>{{playlist.sound_point}} sounds</span>
             </p>
         </div>
     </div>
