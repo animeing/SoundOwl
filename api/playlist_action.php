@@ -98,7 +98,6 @@ if($_POST['method'] == 'create') {
     return;
 }
 else if($_POST['method'] == 'names') {
-    $playlist = (new PlayListDao())->getPlayListNames();
     $ret = [];
     foreach ((new PlayListDao())->getPlayListNames() as $value) {
         $ret[] = $value->getDtoCache();
