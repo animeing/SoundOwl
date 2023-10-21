@@ -1472,7 +1472,7 @@ class ProgressComposite extends HTMLElement {
         });
 
         this.addEventListener('mouseout', (e) => {
-            if (e.relatedTarget !== this.progress && this.isProgressManualMove) {
+            if ((e.relatedTarget !== this.progress && e.relatedTarget !== this) && this.isProgressManualMove) {
                 this.dispatch('changingValue');
                 this.dispatch('change');
                 this.isProgressManualMove = false;
@@ -1501,7 +1501,7 @@ class ProgressComposite extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['value', 'max', 'min'];
+        return ['value', 'max', 'min', 'readonly'];
     }
 
 
@@ -1517,6 +1517,9 @@ class ProgressComposite extends HTMLElement {
             case 'min':
                 this._min = Number(newValue);
                 this.queueValueUpdate(this._pendingValue);
+                break;
+            case 'readonly':
+                this.readOnly = !!newValue;
                 break;
         }
     }
@@ -1535,7 +1538,8 @@ class ProgressComposite extends HTMLElement {
 
     mouseMove(event) {
         const proposedValue = this.mousePositionvalue(event);
-        this.value = Math.min(Math.max(proposedValue, this.min), this.max);
+        let value = Math.min(Math.max(proposedValue, this.min), this.max);
+        this.setAttribute('value', value);
     }
 
     mousePositionvalue(event) {
@@ -2175,9 +2179,6 @@ class CanvasAudioAnalizer extends BaseFrameWork.Draw.Canvas2D{
         this.analyser = audioContext.createAnalyser();
         this.analyser.fftSize = CanvasAudioAnalizer.fftSize;
         audioSourceNode.connect(this.analyser);
-        let filter = audioContext.createBiquadFilter();
-        filter.type = 'allpass';
-        audioSourceNode.connect(filter);
         
         let leng = this.analyser.frequencyBinCount;
         this.spectrums = new Uint8Array(leng);
@@ -2472,6 +2473,75 @@ class AudioPlayer{
             request.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
             request.execute();
         });
+
+        this._gains = [
+            {
+                'hz':16,
+                'gain':0
+            },
+            {
+                'hz':32,
+                'gain':0
+            },
+            {
+                'hz':64,
+                'gain':0
+            },
+            {
+                'hz':125,
+                'gain':0
+            },
+            {
+                'hz':250,
+                'gain':0
+            },
+            {
+                'hz':500,
+                'gain':0
+            },
+            {
+                'hz':1e3,
+                'gain':0
+            },
+            {
+                'hz':2e3,
+                'gain':0
+            },
+            {
+                'hz':4e3,
+                'gain':0
+            },
+            {
+                'hz':8e3,
+                'gain':0
+            },
+            {
+                'hz':16e3,
+                'gain':0
+            }
+        ];
+        
+        this.filters = [];
+        this._gains.forEach(element => {
+            const filter = this.audioContext.createBiquadFilter();
+            if(element == this._gains[0]){
+                filter.type = 'lowshelf';
+            } else if(element == this._gains[this.gains.length-1]){
+                filter.type = 'highshelf';
+            } else {
+                filter.type = 'peaking';
+                filter.Q.value = 1;
+            }
+            filter.frequency.value = element.hz;
+            filter.gain.value = element.gain;
+            this.filters[element.hz] = filter;
+        });
+        this.source.connect(this.filters[this._gains[0].hz]);
+        for (let i = 0; i < this._gains.length - 1; i++) {
+            this.filters[this._gains[i].hz].connect(this.filters[this._gains[i + 1].hz]);
+        }
+        this.filters[this._gains[this._gains.length - 1].hz].connect(this.audioContext.destination);
+
         this.setUpdate();
     }
 
@@ -2510,6 +2580,18 @@ class AudioPlayer{
         }
     }
     
+    set gains(gains){
+        if(gains == undefined) {
+            return;
+        }
+        this._gains = gains;
+        this._gains.forEach(element => {
+            this.filters[element.hz].gain.value = element.gain;
+        });
+    }
+    get gains() {
+        return this._gains;
+    }
 
     updateLockAccess = false;
 

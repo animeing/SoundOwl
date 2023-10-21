@@ -5,7 +5,8 @@ const audioParamSave=()=>{
         {
             'volume': audio.audio.volume,
             'loopMode': audio.loopMode,
-            'loadGiveUpTime':audio.loadGiveUpTime
+            'loadGiveUpTime':audio.loadGiveUpTime,
+            'equalizerGains':audio.gains
         });
     localStorageMap.set('audioParam', saveParams);
 };
@@ -20,6 +21,8 @@ const audioParamLoad=()=>{
     audio.audio.volume = audioParams.volume;
     audio.loopMode = audioParams.loopMode;
     audio.loadGiveUpTime = audioParams.loadGiveUpTime;
+    audio.gains = audioParams.equalizerGains;
+    console.log(audio.gains);
 };
 
 (()=>{
@@ -1148,8 +1151,8 @@ window.addEventListener('load', ()=>{
         dropdownMenu.addItem('Play List',()=>{
             router.push({name:'playlists'});
         });
-        dropdownMenu.addItem('Audio regist', ()=>{
-            router.push({name:'regist'});
+        dropdownMenu.addItem('Setting', ()=>{
+            router.push({name:'setting'});
         });
 
         

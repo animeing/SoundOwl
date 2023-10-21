@@ -1137,6 +1137,61 @@ const ArtistList = {
 
 };
 
+const SettingEqualizerComponent = {
+    template:`
+    <div>
+        <div class="block">
+            <p class="title">Equalizer</p>
+            <div class="block">
+                <p class="title">Preset</p>
+                <div>
+                    <select>
+                        <option>Manual</option>
+                    </select>
+                </div>
+            </div>
+            <div class="block">
+                <p class="title">Setting</p>
+                <div class="equalizer-setting-container">
+                    <p class="equalizer-setting-item" v-for='item in hzArray'>
+                        <span>{{toViewName(item.hz)}}</span>
+                        <sw-h-progress class="setting-equalizer" max="15" min="-15" :value="item.gain" @valueSet="valueChange($event, item)"></sw-h-progress>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <input type="button" class="button" value="update" @click="gainsUpdate">
+    </div>
+    `,
+    data(){
+        return {
+            hzArray:[]
+        }
+    },
+    methods:{
+        valueChange(event, value){
+            value.gain = (event.target.getAttribute('value'));
+        },
+        gainsUpdate(){
+            audio.gains = this.hzArray.slice();
+            audioParamSave();
+        },
+        toViewName(val) {
+            let hzInt = ~~val;
+            let isKiloParam = (hzInt%1000) == 0;
+            let kiloParam = hzInt/1000;
+            if(isKiloParam){
+                return `${kiloParam}kHz`;
+            }
+            return `${hzInt}Hz`;
+        },
+    },
+    mounted() {
+        this.hzArray = audio.gains;
+        console.log(audio.gains);
+    }
+}
+
 const SettingFormComponent = {
     template:`
     <div>
@@ -1184,16 +1239,81 @@ const SettingFormComponent = {
     }
 };
 
-const DataRegist = {
+const TabItem = {
+    template:`
+    <li v-bind:class="{'active':isActive}">
+        <button @click="action">{{name}}</button>
+    </li>
+    `,
+    props:{
+        name:{
+            type:String,
+            require: true
+        },
+        link:{
+            type:String,
+            require: true
+        }
+    },
+    data(){
+        return {
+            isActive:false
+        }
+    },
+    methods:{
+        action() {
+            console.log(!this.isActive);
+            if(!this.isActive)
+                router.push({name:this.link});
+                this.isActive = this.$route.name == this.link;
+        }
+    },
+    watch: {
+        '$route'(to, from) {
+            this.isActive = this.$route.name == this.link;
+        }
+    },
+    mounted() {
+        this.isActive = this.$route.name == this.link;
+    }
+}
+
+const SettingTab = {
+    template:`
+    <ul class="tabmenu">
+        <TabItem name="General" link="setting"></TabItem>
+        <TabItem name="Equalizer" link="equalizer"></TabItem>
+    </ul>
+    `,
+    components:{
+        TabItem
+    }
+}
+
+const Setting = {
     template:`
     <div>
-        <SettingFormComponent></SettingFormComponent>
-        <input type="button" class="button" value="setting update" @click="settingUpdate">
-        <input type="button" class="button" value="sound regist" @click="soundRegist">
+        <SettingTab></SettingTab>
+        <div class="context" v-show="isGeneral">
+            <SettingFormComponent></SettingFormComponent>
+            <input type="button" class="button" value="setting update" @click="settingUpdate">
+            <input type="button" class="button" value="sound regist" @click="soundRegist">
+        </div>
+        <div class="context" v-show="isEqualizer">
+            <SettingEqualizerComponent></SettingEqualizerComponent>
+        </div>
     </div>
     `,
     components:{
-        SettingFormComponent
+        SettingTab,
+        SettingFormComponent,
+        SettingEqualizerComponent
+    },
+    data(){
+        return {
+            isGeneral:true,
+            isEqualizer:false
+        }
     },
     methods:{
         settingUpdate(){
@@ -1243,6 +1363,16 @@ const DataRegist = {
                 messageButtonWindow.open();
             });
         }
+    },
+    watch: {
+        '$route'(to, from) {
+            this.isGeneral = this.$route.name == 'setting';
+            this.isEqualizer = this.$route.name == 'equalizer';
+        }
+    },
+    mounted() {
+        this.isGeneral = this.$route.name == 'setting';
+        this.isEqualizer = this.$route.name == 'equalizer';
     }
 };
 
@@ -1433,11 +1563,19 @@ const router = new VueRouter({
             }
         },
         {
-            path: '/regist',
-            name: 'regist',
-            component: DataRegist,
+            path: '/setting',
+            name: 'setting',
+            component: Setting,
             meta:{
-                title:'Regist'
+                title:'General'
+            }
+        },
+        {
+            path: '/setting/equalizer',
+            name: 'equalizer',
+            component: Setting,
+            meta:{
+                title:'Equalizer'
             }
         },
         {

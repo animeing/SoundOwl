@@ -122,6 +122,41 @@ button{
   height: 0;
 }
 
+.tabmenu {
+  display: flex;
+  height: 2.5em;
+  list-style: none;
+}
+
+.tabmenu > li{
+  flex-grow: 1;
+  height: inherit;
+  border-top: 1px solid var(--subcoloraccentcolor);
+  border-left: 1px solid var(--subcoloraccentcolor);
+  border-right: 1px solid var(--subcoloraccentcolor);
+
+  border-radius: 20px 20px 0 0;
+  overflow: hidden;
+}
+
+.tabmenu > li:not(.active){
+  background: var(--subcoloraccentcolor);
+}
+
+.tabmenu > li > button {
+  width: 100%;
+  height: inherit;
+  color: inherit;
+  background-color: inherit;
+}
+
+.context {
+  padding: 10px;
+  border-bottom: 1px solid var(--subcoloraccentcolor);
+  border-left: 1px solid var(--subcoloraccentcolor);
+  border-right: 1px solid var(--subcoloraccentcolor);
+}
+
 sw-h-progress,
 sw-v-progress,
 sw-audio-progress
@@ -465,6 +500,10 @@ input[type='button'].button:hover {
   border-radius: 5px;
 }
 
+#controller {
+  z-index: 100;
+}
+
 header ~ .layout-base{
   padding-top: 2.6em;
 }
@@ -608,6 +647,38 @@ a.audio-infomation {
   top: 3px;
 
 }
+
+.setting-equalizer{
+  grid-column: 2;
+  width: calc(100% - 3.5em - 20px);
+  display: inline-block;
+}
+
+.setting-equalizer > *{
+  height: inherit;
+}
+
+.equalizer-setting-container{
+  display: grid;
+  align-items: center;
+  row-gap: 10px;
+  grid-template-columns: max-content 1fr;
+}
+
+.equalizer-setting-item{
+  display: contents;
+  padding: 10px 0 10px 0;
+}
+
+.equalizer-setting-item > *{
+  z-index: 0;
+}
+.equalizer-setting-item > span {
+  grid-column: 1;
+  padding: 0 20px 0 20px;
+}
+
+
 
 
 .rotate-progress{
