@@ -1262,7 +1262,6 @@ const TabItem = {
     },
     methods:{
         action() {
-            console.log(!this.isActive);
             if(!this.isActive)
                 router.push({name:this.link});
                 this.isActive = this.$route.name == this.link;
@@ -1326,7 +1325,6 @@ const Setting = {
             });
 
             for(const element of Array.prototype.slice.call(document.getElementsByTagName('sw-input-param'))){
-                console.log(element);
                 updateSetting.formDataMap.set(element.name, element.value);
             }
             
