@@ -22,7 +22,6 @@ const audioParamLoad=()=>{
     audio.loopMode = audioParams.loopMode;
     audio.loadGiveUpTime = audioParams.loadGiveUpTime;
     audio.gains = audioParams.equalizerGains;
-    console.log(audio.gains);
 };
 
 (()=>{
