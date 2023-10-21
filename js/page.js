@@ -1188,7 +1188,6 @@ const SettingEqualizerComponent = {
     },
     mounted() {
         this.hzArray = audio.gains;
-        console.log(audio.gains);
     }
 }
 
@@ -1426,7 +1425,6 @@ const SetUp = {
                 });
     
                 for(const element of Array.prototype.slice.call(document.getElementsByTagName('sw-input-param'))){
-                    console.log(element);
                     updateSetting.formDataMap.set(element.name, element.value);
                 }
                 
