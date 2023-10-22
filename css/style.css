@@ -320,6 +320,7 @@ sw-save-message > div > input[type="text"] {
   color: #eee;
   padding: 3px 15px;
   border-radius: 3px;
+  z-index: 110;
 }
 
 .height-hide{
