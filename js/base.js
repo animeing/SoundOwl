@@ -2441,6 +2441,103 @@ class AudioLoopModeEnum{
 }
 
 
+class ExAudioEffect{
+    /**
+     * 
+     * @param {MediaElementAudioSourceNode} audioSource 
+     * @param {AudioContext} audioContext 
+     * @param {Array<{hz: number, gain: number}>} gains
+     * @param {BiquadFilterNode[]} filters
+     */
+    constructor(audioSource, audioContext, gains, filters) {
+        this.audioSource = audioSource;
+        this.audioContext = audioContext;
+        this._defaultGains = gains;
+        this.filters = filters;
+
+        this.analyser = this.audioContext.createAnalyser();
+
+        this.analyser.fftSize = 32768;
+        this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+
+        this.audioSource.connect(this.analyser);
+        this.effectMain(this);
+        this.isUseEffect = true;
+    }
+    /**
+     * 
+     * @param {ExAudioEffect} self 
+     */
+    effectMain(self) {
+        let animationFrame = ()=>{
+            if(!self.isUseEffect) {
+                self.updateDefaultGainsFilter();
+                self.frameId = requestAnimationFrame(animationFrame);
+                return;
+            }
+            self.analyser.getByteFrequencyData(self.dataArray);
+            let effectHz = self.getSoundRangeValue();
+            console.log('low : '+((((+effectHz.low.normalizedAvg)*5)))+'  middle : '+((((+effectHz.middle.normalizedAvg)*5.5)))+'  height :  '+((((+effectHz.high.normalizedAvg)*2.5))));
+            self._defaultGains.forEach(element => {
+                let baseGain = (+element.gain);
+                if(!isNaN(effectHz.low.normalizedAvg) && element.hz >= effectHz.low.minHz && element.hz < effectHz.low.maxHz) {
+                    self.filters[element.hz].gain.value = (baseGain + ((+effectHz.low.normalizedAvg)*5));
+                }
+                if(!isNaN(effectHz.middle.normalizedAvg) && element.hz >= effectHz.middle.minHz && element.hz < effectHz.middle.maxHz) {
+                    self.filters[element.hz].gain.value = (baseGain + ((+effectHz.middle.normalizedAvg)*5.5));
+                }
+                if(!isNaN(effectHz.high.normalizedAvg) && element.hz >= effectHz.high.minHz && element.hz < effectHz.high.maxHz) {
+                    self.filters[element.hz].gain.value = (baseGain + ((+effectHz.high.normalizedAvg)*2.5));
+                }
+                
+            });
+            self.frameId = requestAnimationFrame(animationFrame);
+        };
+        animationFrame();
+    }
+    getSoundRangeValue() {
+        let effectHz = {
+            'low':{'sum':0,'avg':0, 'normalizedAvg':0,'minHz':16,'maxHz':250},
+            'middle':{'sum':0,'avg':0, 'normalizedAvg':0,'minHz':250, 'maxHz':2e3},
+            'high':{'sum':0, 'avg':0, 'normalizedAvg':0,'minHz':2e3, 'maxHz':16e3}
+        };
+        let totalSum = 0;
+        let totalCount = 0;
+    
+        for (let key in effectHz) {
+            for(let i = effectHz[key].minHz; i < effectHz[key].maxHz; i++) {
+                effectHz[key].sum += this.dataArray[i];
+                totalSum += this.dataArray[i];
+                totalCount++;
+            }
+            effectHz[key].avg = effectHz[key].sum / (effectHz[key].maxHz - effectHz[key].minHz);
+        }
+    
+        const overallAvg = totalSum / totalCount;
+        const scaleFactor = -audio.audio.volume;  // スケール調整のための係数。調整が必要。
+        
+        for (let key in effectHz) {
+            effectHz[key].normalizedAvg = (effectHz[key].avg / overallAvg - 1.0) * scaleFactor + 1.0;
+        }    
+        return effectHz;
+    }
+    
+
+    updateDefaultGainsFilter() {
+        this._defaultGains.forEach(element=>{
+            this.filters[element.hz].gain.value = element.gain;
+        });
+    }
+
+    /**
+     * 
+     * @param {Array<{hz: number, gain: number}>} value
+     */
+    set defaultGains(value) {
+        this._defaultGains = value;
+    }
+}
+
 
 class AudioPlayer{
     _currentAudioClip = null;
@@ -2474,7 +2571,9 @@ class AudioPlayer{
             request.execute();
         });
         this._gains = [{'hz':16,'gain':0},{'hz':32,'gain':0},{'hz':64,'gain':0},{'hz':125,'gain':0},{'hz':250,'gain':0},{'hz':500,'gain':0},{'hz':1e3,'gain':0},{'hz':2e3,'gain':0},{'hz':4e3,'gain':0},{'hz':8e3,'gain':0},{'hz':16e3,'gain':0}];
-        
+        /**
+         * @var {BiquadFilterNode[]}
+         */
         this.filters = [];
         this._gains.forEach(element => {
             const filter = this.audioContext.createBiquadFilter();
@@ -2495,6 +2594,7 @@ class AudioPlayer{
             this.filters[this._gains[i].hz].connect(this.filters[this._gains[i + 1].hz]);
         }
         this.filters[this._gains[this._gains.length - 1].hz].connect(this.audioContext.destination);
+        this.exAudioEffect = new ExAudioEffect(this.source, this.audioContext, this.gains, this.filters);
 
         this.setUpdate();
     }
@@ -2539,12 +2639,32 @@ class AudioPlayer{
             return;
         }
         this._gains = gains;
+        this.exAudioEffect.defaultGains = gains;
         this._gains.forEach(element => {
             this.filters[element.hz].gain.value = element.gain;
         });
     }
     get gains() {
         return this._gains;
+    }
+
+    /**
+     * 
+     * @param {Number} hz 
+     * @param {Number} gain 
+     */
+    setGain(hz, gain) {
+        if(this.filters[hz] == undefined) {
+            return;
+        }
+        this.filters[hz].gain.value = gain;
+        for (const gainParam of this._gains) {
+            if(gainParam.hz == hz) {
+                gainParam.gain = gain;
+            }
+        }
+        this.exAudioEffect.defaultGains = this._gains;
+
     }
 
     updateLockAccess = false;
