@@ -2481,18 +2481,18 @@ class ExAudioEffect{
             // 平滑化処理
             if (prevEffectHz !== null) {
                 for (let key in effectHz) {
-                    let alpha = 0.015;
-                    let diff = Math.abs(effectHz[key].normalizedAvg - prevEffectHz[key].normalizedAvg);
-                    if (diff > 0.3 && prevEffectHz[key].avg != 0) {
-                        alpha = 0.5;
+                    let alpha = 0.0025;
+                    let diff = Math.abs(effectHz[key].avg - prevEffectHz[key].avg);
+                    if (diff > 1 && prevEffectHz[key].avg != 0) {
+                        alpha = 0.05;
                     }
                     effectHz[key].normalizedAvg = (1-alpha) * prevEffectHz[key].normalizedAvg + alpha * effectHz[key].normalizedAvg;
                 }
             }
             prevEffectHz = JSON.parse(JSON.stringify(effectHz));
 
-            let minGain = -15;
-            let maxGain = 15;
+            let minGain = -5;
+            let maxGain = 5;
 
             self._defaultGains.forEach(element => {
                 let baseGain = (+element.gain);
