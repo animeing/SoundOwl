@@ -2479,7 +2479,7 @@ class ExAudioEffect{
             let minGain = -5;
             let maxGain = 5;
 
-            //Equalizerのgainsをしない。直にfiltersを書換え
+            //Equalizerのgainsを変更しない。直にfiltersを書換え
             self.equalizer.gains.forEach(element => {
                 const baseGain = (+element.gain);
     
