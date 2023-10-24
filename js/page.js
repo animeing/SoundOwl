@@ -1173,7 +1173,7 @@ const SettingEqualizerComponent = {
             value.gain = (event.target.getAttribute('value'));
         },
         gainsUpdate(){
-            audio.gains = this.hzArray.slice();
+            audio.equalizer.gains = this.hzArray.slice();
             audioParamSave();
         },
         toViewName(val) {
@@ -1187,7 +1187,7 @@ const SettingEqualizerComponent = {
         },
     },
     mounted() {
-        this.hzArray = audio.gains;
+        this.hzArray = audio.equalizer.gains;
     }
 }
 

@@ -6,7 +6,7 @@ const audioParamSave=()=>{
             'volume': audio.audio.volume,
             'loopMode': audio.loopMode,
             'loadGiveUpTime':audio.loadGiveUpTime,
-            'equalizerGains':audio.gains
+            'equalizerGains':audio.equalizer.gains
         });
     localStorageMap.set('audioParam', saveParams);
 };
@@ -21,7 +21,7 @@ const audioParamLoad=()=>{
     audio.audio.volume = audioParams.volume;
     audio.loopMode = audioParams.loopMode;
     audio.loadGiveUpTime = audioParams.loadGiveUpTime;
-    audio.gains = audioParams.equalizerGains;
+    audio.equalizer.gains = audioParams.equalizerGains;
 };
 
 (()=>{

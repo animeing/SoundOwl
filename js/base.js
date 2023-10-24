@@ -2445,21 +2445,19 @@ class ExAudioEffect{
     /**
      * @param {MediaElementAudioSourceNode} audioSource 
      * @param {AudioContext} audioContext 
-     * @param {Array<{hz: number, gain: number}>} gains
-     * @param {BiquadFilterNode[]} filters
+     * @param {AudioEqualizer} equalizer
      */
-    constructor(audioSource, audioContext, gains, filters) {
-        this.audioSource = audioSource;
+    constructor(audioSource, audioContext, equalizer) {
         this.audioContext = audioContext;
-        this._defaultGains = gains;
-        this.filters = filters;
+        this.equalizer = equalizer;
+        this._prevEffectHz = null;
 
         this.analyser = this.audioContext.createAnalyser();
 
         this.analyser.fftSize = 32768;
         this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
 
-        this.audioSource.connect(this.analyser);
+        audioSource.connect(this.analyser);
 
         this.effectMain(this);
         this.isUseEffect = true;
@@ -2469,7 +2467,6 @@ class ExAudioEffect{
      * @param {ExAudioEffect} self 
      */
      effectMain(self) {
-        let prevEffectHz = null;
         let animationFrame = ()=>{
             if(!self.isUseEffect) {
                 self.updateDefaultGainsFilter();
@@ -2478,40 +2475,29 @@ class ExAudioEffect{
             }
             self.analyser.getByteFrequencyData(self.dataArray);
             let effectHz = self.getSoundRangeValue();
-            // 平滑化処理
-            if (prevEffectHz !== null) {
-                for (let key in effectHz) {
-                    let alpha = 0.0025;
-                    let diff = Math.abs(effectHz[key].avg - prevEffectHz[key].avg);
-                    if (diff > 1 && prevEffectHz[key].avg != 0) {
-                        alpha = 0.05;
-                    }
-                    effectHz[key].normalizedAvg = (1-alpha) * prevEffectHz[key].normalizedAvg + alpha * effectHz[key].normalizedAvg;
-                }
-            }
-            prevEffectHz = JSON.parse(JSON.stringify(effectHz));
 
             let minGain = -5;
             let maxGain = 5;
 
-            self._defaultGains.forEach(element => {
-                let baseGain = (+element.gain);
+            //Equalizerのgainsをしない。直にfiltersを書換え
+            self.equalizer.gains.forEach(element => {
+                const baseGain = (+element.gain);
     
-                let updateFilterGain = (rangeKey, multiplier) => {
-                    let avg = effectHz[rangeKey].normalizedAvg;
+                const updateFilterGain = (rangeKey, multiplier) => {
+                    const avg = effectHz[rangeKey].normalizedAvg;
                     if (isNaN(avg)) {
-                        self.filters[element.hz].gain.value = 0;
+                        self.equalizer.filters[element.hz].gain.value = 0;
                         return;
                     }
                     let newGain = baseGain + (avg * multiplier);
                     newGain = Math.min(Math.max(newGain, minGain), maxGain);
                     newGain = newGain - effectHz.total.normalizedAvg;
                     if(isNaN(newGain)) {
-                        self.filters[element.hz].gain.value = 0;
+                        self.equalizer.filters[element.hz].gain.value = 0;
                         return;
                     }
                     // console.log('Hz['+element.hz+'] Gain['+newGain+'] AVG['+effectHz[rangeKey].avg+']');
-                    self.filters[element.hz].gain.value = newGain;
+                    self.equalizer.filters[element.hz].gain.value = newGain;
                 };
     
                 if(element.hz >= effectHz.low.minHz && element.hz < effectHz.low.maxHz) {
@@ -2529,6 +2515,20 @@ class ExAudioEffect{
         };
         animationFrame();
     }
+
+    smoothing(effectHz) {
+        if (this.prevEffectHz !== null) {
+            for (const key in effectHz) {
+                let alpha = 0.0025;
+                const diff = Math.abs(effectHz[key].avg - this.prevEffectHz[key].avg);
+                if (diff > 1 && this.prevEffectHz[key].avg != 0) {
+                    alpha = 0.05;
+                }
+                effectHz[key].normalizedAvg = (1-alpha) * this.prevEffectHz[key].normalizedAvg + alpha * effectHz[key].normalizedAvg;
+            }
+        }
+        this.prevEffectHz = JSON.parse(JSON.stringify(effectHz));
+    }
     
     getSoundRangeValue() {
         let effectHz = {
@@ -2539,8 +2539,7 @@ class ExAudioEffect{
         let totalSum = 0;
         let totalCount = 0;
     
-        // 平均値の計算
-        for (let key in effectHz) {
+        for (const key in effectHz) {
             let count = 0;
             for (let i = effectHz[key].minHz; i < effectHz[key].maxHz; i++) {
                 if (this.dataArray[i] == 0) {
@@ -2563,8 +2562,8 @@ class ExAudioEffect{
         const overallAvg = totalSum / totalCount;
         const total = {'count': 0, 'normalizedSum': 0, 'normalizedAvg': 0};
         const multiScaleFactor = 2;
-        for (let key in effectHz) {
-            let dynamicScaleFactor = effectHz[key].scaleFactor;
+        for (const key in effectHz) {
+            const dynamicScaleFactor = effectHz[key].scaleFactor;
     
             if (key === 'high' && effectHz[key].avg > 1) {
                 effectHz['low'].multiplier *= 0.5;
@@ -2575,27 +2574,97 @@ class ExAudioEffect{
             total.count++;
             total.normalizedSum += effectHz[key].normalizedAvg * effectHz[key].multiplier;
         }
+        this.smoothing(effectHz);
     
         total.normalizedAvg = total.normalizedSum / total.count;
         effectHz.total = total;
         return effectHz;
     }
-    
+
+    set prevEffectHz(prevEffectHz){
+        this._prevEffectHz = prevEffectHz;
+    }
+
+    get prevEffectHz() {
+        return this._prevEffectHz;
+    }
 
     updateDefaultGainsFilter() {
-        this._defaultGains.forEach(element=>{
-            this.filters[element.hz].gain.value = element.gain;
+        this.equalizer.gains.forEach(element=>{
+            this.equalizer.filters[element.hz].gain.value = element.gain;
         });
-    }
-    /**
-     * 
-     * @param {Array<{hz: number, gain: number}>} value
-     */
-    set defaultGains(value) {
-        this._defaultGains = value;
     }
 }
 
+
+class AudioEqualizer {
+    /**
+     * 
+     * @param {MediaElementAudioSourceNode} audioSource 
+     * @param {AudioContext} audioContext 
+     */
+    constructor(audioSource, audioContext) {
+        this._gainFlat = [{'hz':16,'gain':0},{'hz':32,'gain':0},{'hz':64,'gain':0},{'hz':125,'gain':0},{'hz':250,'gain':0},{'hz':500,'gain':0},{'hz':1e3,'gain':0},{'hz':2e3,'gain':0},{'hz':4e3,'gain':0},{'hz':8e3,'gain':0},{'hz':16e3,'gain':0}];
+        this._currentGains =  JSON.parse(JSON.stringify(this._gainFlat));
+        /**
+         * @type {BiquadFilterNode[]}
+         */
+        this.filters =[];
+        this._gainFlat.forEach(element => {
+            const filter = audioContext.createBiquadFilter();
+            if(element == this._gainFlat[0]){
+                filter.type = 'lowshelf';
+            } else if(element == this._gainFlat[this.gains.length-1]){
+                filter.type = 'highshelf';
+            } else {
+                filter.type = 'peaking';
+                filter.Q.value = 1;
+            }
+            filter.frequency.value = element.hz;
+            filter.gain.value = element.gain;
+            this.filters[element.hz] = filter;
+        });
+        audioSource.connect(this.filters[this._gainFlat[0].hz]);
+        for (let i = 0; i < this._gainFlat.length - 1; i++) {
+            this.filters[this._gainFlat[i].hz].connect(this.filters[this._gainFlat[i + 1].hz]);
+        }
+        this.filters[this._gainFlat[this._gainFlat.length - 1].hz].connect(audioContext.destination);
+    }
+    
+    /**
+     * 
+     * @param {Array<{hz: number, gain: number}>} gains
+     */
+    set gains(gains){
+        if(gains == undefined) {
+            return;
+        }
+        this._currentGains = gains;
+        this._currentGains.forEach(element => {
+            this.filters[element.hz].gain.value = element.gain;
+        });
+    }
+    get gains() {
+        return this._currentGains;
+    }
+
+    /**
+     * 
+     * @param {Number} hz 
+     * @param {Number} gain 
+     */
+     setGain(hz, gain) {
+        if(this.filters[hz] == undefined) {
+            return;
+        }
+        this.filters[hz].gain.value = gain;
+        for (const gainParam of this.gains) {
+            if(gainParam.hz == hz) {
+                gainParam.gain = gain;
+            }
+        }
+    }
+}
 
 class AudioPlayer{
     _currentAudioClip = null;
@@ -2628,31 +2697,8 @@ class AudioPlayer{
             request.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
             request.execute();
         });
-        this._gains = [{'hz':16,'gain':0},{'hz':32,'gain':0},{'hz':64,'gain':0},{'hz':125,'gain':0},{'hz':250,'gain':0},{'hz':500,'gain':0},{'hz':1e3,'gain':0},{'hz':2e3,'gain':0},{'hz':4e3,'gain':0},{'hz':8e3,'gain':0},{'hz':16e3,'gain':0}];
-        /**
-         * @var {BiquadFilterNode[]}
-         */
-        this.filters = [];
-        this._gains.forEach(element => {
-            const filter = this.audioContext.createBiquadFilter();
-            if(element == this._gains[0]){
-                filter.type = 'lowshelf';
-            } else if(element == this._gains[this.gains.length-1]){
-                filter.type = 'highshelf';
-            } else {
-                filter.type = 'peaking';
-                filter.Q.value = 1;
-            }
-            filter.frequency.value = element.hz;
-            filter.gain.value = element.gain;
-            this.filters[element.hz] = filter;
-        });
-        this.source.connect(this.filters[this._gains[0].hz]);
-        for (let i = 0; i < this._gains.length - 1; i++) {
-            this.filters[this._gains[i].hz].connect(this.filters[this._gains[i + 1].hz]);
-        }
-        this.filters[this._gains[this._gains.length - 1].hz].connect(this.audioContext.destination);
-        this.exAudioEffect = new ExAudioEffect(this.source, this.audioContext, this.gains, this.filters);
+        this.equalizer = new AudioEqualizer(this.source, this.audioContext);
+        this.exAudioEffect = new ExAudioEffect(this.source, this.audioContext, this.equalizer);
 
         this.setUpdate();
     }
@@ -2692,39 +2738,6 @@ class AudioPlayer{
         }
     }
     
-    set gains(gains){
-        if(gains == undefined) {
-            return;
-        }
-        this._gains = gains;
-        this.exAudioEffect.defaultGains = gains;
-        this._gains.forEach(element => {
-            this.filters[element.hz].gain.value = element.gain;
-        });
-    }
-    get gains() {
-        return this._gains;
-    }
-
-    /**
-     * 
-     * @param {Number} hz 
-     * @param {Number} gain 
-     */
-    setGain(hz, gain) {
-        if(this.filters[hz] == undefined) {
-            return;
-        }
-        this.filters[hz].gain.value = gain;
-        for (const gainParam of this._gains) {
-            if(gainParam.hz == hz) {
-                gainParam.gain = gain;
-            }
-        }
-        this.exAudioEffect.defaultGains = this._gains;
-
-    }
-
     updateLockAccess = false;
 
     /**
@@ -2845,6 +2858,7 @@ class AudioPlayer{
     audioDeployment(){
         this.eventSupport.dispatchEvent(new CustomEvent('audioSet'));
         this.audio.src = this.currentAudioClip.src;
+        this.exAudioEffect.prevEffectHz = null;
     }
 
     get UPDATE_MILI_SEC(){
