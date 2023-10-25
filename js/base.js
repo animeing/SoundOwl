@@ -2478,6 +2478,7 @@ class ExAudioEffect{
 
             let minGain = -5;
             let maxGain = 5;
+            let logs = '';
 
             //Equalizerのgainsを変更しない。直にfiltersを書換え
             self.equalizer.gains.forEach(element => {
@@ -2490,13 +2491,18 @@ class ExAudioEffect{
                         return;
                     }
                     let newGain = baseGain + (avg * multiplier);
+                    if (element.hz >= effectHz.voice.minHz && element.hz <= effectHz.voice.maxHz) {
+                        let alpha = 0.000045;
+                        const voiceAvg = effectHz.voice.normalizedAvg * effectHz.voice.multiplier;
+                        newGain = (1-alpha) * voiceAvg + alpha * newGain;
+                    }
                     newGain = Math.min(Math.max(newGain, minGain), maxGain);
-                    newGain = newGain - effectHz.total.normalizedAvg;
+                    newGain = newGain - (effectHz.total.normalizedAvg/3);
                     if(isNaN(newGain)) {
                         self.equalizer.filters[element.hz].gain.value = 0;
                         return;
                     }
-                    // console.log('Hz['+element.hz+'] Gain['+newGain+'] AVG['+effectHz[rangeKey].avg+']');
+                    logs=logs+('Hz['+element.hz+'] Gain['+newGain+'] AVG['+effectHz[rangeKey].avg+']\n');
                     self.equalizer.filters[element.hz].gain.value = newGain;
                 };
     
@@ -2510,6 +2516,7 @@ class ExAudioEffect{
                     updateFilterGain('high', effectHz.high.multiplier);
                 }
             });
+            console.log(logs);
             
             self.frameId = requestAnimationFrame(animationFrame);
         };
@@ -2519,10 +2526,14 @@ class ExAudioEffect{
     smoothing(effectHz) {
         if (this.prevEffectHz !== null) {
             for (const key in effectHz) {
-                let alpha = 0.0025;
+                let alpha = 0.000025;
                 const diff = Math.abs(effectHz[key].normalizedAvg - this.prevEffectHz[key].normalizedAvg);
-                if (diff > 0.3 && this.prevEffectHz[key].normalizedAvg != 0) {
-                    alpha = 0.05;
+                if (diff > 0.5 && this.prevEffectHz[key].normalizedAvg != 0) {
+                    if(key == 'voice' && this.prevEffectHz[key].normalizedAvg > effectHz[key].normalizedAvg) {
+                        alpha = 0.000045;
+                    } else {
+                        alpha = 0.0005;
+                    }
                 }
                 effectHz[key].normalizedAvg = (1-alpha) * this.prevEffectHz[key].normalizedAvg + alpha * effectHz[key].normalizedAvg;
             }
@@ -2532,9 +2543,10 @@ class ExAudioEffect{
     
     getSoundRangeValue() {
         let effectHz = {
-            'low': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 8, 'maxHz': 250, 'multiplier': 1.5, 'scaleFactor': 3},
-            'middle': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 250, 'maxHz': 4e3, 'multiplier': 1.2, 'scaleFactor': 0},
-            'high': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 4e3, 'maxHz': 24e3, 'multiplier': 2, 'scaleFactor': 4}
+            'low': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 8, 'maxHz': 125, 'multiplier': 1.5, 'scaleFactor': 3},
+            'middle': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 125, 'maxHz': 4e3, 'multiplier': 1.2, 'scaleFactor': 0},
+            'high': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 4e3, 'maxHz': 24e3, 'multiplier': 2, 'scaleFactor': 4},
+            'voice':{'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 64, 'maxHz': 250, 'multiplier': 1, 'scaleFactor': 0}
         };
         let totalSum = 0;
         let totalCount = 0;
@@ -2542,7 +2554,7 @@ class ExAudioEffect{
         for (const key in effectHz) {
             let count = 0;
             for (let i = effectHz[key].minHz; i < effectHz[key].maxHz; i++) {
-                if (this.dataArray[i] == 0) {
+                if (this.dataArray[i] == 0 || isNaN(this.dataArray[i])) {
                     continue;
                 }
                 if(key == 'high') {
@@ -2573,6 +2585,12 @@ class ExAudioEffect{
             effectHz[key].normalizedAvg = (effectHz[key].avg / overallAvg - 1.0) * (multiScaleFactor + dynamicScaleFactor) + 1.0;
             total.count++;
             total.normalizedSum += effectHz[key].normalizedAvg * effectHz[key].multiplier;
+        }
+        const normalizedAvg = (effectHz.low.normalizedAvg + effectHz.middle.normalizedAvg + effectHz.high.normalizedAvg)/3;
+        if(Math.abs(effectHz.low.normalizedAvg - normalizedAvg) <= 1.5 && 
+            Math.abs(effectHz.middle.normalizedAvg - normalizedAvg) <= 1.5 &&
+            Math.abs(effectHz.high.normalizedAvg - normalizedAvg) <= 1.5) {
+                effectHz.voice.multiplier = 1.4;
         }
         this.smoothing(effectHz);
     
