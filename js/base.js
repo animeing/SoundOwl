@@ -2532,9 +2532,9 @@ class ExAudioEffect{
     
     getSoundRangeValue() {
         let effectHz = {
-            'low': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 16, 'maxHz': 250, 'multiplier': 1.5, 'scaleFactor': 3},
+            'low': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 8, 'maxHz': 250, 'multiplier': 1.5, 'scaleFactor': 3},
             'middle': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 250, 'maxHz': 4e3, 'multiplier': 1.2, 'scaleFactor': 0},
-            'high': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 4e3, 'maxHz': 16e3, 'multiplier': 2, 'scaleFactor': 4}
+            'high': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 4e3, 'maxHz': 24e3, 'multiplier': 2, 'scaleFactor': 4}
         };
         let totalSum = 0;
         let totalCount = 0;
