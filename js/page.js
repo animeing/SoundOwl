@@ -1145,8 +1145,8 @@ const SettingEqualizerComponent = {
             <div class="block">
                 <p class="title">Preset</p>
                 <div>
-                    <select>
-                        <option>Manual</option>
+                    <select v-model='selectPreset' @change='changedPreset'>
+                        <option v-for='key in presetNames' :value='key'>{{key}}</option>
                     </select>
                 </div>
             </div>
@@ -1160,17 +1160,27 @@ const SettingEqualizerComponent = {
                 </div>
             </div>
         </div>
-        <input type="button" class="button" value="update" @click="gainsUpdate">
     </div>
     `,
     data(){
         return {
-            hzArray:[]
+            hzArray:[],
+            presets:[],
+            presetNames:[],
+            selectPreset:'Manual'
         }
     },
     methods:{
         valueChange(event, value){
             value.gain = (event.target.getAttribute('value'));
+            audio.equalizer.setGain(value.hz, value.gain);
+            audioParamSave();
+        },
+        changedPreset(){
+            if(this.presets[this.selectPreset] == undefined) {
+                this.selectPreset = 'Manual';
+            }
+            this.hzArray = JSON.parse(JSON.stringify(this.presets[this.selectPreset]));
         },
         gainsUpdate(){
             audio.equalizer.gains = this.hzArray.slice();
@@ -1187,7 +1197,22 @@ const SettingEqualizerComponent = {
         },
     },
     mounted() {
-        this.hzArray = audio.equalizer.gains;
+        this.hzArray = JSON.parse(JSON.stringify(audio.equalizer.gains));
+        let equalizerPreset = new class extends BaseFrameWork.Network.RequestServerBase{
+            constructor(){
+                super(
+                    null,
+                    `${BASE.API}/sound_equalizer_preset.json`,
+                    BaseFrameWork.Network.HttpResponseType.JSON,
+                    BaseFrameWork.Network.HttpRequestType.GET);
+            }
+        };
+        equalizerPreset.httpRequestor.addEventListener('success',e=>{
+            this.presets = e.detail.response;
+            this.presets['Manual'] = this.hzArray;
+            this.presetNames = Object.keys(this.presets);
+        });
+        equalizerPreset.execute();
     }
 }
 

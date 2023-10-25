@@ -2604,7 +2604,7 @@ class AudioEqualizer {
      * @param {AudioContext} audioContext 
      */
     constructor(audioSource, audioContext) {
-        this._gainFlat = [{'hz':16,'gain':0},{'hz':32,'gain':0},{'hz':64,'gain':0},{'hz':125,'gain':0},{'hz':250,'gain':0},{'hz':500,'gain':0},{'hz':1e3,'gain':0},{'hz':2e3,'gain':0},{'hz':4e3,'gain':0},{'hz':8e3,'gain':0},{'hz':16e3,'gain':0}];
+        this._gainFlat = [{'hz':8,'gain':0},{'hz':16,'gain':0},{'hz':32,'gain':0},{'hz':64,'gain':0},{'hz':125,'gain':0},{'hz':250,'gain':0},{'hz':500,'gain':0},{'hz':1e3,'gain':0},{'hz':2e3,'gain':0},{'hz':4e3,'gain':0},{'hz':8e3,'gain':0},{'hz':16e3,'gain':0},{'hz':24e3,'gain':0}];
         this._currentGains =  JSON.parse(JSON.stringify(this._gainFlat));
         /**
          * @type {BiquadFilterNode[]}
