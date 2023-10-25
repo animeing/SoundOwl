@@ -2490,7 +2490,7 @@ class ExAudioEffect{
                         self.equalizer.filters[element.hz].gain.value = 0;
                         return;
                     }
-                    let newGain = baseGain + (avg * multiplier);
+                    let newGain = (avg * multiplier);
                     if (element.hz >= effectHz.voice.minHz && element.hz <= effectHz.voice.maxHz) {
                         let alpha = 0.000045;
                         const voiceAvg = effectHz.voice.normalizedAvg * effectHz.voice.multiplier;
@@ -2503,7 +2503,7 @@ class ExAudioEffect{
                         return;
                     }
                     logs=logs+('Hz['+element.hz+'] Gain['+newGain+'] AVG['+effectHz[rangeKey].avg+']\n');
-                    self.equalizer.filters[element.hz].gain.value = newGain;
+                    self.equalizer.filters[element.hz].gain.value = newGain + baseGain;
                 };
     
                 if(element.hz >= effectHz.low.minHz && element.hz < effectHz.low.maxHz) {
