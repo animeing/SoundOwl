@@ -2520,8 +2520,8 @@ class ExAudioEffect{
         if (this.prevEffectHz !== null) {
             for (const key in effectHz) {
                 let alpha = 0.0025;
-                const diff = Math.abs(effectHz[key].avg - this.prevEffectHz[key].avg);
-                if (diff > 1 && this.prevEffectHz[key].avg != 0) {
+                const diff = Math.abs(effectHz[key].normalizedAvg - this.prevEffectHz[key].normalizedAvg);
+                if (diff > 0.3 && this.prevEffectHz[key].normalizedAvg != 0) {
                     alpha = 0.05;
                 }
                 effectHz[key].normalizedAvg = (1-alpha) * this.prevEffectHz[key].normalizedAvg + alpha * effectHz[key].normalizedAvg;
