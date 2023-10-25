@@ -2516,7 +2516,7 @@ class ExAudioEffect{
                     updateFilterGain('high', effectHz.high.multiplier);
                 }
             });
-            console.log(logs);
+            // console.log(logs);
             
             self.frameId = requestAnimationFrame(animationFrame);
         };
