@@ -65,6 +65,38 @@ button{
   cursor: pointer;
 }
 
+select {
+  padding: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 2px solid var(--subfontcolor);
+  border-radius: 5px;
+  appearance: none;
+  background-color: var(--basecolor);
+  color: var(--fontcolor);
+}
+
+select:hover {
+  border-color: var(--subfontcolor);
+}
+
+select:focus {
+  outline: none;
+}
+
+select::-ms-expand {
+  display: none;
+}
+
+@-moz-document url-prefix() {
+  select {
+      padding-right: 20px;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><path d="M1,1 L6,6 L11,1" stroke="#000" fill="transparent"/></svg>');
+      background-repeat: no-repeat;
+      background-position: 95% center;
+  }
+}
+
 .unvisible{
   display: none !important;
   visibility: hidden !important;
