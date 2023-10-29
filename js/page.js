@@ -1160,14 +1160,6 @@ const SettingEqualizerComponent = {
                 </div>
             </div>
         </div>
-        <div class="block">
-            <p class="title">Effect</p>
-            <div class="block">
-                <p class="title">SoundSculpt</p>
-                <p>SoundSculpt dynamically adjusts audio frequencies in real-time, enhancing or attenuating different frequency bands to provide a richer audio experience.</p>
-                <input type="checkbox" v-model="isUseSoundSculpt" @change='toggleEffect'>
-            </div>
-        </div>
     </div>
     `,
     data(){
@@ -1175,8 +1167,7 @@ const SettingEqualizerComponent = {
             hzArray:[],
             presets:[],
             presetNames:[],
-            selectPreset:'Manual',
-            isUseSoundSculpt:audio.exAudioEffect.isUseEffect
+            selectPreset:'Manual'
         }
     },
     methods:{
@@ -1184,9 +1175,6 @@ const SettingEqualizerComponent = {
             value.gain = (event.target.getAttribute('value'));
             audio.equalizer.setGain(value.hz, value.gain);
             audioParamSave();
-        },
-        toggleEffect() {
-            audio.exAudioEffect.isUseEffect = !audio.exAudioEffect.isUseEffect;
         },
         changedPreset(){
             if(this.presets[this.selectPreset] == undefined) {
