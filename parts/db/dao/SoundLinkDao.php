@@ -60,15 +60,27 @@ class SoundLinkDao extends SqlCreater implements SoundLinkTable {
     /**
      * @return SoundLinkDto[]
      */
-    public function getWordSearchSounds($word){
+    public function getWordSearchSounds($word) {
         return $this->toDtoList(
             $this->execute(
                 $this->whereQuery(
-                    SoundDataView::ARTIST_NAME.$this::LIKE_OR.SoundDataView::TITLE.$this::LIKE_OR.SoundDataView::ALBUM_TITLE.$this::LIKE),
-                    array('%'.$word.'%', '%'.$word.'%', '%'.$word.'%')
+                    SoundDataView::ARTIST_NAME . $this::LIKE_OR . SoundDataView::TITLE . $this::LIKE_OR . SoundDataView::ALBUM_TITLE . $this::LIKE
+                ) . ' ORDER BY 
+                CASE 
+                    WHEN ' . SoundDataView::ARTIST_NAME . ' = ? THEN 1
+                    WHEN ' . SoundDataView::TITLE . ' = ? THEN 1
+                    WHEN ' . SoundDataView::ALBUM_TITLE . ' = ? THEN 1
+                    ELSE 2 
+                END,
+                CHAR_LENGTH(' . SoundDataView::ARTIST_NAME . '),
+                CHAR_LENGTH(' . SoundDataView::TITLE . '),
+                CHAR_LENGTH(' . SoundDataView::ALBUM_TITLE . ')
+                ',
+                array('%' . $word . '%', '%' . $word . '%', '%' . $word . '%', $word, $word, $word)
             )
         );
     }
+    
 
     public function getAlbumSounds($albumHash) {
         return $this->toDtoList(
