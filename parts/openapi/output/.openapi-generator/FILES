@@ -1,0 +1,16 @@
+.gitignore
+.php-cs-fixer.dist.php
+.travis.yml
+README.md
+composer.json
+docs/Api/DefaultApi.md
+docs/Model/ApiAlbumsPlaycountDescGet200ResponseInner.md
+git_push.sh
+lib/ApiException.php
+lib/Api/DefaultApi.php
+lib/Configuration.php
+lib/HeaderSelector.php
+lib/Model/ApiAlbumsPlaycountDescGet200ResponseInner.php
+lib/Model/ModelInterface.php
+lib/ObjectSerializer.php
+phpunit.xml.dist

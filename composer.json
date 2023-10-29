@@ -9,6 +9,19 @@
     "require": {
         "james-heinrich/getid3": "^1.9",
         "kenangundogan/fontisto": "^3.0",
-        "cboden/ratchet": "^0.4.3"
+        "cboden/ratchet": "^0.4.3",
+        "wikimedia/composer-merge-plugin": "^2.0"
+    },
+    "extra": {
+      "merge-plugin": {
+        "include": [
+          "parts/openapi/output/composer.json"
+        ]
+      }
+    },
+    "config": {
+        "allow-plugins": {
+            "wikimedia/composer-merge-plugin": true
+        }
     }
 }
