@@ -1187,6 +1187,7 @@ const SettingEqualizerComponent = {
         },
         toggleEffect() {
             audio.exAudioEffect.isUseEffect = !audio.exAudioEffect.isUseEffect;
+            audioParamSave();
         },
         changedPreset(){
             if(this.presets[this.selectPreset] == undefined) {
