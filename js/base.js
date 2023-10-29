@@ -2441,6 +2441,37 @@ class AudioLoopModeEnum{
 }
 
 
+class StereoExAudioEffect {
+    /**
+     * @param {MediaElementAudioSourceNode} audioSource 
+     * @param {AudioContext} audioContext 
+     * @param {StereoAudioEqualizer} equalizer
+     */
+    constructor(audioSource, audioContext, equalizer) {
+        this.audioSource = audioSource;
+        this.audioContext = audioContext;
+        this.leftExAudioEffect = new ExAudioEffect(this.audioSource, this.audioContext, equalizer.leftEqualizer);
+        this.rightExAudioEffect = new ExAudioEffect(this.audioSource, this.audioContext, equalizer.rightEqualizer);
+        this._isUseEffect = true;
+        this.leftExAudioEffect.isUseEffect;
+    }
+
+    reset() {
+        this.leftExAudioEffect.prevEffectHz = null;
+        this.rightExAudioEffect.prevEffectHz = null;
+    }
+
+    set isUseEffect(val) {
+        this._isUseEffect = val;
+        this.leftExAudioEffect.isUseEffect = this._isUseEffect;
+        this.rightExAudioEffect.isUseEffect = this._isUseEffect;
+    }
+
+    get isUseEffect() {
+        return this._isUseEffect;
+    }
+}
+
 class ExAudioEffect{
     /**
      * @param {MediaElementAudioSourceNode} audioSource 
@@ -2614,6 +2645,65 @@ class ExAudioEffect{
     }
 }
 
+class StereoAudioEqualizer {
+    /**
+     * 
+     * @param {MediaElementAudioSourceNode} audioSource 
+     * @param {AudioContext} audioContext 
+     */
+    constructor(audioSource, audioContext) {
+        this.splitter = audioContext.createChannelSplitter(2);
+        this.merger = audioContext.createChannelMerger(2);
+
+        this.leftEqualizer = new AudioEqualizer(audioSource, audioContext);
+        this.rightEqualizer = new AudioEqualizer(audioSource, audioContext);
+
+        audioSource.connect(this.splitter);
+
+        this.splitter.connect(this.leftEqualizer.filters[this.leftEqualizer.gains[0].hz], 0);
+        this.splitter.connect(this.rightEqualizer.filters[this.rightEqualizer.gains[0].hz], 1);
+
+        this.leftEqualizer.filters[this.leftEqualizer.gains[this.leftEqualizer.gains.length - 1].hz].connect(this.merger, 0, 0);
+        this.rightEqualizer.filters[this.rightEqualizer.gains[this.rightEqualizer.gains.length - 1].hz].connect(this.merger, 0, 1);
+
+        this.merger.connect(audioContext.destination);
+    }
+
+    /**
+     * 左右同時にgain変更を行う。
+     * @param {Number} hz 
+     * @param {Number} gain 
+     */
+     setMonoGain(hz, gain) {
+        this.leftEqualizer.setGain(hz, gain);
+        this.rightEqualizer.setGain(hz, gain);
+     }
+
+    /**
+     * 左右同時にgain変更を行う。
+     * @param {Array<{hz: number, gain: number}>} value
+     */
+    set monoGains(value) {
+        this.leftEqualizer.gains = value;
+        this.rightEqualizer.gains = value;
+    }
+
+    /**
+     * 
+     * @param {{left:Array<{hz: number, gain: number}>,right:Array<{hz: number, gain: number}>}} value
+     */
+    set gains(value) {
+        this.leftEqualizer.gains = value['left'];
+        this.rightEqualizer.gains = value['right'];
+    }
+    get gains() {
+        let value = {
+            'left':this.leftEqualizer.gains,
+            'right':this.rightEqualizer.gains
+        };
+        return value;
+    }
+}
 
 class AudioEqualizer {
     /**
@@ -2715,8 +2805,8 @@ class AudioPlayer{
             request.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
             request.execute();
         });
-        this.equalizer = new AudioEqualizer(this.source, this.audioContext);
-        this.exAudioEffect = new ExAudioEffect(this.source, this.audioContext, this.equalizer);
+        this.equalizer = new StereoAudioEqualizer(this.source, this.audioContext);
+        this.exAudioEffect = new StereoExAudioEffect(this.source, this.audioContext, this.equalizer);
 
         this.setUpdate();
     }
@@ -2876,7 +2966,7 @@ class AudioPlayer{
     audioDeployment(){
         this.eventSupport.dispatchEvent(new CustomEvent('audioSet'));
         this.audio.src = this.currentAudioClip.src;
-        this.exAudioEffect.prevEffectHz = null;
+        this.exAudioEffect.reset();
     }
 
     get UPDATE_MILI_SEC(){
