@@ -1182,11 +1182,12 @@ const SettingEqualizerComponent = {
     methods:{
         valueChange(event, value){
             value.gain = (event.target.getAttribute('value'));
-            audio.equalizer.setGain(value.hz, value.gain);
+            audio.equalizer.setMonoGain(value.hz, value.gain);
             audioParamSave();
         },
         toggleEffect() {
             audio.exAudioEffect.isUseEffect = !audio.exAudioEffect.isUseEffect;
+            audioParamSave();
         },
         changedPreset(){
             if(this.presets[this.selectPreset] == undefined) {
@@ -1195,7 +1196,7 @@ const SettingEqualizerComponent = {
             this.hzArray = JSON.parse(JSON.stringify(this.presets[this.selectPreset]));
         },
         gainsUpdate(){
-            audio.equalizer.gains = this.hzArray.slice();
+            audio.equalizer.monoGains = this.hzArray.slice();
             audioParamSave();
         },
         toViewName(val) {
@@ -1209,7 +1210,7 @@ const SettingEqualizerComponent = {
         },
     },
     mounted() {
-        this.hzArray = JSON.parse(JSON.stringify(audio.equalizer.gains));
+        this.hzArray = JSON.parse(JSON.stringify(audio.equalizer.leftEqualizer.gains));
         let equalizerPreset = new class extends BaseFrameWork.Network.RequestServerBase{
             constructor(){
                 super(
