@@ -2654,17 +2654,47 @@ class StereoAudioEqualizer {
     constructor(audioSource, audioContext) {
         this.splitter = audioContext.createChannelSplitter(2);
         this.merger = audioContext.createChannelMerger(2);
+        let AudioEqualizerStereo =  class extends AudioEqualizer{
+            /**
+             * 
+             * @param {MediaElementAudioSourceNode} audioSource 
+             * @param {AudioContext} audioContext 
+             * @param {ChannelMergerNode} merger
+             */
+            constructor(audioSource, audioContext, merger) {
+                super(audioSource, audioContext);
+                this.merger = merger;
+                this._connect();
+            }
+        }
 
-        this.leftEqualizer = new AudioEqualizer(audioSource, audioContext);
-        this.rightEqualizer = new AudioEqualizer(audioSource, audioContext);
+        this.leftEqualizer = new class extends AudioEqualizerStereo{
+            /**
+             * @param {AudioDestinationNode} audioDestination
+             */
+            _connect(audioDestination = null) {
+                if(this.merger == null) {
+                    return;
+                }
+                this.filters[this.gains[this.gains.length - 1].hz].connect(this.merger, 0, 0);
+            }
+        }(audioSource, audioContext, this.merger);
+        this.rightEqualizer = new class extends AudioEqualizerStereo{
+            /**
+             * @param {AudioDestinationNode} audioDestination
+             */
+            _connect(audioDestination = null) {
+                if(this.merger == null) {
+                    return;
+                }
+                this.filters[this.gains[this.gains.length - 1].hz].connect(this.merger, 0, 1);
+            }
+        }(audioSource, audioContext, this.merger);
 
         audioSource.connect(this.splitter);
 
         this.splitter.connect(this.leftEqualizer.filters[this.leftEqualizer.gains[0].hz], 0);
         this.splitter.connect(this.rightEqualizer.filters[this.rightEqualizer.gains[0].hz], 1);
-
-        this.leftEqualizer.filters[this.leftEqualizer.gains[this.leftEqualizer.gains.length - 1].hz].connect(this.merger, 0, 0);
-        this.rightEqualizer.filters[this.rightEqualizer.gains[this.rightEqualizer.gains.length - 1].hz].connect(this.merger, 0, 1);
 
         this.merger.connect(audioContext.destination);
     }
@@ -2736,7 +2766,14 @@ class AudioEqualizer {
         for (let i = 0; i < this._gainFlat.length - 1; i++) {
             this.filters[this._gainFlat[i].hz].connect(this.filters[this._gainFlat[i + 1].hz]);
         }
-        this.filters[this._gainFlat[this._gainFlat.length - 1].hz].connect(audioContext.destination);
+        this._connect(audioContext.destination);
+    }
+
+    /**
+     * @param {AudioDestinationNode} audioDestination
+     */
+    _connect(audioDestination) {
+        this.filters[this._gainFlat[this._gainFlat.length - 1].hz].connect(audioDestination);
     }
     
     /**
