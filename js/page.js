@@ -107,6 +107,41 @@ class SoundPlayedAction extends BaseFrameWork.Network.RequestServerBase {
 
 let currentPage = '';
 
+const LoadingListComponent = {
+    template:`
+    <div class="audio-item">
+        <div>
+            <div class="layout-box">
+                <p class="audio-title" style="text-align:center;">
+                <svg width="50" height="50" viewBox="0 0 50 50">
+                    <defs>
+                    <filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feComponentTransfer in="SourceAlpha">
+                        <feFuncA type="table" tableValues="1 0"></feFuncA>
+                        </feComponentTransfer>
+                        <feGaussianBlur stdDeviation="3"></feGaussianBlur>
+                        <feOffset dx="2" dy="2" result="offsetblur"></feOffset>
+                        <feFlood flood-color="black" result="color"></feFlood>
+                        <feComposite in2="offsetblur" operator="in"></feComposite>
+                        <feComposite in2="SourceAlpha" operator="in"></feComposite>
+                        <feMerge>
+                        <feMergeNode in="SourceGraphic"></feMergeNode>
+                        <feMergeNode></feMergeNode>
+                        </feMerge>
+                    </filter>
+                    </defs>
+                    <circle cx="25" cy="25" r="20" stroke="grey" stroke-width="4" fill="none" filter="url(#innerShadow)"></circle>
+                    <circle cx="25" cy="25" r="20" stroke="black" stroke-width="4" stroke-dasharray="31.4159265359 94.2477796077" stroke-dashoffset="0" fill="none">
+                    <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"></animateTransform>
+                    </circle>
+                </svg>
+                </p>
+            </div>
+        </div>
+    </div>
+    `
+};
+
 const SlideList = {
     template: `
     <sw-audio-slide-list>
@@ -353,17 +388,20 @@ const ArtistSoundList = {
         <button v-for="item in requestData()" :class='audioItemClass(item)' @click.right.prevent="soundContext(item)" @click="click(item)">
             <SoundClipComponent :sound-clip='item'></SoundClipComponent>
         </button>
+        <LoadingListComponent v-show="isLoading"></LoadingListComponent>
     </div>
     `,
     data() {
         return {
             soundClips:[],
             currentPlaySoundClip:audio.currentAudioClip,
-            albumHash:null
+            albumHash:null,
+            isLoading:false
         };
     },
     components:{
-        SoundClipComponent
+        SoundClipComponent,
+        LoadingListComponent
     },
     methods:{
         soundContext:(soundClip)=>{
@@ -400,6 +438,7 @@ const ArtistSoundList = {
         },
         requestData(){
             if(this.soundClips.length == 0) {
+                this.isLoading = true;
                 let soundSearch = new ArtistSoundListAction();
 
                 soundSearch.formDataMap.append('ArtistHash', this.$route.query.ArtistHash);
@@ -416,6 +455,7 @@ const ArtistSoundList = {
                         listNo++;
                         this.soundClips.push(audioClip);
                     }
+                    this.isLoading = false;
                 });
                 soundSearch.execute();
                 return this.soundClips;
@@ -475,17 +515,20 @@ const AlbumSoundList = {
         <button v-for="item in requestData()" :class='audioItemClass(item)' @click.right.prevent="soundContext(item)" @click="click(item)">
             <SoundClipComponent :sound-clip='item'></SoundClipComponent>
         </button>
+        <LoadingListComponent v-show="isLoading"></LoadingListComponent>
     </div>
     `,
     data() {
         return {
             soundClips:[],
             currentPlaySoundClip:audio.currentAudioClip,
-            albumHash:null
+            albumHash:null,
+            isLoading:false
         };
     },
     components:{
-        SoundClipComponent
+        SoundClipComponent,
+        LoadingListComponent
     },
     methods:{
         soundContext:(soundClip)=>{
@@ -522,6 +565,7 @@ const AlbumSoundList = {
         },
         requestData(){
             if(this.soundClips.length == 0) {
+                this.isLoading = true;
                 let soundSearch = new AlbumSoundListAction();
 
                 soundSearch.formDataMap.append('AlbumHash', this.$route.query.AlbumHash);
@@ -538,6 +582,7 @@ const AlbumSoundList = {
                         listNo++;
                         this.soundClips.push(audioClip);
                     }
+                    this.isLoading = false;
                 });
                 soundSearch.execute();
                 return this.soundClips;
@@ -597,17 +642,20 @@ const Search = {
         <button v-for="item in requestData()" :class='audioItemClass(item)' @click.right.prevent="soundContext(item)" @click="click(item)">
             <SoundClipComponent :sound-clip='item'></SoundClipComponent>
         </button>
+        <LoadingListComponent v-show="isLoading"></LoadingListComponent>
     </div>
     `,
     data() {
-        return {soundClips:[], currentPlaySoundClip:audio.currentAudioClip};
+        return {soundClips:[], currentPlaySoundClip:audio.currentAudioClip,isLoading:false};
     },
     components:{
-        SoundClipComponent
+        SoundClipComponent,
+        LoadingListComponent
     },
     methods:{
         requestData(){
             if(this.soundClips.length == 0) {
+                this.isLoading = true;
                 let soundSearch = new SoundSearchAction();
 
                 window.searchBox.value = this.$route.query.SearchWord;
@@ -625,6 +673,7 @@ const Search = {
                         listNo++;
                         this.soundClips.push(audioClip);
                     }
+                    this.isLoading = false;
                 });
                 soundSearch.execute();
                 return this.soundClips;
@@ -895,6 +944,7 @@ const AlbumList = {
         <button v-for="item in albumClips" class='audio-item' @click="click(item)">
             <AlbumClipComponent :album-clip='item'></AlbumClipComponent>
         </button>
+        <LoadingListComponent v-show="isLoading"></LoadingListComponent>
     </div>
     `,
     props:{
@@ -912,13 +962,15 @@ const AlbumList = {
         }
     },
     components:{
-        AlbumClipComponent
+        AlbumClipComponent,
+        LoadingListComponent
     },
     data() {
         return {
             currentPlaySoundClip:audio.currentAudioClip,
             start: this.albumClips.length,
-            isMoreLoad:true
+            isMoreLoad:true,
+            isLoading:false
         };
     },
     cpmputed: {
@@ -930,6 +982,12 @@ const AlbumList = {
         async requestData(){
             return await new Promise((resolve, reject)=>{
                 if(this.isMoreLoad){
+                    if(!this.isLoading){
+                        this.isLoading = true;
+                    } else {
+                        reject();
+                        return;
+                    }
                     this.isMoreLoad = false;
                     let albumAction = new AlbumListAction;
                     albumAction.httpRequestor.addEventListener('success', event=>{
@@ -941,16 +999,24 @@ const AlbumList = {
                         resolve();
                     });
                     albumAction.httpRequestor.addEventListener('error', event=>{
+                        this.isLoading = false;
                         reject();
+                        return;
                     });
                     albumAction.formDataMap.set('start', this.start);
                     albumAction.formDataMap.set('end', 50);
                     albumAction.execute();
+                } else {
+                    reject();
+                    return;
                 }
             }).then(()=>{
                 let albumClipsCache = JSON.stringify(this.albumClips);
                 let cache = new BaseFrameWork.Storage.Application.SessionStorageMap;
                 cache.set('albumList', albumClipsCache);
+                this.isLoading = false;
+            }).catch(()=>{
+                //ignore
             });
         },
         click(albumClip) {
@@ -1056,6 +1122,7 @@ const ArtistList = {
         <button v-for="item in artistClips" class='audio-item' @click="click(item)">
             <ArtistClipComponent :artistClip='item'></ArtistClipComponent>
         </button>
+        <LoadingListComponent v-show="isLoading"></LoadingListComponent>
     </div>
     `,
     props:{
@@ -1073,13 +1140,15 @@ const ArtistList = {
         }
     },
     components:{
-        ArtistClipComponent
+        ArtistClipComponent,
+        LoadingListComponent
     },
     data() {
         return {
             currentPlaySoundClip:audio.currentAudioClip,
             start: this.artistClips.length,
-            isMoreLoad: true
+            isMoreLoad: true,
+            isLoading:false
         }
     },
     cpmputed: {
@@ -1092,6 +1161,15 @@ const ArtistList = {
             return await new Promise((resolve, reject)=>{
                 if(this.isMoreLoad){
                     this.isMoreLoad = false;
+                } else {
+                    reject();
+                    return;
+                }
+                if(!this.isLoading){
+                    this.isLoading = true;
+                } else {
+                    reject();
+                    return;
                 }
                 let artistAction = new ArtistListAction;
                 artistAction.httpRequestor.addEventListener('success', event=>{
@@ -1103,7 +1181,9 @@ const ArtistList = {
                     resolve();
                 });
                 artistAction.httpRequestor.addEventListener('error', ()=>{
+                    this.isLoading = false;
                     reject();
+                    return;
                 });
                 artistAction.formDataMap.set('start', this.start);
                 artistAction.formDataMap.set('end', 50);
@@ -1112,6 +1192,9 @@ const ArtistList = {
                 let artistClipsCache = JSON.stringify(this.artistClips);
                 let cache = new BaseFrameWork.Storage.Application.SessionStorageMap;
                 cache.set('artistList', artistClipsCache);
+                this.isLoading = false;
+            }).catch(()=>{
+                //ignore
             });
         },
         click(artistClip) {
@@ -1374,6 +1457,7 @@ const Setting = {
                     let data = event.detail.response;
                     if(toBoolean(data['regist_status'])) {
                         reject();
+                        return;
                     } else {
                         resolve();
                     }
@@ -1431,6 +1515,7 @@ const SetUp = {
                     let data = event.detail.response;
                     if(toBoolean(data['regist_status'])) {
                         reject();
+                        return;
                     } else {
                         let messageButtonWindow = new MessageButtonWindow();
                         messageButtonWindow.value = 'Setup start.';
