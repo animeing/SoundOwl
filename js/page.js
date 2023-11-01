@@ -738,7 +738,7 @@ const PlaylistClipComponent = {
 const ArtistClipComponent = {
     template:`
     <div>
-        <div class="alubm">
+        <div class="album">
             <img loading='lazy' :src="createImageSrc(artistClip.album.album_key)">
         </div>
         <div class='layout-box'>
@@ -760,7 +760,7 @@ const ArtistClipComponent = {
 const AlbumClipComponent = {
     template:`
     <div>
-        <div class="alubm">
+        <div class="album">
             <img loading='lazy' :src="createImageSrc(albumClip.album_key)">
         </div>
         <div class='layout-box'>

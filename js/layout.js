@@ -158,7 +158,7 @@ class AudioClipObject extends HTMLButtonElement{
 
     initalize() {
         let albumArtFrame = document.createElement('div');
-        albumArtFrame.classList.add('alubm');
+        albumArtFrame.classList.add('album');
         this._image = document.createElement('img');
         this._image.setAttribute('loading', 'lazy');
         albumArtFrame.appendChild(this._image);
@@ -516,7 +516,7 @@ customElements.define('sw-audio-slide-list', AudioSlideList);
 const SoundClipComponent = {
     template:`
     <div>
-        <div class="alubm">
+        <div class="album">
             <img loading='lazy' :src="createImageSrc(soundClip.albumKey)">
         </div>
         <div class='layout-box'>

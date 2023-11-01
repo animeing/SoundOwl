@@ -542,19 +542,19 @@ header ~ .layout-base{
   padding-top: 2.6em;
 }
 
-.alubm{
+.album{
   display: inline;
   width: 199px;
 }
 
-.alubm > img{
+.album > img{
   width: 199px;
   height: 170px;
   object-fit: contain;
 }
 
 sw-audio-slide-list img,
-.alubm > img{
+.album > img{
   border: 1px solid var(--itemfcbgcolor);
 }
 
@@ -768,11 +768,11 @@ a.audio-infomation {
   height: 97px;
 }
 
-.audio-controller-playlist .audio-item > div > .alubm {
+.audio-controller-playlist .audio-item > div > .album {
   width: 108px;
 }
 
-.audio-controller-playlist .audio-item > div >.alubm > img {
+.audio-controller-playlist .audio-item > div >.album > img {
   width: 108px;
   height: 92px;
 }
