@@ -2832,6 +2832,28 @@ class AudioPlayer{
         this.loadGiveUpTime = 10000;
         this.audio.onerror = ()=> {
             console.log("Error " + this.audio.error.code + "; details: " + this.audio.error.message);
+            
+            if(this.loopMode != AudioLoopModeEnum.AUDIO_LOOP && this.playList.count() >= 1) {
+                let errorWindow = new MessageWindow;
+                errorWindow.value='Sound load failed.\nAudioFile decode failed.';
+                errorWindow.open();
+                errorWindow.close(2000);
+                let audioClip = this.autoNextClip;
+                if(audioClip == undefined){
+                    this.pause();
+                    this.eventSupport.dispatchEvent(this.audioUpdatedEvent);
+                    return;
+                }
+                this.eventSupport.dispatchEvent(this.audioUpdatedEvent);
+                this.play(audioClip);
+            } else {
+                let errorWindow = new MessageButtonWindow;
+                errorWindow.value='Sound load failed.\nAudioFile decode failed.';
+                errorWindow.addItem('OK', ()=>{
+                    errorWindow.close();
+                });
+                errorWindow.open();
+            }
         };
         this.eventSupport.addEventListener('audioSet', ()=>{
             let request = new SoundInfomation();

@@ -17,6 +17,7 @@ Intranet内でブラウザが入っているPCがあれば視聴できること�
   * PHP8.1
 
 ## Install
+* apt install -y ffmpeg
 * apt install -y screen
 * git clone https://github.com/animeing/SoundOwl.git /var/www/html
 * apt install -y php-xml
