@@ -68,8 +68,6 @@ if(!file_exists(LOCK_PATH)) {
             
             $id3Tags = $id3Analyze['tags'];
             $tagNames = array_reverse(array_keys($id3Tags));
-            print_r($id3Analyze);
-            error_log(findId3TagValue('replaygain_track_gain', $id3Tags, $tagNames).'  ________loggg');
             {
                 $title = findId3TagValue('title', $id3Tags, $tagNames);
                 if($title === false) {
