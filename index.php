@@ -27,9 +27,11 @@ echo StringUtil::deleteNonCss(file_get_contents(dirname(__FILE__).'/css/dark-mod
 ?>
     </style>
     <script>
-const Initalize = {
-    websocket_retry_count:<?php echo WEBSOCKET_RETRY_COUNT_LIMIT;?>,
-    websocket_retry_interval:<?php echo WEBSOCKET_RETRY_INTERVAL;?>
+const SoundOwlProperty = {};
+SoundOwlProperty.WebSocket = {
+    status:false,
+    retryCount:<?php echo WEBSOCKET_RETRY_COUNT_LIMIT;?>,
+    retryInterval:<?php echo WEBSOCKET_RETRY_INTERVAL;?>
 };
     </script>
     <script src="js/base.js"></script>

@@ -1,4 +1,13 @@
 'use strict';
+
+SoundOwlProperty.WebSocket.EventTarget = new EventTarget();
+SoundOwlProperty.SoundRegist = {};
+SoundOwlProperty.SoundRegist.registStatus = false;
+SoundOwlProperty.SoundRegist.RegistDataCount = {};
+SoundOwlProperty.SoundRegist.RegistDataCount.sound = 0;
+SoundOwlProperty.SoundRegist.RegistDataCount.artist = 0;
+SoundOwlProperty.SoundRegist.RegistDataCount.album = 0;
+
 const audioParamSave=()=>{
     let localStorageMap = new BaseFrameWork.Storage.Application.LocalStorageMap();
     let saveParams = JSON.stringify(
@@ -32,7 +41,7 @@ const audioParamLoad=()=>{
         const ws = new WebSocket(`ws://${BASE.WEBSOCKET}:8080`);
         
         ws.onopen = function() {
-            if(retryCount >= Initalize.websocket_retry_count){
+            if(retryCount > SoundOwlProperty.WebSocket.retryCount){
                 let message = document.createElement('sw-message-button');
                 message.addItem('Close', ()=>{
                     message.close();
@@ -42,17 +51,28 @@ const audioParamLoad=()=>{
                 message.open();
             }
             retryCount = 0;
+            SoundOwlProperty.WebSocket.EventTarget.dispatchEvent(new Event('connect'));
         };
 
         ws.onmessage = function(event) {
             let websocketData = JSON.parse(event.data);
-            Initalize.websocket_retry_count = websocketData.context.websocket.retry_count;
-            Initalize.websocket_retry_interval = websocketData.context.websocket.retry_interval;
+            SoundOwlProperty.WebSocket.retryCount = websocketData.context.websocket.retry_count;
+            SoundOwlProperty.WebSocket.retryInterval = websocketData.context.websocket.retry_interval;
+            SoundOwlProperty.SoundRegist.RegistDataCount.sound = websocketData.context.regist_data_count.sound;
+            SoundOwlProperty.SoundRegist.RegistDataCount.album = websocketData.context.regist_data_count.album;
+            SoundOwlProperty.SoundRegist.RegistDataCount.artist = websocketData.context.regist_data_count.artist;
+            SoundOwlProperty.SoundRegist.registStatus = websocketData.context.regist_status;
+            SoundOwlProperty.WebSocket.status = true;
+            SoundOwlProperty.WebSocket.EventTarget.dispatchEvent(new Event('update'));
         };
 
         ws.onclose = function() {
+            if(SoundClipComponent.WebSocket.status) {
+                SoundOwlProperty.WebSocket.status = false;
+                SoundOwlProperty.WebSocket.EventTarget.dispatchEvent(new Event('change'));
+            }
             setTimeout(()=>{
-                if(retryCount >= Initalize.websocket_retry_count){
+                if(retryCount >= SoundOwlProperty.WebSocket.retryCount){
                     
                     let message = document.createElement('sw-message-button');
                     message.addItem('Reconnect', ()=>{
@@ -68,7 +88,7 @@ const audioParamLoad=()=>{
                 }
                 webSocketAction();
                 retryCount++;
-            }, Initalize.websocket_retry_interval);
+            }, SoundOwlProperty.WebSocket.retryInterval);
         };
     }
     webSocketAction();

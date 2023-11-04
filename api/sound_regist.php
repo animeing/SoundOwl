@@ -10,7 +10,7 @@ define('LOCK_PATH', 'lock/sound_regist.lock');
 
 if(!file_exists(LOCK_PATH)) {
     try{
-        touch(LOCK_PATH);
+        FileUtil::touchWithDir(LOCK_PATH);
         function hasRegistedSound($file) {
             global $soundDao;
             foreach($soundDao->findSoundLink($file) as $find) {
@@ -48,6 +48,7 @@ if(!file_exists(LOCK_PATH)) {
             return false;
         }
 
+        
 
         $soundDao = new SoundLinkDao();
         $artistDao = new ArtistDao();
@@ -64,8 +65,11 @@ if(!file_exists(LOCK_PATH)) {
                 echo $file;
                 return;
             }
+            
             $id3Tags = $id3Analyze['tags'];
             $tagNames = array_reverse(array_keys($id3Tags));
+            print_r($id3Analyze);
+            error_log(findId3TagValue('replaygain_track_gain', $id3Tags, $tagNames).'  ________loggg');
             {
                 $title = findId3TagValue('title', $id3Tags, $tagNames);
                 if($title === false) {

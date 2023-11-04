@@ -1415,8 +1415,36 @@ const Setting = {
         <SettingTab></SettingTab>
         <div class="context" v-show="isGeneral">
             <SettingFormComponent></SettingFormComponent>
-            <input type="button" class="button" value="setting update" @click="settingUpdate">
-            <input type="button" class="button" value="sound regist" @click="soundRegist">
+            <div style="font-size:0;line-height:0;">
+                <input type="button" class="button" value="setting update" @click="settingUpdate" :disabled="!isConnectWebSocket" v-bind:data-hint="isConnectWebSocket ? undefined : 'The operation cannot be performed because the WebSocket connection has not been established.'">
+                <div style="position: relative; display: inline-block;">
+                    <input type="button" class="button" value="sound regist" @click="soundRegist" style="position: relative;" :disabled="!isConnectWebSocket" v-bind:data-hint="isConnectWebSocket ? undefined : 'The operation cannot be performed because the WebSocket connection has not been established.'">
+                    <span style="position: absolute; top: 0; left: 0; display: flex;align-items: center; justify-content: center;" hint="Currently registering sound." v-show="isAction">
+                        <svg width="100" height="43" viewBox="0 0 50 50">
+                        <defs>
+                        <filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feComponentTransfer in="SourceAlpha">
+                            <feFuncA type="table" tableValues="1 0"></feFuncA>
+                            </feComponentTransfer>
+                            <feGaussianBlur stdDeviation="3"></feGaussianBlur>
+                            <feOffset dx="2" dy="2" result="offsetblur"></feOffset>
+                            <feFlood flood-color="black" result="color"></feFlood>
+                            <feComposite in2="offsetblur" operator="in"></feComposite>
+                            <feComposite in2="SourceAlpha" operator="in"></feComposite>
+                            <feMerge>
+                            <feMergeNode in="SourceGraphic"></feMergeNode>
+                            <feMergeNode></feMergeNode>
+                            </feMerge>
+                        </filter>
+                        </defs>
+                        <circle cx="25" cy="25" r="20" stroke="grey" stroke-width="4" fill="none" filter="url(#innerShadow)"></circle>
+                        <circle cx="25" cy="25" r="20" stroke="black" stroke-width="4" stroke-dasharray="31.4159265359 94.2477796077" stroke-dashoffset="0" fill="none">
+                        <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"></animateTransform>
+                        </circle>
+                        </svg>
+                    </span>
+                </div>
+            </div>
         </div>
         <div class="context" v-show="isEqualizer">
             <SettingEqualizerComponent></SettingEqualizerComponent>
@@ -1431,10 +1459,23 @@ const Setting = {
     data(){
         return {
             isGeneral:true,
-            isEqualizer:false
+            isEqualizer:false,
+            isConnectWebSocket: SoundOwlProperty.WebSocket.status,
+            isAction: false
         }
     },
     methods:{
+        updateWebConnection() {
+            this.isConnectWebSocket = SoundOwlProperty.WebSocket.status;
+        },
+        updateProperties() {
+            this.isAction = SoundOwlProperty.registStatus;
+            if(this.isAction) {
+                this.isConnectWebSocket = false;
+            } else if (SoundOwlProperty.WebSocket.status) {
+                this.isConnectWebSocket = true;
+            }
+        },
         settingUpdate(){
             let updateSetting = new UpdateSetting;
             updateSetting.httpRequestor.addEventListener('success', event=>{
@@ -1482,6 +1523,14 @@ const Setting = {
                 messageButtonWindow.open();
             });
         }
+    },
+    created(){
+        SoundOwlProperty.WebSocket.EventTarget.addEventListener('change', this.updateWebConnection);
+        SoundOwlProperty.WebSocket.EventTarget.addEventListener('update', this.updateProperties);
+    },
+    beforeDestroy() {
+        SoundOwlProperty.WebSocket.EventTarget.removeEventListener('change', this.updateWebConnection);
+        SoundOwlProperty.WebSocket.EventTarget.removeEventListener('update', this.updateProperties);
     },
     watch: {
         '$route'(to, from) {

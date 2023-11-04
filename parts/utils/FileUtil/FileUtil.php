@@ -46,6 +46,31 @@ final class FileUtil implements IMimeType{
         }
         return $list;
     }
+    
+    /**
+     * 指定されたファイルパスのディレクトリが存在しない場合にディレクトリを作成し、
+     * ファイルにtouchを実行する関数。
+     * 
+     * @param string $filePath touchを実行するファイルのパス。
+     * 
+     * @return bool ディレクトリの作成とファイルのtouchに成功した場合はtrue、
+     *              失敗した場合はfalseを返します。
+     */
+    public static function touchWithDir($filePath) {
+        // ファイルが存在するディレクトリを取得
+        $directory = dirname($filePath);
+    
+        // ディレクトリが存在しない場合は作成
+        if (!is_dir($directory)) {
+            // 再帰的にディレクトリを作成し、失敗したらfalseを返す
+            if (!mkdir($directory, 0644, true)) {
+                return false;
+            }
+        }
+    
+        // ファイルをtouchする
+        return touch($filePath);
+    }
 
     /**
      * @param function $action 引数はFilePathが入ってる。
