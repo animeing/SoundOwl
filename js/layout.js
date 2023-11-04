@@ -67,11 +67,12 @@ const audioParamLoad=()=>{
         };
 
         ws.onclose = function() {
-            if(SoundClipComponent.WebSocket.status) {
+            if(SoundOwlProperty.WebSocket.status) {
                 SoundOwlProperty.WebSocket.status = false;
                 SoundOwlProperty.WebSocket.EventTarget.dispatchEvent(new Event('change'));
             }
             setTimeout(()=>{
+                retryCount++;
                 if(retryCount >= SoundOwlProperty.WebSocket.retryCount){
                     
                     let message = document.createElement('sw-message-button');
@@ -87,7 +88,6 @@ const audioParamLoad=()=>{
                     return;
                 }
                 webSocketAction();
-                retryCount++;
             }, SoundOwlProperty.WebSocket.retryInterval);
         };
     }
