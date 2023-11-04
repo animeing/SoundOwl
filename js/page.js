@@ -422,6 +422,13 @@ const ArtistSoundList = {
             {
                 let updateSoundData = BaseFrameWork.createCustomElement('sw-libutton');
                 updateSoundData.menuItem.onclick=e=>{
+                    {
+                        let wsSendMessage = new SoundOwlProperty.WebSocket.MessageType('sound_update');
+                        wsSendMessage.message = {
+                            'soundHash':soundClip.soundHash
+                        };
+                        SoundOwlProperty.WebSocket.Socket.send(wsSendMessage.toJson());
+                    }
                     let updateSoundinfoAction = new UpdateSoundInfomationAction;
                     updateSoundinfoAction.formDataMap.append('soundhash', soundClip.soundHash);
                     updateSoundinfoAction.httpRequestor.addEventListener('success', event=>{
@@ -431,6 +438,13 @@ const ArtistSoundList = {
                         messageWindow.close(1000);
                     });
                     updateSoundinfoAction.execute();
+                    {
+                        let wsSendMessage = new SoundOwlProperty.WebSocket.MessageType('sound_update');
+                        wsSendMessage.message = {
+                            'lock':soundClip.soundHash
+                        };
+                        SoundOwlProperty.WebSocket.Socket.send(wsSendMessage.toJson());
+                    }
                 };
                 updateSoundData.menuItem.value = 'Information update';
                 ContextMenu.contextMenu.appendChild(updateSoundData);
@@ -549,6 +563,13 @@ const AlbumSoundList = {
             {
                 let updateSoundData = BaseFrameWork.createCustomElement('sw-libutton');
                 updateSoundData.menuItem.onclick=e=>{
+                    {
+                        let wsSendMessage = new SoundOwlProperty.WebSocket.MessageType('sound_update');
+                        wsSendMessage.message = {
+                            'soundHash':soundClip.soundHash
+                        };
+                        SoundOwlProperty.WebSocket.Socket.send(wsSendMessage.toJson());
+                    }
                     let updateSoundinfoAction = new UpdateSoundInfomationAction;
                     updateSoundinfoAction.formDataMap.append('soundhash', soundClip.soundHash);
                     updateSoundinfoAction.httpRequestor.addEventListener('success', event=>{
@@ -558,6 +579,13 @@ const AlbumSoundList = {
                         messageWindow.close(1000);
                     });
                     updateSoundinfoAction.execute();
+                    {
+                        let wsSendMessage = new SoundOwlProperty.WebSocket.MessageType('sound_update');
+                        wsSendMessage.message = {
+                            'lock':soundClip.soundHash
+                        };
+                        SoundOwlProperty.WebSocket.Socket.send(wsSendMessage.toJson());
+                    }
                 };
                 updateSoundData.menuItem.value = 'Information update';
                 ContextMenu.contextMenu.appendChild(updateSoundData);
@@ -699,6 +727,13 @@ const Search = {
             {
                 let updateSoundData = BaseFrameWork.createCustomElement('sw-libutton');
                 updateSoundData.menuItem.onclick=e=>{
+                    {
+                        let wsSendMessage = new SoundOwlProperty.WebSocket.MessageType('sound_update');
+                        wsSendMessage.message = {
+                            'soundHash':soundClip.soundHash
+                        };
+                        SoundOwlProperty.WebSocket.Socket.send(wsSendMessage.toJson());
+                    }
                     let updateSoundinfoAction = new UpdateSoundInfomationAction;
                     updateSoundinfoAction.formDataMap.append('soundhash', soundClip.soundHash);
                     updateSoundinfoAction.httpRequestor.addEventListener('success', event=>{
@@ -708,6 +743,13 @@ const Search = {
                         messageWindow.close(1000);
                     });
                     updateSoundinfoAction.execute();
+                    {
+                        let wsSendMessage = new SoundOwlProperty.WebSocket.MessageType('sound_update');
+                        wsSendMessage.message = {
+                            'lock':soundClip.soundHash
+                        };
+                        SoundOwlProperty.WebSocket.Socket.send(wsSendMessage.toJson());
+                    }
                 };
                 updateSoundData.menuItem.value = 'Information update';
                 ContextMenu.contextMenu.appendChild(updateSoundData);
@@ -889,6 +931,13 @@ const PlaylistSoundList = {
             {
                 let updateSoundData = BaseFrameWork.createCustomElement('sw-libutton');
                 updateSoundData.menuItem.onclick=e=>{
+                    {
+                        let wsSendMessage = new SoundOwlProperty.WebSocket.MessageType('sound_update');
+                        wsSendMessage.message = {
+                            'soundHash':soundClip.soundHash
+                        };
+                        SoundOwlProperty.WebSocket.Socket.send(wsSendMessage.toJson());
+                    }
                     let updateSoundinfoAction = new UpdateSoundInfomationAction;
                     updateSoundinfoAction.formDataMap.append('soundhash', soundClip.soundHash);
                     updateSoundinfoAction.httpRequestor.addEventListener('success', event=>{
@@ -898,6 +947,13 @@ const PlaylistSoundList = {
                         messageWindow.close(1000);
                     });
                     updateSoundinfoAction.execute();
+                    {
+                        let wsSendMessage = new SoundOwlProperty.WebSocket.MessageType('sound_update');
+                        wsSendMessage.message = {
+                            'lock':soundClip.soundHash
+                        };
+                        SoundOwlProperty.WebSocket.Socket.send(wsSendMessage.toJson());
+                    }
                 };
                 updateSoundData.menuItem.value = 'Information update';
                 ContextMenu.contextMenu.appendChild(updateSoundData);
@@ -1469,7 +1525,7 @@ const Setting = {
             this.isConnectWebSocket = SoundOwlProperty.WebSocket.status;
         },
         updateProperties() {
-            this.isAction = SoundOwlProperty.registStatus;
+            this.isAction = SoundOwlProperty.SoundRegist.registStatus;
             if(this.isAction) {
                 this.isConnectWebSocket = false;
             } else if (SoundOwlProperty.WebSocket.status) {

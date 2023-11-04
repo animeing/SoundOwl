@@ -46,7 +46,7 @@ final class FileUtil implements IMimeType{
         }
         return $list;
     }
-    
+
     /**
      * 指定されたファイルパスのディレクトリが存在しない場合にディレクトリを作成し、
      * ファイルにtouchを実行する関数。
@@ -63,7 +63,7 @@ final class FileUtil implements IMimeType{
         // ディレクトリが存在しない場合は作成
         if (!is_dir($directory)) {
             // 再帰的にディレクトリを作成し、失敗したらfalseを返す
-            if (!mkdir($directory, 0644, true)) {
+            if (!mkdir($directory, 0755, true)) {
                 return false;
             }
         }

@@ -1,6 +1,28 @@
 'use strict';
 
 SoundOwlProperty.WebSocket.EventTarget = new EventTarget();
+/**
+ * @type {WebSocket}
+ */
+SoundOwlProperty.WebSocket.Socket = null;
+SoundOwlProperty.WebSocket.MessageType = class {
+    constructor(messageTypeName) {
+        this.messageTypeName = messageTypeName;
+    }
+    set message(message) {
+        this._message = message;
+    }
+    get message() {
+        this._message;
+    }
+
+    toJson() {
+        return JSON.stringify({
+            'messageType':this.messageTypeName,
+            'message':this._message
+        });
+    }
+};
 SoundOwlProperty.SoundRegist = {};
 SoundOwlProperty.SoundRegist.registStatus = false;
 SoundOwlProperty.SoundRegist.RegistDataCount = {};
@@ -38,9 +60,9 @@ const audioParamLoad=()=>{
 (()=>{
     let retryCount = 0;
     const webSocketAction = () =>{
-        const ws = new WebSocket(`ws://${BASE.WEBSOCKET}:8080`);
-        
-        ws.onopen = function() {
+        SoundOwlProperty.WebSocket.Socket = new WebSocket(`ws://${BASE.WEBSOCKET}:8080`);
+
+        SoundOwlProperty.WebSocket.Socket.onopen = function() {
             if(retryCount > SoundOwlProperty.WebSocket.retryCount){
                 let message = document.createElement('sw-message-button');
                 message.addItem('Close', ()=>{
@@ -54,7 +76,7 @@ const audioParamLoad=()=>{
             SoundOwlProperty.WebSocket.EventTarget.dispatchEvent(new Event('connect'));
         };
 
-        ws.onmessage = function(event) {
+        SoundOwlProperty.WebSocket.Socket.onmessage = function(event) {
             let websocketData = JSON.parse(event.data);
             SoundOwlProperty.WebSocket.retryCount = websocketData.context.websocket.retry_count;
             SoundOwlProperty.WebSocket.retryInterval = websocketData.context.websocket.retry_interval;
@@ -66,7 +88,7 @@ const audioParamLoad=()=>{
             SoundOwlProperty.WebSocket.EventTarget.dispatchEvent(new Event('update'));
         };
 
-        ws.onclose = function() {
+        SoundOwlProperty.WebSocket.Socket.onclose = function() {
             if(SoundOwlProperty.WebSocket.status) {
                 SoundOwlProperty.WebSocket.status = false;
                 SoundOwlProperty.WebSocket.EventTarget.dispatchEvent(new Event('change'));

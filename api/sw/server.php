@@ -30,7 +30,7 @@ class ServerMessage implements MessageComponentInterface {
     }
 
     public function onMessage(ConnectionInterface $from, $msg) {
-        $from->send(json_encode($this->addHeader($msg)));
+        $this->sendMessage(json_decode($msg));
     }
 
     public function onClose(ConnectionInterface $conn) {
@@ -62,6 +62,13 @@ class ServerMessage implements MessageComponentInterface {
             'time'=>time() * 1000,
             'context'=>$param
         );
+    }
+
+    public function sendMessage($message) {
+        $status = $this->getStatus();
+        $status['message'] = $message;
+        $data = json_encode($this->addHeader($status));
+        $this->sendClientAll($data);
     }
 
     public function sendStatus() {
