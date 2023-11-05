@@ -8,6 +8,7 @@ use Ratchet\WebSocket\WsServer;
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
 
+define('AUDIO_REGIST_LOCK_PATH', __DIR__.'/../lock/sound_volume_calc.lock');
 define('LOCK_PATH', __DIR__.'/../lock/sound_regist.lock');
 class ServerMessage implements MessageComponentInterface {
     protected $clients;
@@ -44,11 +45,14 @@ class ServerMessage implements MessageComponentInterface {
     public function getStatus(){
         $settings = (parse_ini_file(SETTING_INI));
         return array(
-            'regist_status'=>file_exists(LOCK_PATH),
+            'regist_status'=>file_exists(LOCK_PATH) || file_exists(AUDIO_REGIST_LOCK_PATH),
+            'regist_status_step1'=>file_exists(LOCK_PATH) ,
+            'regist_status_step2'=>file_exists(AUDIO_REGIST_LOCK_PATH),
             'regist_data_count'=>array(
                 'sound'=>$this->soundDao->count($this->soundDao->countQuery()),
                 'artist'=>$this->artistDao->count($this->artistDao->countQuery()),
-                'album'=>$this->albumDao->count($this->albumDao->countQuery())
+                'album'=>$this->albumDao->count($this->albumDao->countQuery()),
+                'analysis_sound'=>$this->soundDao->countInputedLoudnessTarget()
             ),
             'websocket'=>array(
                 'retry_count'=>(array_key_exists('websocket_retry_count', $settings)?$settings['websocket_retry_count'] : 0),

@@ -48,7 +48,8 @@ CREATE TABLE IF NOT EXISTS `sound_link` (
   `artist_name` text ,
   `track_no` text ,
   `play_count` int(11) NOT NULL DEFAULT 0,
-  `data_link` VARCHAR(4351) NOT NULL
+  `data_link` VARCHAR(4351) NOT NULL,
+  `loudness_target` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------

@@ -11,6 +11,8 @@ define('LOCK_PATH', 'lock/sound_regist.lock');
 if(!file_exists(LOCK_PATH)) {
     try{
         FileUtil::touchWithDir(LOCK_PATH);
+
+        $predis = new Predis\Client();
         function hasRegistedSound($file) {
             global $soundDao;
             foreach($soundDao->findSoundLink($file) as $find) {
@@ -54,7 +56,7 @@ if(!file_exists(LOCK_PATH)) {
         $artistDao = new ArtistDao();
         $albumDao = new AlbumDao();
         function registSoundData($file) {
-            global $artistDao, $albumDao, $soundDao;
+            global $artistDao, $albumDao, $soundDao, $predis;
             if(!preg_match('/\.mp3|\.m4a|\.wav|\.ogg|\.flac]/', $file)){
                 return;
             }
@@ -160,6 +162,8 @@ if(!file_exists(LOCK_PATH)) {
                 $soundLinkDto->setPlayCount($soundDtos[0]->getPlayCount());
                 $soundDao->update($soundLinkDto);
             }
+            $jobData = json_encode(['file_path' => $file,'hash'=>$soundLinkDto->getSoundHash()]);
+            $predis->lpush('queue:audio-processing', [$jobData]);
         }
         if(isset($_GET['soundhash'])) {
             $decompless = ComplessUtil::decompless($_GET['soundhash']);
@@ -179,6 +183,5 @@ if(!file_exists(LOCK_PATH)) {
 
 $soundDao = new SoundLinkDao();
 echo json_encode(array(
-    'count'=>$soundDao->count($soundDao->countQuery()),
-    'status'=>file_exists(LOCK_PATH)?'lock':'success'
+    'count'=>$soundDao->count($soundDao->countQuery())
 ));

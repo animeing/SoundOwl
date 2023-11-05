@@ -80,6 +80,10 @@ class SoundLinkDao extends SqlCreater implements SoundLinkTable {
             )
         );
     }
+
+    public function countInputedLoudnessTarget() {
+        return $this->count($this->countWhereQuery($this::LOUDNESS_TARGET.'<> 0'));
+    }
     
 
     public function getAlbumSounds($albumHash) {

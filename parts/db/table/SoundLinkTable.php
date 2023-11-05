@@ -9,6 +9,7 @@ interface SoundLinkTable {
     const TITLE = 'title';
     const LYRICS = 'lyrics';
     const GENRE = 'genre';
+    const LOUDNESS_TARGET = 'loudness_target';
     const ALBUM_HASH = 'album_hash';
     const ALBUM_TITLE = 'album_title';
     const ARTIST_ID = 'artist_id';

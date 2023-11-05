@@ -9,6 +9,7 @@
     "require": {
         "james-heinrich/getid3": "^1.9",
         "kenangundogan/fontisto": "^3.0",
-        "cboden/ratchet": "^0.4.3"
+        "cboden/ratchet": "^0.4.3",
+        "predis/predis":"^2.2"
     }
 }

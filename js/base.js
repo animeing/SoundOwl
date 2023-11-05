@@ -2735,6 +2735,29 @@ class StereoAudioEqualizer {
     }
 }
 
+class LoudnessNormalize {
+    /**
+     * @param {MediaElementAudioSourceNode} audioSource 
+     * @param {AudioContext} audioContext 
+     */
+    constructor(audioSource, audioContext) {
+        this.gainNode = audioContext.createGain();
+        audioSource.connect(this.gainNode);
+        this.gainNode.connect(audioContext.destination);
+        this._isUseEffect = true;
+    }
+
+    get desiredMeanVolume() {
+        return -16;
+    }
+
+
+    set soundMeanVolume(meanVolume) {
+        const gainVolume = Math.pow(10, this.desiredMeanVolume - meanVolume /20);
+        this.gainNode.gain.value = gainVolume;
+    }
+}
+
 class AudioEqualizer {
     /**
      * 
@@ -2859,6 +2882,7 @@ class AudioPlayer{
             let request = new SoundInfomation();
             request.httpRequestor.addEventListener('success', event=>{
                 this.data = event.detail.response;
+                this.loudnessNormalize.soundMeanVolume = this.data.loudness_target;
                 this.eventSupport.dispatchEvent(new CustomEvent('audio_info_loaded'));
             });
             request.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
@@ -2866,6 +2890,7 @@ class AudioPlayer{
         });
         this.equalizer = new StereoAudioEqualizer(this.source, this.audioContext);
         this.exAudioEffect = new StereoExAudioEffect(this.source, this.audioContext, this.equalizer);
+        this.loudnessNormalize = new LoudnessNormalize(this.source, this.audioContext);
 
         this.setUpdate();
     }

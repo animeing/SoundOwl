@@ -99,4 +99,11 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
     public function getDataLink(){
         return parent::getDtoCache()[SoundLinkTable::DATA_LINK];
     }
+    public function setLoudnessTarget($loudnessTarget) {
+        return parent::putDtoCache(SoundLinkTable::LOUDNESS_TARGET, $loudnessTarget);
+    }
+
+    public function getLoudnessTarget() {
+        return parent::getDtoCache()[SoundLinkTable::LOUDNESS_TARGET];
+    }
 }
