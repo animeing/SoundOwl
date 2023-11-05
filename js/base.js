@@ -2443,7 +2443,7 @@ class AudioLoopModeEnum{
 
 class StereoExAudioEffect {
     /**
-     * @param {MediaElementAudioSourceNode} audioSource 
+     * @param {AudioNode} audioSource 
      * @param {AudioContext} audioContext 
      * @param {StereoAudioEqualizer} equalizer
      */
@@ -2461,6 +2461,15 @@ class StereoExAudioEffect {
         this.rightExAudioEffect.prevEffectHz = null;
     }
 
+    /**
+     * 
+     * @param {AudioNode} audioNode 
+     */
+    connect(audioNode) {
+        this.leftExAudioEffect.connect(audioNode);
+        this.rightExAudioEffect.connect(audioNode);
+    }
+
     set isUseEffect(val) {
         this._isUseEffect = val;
         this.leftExAudioEffect.isUseEffect = this._isUseEffect;
@@ -2474,7 +2483,7 @@ class StereoExAudioEffect {
 
 class ExAudioEffect{
     /**
-     * @param {MediaElementAudioSourceNode} audioSource 
+     * @param {AudioNode} audioSource 
      * @param {AudioContext} audioContext 
      * @param {AudioEqualizer} equalizer
      */
@@ -2492,6 +2501,14 @@ class ExAudioEffect{
 
         this.effectMain(this);
         this.isUseEffect = true;
+    }
+
+    /**
+     * 
+     * @param {AudioNode} audioNode 
+     */
+    connect(audioNode) {
+        this.analyser.connect(audioNode);
     }
     /**
      * 
@@ -2648,16 +2665,16 @@ class ExAudioEffect{
 class StereoAudioEqualizer {
     /**
      * 
-     * @param {MediaElementAudioSourceNode} audioSource 
+     * @param {AudioNode} audioSource 
      * @param {AudioContext} audioContext 
      */
     constructor(audioSource, audioContext) {
         this.splitter = audioContext.createChannelSplitter(2);
         this.merger = audioContext.createChannelMerger(2);
-        let AudioEqualizerStereo =  class extends AudioEqualizer{
+        let AudioEqualizerStereo = class extends AudioEqualizer{
             /**
              * 
-             * @param {MediaElementAudioSourceNode} audioSource 
+             * @param {AudioNode} audioSource 
              * @param {AudioContext} audioContext 
              * @param {ChannelMergerNode} merger
              */
@@ -2696,7 +2713,13 @@ class StereoAudioEqualizer {
         this.splitter.connect(this.leftEqualizer.filters[this.leftEqualizer.gains[0].hz], 0);
         this.splitter.connect(this.rightEqualizer.filters[this.rightEqualizer.gains[0].hz], 1);
 
-        this.merger.connect(audioContext.destination);
+    }
+
+    /**
+     * @param {AudioNode} audioNode 
+     */
+    connect(audioNode) {
+        this.merger.connect(audioNode);
     }
 
     /**
@@ -2737,23 +2760,26 @@ class StereoAudioEqualizer {
 
 class LoudnessNormalize {
     /**
-     * @param {MediaElementAudioSourceNode} audioSource 
+     * @param {AudioNode} audioSource 
      * @param {AudioContext} audioContext 
      */
     constructor(audioSource, audioContext) {
         this.gainNode = audioContext.createGain();
         audioSource.connect(this.gainNode);
-        this.gainNode.connect(audioContext.destination);
         this._isUseEffect = true;
+        this.desiredMeanVolume = -16;
     }
 
-    get desiredMeanVolume() {
-        return -16;
+    /**
+     * @param {AudioNode} audioSource 
+     */
+    connect(audioSource){
+        this.gainNode.connect(audioSource);
     }
-
 
     set soundMeanVolume(meanVolume) {
-        const gainVolume = Math.pow(10, this.desiredMeanVolume - meanVolume /20);
+        meanVolume = (+meanVolume);
+        const gainVolume = Math.pow(10, (this.desiredMeanVolume - (meanVolume)) /20);
         this.gainNode.gain.value = gainVolume;
     }
 }
@@ -2761,7 +2787,7 @@ class LoudnessNormalize {
 class AudioEqualizer {
     /**
      * 
-     * @param {MediaElementAudioSourceNode} audioSource 
+     * @param {AudioNode} audioSource 
      * @param {AudioContext} audioContext 
      */
     constructor(audioSource, audioContext) {
@@ -2793,7 +2819,7 @@ class AudioEqualizer {
     }
 
     /**
-     * @param {AudioDestinationNode} audioDestination
+     * @param {AudioNode} audioDestination
      */
     _connect(audioDestination) {
         this.filters[this._gainFlat[this._gainFlat.length - 1].hz].connect(audioDestination);
@@ -2840,7 +2866,6 @@ class AudioPlayer{
         this.audio = new Audio;
         this.audioContext = new AudioContext;
         this.source = this.audioContext.createMediaElementSource(this.audio);
-        this.source.connect(this.audioContext.destination);
         /**
          * @type {BaseFrameWork.List<AudioClip>}
          */
@@ -2888,9 +2913,10 @@ class AudioPlayer{
             request.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
             request.execute();
         });
-        this.equalizer = new StereoAudioEqualizer(this.source, this.audioContext);
-        this.exAudioEffect = new StereoExAudioEffect(this.source, this.audioContext, this.equalizer);
         this.loudnessNormalize = new LoudnessNormalize(this.source, this.audioContext);
+        this.equalizer = new StereoAudioEqualizer(this.loudnessNormalize.gainNode, this.audioContext);
+        this.exAudioEffect = new StereoExAudioEffect(this.equalizer.merger, this.audioContext, this.equalizer);
+        this.exAudioEffect.connect(this.audioContext.destination);
 
         this.setUpdate();
     }
