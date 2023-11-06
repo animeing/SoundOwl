@@ -99,6 +99,30 @@ BaseFrameWork.Draw.Transform=class{
     }
 };
 
+/**
+ * 指定した値が目的の値になるまで待機し、一定時間経っても目的の値にならない場合にエラー関数を実行する。
+ * 
+ * @param {Function} checkValue - 目的の値になったかどうかをチェックするための関数。
+ * @param {*} targetValue - 目的の値。
+ * @param {number} timeout - 待機する最大時間（ミリ秒）。
+ * @returns {Promise} - 目的の値になるまで待機するPromiseオブジェクト。目的の値になればresolveが、タイムアウトすればrejectが呼ばれる。
+ */
+BaseFrameWork.waitForValue=(checkValue, targetValue, timeout)=> {
+    return new Promise((resolve, reject) => {
+        const startTime = Date.now();
+        function check() {
+            if (checkValue() === targetValue) {
+                resolve();
+            } else if (Date.now() - startTime >= timeout) {
+                reject(new Error('Timeout'));
+            } else {
+                setTimeout(check, 100);
+            }
+        }
+        check();
+    });
+}
+
 class MousePosition{
     _element = null;
     /**
@@ -2768,6 +2792,10 @@ class LoudnessNormalize {
         audioSource.connect(this.gainNode);
         this._isUseEffect = true;
         this.desiredMeanVolume = -16;
+        /**
+         * @type {AudioClip} 
+         */
+        this.soundClip = null;
     }
 
     /**
@@ -2908,6 +2936,7 @@ class AudioPlayer{
             request.httpRequestor.addEventListener('success', event=>{
                 this.data = event.detail.response;
                 this.loudnessNormalize.soundMeanVolume = this.data.loudness_target;
+                this.loudnessNormalize.soundClip = this.currentAudioClip;
                 this.eventSupport.dispatchEvent(new CustomEvent('audio_info_loaded'));
             });
             request.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
@@ -3155,28 +3184,37 @@ class AudioPlayer{
 
     play(audioClip = undefined){
         this.setStopUpdate();
-        try{
-            if(audioClip != undefined){
-                this.currentAudioClip = audioClip;
-                this.audioDeployment();
-            } else if(this.currentAudioClip == null){
-                this.currentAudioClip = this.playList.get(0);
-                if(this.currentAudioClip == undefined){
-                    return;
-                }
-                this.audioDeployment();
-            } else {
-                if(this.audio.src == null){
-                    this.audioDeployment();
-                }
+        if(audioClip != undefined){
+            this.currentAudioClip = audioClip;
+            this.audioDeployment();
+        } else if(this.currentAudioClip == null){
+            this.currentAudioClip = this.playList.get(0);
+            if(this.currentAudioClip == undefined){
+                return;
             }
+            this.audioDeployment();
+        } else {
+            if(this.audio.src == null){
+                this.audioDeployment();
+            }
+        }
+        BaseFrameWork.waitForValue(
+            ()=>{
+                if(this.loudnessNormalize.soundClip == null) {
+                    return null;
+                }
+                return this.loudnessNormalize.soundClip.src
+            },
+            this.currentAudioClip.src,
+            2e5).
+        then(()=>{
             setTitle(this.currentAudioClip.title);
             this.audio.play();
             this.currentPlayState = AudioPlayStateEnum.PLAY;
             this.eventSupport.dispatchEvent(new CustomEvent('play'));
-        } finally {
+        }).finally(()=>{
             this.setUpdate();
-        }
+        });
     }
     pause(){
         this.audio.pause();
