@@ -2548,18 +2548,16 @@ class ExAudioEffect{
             self.analyser.getByteFrequencyData(self.dataArray);
             let effectHz = self.getSoundRangeValue();
 
-            let minGain = -5;
-            let maxGain = 5;
+            let minGain = -3;
+            let maxGain = 3;
             let logs = '';
 
-            //Equalizerのgainsを変更しない。直にfiltersを書換え
+            let newGains = {};
             self.equalizer.gains.forEach(element => {
-                const baseGain = (+element.gain);
     
                 const updateFilterGain = (rangeKey, multiplier) => {
                     const avg = effectHz[rangeKey].normalizedAvg;
                     if (isNaN(avg)) {
-                        self.equalizer.filters[element.hz].gain.value = 0;
                         return;
                     }
                     let newGain = (avg * multiplier);
@@ -2571,11 +2569,10 @@ class ExAudioEffect{
                     newGain = Math.min(Math.max(newGain, minGain), maxGain);
                     newGain = newGain - (effectHz.total.normalizedAvg/3);
                     if(isNaN(newGain)) {
-                        self.equalizer.filters[element.hz].gain.value = 0;
                         return;
                     }
-                    logs=logs+('Hz['+element.hz+'] Gain['+newGain+'] AVG['+effectHz[rangeKey].avg+']\n');
-                    self.equalizer.filters[element.hz].gain.value = newGain + baseGain;
+                    newGains[element.hz+''] = newGain;
+                    // self.equalizer.filters[element.hz].gain.value = newGain + baseGain;
                 };
     
                 if(element.hz >= effectHz.low.minHz && element.hz < effectHz.low.maxHz) {
@@ -2588,23 +2585,102 @@ class ExAudioEffect{
                     updateFilterGain('high', effectHz.high.multiplier);
                 }
             });
-            // console.log(logs);
+            newGains = this.equalizerWaveAdjustment(newGains);
+            newGains = this.adjustmentAudioLevel(newGains);
+            //Equalizerのgainsを変更しない。直にfiltersを書換え
+            self.equalizer.gains.forEach(element => {
+                if(newGains == null || newGains[element.hz] == undefined){
+                    self.equalizer.filters[element.hz].gain.value = 0;
+                    return;
+                }
+                logs=logs+('Hz['+element.hz+'] Gain['+newGains[element.hz]+']\n');
+                const baseGain = (+element.gain);
+                self.equalizer.filters[element.hz].gain.value = newGains[element.hz] + baseGain;
+            });
+            console.log(logs);
             
             self.frameId = requestAnimationFrame(animationFrame);
         };
         animationFrame();
     }
 
+    /**
+     * 
+     * @param {Array} newGains 
+     * @returns 
+     */
+    adjustmentAudioLevel(newGains) {
+        if(newGains == null){
+            return;
+        }
+        if(Object.keys(newGains).length == 0){
+            return;
+        }
+        let sumGain = 0;
+        for (const key of Object.keys(newGains)) {
+            if(isNaN(newGains[key])) {
+                continue;
+            }
+            sumGain+=newGains[key];
+        }
+        if(Math.abs(sumGain) > 24){
+            let addGain = (sumGain*-1)/(Object.keys(newGains).length);
+            for (const key of Object.keys(newGains)) {
+                newGains[key] += addGain;
+            };
+        }
+        return newGains;
+    }
+
+    /**
+     * 
+     * @param {Array<{hz: number, gain: number}>} newGains
+     */
+    equalizerWaveAdjustment(newGains){
+        if(newGains == null){
+            return;
+        }
+        if(Object.keys(newGains).length == 0){
+            return;
+        }
+        let lowHzGain = 0;
+        let toLow = +Object.keys(newGains)[0];
+        let maxDiff = 4.5;
+        for (const key in newGains) {
+            if (Object.hasOwnProperty.call(newGains, key)) {
+                const element = newGains[key];
+                if(key == toLow) {
+                    lowHzGain = element;
+                    continue;
+                }
+                const diff = Math.abs(lowHzGain - element);
+                if(diff < maxDiff) {
+                    lowHzGain = element;
+                    continue;
+                }
+                if(lowHzGain > element) {
+                    newGains[key+''] = lowHzGain - maxDiff;
+                } else {
+                    newGains[key+''] = lowHzGain + maxDiff;
+                }
+                lowHzGain = newGains[key+''];
+            }
+        }
+        return newGains;
+    }
+
     smoothing(effectHz) {
         if (this.prevEffectHz !== null) {
             for (const key in effectHz) {
-                let alpha = 0.000025;
+                let alpha = 0.0000045;
                 const diff = Math.abs(effectHz[key].normalizedAvg - this.prevEffectHz[key].normalizedAvg);
-                if (diff > 0.5 && this.prevEffectHz[key].normalizedAvg != 0) {
+                if (diff > 0.8 && this.prevEffectHz[key].normalizedAvg != 0) {
                     if(key == 'voice' && this.prevEffectHz[key].normalizedAvg > effectHz[key].normalizedAvg) {
-                        alpha = 0.000045;
+                        alpha = alpha/1000;
+                    } else if(this.prevEffectHz[key].normalizedAvg > effectHz[key].normalizedAvg) {
+                        alpha = alpha/1000;
                     } else {
-                        alpha = 0.0005;
+                        alpha = alpha*10;
                     }
                 }
                 effectHz[key].normalizedAvg = (1-alpha) * this.prevEffectHz[key].normalizedAvg + alpha * effectHz[key].normalizedAvg;
@@ -2615,10 +2691,10 @@ class ExAudioEffect{
     
     getSoundRangeValue() {
         let effectHz = {
-            'low': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 8, 'maxHz': 125, 'multiplier': 1.5, 'scaleFactor': 3},
+            'low': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 8, 'maxHz': 125, 'multiplier': 1.5, 'scaleFactor': 1},
             'middle': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 125, 'maxHz': 4e3, 'multiplier': 1.2, 'scaleFactor': 0},
-            'high': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 4e3, 'maxHz': 24e3, 'multiplier': 2, 'scaleFactor': 4},
-            'voice':{'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 64, 'maxHz': 250, 'multiplier': 1, 'scaleFactor': 0}
+            'high': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 4e3, 'maxHz': 24e3, 'multiplier': 3, 'scaleFactor': 4},
+            'voice':{'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 64, 'maxHz': 250, 'multiplier': 4, 'scaleFactor': 0}
         };
         let totalSum = 0;
         let totalCount = 0;
