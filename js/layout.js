@@ -83,7 +83,10 @@ const audioParamLoad=()=>{
             SoundOwlProperty.SoundRegist.RegistDataCount.sound = websocketData.context.regist_data_count.sound;
             SoundOwlProperty.SoundRegist.RegistDataCount.album = websocketData.context.regist_data_count.album;
             SoundOwlProperty.SoundRegist.RegistDataCount.artist = websocketData.context.regist_data_count.artist;
+            SoundOwlProperty.SoundRegist.RegistDataCount.analysisSound = websocketData.context.regist_data_count.analysis_sound;
             SoundOwlProperty.SoundRegist.registStatus = websocketData.context.regist_status;
+            SoundOwlProperty.SoundRegist.registStatusStep1 = websocketData.context.regist_status_step1;
+            SoundOwlProperty.SoundRegist.registStatusStep2 = websocketData.context.regist_status_step2;
             SoundOwlProperty.WebSocket.status = true;
             SoundOwlProperty.WebSocket.EventTarget.dispatchEvent(new Event('update'));
         };

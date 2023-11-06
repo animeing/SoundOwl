@@ -1372,6 +1372,39 @@ const SettingFormComponent = {
     template:`
     <div>
         <div class="block">
+            <p class="title">Current Status</p>
+            <div>
+                <div style="display: flex;justify-content: space-around;">
+                    <div class="block">
+                        <p class="title">Regist Status</p>
+                        <p>{{registStatus?'Action':'Finished'}}</p>
+                    </div>
+                    <div class="block">
+                        <p class="title">Regist Step1</p>
+                        <p>{{registStatusStep1?'Action':'Finished'}}</p>
+                    </div>
+                    <div class="block">
+                        <p class="title">Regist Step2</p>
+                        <p>{{registStatusStep2?'Action':'Finished'}}</p>
+                    </div>
+                </div>
+                <div style="display: flex;justify-content: space-around;">
+                    <div class="block">
+                        <p class="title">Analysis/Sound Count</p>
+                        <p><span>{{analysisSoundCount}}</span>/<span>{{registSoundCount}}</span></p>
+                    </div>
+                    <div class="block">
+                        <p class="title">Album Count</p>
+                        <p>{{albumCount}}</p>
+                    </div>
+                    <div class="block">
+                        <p class="title">Artist Count</p>
+                        <p>{{artistCount}}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="block">
             <p class="title">DB</p>
             <sw-input-param data-title="IP Address" type="text" :value="ip" name="db_ip_address"></sw-input-param>
             <sw-input-param data-title="DB Name" type="text" :value="dbName" name="db_name"></sw-input-param>
@@ -1397,8 +1430,30 @@ const SettingFormComponent = {
             pass:'',
             sound:'',
             websocketRetryCount:0,
-            websocketRetryIntervalMs:10000
+            websocketRetryIntervalMs:10000,
+
+            registStatus:SoundOwlProperty.SoundRegist.registStatus,
+            registStatusStep1:SoundOwlProperty.SoundRegist.registStatusStep1,
+            registStatusStep2:SoundOwlProperty.SoundRegist.registStatusStep2,
+
+            registSoundCount:SoundOwlProperty.SoundRegist.RegistDataCount.sound,
+            analysisSoundCount:SoundOwlProperty.SoundRegist.RegistDataCount.analysisSound,
+            albumCount:SoundOwlProperty.SoundRegist.RegistDataCount.album,
+            artistCount: SoundOwlProperty.SoundRegist.RegistDataCount.artist
         };
+    },
+    methods:{
+        updateCurrentStatus(){
+
+            this.registStatus=SoundOwlProperty.SoundRegist.registStatus;
+            this.registStatusStep1=SoundOwlProperty.SoundRegist.registStatusStep1;
+            this.registStatusStep2=SoundOwlProperty.SoundRegist.registStatusStep2;
+
+            this.registSoundCount=SoundOwlProperty.SoundRegist.RegistDataCount.sound;
+            this.analysisSoundCount=SoundOwlProperty.SoundRegist.RegistDataCount.analysisSound;
+            this.albumCount=SoundOwlProperty.SoundRegist.RegistDataCount.album;
+            this.artistCount=SoundOwlProperty.SoundRegist.RegistDataCount.artist;
+        }
     },
     mounted() {
         let getSettingAction = new GetSetting;
@@ -1412,6 +1467,10 @@ const SettingFormComponent = {
             this.websocketRetryIntervalMs = event.detail.response.websocket_retry_interval;
         });
         getSettingAction.execute();
+        SoundOwlProperty.WebSocket.EventTarget.addEventListener('update',this.updateCurrentStatus);
+    },
+    beforeDestroy() {
+        SoundOwlProperty.WebSocket.EventTarget.removeEventListener('update', this.updateCurrentStatus);
     }
 };
 
