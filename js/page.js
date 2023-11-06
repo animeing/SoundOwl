@@ -241,7 +241,8 @@ const Home = {
             albumTop20:'Album Top 20',
             soundClips:[],
             albumData:[],
-            newSoundClips:[]
+            newSoundClips:[],
+            isLoad:false
         };
     },
     components:{
@@ -272,8 +273,9 @@ const Home = {
             }
         },
         soundCountRequest(){
-            if(this.soundClips.length == 0) {
+            if(!this.isLoad) {
                 let playCountAction = new PlayCountAction();
+                this.isLoad = true;
                 
                 let listNo = 0;
                 playCountAction.httpRequestor.addEventListener('success', event=>{
@@ -396,7 +398,8 @@ const ArtistSoundList = {
             soundClips:[],
             currentPlaySoundClip:audio.currentAudioClip,
             albumHash:null,
-            isLoading:false
+            isLoading:false,
+            isLoad:false,
         };
     },
     components:{
@@ -451,8 +454,9 @@ const ArtistSoundList = {
             }
         },
         requestData(){
-            if(this.soundClips.length == 0) {
+            if(!this.isLoad) {
                 this.isLoading = true;
+                this.isLoad = true;
                 let soundSearch = new ArtistSoundListAction();
 
                 soundSearch.formDataMap.append('ArtistHash', this.$route.query.ArtistHash);
@@ -518,6 +522,7 @@ const ArtistSoundList = {
         $route(to, from) {
             if(to.query.AlbumHash != from.query.AlbumHash){
                 this.soundClips.splice(0);
+                this.isLoad = false;
             }
         }
     }
@@ -537,7 +542,8 @@ const AlbumSoundList = {
             soundClips:[],
             currentPlaySoundClip:audio.currentAudioClip,
             albumHash:null,
-            isLoading:false
+            isLoading:false,
+            isLoad:false
         };
     },
     components:{
@@ -592,8 +598,9 @@ const AlbumSoundList = {
             }
         },
         requestData(){
-            if(this.soundClips.length == 0) {
+            if(!this.isLoad) {
                 this.isLoading = true;
+                this.isLoad = true;
                 let soundSearch = new AlbumSoundListAction();
 
                 soundSearch.formDataMap.append('AlbumHash', this.$route.query.AlbumHash);
@@ -659,6 +666,7 @@ const AlbumSoundList = {
         $route(to, from) {
             if(to.query.AlbumHash != from.query.AlbumHash){
                 this.soundClips.splice(0);
+                this.isLoad = false;
             }
         }
     }
@@ -674,7 +682,12 @@ const Search = {
     </div>
     `,
     data() {
-        return {soundClips:[], currentPlaySoundClip:audio.currentAudioClip,isLoading:false};
+        return {
+            soundClips:[],
+            currentPlaySoundClip:audio.currentAudioClip,
+            isLoading:false,
+            isLoad:false
+        };
     },
     components:{
         SoundClipComponent,
@@ -682,8 +695,9 @@ const Search = {
     },
     methods:{
         requestData(){
-            if(this.soundClips.length == 0) {
+            if(!this.isLoad) {
                 this.isLoading = true;
+                this.isLoad = true;
                 let soundSearch = new SoundSearchAction();
 
                 window.searchBox.value = this.$route.query.SearchWord;
@@ -797,6 +811,7 @@ const Search = {
         $route(to, from) {
             if(to.query.SearchWord != from.query.SearchWord){
                 this.soundClips.splice(0);
+                this.isLoad=false;
             }
         }
     }
