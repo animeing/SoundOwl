@@ -2623,12 +2623,10 @@ class ExAudioEffect{
             }
             sumGain+=newGains[key];
         }
-        if(Math.abs(sumGain) > 24){
-            let addGain = (sumGain*-1)/(Object.keys(newGains).length);
-            for (const key of Object.keys(newGains)) {
-                newGains[key] += addGain;
-            };
-        }
+        let avgGain = (sumGain)/(Object.keys(newGains).length);
+        for (const key of Object.keys(newGains)) {
+            newGains[key] -= (avgGain);
+        };
         return newGains;
     }
 
@@ -2672,15 +2670,13 @@ class ExAudioEffect{
     smoothing(effectHz) {
         if (this.prevEffectHz !== null) {
             for (const key in effectHz) {
-                let alpha = 0.0000045;
+                let alpha = 0.000000045;
                 const diff = Math.abs(effectHz[key].normalizedAvg - this.prevEffectHz[key].normalizedAvg);
-                if (diff > 0.8 && this.prevEffectHz[key].normalizedAvg != 0) {
+                if (diff > 0.5 && this.prevEffectHz[key].normalizedAvg != 0) {
                     if(key == 'voice' && this.prevEffectHz[key].normalizedAvg > effectHz[key].normalizedAvg) {
                         alpha = alpha/1000;
-                    } else if(this.prevEffectHz[key].normalizedAvg > effectHz[key].normalizedAvg) {
-                        alpha = alpha/1000;
                     } else {
-                        alpha = alpha*10;
+                        alpha = alpha*10000;
                     }
                 }
                 effectHz[key].normalizedAvg = (1-alpha) * this.prevEffectHz[key].normalizedAvg + alpha * effectHz[key].normalizedAvg;
