@@ -2675,7 +2675,7 @@ class ExAudioEffect{
                     if(key == 'voice' && this.prevEffectHz[key].normalizedAvg > effectHz[key].normalizedAvg) {
                         alpha = alpha/1000;
                     } else {
-                        alpha = alpha*10000;
+                        alpha = alpha*1000000;
                     }
                 }
                 effectHz[key].normalizedAvg = (1-alpha) * this.prevEffectHz[key].normalizedAvg + alpha * effectHz[key].normalizedAvg;
