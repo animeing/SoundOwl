@@ -2572,7 +2572,6 @@ class ExAudioEffect{
                         return;
                     }
                     newGains[element.hz+''] = newGain;
-                    // self.equalizer.filters[element.hz].gain.value = newGain + baseGain;
                 };
     
                 if(element.hz >= effectHz.low.minHz && element.hz < effectHz.low.maxHz) {
