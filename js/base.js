@@ -2562,7 +2562,7 @@ class ExAudioEffect{
                     }
                     let newGain = (avg * multiplier);
                     if (element.hz >= effectHz.voice.minHz && element.hz <= effectHz.voice.maxHz) {
-                        let alpha = 0.000045;
+                        let alpha = 0.5;
                         const voiceAvg = effectHz.voice.normalizedAvg * effectHz.voice.multiplier;
                         newGain = (1-alpha) * voiceAvg + alpha * newGain;
                     }
@@ -2642,7 +2642,7 @@ class ExAudioEffect{
         }
         let lowHzGain = 0;
         let toLow = +Object.keys(newGains)[0];
-        let maxDiff = 4.5;
+        let maxDiff = 1.5;
         for (const key in newGains) {
             if (Object.hasOwnProperty.call(newGains, key)) {
                 const element = newGains[key];
@@ -2671,7 +2671,7 @@ class ExAudioEffect{
             for (const key in effectHz) {
                 let alpha = 0.000000045;
                 const diff = Math.abs(effectHz[key].normalizedAvg - this.prevEffectHz[key].normalizedAvg);
-                if (diff > 0.5 && this.prevEffectHz[key].normalizedAvg != 0) {
+                if (diff > 1.6 && this.prevEffectHz[key].normalizedAvg != 0) {
                     if(key == 'voice' && this.prevEffectHz[key].normalizedAvg > effectHz[key].normalizedAvg) {
                         alpha = alpha/1000;
                     } else {
@@ -2689,7 +2689,7 @@ class ExAudioEffect{
             'low': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 8, 'maxHz': 125, 'multiplier': 1.5, 'scaleFactor': 1},
             'middle': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 125, 'maxHz': 4e3, 'multiplier': 1.2, 'scaleFactor': 0},
             'high': {'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 4e3, 'maxHz': 24e3, 'multiplier': 3, 'scaleFactor': 4},
-            'voice':{'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 64, 'maxHz': 250, 'multiplier': 4, 'scaleFactor': 0}
+            'voice':{'sum': 0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 64, 'maxHz': 8e3, 'multiplier': 4, 'scaleFactor': 0}
         };
         let totalSum = 0;
         let totalCount = 0;
@@ -2867,6 +2867,8 @@ class LoudnessNormalize {
          * @type {AudioClip} 
          */
         this.soundClip = null;
+        this._isUse = true;
+        this._decibel = 0;
     }
 
     /**
@@ -2876,10 +2878,32 @@ class LoudnessNormalize {
         this.gainNode.connect(audioSource);
     }
 
+    set isUse(isUse) {
+        this._isUse = isUse;
+        this.soundMeanVolume = this._decibel;
+    }
+
+    get isUse(){
+        return this._isUse;
+    }
+
     set soundMeanVolume(meanVolume) {
-        meanVolume = (+meanVolume);
-        const gainVolume = Math.pow(10, (this.desiredMeanVolume - (meanVolume)) /20);
+        this._decibel = (+meanVolume);
+        if(!this._isUse) {
+            this.gainNode.gain.value = 0;
+            return;
+        }
+        const gainVolume = this.decibelToGain(meanVolume);
         this.gainNode.gain.value = gainVolume;
+    }
+
+    /**
+     * 
+     * @param {number} decibel 
+     * @returns 
+     */
+    decibelToGain(decibel) {
+        return Math.pow(10, (this.desiredMeanVolume - (decibel)) /20);
     }
 }
 
