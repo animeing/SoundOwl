@@ -2521,6 +2521,7 @@ class SoundSculptEffect {
         this.prevEffectHz = [];
 
         this.analyser = this.audioContext.createAnalyser();
+        this.voice = {'sum': 0, 'count':0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 64, 'maxHz': 8e3};
 
         this.analyser.fftSize = 32768;
         this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
@@ -2574,6 +2575,10 @@ class SoundSculptEffect {
                 let newGain = effectHz[element.hz+''].smoothing * effectHz[element.hz+''].multiplier;
                 if(isNaN(newGain)) {
                     return;
+                }
+                if (element.hz >= this.voice.minHz && element.hz <= this.voice.maxHz) {
+                    let alpha = 0.5;
+                    newGain = (1-alpha)*this.voice.normalizedAvg + alpha * newGain;
                 }
                 newGains[element.hz+''] = SELF.getAdjustedValue(
                     newGain,
@@ -2703,20 +2708,21 @@ class SoundSculptEffect {
          * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, smoothing: number, normalizedAvg: number, multiplier: number}>}
          */
         let effectHzs = {
-            '8':{'hz':8, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
-            '16':{'hz':16, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
-            '32':{'hz':32, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
-            '64':{'hz':64, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
-            '125':{'hz':125, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
+            '8':{'hz':8, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1},
+            '16':{'hz':16, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1.2},
+            '32':{'hz':32, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1.2},
+            '64':{'hz':64, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1.26},
+            '125':{'hz':125, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1.6},
             '250':{'hz':250, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
-            '500':{'hz':500, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
-            '1000':{'hz':1e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
-            '2000':{'hz':2e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
-            '4000':{'hz':4e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
-            '8000':{'hz':8e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
-            '16000':{'hz':16e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
-            '24000':{'hz':24e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
+            '500':{'hz':500, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2.5},
+            '1000':{'hz':1e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2.5},
+            '2000':{'hz':2e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2.6},
+            '4000':{'hz':4e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2.7},
+            '8000':{'hz':8e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3},
+            '16000':{'hz':16e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3.7},
+            '24000':{'hz':24e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':4},
         };
+        this.voice = {'hz':'voiceRange','sum': 0, 'count':0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 64, 'maxHz': 8e3};
         let total = {'count':0, 'sum':0};
         for (const key in effectHzs) {
             if (!Object.hasOwnProperty.call(effectHzs, key)) {
@@ -2729,6 +2735,10 @@ class SoundSculptEffect {
                 if(this.dataArray[i] == 0 || isNaN(this.dataArray[i])) {
                     continue;
                 }
+                if (effectHz.hz >= this.voice.minHz && effectHz.hz <= this.voice.maxHz) {
+                    this.voice.sum += this.dataArray[i];
+                    this. voice.count++;
+                }
                 effectHz.sum += this.dataArray[i];
                 effectHz.count++;
                 total.sum += this.dataArray[i];
@@ -2736,12 +2746,14 @@ class SoundSculptEffect {
             }
             effectHz.avg = effectHz.count != 0 ? effectHz.sum / effectHz.count : 0;
         }
+        this.voice.avg = this.voice.sum / this.voice.count;
         const overallAvg = total.sum / total.count;
         const scaleFactor = 0;
         for(const key in effectHzs) {
             const effectHz = effectHzs[key];
             effectHz.normalizedAvg = (effectHz.avg / overallAvg - 1.0) * (scaleFactor + 1.0);
         }
+        this.voice.normalizedAvg = (this.voice.avg / overallAvg -1.0) * (scaleFactor + 1.0);
         this.smoothing(effectHzs);
         return effectHzs;
     }
