@@ -2481,8 +2481,8 @@ class StereoExAudioEffect {
     }
 
     reset() {
-        this.leftExAudioEffect.prevEffectHz = null;
-        this.rightExAudioEffect.prevEffectHz = null;
+        this.leftExAudioEffect.reset()
+        this.rightExAudioEffect.reset();
     }
 
     /**
@@ -2518,7 +2518,7 @@ class SoundSculptEffect {
         /**
          * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, smoothing: number, normalizedAvg: number, multiplier: number}>}
          */
-        this.prevEffectHz = null;
+        this.prevEffectHz = [];
 
         this.analyser = this.audioContext.createAnalyser();
 
@@ -2530,9 +2530,9 @@ class SoundSculptEffect {
          * @type {number}
          */
         this.frameId = null;
+        this._isUseEffect = true;
 
         this.effectMain();
-        this._isUseEffect = true;
     }
 
     set isUseEffect(val) {
@@ -2551,7 +2551,9 @@ class SoundSculptEffect {
     get isUseEffect() {
         return this._isUseEffect;
     }
-
+    reset() {
+        this.prevEffectHz = [];
+    }
     /**
      * 
      * @param {AudioNode} audioNode 
@@ -2560,34 +2562,26 @@ class SoundSculptEffect {
         this.analyser.connect(audioNode);
     }
     effectMain(){
-        let beforeGains = {};
         const SELF = this;
         let animationFrame =()=>{
             SELF.analyser.getByteFrequencyData(SELF.dataArray);
             let effectHz = this.calcBandValue();
-            const MIN_GAIN = -7;
-            const MAX_GAIN = 7;
+            const MIN_GAIN = -6;
+            const MAX_GAIN = 6;
             let logs = '';
             let newGains = {};
-            let lastUpdateTime = performance.now();
             SELF.equalizer.gains.forEach(element=>{
                 let newGain = effectHz[element.hz+''].smoothing * effectHz[element.hz+''].multiplier;
                 if(isNaN(newGain)) {
                     return;
                 }
-                if(beforeGains[element.hz+''] == null) {
-                    beforeGains[element.hz+''] = 0;
-                }
                 newGains[element.hz+''] = SELF.getAdjustedValue(
-                    beforeGains[element.hz+''],
+                    newGain,
                     MAX_GAIN,
                     MIN_GAIN,
-                    newGain - beforeGains[element.hz+''],
-                    lastUpdateTime,
-                    performance.now()
-                    );
-                logs=logs+('Hz['+element.hz+'] NewGain['+newGain+'] Gain['+newGains[element.hz+'']+'] Before['+beforeGains[element.hz+'']+'] Deff['+(newGain - beforeGains[element.hz])+']\n');
-                beforeGains[element.hz+''] = newGains[element.hz+''];
+                    1.3);
+                
+                logs += 'hz ['+element.hz+'] newGain['+newGain+']\nhz ['+element.hz+']    Gain['+newGains[element.hz+'']+']\n';
             });
             newGains = this.equalizerWaveAdjustment(newGains);
             newGains = this.adjustmentAudioLevel(newGains);
@@ -2637,23 +2631,12 @@ class SoundSculptEffect {
      * @param {number} currentValue 
      * @param {number} maxValue 
      * @param {number} minValue 
-     * @param {number} additionalValue 
      * @returns 
      */
-    getAdjustedValue(currentValue, maxValue, minValue, additionalValue, lastUpdateTime, now) {
-        const range = maxValue - minValue;
-        const midPoint = (maxValue + minValue) / 2;
-        const distanceFromMid = (currentValue - midPoint) / range;
-        const easeFactor = 1 - Math.pow(distanceFromMid, 5);
-
-        const timeDelta = now - lastUpdateTime;
-
-        const timeFactor = timeDelta / 16.7;
-        let delta = additionalValue * easeFactor * timeFactor;
-
-        let newValue = currentValue + delta;
-        newValue = Math.min(Math.max(newValue, minValue), maxValue);
-        return newValue;
+    getAdjustedValue(currentValue, maxValue, minValue, easeParameter = 2) {
+        const normalizedX = (currentValue - minValue) / (maxValue - minValue);
+        const easedX = Math.pow(normalizedX, easeParameter) / (Math.pow(normalizedX, easeParameter) + Math.pow(1 - normalizedX, easeParameter));
+        return easedX * (maxValue - minValue) + minValue;
     }
         
     /**
@@ -3429,7 +3412,5 @@ window.addEventListener('load', ()=>{
 }, !0);
 
 var audio = new AudioPlayer;
-
-
 
 
