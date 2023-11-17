@@ -2896,7 +2896,11 @@ class LoudnessNormalize {
 
     set isUse(isUse) {
         this._isUse = isUse;
-        this.soundMeanVolume = this._decibel;
+        if(isUse) {
+            this.soundMeanVolume = this._decibel;
+        } else {
+            this.gainNode.gain.value = 0;
+        }
     }
 
     get isUse(){
@@ -2906,7 +2910,6 @@ class LoudnessNormalize {
     set soundMeanVolume(meanVolume) {
         this._decibel = (+meanVolume);
         if(!this._isUse) {
-            this.gainNode.gain.value = 0;
             return;
         }
         const gainVolume = this.decibelToGain(meanVolume);
