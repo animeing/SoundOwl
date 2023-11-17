@@ -35,6 +35,7 @@ SoundOwlProperty.WebSocket = {
 };
     </script>
     <script src="js/base.js"></script>
+    <script src="js/audio.js"></script>
     <script src="js/layout.js"></script>
     <script src="js/page.js"></script>
 </head>
