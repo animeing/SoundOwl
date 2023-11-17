@@ -1291,6 +1291,32 @@ const ArtistList = {
 
 };
 
+const SettingEffectComponent = {
+    template:`
+    <div>
+        <div class="block">
+            <p class="title">Effect</p>
+            <div class="block">
+                <p class="title">SoundSculpt</p>
+                <p>SoundSculpt dynamically adjusts audio frequencies in real-time, enhancing or attenuating different frequency bands to provide a richer audio experience.</p>
+                <input type="checkbox" v-model="isUseSoundSculpt" @change='toggleEffect'>
+            </div>
+        </div>
+    </div>
+    `,
+    data() {
+        return {
+            isUseSoundSculpt:audio.exAudioEffect.isUseEffect
+        }
+    },
+    methods: {
+        toggleEffect() {
+            audio.exAudioEffect.isUseEffect = !audio.exAudioEffect.isUseEffect;
+            audioParamSave();
+        },
+    }
+};
+
 const SettingEqualizerComponent = {
     template:`
     <div>
@@ -1314,14 +1340,6 @@ const SettingEqualizerComponent = {
                 </div>
             </div>
         </div>
-        <div class="block">
-            <p class="title">Effect</p>
-            <div class="block">
-                <p class="title">SoundSculpt</p>
-                <p>SoundSculpt dynamically adjusts audio frequencies in real-time, enhancing or attenuating different frequency bands to provide a richer audio experience.</p>
-                <input type="checkbox" v-model="isUseSoundSculpt" @change='toggleEffect'>
-            </div>
-        </div>
     </div>
     `,
     data(){
@@ -1329,18 +1347,13 @@ const SettingEqualizerComponent = {
             hzArray:[],
             presets:[],
             presetNames:[],
-            selectPreset:'Manual',
-            isUseSoundSculpt:audio.exAudioEffect.isUseEffect
+            selectPreset:'Manual'
         }
     },
     methods:{
         valueChange(event, value){
             value.gain = (event.target.getAttribute('value'));
             audio.equalizer.setMonoGain(value.hz, value.gain);
-            audioParamSave();
-        },
-        toggleEffect() {
-            audio.exAudioEffect.isUseEffect = !audio.exAudioEffect.isUseEffect;
             audioParamSave();
         },
         changedPreset(){
@@ -1532,6 +1545,7 @@ const SettingTab = {
     <ul class="tabmenu">
         <TabItem name="General" link="setting"></TabItem>
         <TabItem name="Equalizer" link="equalizer"></TabItem>
+        <TabItem name="Effect" link="effect"></TabItem>
     </ul>
     `,
     components:{
@@ -1579,17 +1593,22 @@ const Setting = {
         <div class="context" v-show="isEqualizer">
             <SettingEqualizerComponent></SettingEqualizerComponent>
         </div>
+        <div class="context" v-show="isEffect">
+            <SettingEffectComponent></SettingEffectComponent>
+        </div>
     </div>
     `,
     components:{
         SettingTab,
         SettingFormComponent,
-        SettingEqualizerComponent
+        SettingEqualizerComponent,
+        SettingEffectComponent
     },
     data(){
         return {
             isGeneral:true,
             isEqualizer:false,
+            isEffect:false,
             isConnectWebSocket: SoundOwlProperty.WebSocket.status,
             isAction: false
         }
@@ -1666,11 +1685,13 @@ const Setting = {
         '$route'(to, from) {
             this.isGeneral = this.$route.name == 'setting';
             this.isEqualizer = this.$route.name == 'equalizer';
+            this.isEffect = this.$route.name == 'effect';
         }
     },
     mounted() {
         this.isGeneral = this.$route.name == 'setting';
         this.isEqualizer = this.$route.name == 'equalizer';
+        this.isEffect = this.$route.name == 'effect';
     }
 };
 
@@ -1874,6 +1895,14 @@ const router = new VueRouter({
             component: Setting,
             meta:{
                 title:'Equalizer'
+            }
+        },
+        {
+            path: '/setting/effect',
+            name: 'effect',
+            component: Setting,
+            meta: {
+                title: 'Effect'
             }
         },
         {
