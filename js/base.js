@@ -2899,7 +2899,7 @@ class LoudnessNormalize {
         if(isUse) {
             this.soundMeanVolume = this._decibel;
         } else {
-            this.gainNode.gain.value = 0;
+            this.gainNode.gain.value = 1;
         }
     }
 
