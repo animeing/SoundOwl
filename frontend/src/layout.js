@@ -1,4 +1,9 @@
 'use strict';
+import { BaseFrameWork,BASE,ProgressComposite,MouseEventEnum } from "./base";
+import { AudioClip, AudioLoopModeEnum } from "./audio";
+import audio from "./audio";
+import router from "./router";
+import { timeToText } from "./base";
 
 SoundOwlProperty.WebSocket.EventTarget = new EventTarget();
 /**
@@ -30,7 +35,7 @@ SoundOwlProperty.SoundRegist.RegistDataCount.sound = 0;
 SoundOwlProperty.SoundRegist.RegistDataCount.artist = 0;
 SoundOwlProperty.SoundRegist.RegistDataCount.album = 0;
 
-const audioParamSave=()=>{
+export const audioParamSave=()=>{
     let localStorageMap = new BaseFrameWork.Storage.Application.LocalStorageMap();
     let saveParams = JSON.stringify(
         {
@@ -44,7 +49,7 @@ const audioParamSave=()=>{
     localStorageMap.set('audioParam', saveParams);
 };
 
-const audioParamLoad=()=>{
+export const audioParamLoad=()=>{
     let localStorageMap = new BaseFrameWork.Storage.Application.LocalStorageMap();
     let audioParam = localStorageMap.get('audioParam');
     if(audioParam == null) {
@@ -560,7 +565,7 @@ class AudioSlideList extends HTMLElement {
 customElements.define('sw-audio-slide-list', AudioSlideList);
 
 
-const SoundClipComponent = {
+export const SoundClipComponent = {
     template:`
     <div>
         <div class="album">
@@ -1039,7 +1044,7 @@ const AudioCanvas = {
 
 };
 
-const AudioController = {
+export const AudioController = {
     template:`
         <div>
             <p class='sound-info-frame'>
@@ -1169,11 +1174,6 @@ const AudioController = {
         }
     }
 };
-
-window.addEventListener('load', ()=>{
-    Vue.component('audio-controller', AudioController);
-    let vue = new Vue({ el: '#controller' });
-});
 
 (()=>{
     const mainMenu=()=>{

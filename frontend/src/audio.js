@@ -1,3 +1,4 @@
+import { BaseFrameWork,BASE, setTitle } from "./base";
 
 class CanvasAudioAnalizer extends BaseFrameWork.Draw.Canvas2D{
     render=()=>{
@@ -74,101 +75,8 @@ class MenuItem {
     }
 }
 
-/**
- * 
- * @param {HTMLAnchorElement} tag 
- */
-const LinkAction = (tag)=>{
-    tag.onclick = (e)=>{
-        e.preventDefault();
-        let link = tag.getAttribute('name');
-        router.push({name:link});
-        setTitle('');
-    };
-};
 
-const _history = {
-    pushState(url){
-        history.pushState(url, null, url);
-    }
-};
-
-const ContextMenu = {
-    isVisible: false,
-    contextMenu: document.createElement('ul'),
-    position: new DisplayPoint,
-    /**
-     * @param {Element} baseElement
-     */
-    baseElement: null,
-    /**
-     * 
-     * @param {Event} e 
-     */
-    visible(e){
-        if(e.preventDefault != undefined){
-            e.preventDefault();
-        }
-        if(ContextMenu.isVisible){
-            ContextMenu.remove();
-        }
-        ContextMenu.baseElement = document.createElement('div');
-        ContextMenu.baseElement.id='context-menu';
-        ContextMenu.baseElement.appendChild(this.contextMenu);
-        document.html().append(ContextMenu.baseElement);
-        ContextMenu.setPosition(e);
-        ContextMenu.isVisible=true;
-        if(e.stopImmediatePropagation != undefined){
-            e.stopImmediatePropagation();
-        }
-    },
-    /**
-     * @private
-     */
-    removeEventSet(){
-        let disableAction = ()=>{
-            if(ContextMenu.isVisible){
-                ContextMenu.remove();
-                ContextMenu.contextMenu.destoryChildren();
-            }
-        };
-        document.html().addEventListener(MouseEventEnum.CLICK,disableAction, !1);
-        window.addEventListener('scroll',disableAction, !1);
-        window.addEventListener('drag',disableAction, !1);
-    },
-    /**
-     * @private
-     * @param {Event} e 
-     */
-    setPosition(e){
-        let point = new MousePosition(ContextMenu.baseElement).worldMousePosition(e);
-        ContextMenu.position.x = point.x;
-        ContextMenu.position.y = point.y;
-        if(ContextMenu.position.isHorizontalOverFlow(ContextMenu.baseElement.clientWidth)){
-            ContextMenu.position.x = ContextMenu.position.x - ContextMenu.baseElement.clientWidth;
-        }
-        if(ContextMenu.position.isVerticalOverFlow(ContextMenu.baseElement.clientHeight)){
-            ContextMenu.position.y = ContextMenu.position.y - ContextMenu.baseElement.clientHeight;
-        }
-        ContextMenu.baseElement.style.left = ContextMenu.position.x+"px";
-        ContextMenu.baseElement.style.top = ContextMenu.position.y+"px";
-    },
-    remove(){
-        if(ContextMenu.isVisible){
-            try{
-                ContextMenu.baseElement.remove();
-                ContextMenu.isVisible = false;
-            }catch(e){}
-        }
-    }
-};
-
-window.addEventListener('contextmenu', (e)=>{
-    ContextMenu.visible(e);
-    e.stopPropagation();
-});
-
-class AudioClip{
+export class AudioClip{
     constructor(){
         this.no=0;
         this.soundHash=null;
@@ -256,7 +164,7 @@ class AudioStateEnum{
     }
 }
 
-class AudioPlayStateEnum{
+export class AudioPlayStateEnum{
     static get PLAY(){
         return 'play';
     }
@@ -268,7 +176,7 @@ class AudioPlayStateEnum{
     }
 }
 
-class AudioLoopModeEnum{
+export class AudioLoopModeEnum{
     static get NON_LOOP(){
         return 'NON_LOOP';
     }
@@ -1162,5 +1070,5 @@ class AudioPlayer{
         this.eventSupport.dispatchEvent(new CustomEvent('stop'));
     }
 }
-
-var audio = new AudioPlayer;
+const audio = new AudioPlayer;
+export default audio;

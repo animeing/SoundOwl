@@ -1,13 +1,17 @@
 'use strict';
-const BASE = {
+
+import router from "./router";
+
+export const BASE = {
     DOMAIN:'',
     SAVE_PATH:window.location.pathname.split('#')[0],
     HOME:window.location.pathname.split('#')[0],
+    VUE_HOME:window.location.pathname.split('#')[0]+'#/',
     API:window.location.pathname.split('#')[0]+'api/',
     WEBSOCKET:window.location.hostname
 };
 
-const BaseFrameWork={};
+export const BaseFrameWork={};
 BaseFrameWork.Network={};
 BaseFrameWork.Storage={};
 BaseFrameWork.Storage.Application={};
@@ -192,7 +196,7 @@ const Base64 = {
 };
 
 
-class MouseEventEnum {
+export class MouseEventEnum {
     /**
      * mousedown
      */
@@ -255,14 +259,14 @@ class TouchEventEnum{
         return 'click';
     }
 }
-const toBoolean=(data)=> {
+export const toBoolean=(data)=> {
     if(data === true || data === false) {
         return data;
     }
     return String(data).toLowerCase() === 'true';
 };
 
-class DisplayPoint extends BaseFrameWork.Draw.Point2D{
+export class DisplayPoint extends BaseFrameWork.Draw.Point2D{
     constructor(){
         super();
     }
@@ -276,7 +280,7 @@ class DisplayPoint extends BaseFrameWork.Draw.Point2D{
     }
 }
 
-class DragMoveEvent extends Event{
+export class DragMoveEvent extends Event{
     /**
      * @type {Element}
      */
@@ -698,7 +702,7 @@ BaseFrameWork.List = class {
  * @template {WebObject} T
  * @type {BaseFrameWork.List<T>}
  */
-class WebObjectList extends BaseFrameWork.List{
+export class WebObjectList extends BaseFrameWork.List{
     /**
      * @param {WebObject} parent 
      */
@@ -1122,7 +1126,7 @@ const UrlParam = {
     }
 };
 
-class ClipBoard {
+export class ClipBoard {
     static set(str) {
         if(navigator.clipboard){
             navigator.clipboard.writeText(str);
@@ -1283,35 +1287,11 @@ BaseFrameWork.Network.RequestServerBase=class {
     }
 };
 
-
-class BindValue{
-    _currentValue = "";
-    _bindObject = new WebObject;
-
-    constructor(bindWrapper){
-        this._bindObject = bindWrapper;
-    }
-
-    set value(newValue){
-        if(this._currentValue !== newValue){
-            this.bindObject.value = newValue;
-            this._currentValue = newValue;
-        }
-    }
-    get value(){
-        return this._currentValue;
-    }
-
-    get bindObject(){
-        return this._bindObject;
-    }
-}
-
 /**
  * @abstract
  * @deprecated Use Element
  */
-class WebObject{
+export class WebObject{
     _obj = undefined;
     constructor(){
         this._obj = document.createElement(this.tagName);
@@ -1471,7 +1451,7 @@ class SwResize extends HTMLElement {
 }
 customElements.define('sw-resize', SwResize);
 
-class ProgressComposite extends HTMLElement {
+export class ProgressComposite extends HTMLElement {
     constructor() {
         super();
 
@@ -1661,7 +1641,7 @@ class VerticalProgressComposite extends ProgressComposite{
 customElements.define('sw-v-progress', VerticalProgressComposite);
 
 
-class ComboBoxObject extends WebObject{
+export class ComboBoxObject extends WebObject{
 
     /**
      * @type {BaseFrameWork.List<OptionObject>}
@@ -2070,7 +2050,7 @@ BaseFrameWork.Draw.Canvas=class extends BaseFrameWork.Draw.Module.CanvasBase{
     }
 };
 
-class CanvasObjectColor{
+export class CanvasObjectColor{
     r = 0xff;
     g = 0xff;
     b = 0xff;
@@ -2188,10 +2168,7 @@ BaseFrameWork.Draw.Figure.BoxCanvasObject2D=class extends BaseFrameWork.Draw.Fig
 var fixed = document.createElement`div`;
 fixed.classList.add`fixed-window`;
 
-let bindObject = new BindValue;
-let testPtag = document.createElement('p');
-
-const setTitle = (pageName)=>{
+export const setTitle = (pageName)=>{
     if(pageName == ''){
         document.title = 'SoundOwl';
         return;
@@ -2216,7 +2193,7 @@ const getTime=(sec)=> {
     };
 };
 
-const timeToText=(time)=> {
+export const timeToText=(time)=> {
     let t = getTime(time);
     return {
       "min": ("0" + t["min"]).slice(-2),
@@ -2245,6 +2222,101 @@ const addBottomEvent = (element)=>{
         });
     }
 };
+
+/**
+ * 
+ * @param {HTMLAnchorElement} tag 
+ */
+ const LinkAction = (tag)=>{
+    tag.onclick = (e)=>{
+        e.preventDefault();
+        let link = tag.getAttribute('name');
+        router.push({name:link});
+        setTitle('');
+    };
+};
+
+const _history = {
+    pushState(url){
+        history.pushState(url, null, url);
+    }
+};
+
+const ContextMenu = {
+    isVisible: false,
+    contextMenu: document.createElement('ul'),
+    position: new DisplayPoint,
+    /**
+     * @param {Element} baseElement
+     */
+    baseElement: null,
+    /**
+     * 
+     * @param {Event} e 
+     */
+    visible(e){
+        if(e.preventDefault != undefined){
+            e.preventDefault();
+        }
+        if(ContextMenu.isVisible){
+            ContextMenu.remove();
+        }
+        ContextMenu.baseElement = document.createElement('div');
+        ContextMenu.baseElement.id='context-menu';
+        ContextMenu.baseElement.appendChild(this.contextMenu);
+        document.html().append(ContextMenu.baseElement);
+        ContextMenu.setPosition(e);
+        ContextMenu.isVisible=true;
+        if(e.stopImmediatePropagation != undefined){
+            e.stopImmediatePropagation();
+        }
+    },
+    /**
+     * @private
+     */
+    removeEventSet(){
+        let disableAction = ()=>{
+            if(ContextMenu.isVisible){
+                ContextMenu.remove();
+                ContextMenu.contextMenu.destoryChildren();
+            }
+        };
+        document.html().addEventListener(MouseEventEnum.CLICK,disableAction, !1);
+        window.addEventListener('scroll',disableAction, !1);
+        window.addEventListener('drag',disableAction, !1);
+    },
+    /**
+     * @private
+     * @param {Event} e 
+     */
+    setPosition(e){
+        let point = new MousePosition(ContextMenu.baseElement).worldMousePosition(e);
+        ContextMenu.position.x = point.x;
+        ContextMenu.position.y = point.y;
+        if(ContextMenu.position.isHorizontalOverFlow(ContextMenu.baseElement.clientWidth)){
+            ContextMenu.position.x = ContextMenu.position.x - ContextMenu.baseElement.clientWidth;
+        }
+        if(ContextMenu.position.isVerticalOverFlow(ContextMenu.baseElement.clientHeight)){
+            ContextMenu.position.y = ContextMenu.position.y - ContextMenu.baseElement.clientHeight;
+        }
+        ContextMenu.baseElement.style.left = ContextMenu.position.x+"px";
+        ContextMenu.baseElement.style.top = ContextMenu.position.y+"px";
+    },
+    remove(){
+        if(ContextMenu.isVisible){
+            try{
+                ContextMenu.baseElement.remove();
+                ContextMenu.isVisible = false;
+            }catch(e){}
+        }
+    }
+};
+
+window.addEventListener('contextmenu', (e)=>{
+    ContextMenu.visible(e);
+    e.stopPropagation();
+});
+
 
 addBottomEvent(window);
 window.addEventListener('load', ()=>{

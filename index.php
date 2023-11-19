@@ -14,8 +14,6 @@ require_once(dirname(__FILE__).'/parts/loader.php');
   src: url(img/fontisto.php);
 }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-    <script src="https://unpkg.com/vue-router@3.0.7/dist/vue-router.js"></script>
     <style>
 <?php
 echo StringUtil::deleteNonCss(file_get_contents(dirname(__FILE__).'/css/style.css'));
@@ -34,10 +32,7 @@ SoundOwlProperty.WebSocket = {
     retryInterval:<?php echo WEBSOCKET_RETRY_INTERVAL;?>
 };
     </script>
-    <script src="js/base.js"></script>
-    <script src="js/audio.js"></script>
-    <script src="js/layout.js"></script>
-    <script src="js/page.js"></script>
+    <script src="js/main.bundle.js" defer></script>
 </head>
 <body>
 	<header>

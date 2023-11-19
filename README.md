@@ -17,14 +17,13 @@ Intranet内でブラウザが入っているPCがあれば視聴できること�
   * PHP8.1
 
 ## Install
-* apt install -y redis
-* apt install -y ffmpeg
-* apt install -y screen
+* curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+* apt install -y redis ffmpeg screen php-xml php8.1-gd composer nodejs
 * git clone https://github.com/animeing/SoundOwl.git /var/www/html
-* apt install -y php-xml
-* apt install -y php8.1-gd
-* apt install -y composer
 * composer install
+* cd /var/www/html/frontend
+* npm install
+* npx webpack --config webpack.config.js
 * systemctl restart apache2
 * systemctl start redis-server
 * screen

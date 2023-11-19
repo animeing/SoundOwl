@@ -1,4 +1,10 @@
 'use strict';
+import { BaseFrameWork,BASE } from "./base";
+import { AudioClip } from "./audio";
+import audio from "./audio";
+import { SoundClipComponent } from "./layout";
+import router from "./router";
+import { audioParamSave } from "./layout";
 
 class PlayCountAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
@@ -227,7 +233,7 @@ const SlideComponet = {
     }
 };
 
-const Home = {
+export const Home = {
     template:`
     <div>
         <SlideComponet :slide-title="'New Sounds 40'" :data-request="newSoundRequest" :context-menu="soundContext" :item-click="newSoundClipClick"></SlideComponet>
@@ -384,7 +390,7 @@ const Home = {
     }
 };
 
-const ArtistSoundList = {
+export const ArtistSoundList = {
     template:`
     <div class='audio-list'>
         <button v-for="item in requestData()" :class='audioItemClass(item)' @click.right.prevent="soundContext(item)" @click="click(item)">
@@ -528,7 +534,7 @@ const ArtistSoundList = {
     }
 }
 
-const AlbumSoundList = {
+export const AlbumSoundList = {
     template:`
     <div class='audio-list'>
         <button v-for="item in requestData()" :class='audioItemClass(item)' @click.right.prevent="soundContext(item)" @click="click(item)">
@@ -672,7 +678,7 @@ const AlbumSoundList = {
     }
 };
 
-const Search = {
+export const Search = {
     template:`
     <div class='audio-list'>
         <button v-for="item in requestData()" :class='audioItemClass(item)' @click.right.prevent="soundContext(item)" @click="click(item)">
@@ -832,7 +838,10 @@ const PlaylistClipComponent = {
     </div>
     `,
     props:{
-        playlist:[]
+        playlist:{
+            type: Object,
+            require: true
+        }
     },
     methods:{
         createImageSrc(playlistName) {
@@ -888,7 +897,7 @@ const AlbumClipComponent = {
     },
 };
 
-const PlaylistSoundList = {
+export const PlaylistSoundList = {
     template:`
     <div class='audio-list'>
         <button v-for="item in soundClips" :class='audioItemClass(item)' @click.right.prevent="soundContext(item)" @click="click(item)">
@@ -1009,7 +1018,7 @@ const PlaylistSoundList = {
     }
 };
 
-const AlbumList = {
+export const AlbumList = {
     template:`
     <div class='audio-list'>
         <button v-for="item in albumClips" class='audio-item' @click="click(item)">
@@ -1112,7 +1121,7 @@ const AlbumList = {
     }
 };
 
-const PlayListNames = {
+export const PlayListNames = {
     template:`
     <div class='audio-list'>
         <button v-for='item in playlist' class='audio-item' @click="onclick(item)" @click.right.prevent="soundContext(item)">
@@ -1120,14 +1129,8 @@ const PlayListNames = {
         </button>
     </div>
     `,
-    props:{
-        playlist:{
-            type:Array,
-            require: false,
-            default: ()=>{
-                return [];
-            }
-        }
+    data(){
+        return {playlist:[]}
     },
     components:{
         PlaylistClipComponent
@@ -1187,7 +1190,7 @@ const PlayListNames = {
     }
 }
 
-const ArtistList = {
+export const ArtistList = {
     template:`
     <div class='audio-list'>
         <button v-for="item in artistClips" class='audio-item' @click="click(item)">
@@ -1563,7 +1566,7 @@ const SettingTab = {
     }
 }
 
-const Setting = {
+export const Setting = {
     template:`
     <div>
         <SettingTab></SettingTab>
@@ -1705,7 +1708,7 @@ const Setting = {
     }
 };
 
-const SetUp = {
+export const SetUp = {
     template:`
     <div>
         <SettingFormComponent></SettingFormComponent>
@@ -1824,123 +1827,6 @@ const SetUp = {
         }
     }
 }
-
-const router = new VueRouter({
-    routes: [
-        {
-            path: '/',
-            name: 'home',
-            component: Home,
-            meta:{
-                title:'Home'
-            }
-        },
-        {
-            path:'/album_list',
-            name: 'album_list',
-            component: AlbumList,
-            meta:{
-                title:'Album List'
-            }
-        },
-        {
-            path:'/artist_list',
-            name:'artist_list',
-            component: ArtistList,
-            meta:{
-                title:'Artist List'
-            }
-        },
-        {
-            path:'/album',
-            name:'album',
-            component: AlbumSoundList,
-            meta:{
-                title:'Album'
-            }
-        },
-        {
-            path:'/artist',
-            name:'artist',
-            component:ArtistSoundList,
-            meta:{
-                title:'Artist'
-            }
-        },
-        {
-            path: '/search',
-            name:'search',
-            component: Search,
-            meta:{
-                title:'Search'
-            }
-        },
-        {
-            path: '/playlists',
-            name: 'playlists',
-            component: PlayListNames,
-            meta:{
-                title: 'Play List'
-            }
-        },
-        {
-            path: '/playlists/sounds',
-            name: 'playlist_sounds',
-            component: PlaylistSoundList,
-            meta:{
-                title: 'Playlist Sounds'
-            }
-        },
-        {
-            path: '/setting',
-            name: 'setting',
-            component: Setting,
-            meta:{
-                title:'General'
-            }
-        },
-        {
-            path: '/setting/equalizer',
-            name: 'equalizer',
-            component: Setting,
-            meta:{
-                title:'Equalizer'
-            }
-        },
-        {
-            path: '/setting/effect',
-            name: 'effect',
-            component: Setting,
-            meta: {
-                title: 'Effect'
-            }
-        },
-        {
-            path: '/setup',
-            name: 'setup',
-            component: SetUp,
-            meta:{
-                title:'Setup'
-            }
-        }
-    ]
-});
-
-
-router.beforeEach((to, from, next)=>{
-    next();
-    let viewNameElement = document.getElementById('view-name');
-    viewNameElement.innerText = router.currentRoute.meta.title;
-    viewNameElement.setAttribute('data-hint', router.currentRoute.meta.title);
-    setTitle(router.currentRoute.meta.title == 'Home'?'':router.currentRoute.meta.title);
-});
-
-window.addEventListener('load', ()=>{
-    let vue = new Vue({
-        el:'#base',
-        router
-    });
-});
 
 const toGetParamMap=getParam=>{
     let getterNewParam = new Array();
