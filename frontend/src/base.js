@@ -1572,7 +1572,7 @@ export class ProgressComposite extends HTMLElement {
     }
 
     get value() {
-        return this._value;
+        return +(this._value);
     }
 
     set value(value) {
@@ -1581,7 +1581,7 @@ export class ProgressComposite extends HTMLElement {
     }
 
     get max() {
-        return this._max;
+        return +(this._max);
     }
 
     set max(value) {
@@ -1593,7 +1593,7 @@ export class ProgressComposite extends HTMLElement {
     }
 
     get min() {
-        return this._min;
+        return +(this._min);
     }
 
     set min(value) {
