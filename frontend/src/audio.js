@@ -1,4 +1,5 @@
 import { BaseFrameWork,BASE, setTitle } from "./base";
+import { SoundInfomation } from "./page";
 
 class CanvasAudioAnalizer extends BaseFrameWork.Draw.Canvas2D{
     render=()=>{

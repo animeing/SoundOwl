@@ -5,6 +5,7 @@ import audio from "./audio";
 import { SoundClipComponent } from "./layout";
 import router from "./router";
 import { audioParamSave } from "./layout";
+import { ContextMenu } from "./base";
 
 class PlayCountAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
@@ -45,7 +46,7 @@ class LockStatus extends BaseFrameWork.Network.RequestServerBase {
 }
 
 
-class SoundInfomation extends BaseFrameWork.Network.RequestServerBase {
+export class SoundInfomation extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'sound_data.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
     }

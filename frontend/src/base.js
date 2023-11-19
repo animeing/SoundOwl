@@ -2242,7 +2242,7 @@ const _history = {
     }
 };
 
-const ContextMenu = {
+export const ContextMenu = {
     isVisible: false,
     contextMenu: document.createElement('ul'),
     position: new DisplayPoint,

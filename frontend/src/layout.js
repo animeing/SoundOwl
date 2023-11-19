@@ -4,6 +4,7 @@ import { AudioClip, AudioLoopModeEnum } from "./audio";
 import audio from "./audio";
 import router from "./router";
 import { timeToText } from "./base";
+import { ContextMenu } from "./base";
 
 SoundOwlProperty.WebSocket.EventTarget = new EventTarget();
 /**
