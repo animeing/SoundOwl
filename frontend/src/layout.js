@@ -5,6 +5,7 @@ import audio from "./audio";
 import router from "./router";
 import { timeToText } from "./base";
 import { ContextMenu } from "./base";
+import { AudioPlayStateEnum } from "./audio";
 
 SoundOwlProperty.WebSocket.EventTarget = new EventTarget();
 /**
@@ -1175,17 +1176,17 @@ export const AudioController = {
         }
     }
 };
-
+const searchBox = document.createElement('sw-searchbox');
+export default searchBox;
 (()=>{
     const mainMenu=()=>{
         let menu = document.getElementById('main-menu');
         menu.innerHTML = '';
-        window.searchBox = document.createElement('sw-searchbox');
-        window.searchBox.searchEvent = value =>{
+        searchBox.searchEvent = value =>{
             router.push({name:'search', query: {SearchWord: value}});
         }
-        window.searchBox.classList.add('searchbox');
-        menu.appendChild(window.searchBox);
+        searchBox.classList.add('searchbox');
+        menu.appendChild(searchBox);
         
         let dropdownMenu = BaseFrameWork.createCustomElement('sw-dropdown');
         dropdownMenu.classList.add('header-item', 'nonselectable');

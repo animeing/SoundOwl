@@ -6,6 +6,9 @@ import { SoundClipComponent } from "./layout";
 import router from "./router";
 import { audioParamSave } from "./layout";
 import { ContextMenu } from "./base";
+import { AudioPlayStateEnum } from "./audio";
+import searchBox from "./layout"
+
 
 class PlayCountAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
@@ -106,7 +109,7 @@ class SetupDataBase extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
-class SoundPlayedAction extends BaseFrameWork.Network.RequestServerBase {
+export class SoundPlayedAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'action/sound_played.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
     }
@@ -707,8 +710,8 @@ export const Search = {
                 this.isLoad = true;
                 let soundSearch = new SoundSearchAction();
 
-                window.searchBox.value = this.$route.query.SearchWord;
-                soundSearch.formDataMap.append('SearchWord', window.searchBox.value);
+                searchBox.value = this.$route.query.SearchWord;
+                soundSearch.formDataMap.append('SearchWord', searchBox.value);
                 let listNo = 0;
                 soundSearch.httpRequestor.addEventListener('success', event=>{
                     for (const response of event.detail.response) {
