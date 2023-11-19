@@ -1,12 +1,12 @@
 'use strict';
 import { BaseFrameWork,BASE } from "./base";
-import { AudioClip } from "./audio";
-import audio from "./audio";
+import { AudioClip } from "./audio/type/audioClip";
+import audio from "./audio/audioPlayer";
+import { AudioPlayStateEnum } from "./audio/enum/audioPlayStateEnum";
+import { audioParamSave } from "./utilization/register";
 import { SoundClipComponent } from "./layout";
 import router from "./router";
-import { audioParamSave } from "./layout";
 import { ContextMenu } from "./base";
-import { AudioPlayStateEnum } from "./audio";
 import searchBox from "./layout"
 
 
@@ -1369,7 +1369,7 @@ const SettingEqualizerComponent = {
     },
     methods:{
         valueChange(event, value){
-            value.gain = (event.target.getAttribute('value'));
+            value.gain = (event.target.value);
             audio.equalizer.setMonoGain(value.hz, value.gain);
             audioParamSave();
         },

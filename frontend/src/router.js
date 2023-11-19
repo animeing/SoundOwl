@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import {Home, AlbumList, ArtistList, AlbumSoundList, ArtistSoundList, Search, PlayListNames, PlaylistSoundList, Setting, SetUp} from "./page"
 import { BASE } from "./base";
-import { setTitle } from './base';
 
 const router = createRouter({
     history: createWebHistory(BASE.VUE_HOME),

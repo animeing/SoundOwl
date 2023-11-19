@@ -1,11 +1,13 @@
 'use strict';
 import { BaseFrameWork,BASE,ProgressComposite,MouseEventEnum } from "./base";
-import { AudioClip, AudioLoopModeEnum } from "./audio";
-import audio from "./audio";
 import router from "./router";
 import { timeToText } from "./base";
 import { ContextMenu } from "./base";
-import { AudioPlayStateEnum } from "./audio";
+import { AudioPlayStateEnum } from "./audio/enum/audioPlayStateEnum";
+import { AudioLoopModeEnum } from "./audio/enum/audioLoopModeEnum";
+import { AudioClip } from "./audio/type/audioClip";
+import audio from "./audio/audioPlayer";
+import { audioParamSave } from "./utilization/register";
 
 SoundOwlProperty.WebSocket.EventTarget = new EventTarget();
 /**
@@ -36,35 +38,6 @@ SoundOwlProperty.SoundRegist.RegistDataCount = {};
 SoundOwlProperty.SoundRegist.RegistDataCount.sound = 0;
 SoundOwlProperty.SoundRegist.RegistDataCount.artist = 0;
 SoundOwlProperty.SoundRegist.RegistDataCount.album = 0;
-
-export const audioParamSave=()=>{
-    let localStorageMap = new BaseFrameWork.Storage.Application.LocalStorageMap();
-    let saveParams = JSON.stringify(
-        {
-            'volume': audio.audio.volume,
-            'loopMode': audio.loopMode,
-            'loadGiveUpTime':audio.loadGiveUpTime,
-            'equalizerGains':audio.equalizer.gains,
-            'soundSculpt':audio.exAudioEffect.isUseEffect,
-            'audioLondnessNormalize':audio.loudnessNormalize.isUse
-        });
-    localStorageMap.set('audioParam', saveParams);
-};
-
-export const audioParamLoad=()=>{
-    let localStorageMap = new BaseFrameWork.Storage.Application.LocalStorageMap();
-    let audioParam = localStorageMap.get('audioParam');
-    if(audioParam == null) {
-        return;
-    }
-    let audioParams = JSON.parse(audioParam);
-    audio.audio.volume = audioParams.volume;
-    audio.loopMode = audioParams.loopMode;
-    audio.loadGiveUpTime = audioParams.loadGiveUpTime;
-    audio.equalizer.gains = audioParams.equalizerGains;
-    audio.exAudioEffect.isUseEffect = audioParams.soundSculpt;
-    audio.loudnessNormalize.isUse = audioParams.audioLondnessNormalize;
-};
 
 (()=>{
     let retryCount = 0;
@@ -1207,7 +1180,6 @@ export default searchBox;
 
         
     };
-    window.addEventListener('DOMContentLoaded', audioParamLoad);
     window.addEventListener('load', mainMenu);
     
 
