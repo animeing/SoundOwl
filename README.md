@@ -27,13 +27,13 @@ Intranet内でブラウザが入っているPCがあれば視聴できること�
 * systemctl restart apache2
 * systemctl start redis-server
 * screen
-* php /var/www/html/api/sw/server.php
-* screen
 * php /var/www/html/api/quescript/queueAction.php
 * ブラウザにて http://<ServerのIPAddress>/#/setup にアクセス
 <img src="https://user-images.githubusercontent.com/24301121/178284171-61d9077c-6517-4666-9d65-8187f935de9c.png" width="100%">
 
 * Databaseの情報と音源の存在するフォルダを入力(WebSocketは必要であれば変更してください。)
 * SetUpボタンを押してしばらく待つ(対象の曲数によっては数日を要する場合がありますが、そのSetUp中も利用することは可能です。)
+* screen
+* php /var/www/html/api/sw/server.php
 * ※SetUpボタンはWebSocket通信が確立してない場合、押下することができません。
 * ※ラウンドネス・ノーマライゼーション機能を期待する場合は完全にSetUpが終わるのを待つ必要があります。
