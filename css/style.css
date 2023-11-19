@@ -97,6 +97,36 @@ select::-ms-expand {
   }
 }
 
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--basecolor);
+  border-radius: 4px;
+  background-color: var(--subcolor);
+  cursor: pointer;
+  vertical-align: middle;
+  position: relative;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--subcoloraccentcolor);
+}
+
+
+input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--fontcolor);
+  font-size: 16px;
+}
+
+
 .unvisible{
   display: none !important;
   visibility: hidden !important;
