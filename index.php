@@ -32,6 +32,9 @@ SoundOwlProperty.WebSocket = {
     retryInterval:<?php echo WEBSOCKET_RETRY_INTERVAL;?>
 };
     </script>
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="manifest.json">
     <script src="js/main.bundle.js" defer></script>
 </head>
 <body>
