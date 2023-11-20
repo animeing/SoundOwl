@@ -5,11 +5,11 @@ import { AudioClip } from "./audio/type/audioClip";
 import audio from "./audio/audioPlayer";
 import { AudioPlayStateEnum } from "./audio/enum/audioPlayStateEnum";
 import { audioParamSave } from "./utilization/register";
-import { SoundClipComponent } from "./layout";
 import router from "./router";
 import { ContextMenu } from "./base";
 import searchBox from "./layout";
 import LoadingListComponent from "./layout/common/loadingListComponent.vue";
+import SoundClipComponent from "./layout/common/soundClipComponent.vue";
 
 
 export class PlayCountAction extends BaseFrameWork.Network.RequestServerBase {
