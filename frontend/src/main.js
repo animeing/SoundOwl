@@ -17,10 +17,10 @@ router.afterEach((to, from) =>{
     const nearestWithTitle = to.matched.slice().reverse().find(r => r.meta && r.meta.title);
     if(nearestWithTitle) {
         document.title = `${nearestWithTitle.meta.title} - SoundOwl`;
+        let viewNameElement = document.getElementById('view-name');
+        viewNameElement.innerText = nearestWithTitle.meta.title;
+        viewNameElement.setAttribute('data-hint', nearestWithTitle.meta.title);
     }
-    let viewNameElement = document.getElementById('view-name');
-    viewNameElement.innerText = nearestWithTitle.meta.title;
-    viewNameElement.setAttribute('data-hint', nearestWithTitle.meta.title);
 });
 
 app.mount("#base");
