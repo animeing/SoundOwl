@@ -1,5 +1,6 @@
 'use strict';
-import { BaseFrameWork,BASE } from "./base";
+import { BASE } from "./utilization/path";
+import { BaseFrameWork } from "./base";
 import { AudioClip } from "./audio/type/audioClip";
 import audio from "./audio/audioPlayer";
 import { AudioPlayStateEnum } from "./audio/enum/audioPlayStateEnum";
@@ -10,39 +11,39 @@ import { ContextMenu } from "./base";
 import searchBox from "./layout"
 
 
-class PlayCountAction extends BaseFrameWork.Network.RequestServerBase {
+export class PlayCountAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'play_count_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
 
     }
 }
 
-class AlbumCountAction extends BaseFrameWork.Network.RequestServerBase {
+export class AlbumCountAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'album_count_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
 
     }
 }
 
-class SoundSearchAction extends BaseFrameWork.Network.RequestServerBase {
+export class SoundSearchAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'sound_search.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
 
     }
 }
 
-class AlbumSoundListAction extends BaseFrameWork.Network.RequestServerBase {
+export class AlbumSoundListAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'album_sounds.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
     }
 }
 
-class SiteStatus extends BaseFrameWork.Network.RequestServerBase {
+export class SiteStatus extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'site_status.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
 }
-class LockStatus extends BaseFrameWork.Network.RequestServerBase {
+export class LockStatus extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'lock_status.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
@@ -55,55 +56,55 @@ export class SoundInfomation extends BaseFrameWork.Network.RequestServerBase {
     }
 }
 
-class SoundAddTimeListAction extends BaseFrameWork.Network.RequestServerBase {
+export class SoundAddTimeListAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'sound_addtime_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
 }
 
-class AlbumListAction extends BaseFrameWork.Network.RequestServerBase {
+export class AlbumListAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'album_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
 }
 
-class ArtistListAction extends BaseFrameWork.Network.RequestServerBase {
+export class ArtistListAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'artist_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
 }
 
-class ArtistSoundListAction extends BaseFrameWork.Network.RequestServerBase {
+export class ArtistSoundListAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'artist_sounds.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
 }
 
-class GetSetting extends BaseFrameWork.Network.RequestServerBase {
+export class GetSetting extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'get_setting.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
     }
 }
 
-class UpdateSetting extends BaseFrameWork.Network.RequestServerBase {
+export class UpdateSetting extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'update_setting.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
 }
 
-class SoundRegistAction extends BaseFrameWork.Network.RequestServerBase {
+export class SoundRegistAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'sound_regist.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
 }
 
-class UpdateSoundInfomationAction extends BaseFrameWork.Network.RequestServerBase {
+export class UpdateSoundInfomationAction extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'sound_regist.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
     }
 }
 
-class SetupDataBase extends BaseFrameWork.Network.RequestServerBase {
+export class SetupDataBase extends BaseFrameWork.Network.RequestServerBase {
     constructor() {
         super(null, BASE.API+'setup_database_table.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
     }
@@ -150,248 +151,6 @@ const LoadingListComponent = {
         </div>
     </div>
     `
-};
-
-const SlideList = {
-    template: `
-    <sw-audio-slide-list>
-        <div>
-            <button v-for="item in data" @click.right.prevent="contextmenu(item)" @click="click(item)">
-                <img loading='lazy' :src="createImageSrc(item.albumKey)">
-                <p :data-hint="item.title">{{ item.title }}</p>
-            </button>
-        </div>
-    </sw-audio-slide-list>`,
-    
-    data() {
-        return {
-            data:[]
-        };
-    },
-    props:{
-        dataRequest:{
-            type:Function
-        },
-        onClick:{
-            type:Function
-        },
-        contextMenu:{
-            type:Function
-        }
-    },
-    methods:{
-        createImageSrc(albumKey) {
-            return `${BASE.HOME}img/album_art.php?media_hash=`+albumKey;
-        },
-        click(soundClip){
-            if(this.onClick) {
-                this.onClick(soundClip);
-            }
-            return;
-        },
-        contextmenu(item){
-            ContextMenu.contextMenu.destoryChildren();
-            if(!this.contextMenu) {
-                return;
-            }
-            this.contextMenu(item);
-        }
-    },
-    created(){
-        this.data = this.dataRequest();
-    },
-    computeds:{}
-};
-const SlideComponet = {
-    template:
-    `
-    <div class="box">
-        <p>{{slideTitle}}</p>
-        <SlideList :on-click='itemClick' :context-menu='contextmenu' :data-request='dataRequest'></SlideList>
-    </div>
-    `,
-    props:{
-        slideTitle:{
-            type:String
-        },
-        dataRequest:{
-            type:Function
-        },
-        itemClick:{
-            type:Function
-        },
-        contextMenu:{
-            type:Function
-        }
-    },
-    methods:{
-        contextmenu(item){
-            if(!this.contextMenu) {
-                return;
-            }
-            this.contextMenu(item);
-        }
-    },
-    components:{
-        SlideList
-    }
-};
-
-export const Home = {
-    template:`
-    <div>
-        <SlideComponet :slide-title="'New Sounds 40'" :data-request="newSoundRequest" :context-menu="soundContext" :item-click="newSoundClipClick"></SlideComponet>
-        <SlideComponet :slide-title="soundTop20" :data-request="soundCountRequest" :context-menu="soundContext" :item-click="soundClipClick"></SlideComponet>
-        <SlideComponet :slide-title="albumTop20" :data-request="albumCountRequest" :item-click="albumClipClick"></SlideComponet>
-    </div>
-    `,
-    data() {
-        return {
-            soundTop20:'Sound Top 20',
-            albumTop20:'Album Top 20',
-            soundClips:[],
-            albumData:[],
-            newSoundClips:[],
-            isLoad:false
-        };
-    },
-    components:{
-        SlideComponet
-    },
-    methods:{
-        newSoundRequest() {
-            if(this.newSoundClips.length == 0) {
-                let newSoundAction = new SoundAddTimeListAction();
-                let listNo = 0;
-                newSoundAction.httpRequestor.addEventListener('success', event=>{
-                    for (const response of event.detail.response) {
-                        let audioClip = new AudioClip();
-                        audioClip.soundHash = response['sound_hash'];
-                        audioClip.title = response['title'];
-                        audioClip.artist = response['artist_name'];
-                        audioClip.album = response['album']['album_title'];
-                        audioClip.albumKey = response['album']['album_hash'];
-                        audioClip.no = listNo;
-                        listNo++;
-                        this.newSoundClips.push(audioClip);
-                    }
-                });
-                newSoundAction.execute();
-                return this.newSoundClips;
-            } else {
-                return this.newSoundClips;
-            }
-        },
-        soundCountRequest(){
-            if(!this.isLoad) {
-                let playCountAction = new PlayCountAction();
-                this.isLoad = true;
-                
-                let listNo = 0;
-                playCountAction.httpRequestor.addEventListener('success', event=>{
-                    for (const response of event.detail.response) {
-                        let audioClip = new AudioClip();
-                        audioClip.soundHash = response['sound_hash'];
-                        audioClip.title = response['title'];
-                        audioClip.artist = response['artist_name'];
-                        audioClip.album = response['album']['album_title'];
-                        audioClip.albumKey = response['album']['album_hash'];
-                        audioClip.no = listNo;
-                        listNo++;
-                        this.soundClips.push(audioClip);
-                    }
-                });
-                playCountAction.execute();
-                return this.soundClips;
-            } else {
-                return this.soundClips;
-            }
-        },
-        albumCountRequest(){
-            if(this.albumData.length == 0) {
-                let albumCountAction = new AlbumCountAction;
-                albumCountAction.httpRequestor.addEventListener('success', event=>{
-                    for (const response of event.detail.response) {
-                        this.albumData.push(response);
-                    }
-                });
-                albumCountAction.execute();
-                return this.albumData;
-            } else {
-                return this.albumData;
-            }
-        },
-        newSoundClipClick(soundClip) {
-            if(ContextMenu.isVisible){
-                return;
-            }
-            audio.playList.removeAll();
-            for(const audioclip of this.newSoundClips) {
-                audio.playList.add(audioclip);
-            }
-            if(audio.currentAudioClip == null){
-                audio.play(soundClip);
-                return;
-            }            
-            if(soundClip.equals(audio.currentAudioClip)){
-                if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
-                    audio.play();
-                } else {
-                    if(audio.currentPlayState === AudioPlayStateEnum.PLAY || audio.currentPlayState !== AudioPlayStateEnum.STOP ){
-                        audio.pause();
-                    }
-                }
-                return;
-            } else {
-                audio.play(soundClip);
-            }
-        },
-        soundClipClick(soundClip){
-            if(ContextMenu.isVisible){
-                return;
-            }
-            audio.playList.removeAll();
-            for(const audioclip of this.soundClips) {
-                audio.playList.add(audioclip);
-            }
-            if(audio.currentAudioClip == null){
-                audio.play(soundClip);
-                return;
-            }            
-            if(soundClip.equals(audio.currentAudioClip)){
-                if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
-                    audio.play();
-                } else {
-                    if(audio.currentPlayState === AudioPlayStateEnum.PLAY || audio.currentPlayState !== AudioPlayStateEnum.STOP ){
-                        audio.pause();
-                    }
-                }
-                return;
-            } else {
-                audio.play(soundClip);
-            }
-        },
-        soundContext:(soundClip)=>{
-            let addNextSound = BaseFrameWork.createCustomElement('sw-libutton');
-            addNextSound.menuItem.onclick=e=>{
-                if(audio.currentAudioClip == undefined) {
-                    audio.playList.add(soundClip, 0);
-                    return;
-                }
-                let appendPosition = audio.playList.equalFindIndex(audio.currentAudioClip);
-                audio.playList.add(soundClip, appendPosition+1);
-            };
-            addNextSound.menuItem.value = 'Add to playlist';
-            ContextMenu.contextMenu.appendChild(addNextSound);
-        },
-        albumClipClick(albumClip) {
-            if(ContextMenu.isVisible){
-                return;
-            }
-            router.push({name:'album', query: {AlbumHash: albumClip.albumKey}});
-
-        }
-    }
 };
 
 export const ArtistSoundList = {

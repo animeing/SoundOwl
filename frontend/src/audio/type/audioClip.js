@@ -1,4 +1,4 @@
-import { BASE } from "../../base";
+import { BASE } from "../../utilization/path";
 
 export class AudioClip{
     constructor(){

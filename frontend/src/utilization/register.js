@@ -29,4 +29,3 @@ export const audioParamLoad=()=>{
     audio.exAudioEffect.isUseEffect = audioParams.soundSculpt;
     audio.loudnessNormalize.isUse = audioParams.audioLondnessNormalize;
 };
-audioParamLoad();

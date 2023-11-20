@@ -2,15 +2,6 @@
 
 import router from "./router";
 
-export const BASE = {
-    DOMAIN:'',
-    SAVE_PATH:window.location.pathname.split('#')[0],
-    HOME:window.location.pathname.split('#')[0],
-    VUE_HOME:window.location.pathname.split('#')[0]+'#/',
-    API:window.location.pathname.split('#')[0]+'api/',
-    WEBSOCKET:window.location.hostname
-};
-
 export const BaseFrameWork={};
 BaseFrameWork.Network={};
 BaseFrameWork.Storage={};
@@ -1917,6 +1908,268 @@ class DropDownElement extends HTMLUListElement{
 }
 
 BaseFrameWork.defineCustomElement('sw-dropdown', DropDownElement, {extends: 'ul'});
+
+class SearchBox extends HTMLElement{
+    _searchBox = document.createElement('input');
+    searchIcon = document.createElement('span');
+    searchEvent = value=>{};
+    constructor(){
+        super();
+        this.searchIcon.innerText = '';
+        this.searchIcon.addEventListener(MouseEventEnum.CLICK, ()=>{
+            this.searchBox.focus();
+        });
+        this.searchBox.type='text';
+        this.searchBox.addEventListener('keyup', (e)=>{
+            if(e.keyCode !== 13){
+                return;
+            }
+            this.searchEvent(this.searchBox.value);
+        });
+        this.searchBox.addEventListener('contextmenu', ()=>{
+            ContextMenu.contextMenu.destoryChildren();
+            {
+                let copy = BaseFrameWork.createCustomElement('sw-libutton');
+                copy.menuItem.value = 'Copy';
+                copy.menuItem.onclick = ()=>{
+                    ClipBoard.set(this.searchBox.value);
+                };
+                ContextMenu.contextMenu.appendChild(copy);
+            }
+            {
+                let paste = BaseFrameWork.createCustomElement('sw-libutton');
+                paste.menuItem.value = 'Paste';
+                paste.menuItem.onclick = ()=>{
+                    ClipBoard.get(this.searchBox);
+                }
+                ContextMenu.contextMenu.appendChild(paste);
+            }
+        });
+    }
+    
+    connectedCallback(){
+        this.setAttribute('data-hint', 'Search box');
+        this.searchIcon.classList.add('icon');
+        this.appendChild(this.searchIcon);
+        this.appendChild(this.searchBox);
+    }
+
+    get value(){
+        return this.searchBox.value;
+    }
+
+    set value(value){
+        this.searchBox.value = value;
+    }
+
+    get searchBox(){
+        return this._searchBox
+    }
+}
+customElements.define('sw-searchbox', SearchBox);
+
+
+class InputParam extends HTMLElement {
+    constructor() {
+        super();
+        this._title = document.createElement('span');
+        this._input = document.createElement('input');
+        this._input.addEventListener('contextmenu', ()=>{
+            ContextMenu.contextMenu.destoryChildren();
+            {
+                let copy = BaseFrameWork.createCustomElement('sw-libutton');
+                copy.menuItem.value = 'Copy';
+                copy.menuItem.onclick = ()=>{
+                    ClipBoard.set(this._input.value);
+                };
+                ContextMenu.contextMenu.appendChild(copy);
+            }
+            {
+                let paste = BaseFrameWork.createCustomElement('sw-libutton');
+                paste.menuItem.value = 'Paste';
+                paste.menuItem.onclick = ()=>{
+                    ClipBoard.get(this._input);
+                }
+                ContextMenu.contextMenu.appendChild(paste);
+            }
+        });
+        {
+            let val = this._input.value;
+            this._input.addEventListener('input', ()=>{
+                if(!this._input.hasAttribute('pattern')) {
+                    return;
+                }
+                const pattern = new RegExp(this._input.value.pattern);
+                if(!pattern.test('/^'+this._input.value+'$/')) {
+                    this._input.value = val;
+                    return;
+                }
+                if(this._input.value == '') {
+                    this._input.value = val;
+                    return;
+                }
+                if(this._input.hasAttribute('max')) {
+                    this._input.value = Math.min(this._input.value, this._input.max);
+                }
+                if(this._input.hasAttribute('min')) {
+                    this._input.value = Math.max(this._input.value, this._input.min);
+                }
+                val = this._input.value;
+            });
+        }
+    }
+    
+    static get observedAttributes() {
+        return ['value', 'data-title', 'type', 'max', 'min', 'pattern','name', 'readonly'];
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if('value' == name) {
+            this._input.value = newValue;
+        }
+        if('data-title' == name) {
+            this._title.innerText = newValue;
+        }
+        if('type' == name) {
+            this._input.type = newValue;
+        }
+        if('max' == name) {
+            this._input.setAttribute('max', newValue);
+        }
+        if('min' == name) {
+            this._input.setAttribute('min', newValue);
+        }
+        if('pattern' == name) {
+            this._input.setAttribute('pattern', newValue);
+        }
+        if('name' == name) {
+            this._input.name = newValue;
+        }
+        if('readonly' == name) {
+            this._input.readOnly = newValue;
+        }
+    }
+
+    get value(){
+        return this._input.value;
+    }
+    set value(val) {
+        this.setAttribute('value', val);
+    }
+
+    get title() {
+        return this._title.innerText;
+    }
+    set title(title) {
+        this.setAttribute('data-title', title);
+    }
+
+    get type() {
+        return this._input.type;
+    }
+    set type(type) {
+        this.setAttribute('type', type);
+    }
+
+    get max() {
+        return this._input.max;
+    }
+
+    set max(max) {
+        this.setAttribute('max', max);
+    }
+
+    get min() {
+        return this._input.min;
+    }
+
+    set min(min) {
+        this.setAttribute('min', min);
+    }
+
+    get pattern(){
+        return this._input.pattern;
+    }
+
+    set pattern(pattern){
+        this.setAttribute('pattern', pattern);
+    }
+
+    get name() {
+        return this._input.name;
+    }
+    set name(name) {
+        this.setAttribute('name', name);
+    }
+
+    get readOnly() {
+        return this._input.readOnly;
+    }
+    set readOnly(readOnly) {
+        this.setAttribute('readonly', readOnly);
+    }
+    
+    connectedCallback(){
+        let shadow = this.attachShadow({mode: 'closed'});
+        shadow.appendChild(this._title);
+        shadow.appendChild(this._input);
+        let style = document.createElement('style');
+        style.innerHTML = `
+        :host {
+            display: block;
+        }
+        
+        span{
+            min-width: 10em;
+            width: fit-content;
+            display: inline-block;
+            border-bottom: 2px solid var(--subfontcolor);
+            margin-bottom: 10px;
+        }
+          
+        input{
+            background-color: var(--playerbgcolor);
+            width: 100%;
+            border-radius: 5px;
+            font-size: 1em;
+            height: 23px;
+            color: var(--fontcolor);
+            -webkit-text-fill-color: var(--fontcolor);
+            border: none;
+            padding: 5px;
+        }`;
+        shadow.appendChild(style);
+    }
+}
+BaseFrameWork.defineCustomElement('sw-input-param', InputParam);
+
+
+class AudioSlideList extends HTMLElement {
+    constructor() {
+        super();
+        this.addEventListener('wheel', e=>{
+            if((this.scrollLeft == 0 && e.deltaY < 0)|| (this.scrollLeft == (this.scrollWidth - this.clientWidth) && e.deltaY > 0)){
+                return;
+            }
+            e.preventDefault();
+            this.scrollLeft += e.deltaY;
+        });
+        this.frame = document.createElement('div');
+    }
+    
+    connectedCallback() {
+        if(this.children.length == 0){
+            this.append(this.frame);
+        }
+    }
+    add(element) {
+        this.frame.appendChild(element);
+    }
+
+}
+
+customElements.define('sw-audio-slide-list', AudioSlideList);
+
 
 
 /**

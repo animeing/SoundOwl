@@ -1,5 +1,6 @@
 const path = require('path');
 const { DefinePlugin } = require('webpack');
+const { VueLoaderPlugin } = require('vue-loader');
 
 module.exports = {
     cache: false,
@@ -10,17 +11,31 @@ module.exports = {
         },
         symlinks: false
     },
-    entry: {
-        main: './src/main.js'
+    module:{
+        rules:[
+            {
+                test: /\.vue$/,
+                loader: 'vue-loader',
+                options:{
+                    compilerOptions:{
+                        isCustomElement: tag => tag.startsWith('sw-')
+                    }
+                }
+            }
+        ]
     },
+    entry: [
+        './src/main.js'
+    ],
     output: {
-        filename: '[name].bundle.js',
+        filename: 'main.bundle.js',
         path: path.resolve(__dirname, '../js'),
     },
     plugins:[
         new DefinePlugin({
             __VUE_OPTIONS_API__: true,
             __VUE_PROD_DEVTOOLS__: false,
-        })
+        }),
+        new VueLoaderPlugin()
     ]
 }
