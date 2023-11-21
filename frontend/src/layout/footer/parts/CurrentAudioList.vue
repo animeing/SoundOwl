@@ -19,6 +19,7 @@ import {AudioPlayStateEnum} from "../../../audio/enum/audioPlayStateEnum";
 import audio from '../../../audio/audioPlayer';
 import { AudioClip } from '../../../audio/type/audioClip';
 import SoundClipComponentVue from '../../common/SoundClipComponent.vue';
+import { BASE } from '../../../utilization/path';
 
 export default {
     name:'CurrentAudioList',

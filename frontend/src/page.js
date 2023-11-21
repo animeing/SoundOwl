@@ -10,6 +10,7 @@ import { ContextMenu } from "./base";
 import searchBox from "./layout";
 import LoadingListComponent from "./layout/common/LoadingListComponent.vue";
 import SoundClipComponent from "./layout/common/SoundClipComponent.vue";
+import { MessageWindow } from "./base";
 
 
 export class PlayCountAction extends BaseFrameWork.Network.RequestServerBase {

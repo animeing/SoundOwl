@@ -1716,7 +1716,7 @@ class OptionObject extends HTMLOptionElement{
 
 BaseFrameWork.defineCustomElement('sw-option', OptionObject, {extends:'option'});
 
-class MessageWindow extends HTMLElement{
+export class MessageWindow extends HTMLElement{
     _messageElement = document.createElement('p');
     constructor(){
         super();
@@ -2475,6 +2475,36 @@ const addBottomEvent = (element)=>{
         });
     }
 };
+
+
+class MenuItem {
+    /**
+     * 
+     * @param {WebObject} webObject 
+     */
+    constructor(webObject){
+        this.webObject = webObject;
+        this.value = '';
+        this.onClickEvent= ()=>{};
+    }
+
+    get value(){
+        return this.webObject.value;
+    }
+
+    set value(value){
+        this.webObject.value = value;
+    }
+
+    set onClickEvent(func){
+        if(this.webObject instanceof WebObject){
+            return this.webObject.object.addEventListener(MouseEventEnum.CLICK, (e)=>{func(e)});
+        } else if(this.webObject instanceof Element){
+            this.webObject.addEventListener(MouseEventEnum.CLICK, (e)=>{func(e)});
+        }
+    }
+}
+
 
 /**
  * 
