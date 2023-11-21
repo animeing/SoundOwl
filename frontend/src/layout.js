@@ -9,7 +9,7 @@ import { AudioLoopModeEnum } from "./audio/enum/audioLoopModeEnum";
 import { AudioClip } from "./audio/type/audioClip";
 import audio from "./audio/audioPlayer";
 import { audioParamLoad, audioParamSave } from "./utilization/register";
-import SoundClipComponent from "./layout/common/soundClipComponent.vue";
+import SoundClipComponent from "./layout/common/SoundClipComponent.vue";
 
 SoundOwlProperty.WebSocket.EventTarget = new EventTarget();
 /**
