@@ -10,6 +10,7 @@
 </template>
 
 <script>
+import { ContextMenu } from '../../../base';
 import "../../../layout";
 import { BASE } from '../../../utilization/path';
 
