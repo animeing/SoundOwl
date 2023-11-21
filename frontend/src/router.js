@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import Home from "./layout/home/Home.vue";
 import {AlbumList, ArtistList, AlbumSoundList, ArtistSoundList, Search, PlayListNames, PlaylistSoundList, Setting, SetUp} from "./page";
 import { BASE } from "./utilization/path";
+import NotFound from "./layout/error/NotFound.vue";
 
 const router = createRouter({
     history: createWebHistory(BASE.VUE_HOME),
@@ -100,6 +101,14 @@ const router = createRouter({
             component: SetUp,
             meta:{
                 title:'Setup'
+            }
+        },
+        {
+            path: '/:catchAll(.*)',
+            name: 'notfound',
+            component: NotFound,
+            meta:{
+                title:'Not Found'
             }
         }
     ]

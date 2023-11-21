@@ -21,6 +21,13 @@ module.exports = {
                         isCustomElement: tag => tag.startsWith('sw-')
                     }
                 }
+            },
+            {
+                test: /\.css$/,
+                use:[
+                    'style-loader',
+                    'css-loader'
+                ]
             }
         ]
     },
