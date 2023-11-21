@@ -8,8 +8,8 @@ import { audioParamSave } from "./utilization/register";
 import router from "./router";
 import { ContextMenu } from "./base";
 import searchBox from "./layout";
-import LoadingListComponent from "./layout/common/loadingListComponent.vue";
-import SoundClipComponent from "./layout/common/soundClipComponent.vue";
+import LoadingListComponent from "./layout/common/LoadingListComponent.vue";
+import SoundClipComponent from "./layout/common/SoundClipComponent.vue";
 
 
 export class PlayCountAction extends BaseFrameWork.Network.RequestServerBase {

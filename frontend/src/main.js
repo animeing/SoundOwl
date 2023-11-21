@@ -1,7 +1,6 @@
 import {createApp } from 'vue';
 import router from './router';
-import { AudioController } from './layout';
-
+import AudioController from './layout/footer/AudioController.vue';
 
 const footer = createApp({});
 footer.component('audio-controller', AudioController);
