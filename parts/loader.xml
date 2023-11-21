@@ -4,9 +4,9 @@
     <util>utils/stringUtil/ComplessUtil.php</util>
     <util>utils/stringUtil/StringUtil.php</util>
     <util>utils/browserUtil/BrowserUtil.php</util>
-    <util>utils/FileUtil/IMimeType.php</util>
-    <util>utils/FileUtil/FileUtil.php</util>
-    <util>utils/FileUtil/IniWrite.php</util>
+    <util>utils/fileUtil/IMimeType.php</util>
+    <util>utils/fileUtil/FileUtil.php</util>
+    <util>utils/fileUtil/IniWrite.php</util>
 
     <base>db/dao/ISql.php</base>
     <base>db/connector/Connector.php</base>
