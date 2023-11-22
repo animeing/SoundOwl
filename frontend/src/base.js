@@ -578,8 +578,9 @@ BaseFrameWork.List = class {
      */
     addAll(list) {
         for (const iterator of list) {
-            this.add(iterator);
+            this.array[this.array.length] = iterator;
         }
+        this.eventSupport.dispatch('change');
     }
 
     /**
