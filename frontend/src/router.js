@@ -1,9 +1,10 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Home from "./layout/home/Home.vue";
-import {AlbumList, ArtistList, ArtistSoundList, Search, PlayListNames, PlaylistSoundList, Setting, SetUp} from "./page";
+import {AlbumList, ArtistList, Search, PlayListNames, PlaylistSoundList, Setting, SetUp} from "./page";
 import { BASE } from "./utilization/path";
 import NotFound from "./layout/error/NotFound.vue";
 import AlbumSoundList from "./layout/albumSoundList/AlbumSoundList.vue";
+import ArtistSoundList from "./layout/artistSoundList/ArtistSoundList.vue";
 
 const router = createRouter({
     history: createWebHistory(BASE.VUE_HOME),

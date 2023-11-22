@@ -4,6 +4,8 @@ import { BaseFrameWork,ProgressComposite } from "./base";
 import router from "./router";
 import audio from "./audio/audioPlayer";
 
+export const SoundOwlProperty = {};
+SoundOwlProperty.WebSocket = {};
 SoundOwlProperty.WebSocket.EventTarget = new EventTarget();
 /**
  * @type {WebSocket}
