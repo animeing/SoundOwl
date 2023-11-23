@@ -4,7 +4,7 @@
   },
   "editor.formatOnSave": true,
   "editor.tabSize": 2,
-  "editor.detectIndentation":true,
+  "editor.detectIndentation": true,
   "editor.insertSpaces": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "files.eol": "\n",
@@ -13,11 +13,10 @@
   },
   "eslint.validate": ["javascript", "vue"],
   "vetur.validation.template": false,
+  "vetur.validation.script": false,
   "eslint.enable": true,
   "eslint.alwaysShowStatus": true,
-  "eslint.workingDirectories": [
-    "./frontend"
-  ],
+  "eslint.workingDirectories": ["./frontend"],
   "[javascript]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint",
     "editor.tabSize": 2
