@@ -28,4 +28,6 @@ jobs:
         npm install
       
     - name : build
-      run : npx webpack --config webpack.config.js
+      run :  |
+        cd frontend
+        npx webpack --config webpack.config.js
