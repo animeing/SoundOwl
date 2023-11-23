@@ -2,7 +2,7 @@
 import { BASE } from "./utilization/path";
 import { BaseFrameWork,ProgressComposite } from "./base";
 import router from "./router";
-import audio from "./audio/audioPlayer";
+import audio from "./audio/AudioPlayer";
 
 export const SoundOwlProperty = {};
 SoundOwlProperty.WebSocket = {};

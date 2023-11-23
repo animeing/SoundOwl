@@ -10,9 +10,9 @@
     </span>
 </template>
 <script>
-import audio from '../../../audio/audioPlayer';
-import { AudioLoopModeEnum } from '../../../audio/enum/audioLoopModeEnum';
-import {AudioPlayStateEnum} from "../../../audio/enum/audioPlayStateEnum";
+import audio from '../../../audio/AudioPlayer';
+import { AudioLoopModeEnum } from '../../../audio/enum/AudioLoopModeEnum';
+import {AudioPlayStateEnum} from "../../../audio/enum/AaudioPlayStateEnum";
 import { ContextMenu } from '../../../base';
 
 export default {

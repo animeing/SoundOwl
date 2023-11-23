@@ -7,9 +7,9 @@
     </div>
 </template>
 <script>
-import audio from '../../audio/audioPlayer';
-import { AudioPlayStateEnum } from '../../audio/enum/audioPlayStateEnum';
-import { AudioClip } from '../../audio/type/audioClip';
+import audio from '../../audio/AudioPlayer';
+import { AudioPlayStateEnum } from '../../audio/enum/AaudioPlayStateEnum';
+import { AudioClip } from '../../audio/type/AudioClip';
 import { BaseFrameWork, ContextMenu } from '../../base';
 import searchBox, { SoundOwlProperty } from '../../layout';
 import { SoundSearchAction, UpdateSoundInfomationAction } from '../../page';

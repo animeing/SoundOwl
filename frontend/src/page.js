@@ -1,9 +1,9 @@
 'use strict';
 import { BASE } from "./utilization/path";
 import { BaseFrameWork } from "./base";
-import { AudioClip } from "./audio/type/audioClip";
-import audio from "./audio/audioPlayer";
-import { AudioPlayStateEnum } from "./audio/enum/audioPlayStateEnum";
+import { AudioClip } from "./audio/type/AudioClip";
+import audio from "./audio/AudioPlayer";
+import { AudioPlayStateEnum } from "./audio/enum/AaudioPlayStateEnum";
 import { audioParamSave } from "./utilization/register";
 import router from "./router";
 import { ContextMenu } from "./base";

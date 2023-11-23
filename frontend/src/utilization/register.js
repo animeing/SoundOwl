@@ -1,4 +1,4 @@
-import audio from "../audio/audioPlayer";
+import audio from "../audio/AudioPlayer";
 import { BaseFrameWork } from "../base";
 
 export const audioParamSave=()=>{

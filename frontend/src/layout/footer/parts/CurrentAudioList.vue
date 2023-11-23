@@ -15,9 +15,9 @@
 </template>
 <script>
 import {BaseFrameWork, ContextMenu} from "../../../base";
-import {AudioPlayStateEnum} from "../../../audio/enum/audioPlayStateEnum";
-import audio from '../../../audio/audioPlayer';
-import { AudioClip } from '../../../audio/type/audioClip';
+import {AudioPlayStateEnum} from "../../../audio/enum/AaudioPlayStateEnum";
+import audio from '../../../audio/AudioPlayer';
+import { AudioClip } from '../../../audio/type/AudioClip';
 import SoundClipComponentVue from '../../common/SoundClipComponent.vue';
 import { BASE } from '../../../utilization/path';
 

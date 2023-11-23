@@ -7,8 +7,8 @@
     </div>
 </template>
 <script>
-import audio from '../../audio/audioPlayer'
-import { AudioPlayStateEnum } from '../../audio/enum/audioPlayStateEnum'
+import audio from '../../audio/AudioPlayer'
+import { AudioPlayStateEnum } from '../../audio/enum/AaudioPlayStateEnum'
 import { BaseFrameWork, ContextMenu } from '../../base'
 import { SoundOwlProperty } from '../../layout'
 import { ArtistSoundListAction } from '../../page'

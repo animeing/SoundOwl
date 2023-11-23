@@ -7,9 +7,9 @@
 </template>
 <script>
 import { BaseFrameWork, ContextMenu } from '../../base';
-import audio from '../../audio/audioPlayer';
-import { AudioPlayStateEnum } from '../../audio/enum/audioPlayStateEnum';
-import { AudioClip } from '../../audio/type/audioClip';
+import audio from '../../audio/AudioPlayer';
+import { AudioPlayStateEnum } from '../../audio/enum/AaudioPlayStateEnum';
+import { AudioClip } from '../../audio/type/AudioClip';
 import { AlbumCountAction, PlayCountAction, SoundAddTimeListAction } from '../../page';
 import router from '../../router';
 import SlideComponet from "./parts/SlideComponet.vue";

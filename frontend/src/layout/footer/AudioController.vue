@@ -19,11 +19,11 @@
 import CurrentAudioList from "./parts/CurrentAudioList.vue";
 import AudioCanvas from "./parts/AudioCanvas.vue";
 import AudioIconControl from './parts/AudioIconControl.vue';
-import { AudioClip } from '../../audio/type/audioClip';
-import audio from '../../audio/audioPlayer';
+import { AudioClip } from '../../audio/type/AudioClip';
+import audio from '../../audio/AudioPlayer';
 import { ContextMenu, timeToText } from '../../base';
 import router from '../../router';
-import { AudioPlayStateEnum } from '../../audio/enum/audioPlayStateEnum';
+import { AudioPlayStateEnum } from '../../audio/enum/AaudioPlayStateEnum';
 import { audioParamLoad } from '../../utilization/register';
 
 

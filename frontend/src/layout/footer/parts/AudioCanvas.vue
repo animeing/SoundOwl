@@ -11,7 +11,7 @@
             v-else>{{lyrics}}</div>
 </template>
 <script>
-import audio from '../../../audio/audioPlayer';
+import audio from '../../../audio/AudioPlayer';
 import { BaseFrameWork, ContextMenu } from '../../../base';
 
 export default {

@@ -13,7 +13,7 @@
     </div>
 </template>
 <script>
-import { AudioClip } from '../../audio/type/audioClip'
+import { AudioClip } from '../../audio/type/AudioClip'
 import {BASE} from "../../utilization/path"
 
 
