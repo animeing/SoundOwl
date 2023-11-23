@@ -1162,7 +1162,9 @@ BaseFrameWork.Network.HttpResponseType=class {
     }
 };
 
-
+/**
+ * @deprecated
+ */
 BaseFrameWork.Network.RequestServerBase=class {
     _callBack = (e) =>{};
     /**
