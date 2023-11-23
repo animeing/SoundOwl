@@ -32,7 +32,7 @@ export default {
     return {
       albumClips: [],
       currentPlaySoundClip:audio.currentAudioClip,
-      start: this.albumClips.length,
+      start:0,
       isMoreLoad:true,
       isLoading:false
     };
@@ -51,6 +51,7 @@ export default {
       }
       return JSON.parse(albumClipsCache);
     })();
+    this.start = this.albumClips.length;
     window.addEventListener('bottom', this.bottomEvent);
     if(this.albumClips.length == 0){
       this.requestData();

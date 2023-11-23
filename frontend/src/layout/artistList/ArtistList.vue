@@ -34,10 +34,10 @@ export default {
   data() {
     return {
       currentPlaySoundClip:audio.currentAudioClip,
-      start: this.artistClips.length,
+      artistClips:[],
+      start: 0,
       isMoreLoad: true,
-      isLoading:false,
-      artistClips:[]
+      isLoading:false
     };
   },
   cpmputed: {
@@ -47,9 +47,6 @@ export default {
   },
   mounted() {
     window.addEventListener('bottom', this.bottomEvent);
-    if(this.artistClips.length == 0) {
-      this.requestData();
-    }
     this.artistClips = (()=>{
       let cache = new BaseFrameWork.Storage.Application.SessionStorageMap;
       let artistClipsCache = cache.get('artistList');
@@ -58,6 +55,10 @@ export default {
       }
       return JSON.parse(artistClipsCache);
     })();
+    this.start = this.artistClips.length;
+    if(this.artistClips.length == 0) {
+      this.requestData();
+    }
   },
   methods:{
     async requestData(){
