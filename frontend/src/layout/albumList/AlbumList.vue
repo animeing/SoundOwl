@@ -15,7 +15,6 @@ import AlbumClipComponent from './parts/AlbumClipComponent.vue';
 import LoadingListComponent from '../common/LoadingListComponent.vue';
 import { BaseFrameWork, ContextMenu } from '../../base';
 import { AlbumListAction } from '../../page';
-import router from '../../router';
 import audio from '../../audio/AudioPlayer';
 
 export default {
@@ -102,7 +101,7 @@ export default {
       if(ContextMenu.isVisible){
         return;
       }
-      router.push({name:'album', query: {AlbumHash: albumClip.album_key}});
+      this.$router.push({name:'album', query: {AlbumHash: albumClip.album_key}});
     },
     bottomEvent() {
       this.requestData();

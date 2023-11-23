@@ -14,7 +14,6 @@
 import audio from '../../audio/AudioPlayer';
 import { BaseFrameWork, ContextMenu } from '../../base';
 import { ArtistListAction } from '../../page';
-import router from '../../router';
 import LoadingListComponent from '../common/LoadingListComponent.vue';
 import ArtistClipComponent from './parts/ArtistClipComponent.vue';
 
@@ -105,7 +104,7 @@ export default {
       if(ContextMenu.isVisible){ 
         return;
       }
-      router.push({name:'artist', query: {ArtistHash: artistClip.artist_id}});
+      this.$router.push({name:'artist', query: {ArtistHash: artistClip.artist_id}});
     },
     bottomEvent() {
       this.requestData();

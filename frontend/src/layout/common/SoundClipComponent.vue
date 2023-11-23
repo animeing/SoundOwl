@@ -27,7 +27,6 @@
 <script>
 import { AudioClip } from '../../audio/type/AudioClip';
 import { ContextMenu } from '../../base';
-import router from '../../router';
 import {BASE} from '../../utilization/path';
 
 
@@ -59,7 +58,7 @@ export default {
       if(ContextMenu.isVisible){
         return;
       }
-      router.push({name:'album', query: {AlbumHash: this.soundClip.albumKey}});
+      this.$router.push({name:'album', query: {AlbumHash: this.soundClip.albumKey}});
     }
   }
 };

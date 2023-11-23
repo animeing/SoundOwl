@@ -22,7 +22,6 @@ import audio from '../../audio/AudioPlayer';
 import { AudioPlayStateEnum } from '../../audio/enum/AudioPlayStateEnum';
 import { AudioClip } from '../../audio/type/AudioClip';
 import { AlbumCountAction, PlayCountAction, SoundAddTimeListAction } from '../../page';
-import router from '../../router';
 import SlideComponet from './parts/SlideComponet.vue';
 
 export default {
@@ -168,8 +167,7 @@ export default {
       if(ContextMenu.isVisible){
         return;
       }
-      router.push({name:'album', query: {AlbumHash: albumClip.albumKey}});
-
+      this.$router.push({name:'album', query: {AlbumHash: albumClip.albumKey}});
     }
   },
 };

@@ -16,10 +16,11 @@ import audio from '../../audio/AudioPlayer';
 import { AudioPlayStateEnum } from '../../audio/enum/AudioPlayStateEnum';
 import { AudioClip } from '../../audio/type/AudioClip';
 import { BaseFrameWork, ContextMenu, MessageWindow } from '../../base';
-import searchBox, { SoundOwlProperty } from '../../layout';
+import { SoundOwlProperty } from '../../layout';
 import { SoundSearchAction, UpdateSoundInfomationAction } from '../../page';
 import LoadingListComponent from '../common/LoadingListComponent.vue';
 import SoundClipComponent from '../common/SoundClipComponent.vue';
+import searchBox from '../../main';
 
 export default {
   name: 'SearchVue',

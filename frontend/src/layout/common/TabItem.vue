@@ -6,7 +6,6 @@
     </li>
 </template>
 <script>
-import router from '../../router';
 export default {
   name:'TabItem',
   props:{
@@ -41,7 +40,7 @@ export default {
   methods:{
     action() {
       if(!this.isActive)
-        router.push({name:this.link});
+        this.$router.push({name:this.link});
       this.isActive = this.$route.name == this.link;
     }
   }

@@ -44,7 +44,6 @@ import AudioIconControl from './parts/AudioIconControl.vue';
 import { AudioClip } from '../../audio/type/AudioClip';
 import audio from '../../audio/AudioPlayer';
 import { ContextMenu, timeToText } from '../../base';
-import router from '../../router';
 import { AudioPlayStateEnum } from '../../audio/enum/AudioPlayStateEnum';
 import { audioParamLoad, audioParamSave } from '../../utilization/register';
 
@@ -91,7 +90,7 @@ export default {
       if(ContextMenu.isVisible || this.currentPlaySoundClip.albumKey == ''){
         return;
       }
-      router.push({name:'album', query: {AlbumHash: this.currentPlaySoundClip.albumKey}});
+      this.$router.push({name:'album', query: {AlbumHash: this.currentPlaySoundClip.albumKey}});
     },
     toggleView() {
       this.$el.parentNode.classList.toggle('analyser');

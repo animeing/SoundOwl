@@ -12,7 +12,6 @@
 </template>
 <script>
 import { BaseFrameWork, ContextMenu, MessageWindow } from '../../base';
-import router from '../../router';
 import { BASE } from '../../utilization/path';
 import PlaylistClipComponent from './parts/PlaylistClipComponent.vue';
 
@@ -59,7 +58,7 @@ export default {
 
     },
     onclick(playlistData) {
-      router.push({name:'playlist_sounds', query: {list: playlistData.play_list}});
+      this.$router.push({name:'playlist_sounds', query: {list: playlistData.play_list}});
     },
     getPlaylists() {
 
