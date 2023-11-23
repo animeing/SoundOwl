@@ -1,5 +1,7 @@
 {
     "name": "animeing/sound-owl_local",
+    "description":"このプロジェクトは音楽ファイルをIntranet内でブラウザを用いて聴くためのアプリケーションです。",
+    "license":"MIT",
     "authors": [
         {
             "name": "animeing",
