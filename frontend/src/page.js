@@ -1,14 +1,6 @@
 'use strict';
-import audio from './audio/AudioPlayer';
-import { AudioPlayStateEnum } from './audio/enum/AudioPlayStateEnum';
-import { AudioClip } from './audio/type/AudioClip';
-import { BaseFrameWork, ContextMenu, MessageButtonWindow, MessageWindow, toBoolean } from './base';
-import { SoundOwlProperty } from './layout';
-import LoadingListComponent from './layout/common/LoadingListComponent.vue';
-import SoundClipComponent from './layout/common/SoundClipComponent.vue';
-import router from './router';
+import { BaseFrameWork } from './base';
 import { BASE } from './utilization/path';
-import { audioParamSave } from './utilization/register';
 
 
 /**
