@@ -4,7 +4,6 @@ import AlbumSoundList from './layout/albumSoundList/AlbumSoundList.vue';
 import ArtistSoundList from './layout/artistSoundList/ArtistSoundList.vue';
 import NotFound from './layout/error/NotFound.vue';
 import Home from './layout/home/Home.vue';
-import Search from './layout/search/Search.vue';
 import ArtistList from './layout/artistList/ArtistList.vue';
 import PlayListNames from './layout/playlistList/PlayListNames.vue';
 import PlaylistSoundList from './layout/playlistSoundList/PlaylistSoundList.vue';
@@ -58,7 +57,7 @@ const router = createRouter({
     {
       path: '/search',
       name:'search',
-      component: Search,
+      component: import('./layout/search/Search.vue'),
       meta:{
         title:'Search'
       }
