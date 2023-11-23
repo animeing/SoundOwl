@@ -6,16 +6,6 @@ import { BASE } from './utilization/path';
 /**
  * @deprecated
  */
-export class PlayCountAction extends BaseFrameWork.Network.RequestServerBase {
-  constructor() {
-    super(null, BASE.API+'play_count_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
-
-  }
-}
-
-/**
- * @deprecated
- */
 export class AlbumCountAction extends BaseFrameWork.Network.RequestServerBase {
   constructor() {
     super(null, BASE.API+'album_count_list.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);

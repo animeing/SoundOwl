@@ -21,8 +21,9 @@ import { BaseFrameWork, ContextMenu } from '../../base';
 import audio from '../../audio/AudioPlayer';
 import { AudioPlayStateEnum } from '../../audio/enum/AudioPlayStateEnum';
 import { AudioClip } from '../../audio/type/AudioClip';
-import { AlbumCountAction, PlayCountAction, SoundAddTimeListAction } from '../../page';
+import { AlbumCountAction, SoundAddTimeListAction } from '../../page';
 import SlideComponet from './parts/SlideComponet.vue';
+import { PlayCountAction } from '../../api/PlayCountAction';
 
 export default {
   name:'HomeVue',
@@ -65,10 +66,9 @@ export default {
       if(!this.isLoad) {
         let playCountAction = new PlayCountAction();
         this.isLoad = true;
-                
         let listNo = 0;
-        playCountAction.httpRequestor.addEventListener('success', event=>{
-          for (const response of event.detail.response) {
+        playCountAction.execute().then(data=>{
+          for (const response of data.data) {
             let audioClip = new AudioClip();
             audioClip.soundHash = response['sound_hash'];
             audioClip.title = response['title'];
@@ -80,7 +80,6 @@ export default {
             this.soundClips.push(audioClip);
           }
         });
-        playCountAction.execute();
         return this.soundClips;
       } else {
         return this.soundClips;
