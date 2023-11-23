@@ -1,16 +1,18 @@
 <template>
-  <div class="not-found">
-    <h1>404</h1>
-    <h2>Oops! Page not found.</h2>
-    <p>The page you are looking for does not exist or has moved.</p>
-    <router-link to="/">Go back home</router-link>
-  </div>
+    <div class="not-found">
+        <h1>404</h1>
+        <h2>Oops! Page not found.</h2>
+        <p>The page you are looking for does not exist or has moved.</p>
+        <router-link to="/">
+            Go back home
+        </router-link>
+    </div>
 </template>
 
 <script>
 export default {
   name: 'NotFound'
-}
+};
 </script>
 
 <style scoped>

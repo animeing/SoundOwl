@@ -1,14 +1,13 @@
 <template>
     <div class="audio-list">
         <button
-            v-for="(item, index) in requestData()"
+            v-for="(item,index) in soundClips"
             :key="index"
             :class="audioItemClass(item)"
             @click.right.prevent="soundContext(item)"
             @click="click(item)">
             <SoundClipComponent :sound-clip="item" />
         </button>
-        <LoadingListComponent v-show="isLoading" />
     </div>
 </template>
 <script>
@@ -16,74 +15,52 @@ import audio from '../../audio/AudioPlayer';
 import { AudioPlayStateEnum } from '../../audio/enum/AudioPlayStateEnum';
 import { AudioClip } from '../../audio/type/AudioClip';
 import { BaseFrameWork, ContextMenu, MessageWindow } from '../../base';
-import searchBox, { SoundOwlProperty } from '../../layout';
-import { SoundSearchAction, UpdateSoundInfomationAction } from '../../page';
-import LoadingListComponent from '../common/LoadingListComponent.vue';
+import { SoundOwlProperty } from '../../layout';
+import { UpdateSoundInfomationAction } from '../../page';
+import { BASE } from '../../utilization/path';
 import SoundClipComponent from '../common/SoundClipComponent.vue';
 
 export default {
-  name: 'SearchVue',
-  components: {
-    SoundClipComponent,
-    LoadingListComponent
+  name:'PlaylistSoundList',
+  components:{
+    SoundClipComponent
   },
+  
   data() {
-    return {
-      soundClips: [],
-      currentPlaySoundClip: audio.currentAudioClip,
-      isLoading: false,
-      isLoad: false
+    return {soundClips:[], currentPlaySoundClip:audio.currentAudioClip};
+  },
+  mounted(){
+    let action = new class extends BaseFrameWork.Network.RequestServerBase {
+      constructor() {
+        super(null, BASE.API+'playlist_action.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+      }
     };
-  },
-  watch: {
-    $route(to, from) {
-      if (to.query.SearchWord != from.query.SearchWord){
-        this.soundClips.splice(0);
-        this.isLoad=false;
+    action.formDataMap.append('method', 'sounds');
+    action.formDataMap.append('name', this.$route.query.list);
+    action.httpRequestor.addEventListener('success', event=>{
+      this.soundClips.splice(0);
+      let listNo = 0;
+      for (const response of event.detail.response) {
+        let audioClip = new AudioClip();
+        audioClip.soundHash = response['sound_hash'];
+        audioClip.title = response['title'];
+        audioClip.artist = response['artist_name'];
+        audioClip.album = response['album_title'];
+        audioClip.albumKey = response['album_hash'];
+        audioClip.no = listNo;
+        listNo++;
+        this.soundClips.push(audioClip);
       }
-    }
-  },
-  created(){
-    audio.eventSupport.addEventListener('audioSet', ()=>{
-      this.currentPlaySoundClip = audio.currentAudioClip;
     });
+    action.execute();
   },
-  methods: {
-    requestData(){
-      if (!this.isLoad) {
-        this.isLoading = true;
-        this.isLoad = true;
-        let soundSearch = new SoundSearchAction();
-
-        searchBox.value = this.$route.query.SearchWord;
-        soundSearch.formDataMap.append('SearchWord', searchBox.value);
-        let listNo = 0;
-        soundSearch.httpRequestor.addEventListener('success', event=>{
-          for (const response of event.detail.response) {
-            let audioClip = new AudioClip();
-            audioClip.soundHash = response['sound_hash'];
-            audioClip.title = response['title'];
-            audioClip.artist = response['artist_name'];
-            audioClip.album = response['album']['album_title'];
-            audioClip.albumKey = response['album']['album_hash'];
-            audioClip.no = listNo;
-            listNo++;
-            this.soundClips.push(audioClip);
-          }
-          this.isLoading = false;
-        });
-        soundSearch.execute();
-        return this.soundClips;
-      } else {
-        return this.soundClips;
-      }
-    },
-    soundContext: (soundClip)=>{
+  methods:{
+    soundContext:(soundClip)=>{
       ContextMenu.contextMenu.destoryChildren();
       {
         let addNextSound = BaseFrameWork.createCustomElement('sw-libutton');
         addNextSound.menuItem.onclick=()=>{
-          if (audio.currentAudioClip == undefined) {
+          if(audio.currentAudioClip == undefined) {
             audio.playList.add(soundClip, 0);
             return;
           }
@@ -99,7 +76,7 @@ export default {
           {
             let wsSendMessage = new SoundOwlProperty.WebSocket.MessageType('sound_update');
             wsSendMessage.message = {
-              'soundHash': soundClip.soundHash
+              'soundHash':soundClip.soundHash
             };
             SoundOwlProperty.WebSocket.Socket.send(wsSendMessage.toJson());
           }
@@ -115,7 +92,7 @@ export default {
           {
             let wsSendMessage = new SoundOwlProperty.WebSocket.MessageType('sound_update');
             wsSendMessage.message = {
-              'lock': soundClip.soundHash
+              'lock':soundClip.soundHash
             };
             SoundOwlProperty.WebSocket.Socket.send(wsSendMessage.toJson());
           }
@@ -126,21 +103,22 @@ export default {
             
     },
     click(soundClip){
-      if (ContextMenu.isVisible){
+      if(ContextMenu.isVisible){
         return;
       }
       audio.playList.removeAll();
-      audio.playList.addAll(this.soundClips);
-            
-      if (audio.currentAudioClip == null){
+      for(const audioclip of this.soundClips) {
+        audio.playList.add(audioclip);
+      }
+      if(audio.currentAudioClip == null){
         audio.play(soundClip);
         return;
       }
-      if (soundClip.equals(audio.currentAudioClip)){
-        if (audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP){
+      if(soundClip.equals(audio.currentAudioClip)){
+        if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
           audio.play();
         } else {
-          if (audio.currentPlayState === AudioPlayStateEnum.PLAY || audio.currentPlayState !== AudioPlayStateEnum.STOP){
+          if(audio.currentPlayState === AudioPlayStateEnum.PLAY || audio.currentPlayState !== AudioPlayStateEnum.STOP ){
             audio.pause();
           }
         }
@@ -150,7 +128,7 @@ export default {
       }
     },
     audioItemClass(soundClip) {
-      if (this.currentPlaySoundClip == null){
+      if(this.currentPlaySoundClip == null){
         return 'audio-item';
       }
       return 'audio-item'+(this.currentPlaySoundClip.equals(soundClip)?' audio-list-nowplaying':'');
@@ -158,4 +136,3 @@ export default {
   }
 };
 </script>
-

@@ -1,9 +1,17 @@
 <template>
     <sw-audio-slide-list>
         <div>
-            <button v-for="item in data" @click.right.prevent="contextmenu(item)" @click="click(item)" :key="item.id">
-                <img loading="lazy" :src="createImageSrc(item.albumKey)">
-                <p :data-hint="item.title">{{ item.title }}</p>
+            <button
+                v-for="item in data"
+                :key="item.id"
+                @click.right.prevent="contextmenu(item)"
+                @click="click(item)">
+                <img
+                    loading="lazy"
+                    :src="createImageSrc(item.albumKey)">
+                <p :data-hint="item.title">
+                    {{ item.title }}
+                </p>
             </button>
         </div>
     </sw-audio-slide-list>
@@ -11,50 +19,58 @@
 
 <script>
 import { ContextMenu } from '../../../base';
-import "../../../layout";
+import '../../../layout';
 import { BASE } from '../../../utilization/path';
 
 export default {
-    data() {
-        return {
-            data: []
-        };
+  props: {
+    dataRequest: {
+      type: Function,
+      require: true,
+      default(){
+        return ()=>{};
+      }
     },
-    props: {
-        dataRequest: {
-            type: Function
-        },
-        onClick: {
-            type: Function
-        },
-        contextMenu: {
-            type: Function
-        }
+    onClick: {
+      type: Function,
+      require: true,
+      default(){
+        return ()=>{};
+      }
     },
-    methods: {
-        createImageSrc(albumKey) {
-            return `${BASE.HOME}img/album_art.php?media_hash=` + albumKey;
-        },
-        click(soundClip) {
-            if (this.onClick) {
-                this.onClick(soundClip);
-            }
-            return;
-        },
-        contextmenu(item) {
-            ContextMenu.contextMenu.destoryChildren();
-            if(!this.contextMenu) {
-                return;
-            }
-            this.contextMenu(item);
-        }
-    },
-    created() {
-        this.data = this.dataRequest();
+    contextMenu: {
+      type: Function,
+      require: true,
+      default(){
+        return ()=>{};
+      }
     }
+  },
+  data() {
+    return {
+      data: []
+    };
+  },
+  created() {
+    this.data = this.dataRequest();
+  },
+  methods: {
+    createImageSrc(albumKey) {
+      return `${BASE.HOME}img/album_art.php?media_hash=` + albumKey;
+    },
+    click(soundClip) {
+      if (this.onClick) {
+        this.onClick(soundClip);
+      }
+      return;
+    },
+    contextmenu(item) {
+      ContextMenu.contextMenu.destoryChildren();
+      if(!this.contextMenu) {
+        return;
+      }
+      this.contextMenu(item);
+    }
+  }
 };
 </script>
-
-<style>
-/* ここにCSSスタイルを追加 */
-</style>

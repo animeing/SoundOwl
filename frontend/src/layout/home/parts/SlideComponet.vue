@@ -1,7 +1,10 @@
 <template>
     <div class="box">
         <p>{{ slideTitle }}</p>
-        <SlideList :on-click="itemClick" :context-menu="contextmenu" :data-request="dataRequest"></SlideList>
+        <SlideList
+            :on-click="itemClick"
+            :context-menu="contextmenu"
+            :data-request="dataRequest" />
     </div>
 </template>
 
@@ -9,35 +12,47 @@
 import SlideList from './SlideList.vue';
 
 export default {
-    name: 'SlideComponent',
-    props: {
-        slideTitle: {
-            type: String
-        },
-        dataRequest: {
-            type: Function
-        },
-        itemClick: {
-            type: Function
-        },
-        contextMenu: {
-            type: Function
-        }
+  name: 'SlideComponent',
+  components: {
+    SlideList
+  },
+  props: {
+    slideTitle: {
+      type: String,
+      require: true,
+      default(){
+        return '';
+      }
     },
-    methods: {
-        contextmenu(item) {
-            if (!this.contextMenu) {
-                return;
-            }
-            this.contextMenu(item);
-        }
+    dataRequest: {
+      type: Function,
+      require: true,
+      default(){
+        return ()=>{return {};};
+      }
     },
-    components: {
-        SlideList
+    itemClick: {
+      type: Function,
+      require: true,
+      default(){
+        return ()=>{return {};};
+      }
+    },
+    contextMenu: {
+      type: Function,
+      require: true,
+      default(){
+        return ()=>{return {};};
+      }
     }
+  },
+  methods: {
+    contextmenu(item) {
+      if (!this.contextMenu) {
+        return;
+      }
+      this.contextMenu(item);
+    }
+  }
 };
 </script>
-
-<style>
-/* ここにCSSスタイルを追加 */
-</style>
