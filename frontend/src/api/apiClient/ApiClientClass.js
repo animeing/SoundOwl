@@ -33,6 +33,9 @@ export class ApiClientClass {
       method: this.method,
       url: this._buildUrl(data),
       data: (this.method.toLowerCase() != 'get' ? data : null)
-    }).catch(error => console.error('An error occurred:', error));
+    }).catch(error => {
+      console.error('An error occurred:', error);
+      throw error;
+    });
   }
 }
