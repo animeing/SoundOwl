@@ -1,0 +1,26 @@
+name: MariaDB Table Setup Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:latest
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testdb
+        ports:
+          - 3306:3306
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install MariaDB client
+        run: sudo apt-get install mariadb-client
+
+      - name: Run SQL script
+        run: |
+          mysql -h 127.0.0.1 -u root -ppassword testdb < /parts/setup/soundowl_table_mysql.sql
