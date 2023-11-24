@@ -57,7 +57,7 @@ const router = createRouter({
     {
       path: '/search',
       name:'search',
-      component: import('./layout/search/Search.vue'),
+      component: ()=>import('./layout/search/Search.vue'),
       meta:{
         title:'Search'
       }
