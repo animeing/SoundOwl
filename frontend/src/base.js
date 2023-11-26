@@ -527,6 +527,39 @@ export class DragMoveEvent extends Event{
   });
 })(Array.prototype);
 
+BaseFrameWork.LimitedList = class extends EventTarget{
+  constructor(limit) {
+    super();
+    this.limit = limit;
+    this.array = [];
+  }
+  add(element) {
+    this.array.push(element);
+    this.dispatchEvent(new CustomEvent('add'));
+    if (this.array.length > this.limit) {
+      let vl = this.array.shift();
+      this.dispatchEvent(new CustomEvent('delete', {
+        detail:{
+          value:vl
+        }}));
+    }
+  }
+
+  *[Symbol.iterator]() {
+    for (const value of this.array) {
+      yield value;
+    }
+  }
+
+  get(index) {
+    return this.array[index];
+  }
+
+  size() {
+    return this.array.length;
+  }
+};
+
 /**
  * @template T
  */
