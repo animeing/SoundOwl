@@ -7,9 +7,10 @@ import { BaseFrameWork } from '../base';
 let cacheList = new BaseFrameWork.LimitedList(7);
 
 class CacheStruct{
-  constructor(url, convert) {
+  constructor(url, convert, objectUrl) {
     this.url = url;
     this.convert = convert;
+    this.objectUrl = objectUrl;
   }
 }
 
@@ -24,6 +25,7 @@ export async function ffmpegInitalize() {
 
   cacheList.addEventListener('delete',data=>{
     ffmpeg.deleteFile(data.detail.value);
+    URL.revokeObjectURL(data.detail.objectUrl);
   });
 }
 
@@ -49,8 +51,7 @@ function findConvertedCacheData(url) {
 export async function conversionToWav(url) {
   let cache = findConvertedCacheData(url);
   if(cache !== false) {
-    const data = await ffmpeg.readFile(cache.convert);
-    return URL.createObjectURL(new Blob([data.buffer], {type:'audio/wav'}));
+    return cache.objectUrl;
   }
   let urlFile = await fetchFile(url);
   await BaseFrameWork.waitForValue(()=>isLoaded, true, 50000);
@@ -59,7 +60,8 @@ export async function conversionToWav(url) {
   let convertFileName = filename+'.wav';
   await ffmpeg.exec(['-i', filename, convertFileName]);
   const data = await ffmpeg.readFile(convertFileName);
-  cacheList.add(new CacheStruct(url, convertFileName));
   ffmpeg.deleteFile(filename);
-  return URL.createObjectURL(new Blob([data.buffer], { type: 'audio/wav' }));
+  let objectUrl = URL.createObjectURL(new Blob([data.buffer], { type: 'audio/wav' }));
+  cacheList.add(new CacheStruct(url, convertFileName, objectUrl));
+  return objectUrl;
 }
