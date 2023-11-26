@@ -3,13 +3,15 @@ order allow,deny
 deny from all
 </Files>
 
+AddType application/wasm .wasm
+
 <ifModule mod_expires.c>
 
  BrowserMatch ^Mozilla/4\.0[678] no-gzip
  BrowserMatch ^Mozilla/4 gzip-only-text/html
  BrowserMatch \bMSI[E] !no-gzip !gzip-only-text/html
  
- SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|ico|zip)$ no-gzip dont-vary
+ SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|ico|zip|wasm)$ no-gzip dont-vary
  SetEnvIfNoCase Request_URI _\.utxt$ no-gzip
 </IfModule>
 
@@ -27,8 +29,8 @@ deny from all
  <FilesMatch "\.(ico|jpe?g|png|gif|svg|swf|pdf|ttf|woff|otf|eot)$">
    Header set Cache-Control "max-age=604800, public"
  </FilesMatch>
-
 </ifModule>
+
 
 <IfModule mod_php5.c>
 php_flag session.cookie_httponly on
@@ -45,7 +47,7 @@ php_flag session.use_only_cookies On
  RewriteEngine on
  
 
- RewriteCond %{REQUEST_FILENAME} !^(.*)\.(gif|png|jpg|jpeg|js|css|xml|mp4|avi|bmp|mp3|wav|ogg|wma|wav|m4a|ico|clomex|json|clomex)$ [NC]
+ RewriteCond %{REQUEST_FILENAME} !^(.*)\.(gif|png|jpg|jpeg|js|css|xml|mp4|avi|bmp|mp3|wav|ogg|wma|wav|m4a|ico|clomex|json|wasm)$ [NC]
  RewriteCond %{REQUEST_URI} !^/user/*.*$
  RewriteCond %{REQUEST_URI} !^/serch/*.*$
  RewriteCond %{REQUEST_URI} !/parts/

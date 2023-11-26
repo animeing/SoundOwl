@@ -1,4 +1,4 @@
-import { BaseFrameWork, MessageButtonWindow, MessageWindow, setTitle } from '../base';
+import { BaseFrameWork, MessageWindow, setTitle } from '../base';
 import { SoundInfomation, SoundPlayedAction } from '../page';
 import { StereoAudioEqualizer } from './effect/equalizer/StereoAudioEqualizer';
 import { LoudnessNormalize } from './effect/normalize/LoudnessNormalize';
@@ -6,7 +6,7 @@ import { StereoExAudioEffect } from './effect/soundSculpt/StereoExAudioEffect';
 import { AudioLoopModeEnum } from './enum/AudioLoopModeEnum';
 import { AudioPlayStateEnum } from './enum/AudioPlayStateEnum';
 import { AudioStateEnum } from './enum/AudioStateEnum';
-
+import { conversionToWav, ffmpegInitalize } from './conversionToWav';
 
 class AudioPlayer{
   _currentAudioClip = null;
@@ -26,29 +26,17 @@ class AudioPlayer{
     this.audioUpdatedEvent = new CustomEvent('updated');
     this.data = {};
     this.loadGiveUpTime = 10000;
-    this.audio.onerror = ()=> {
+
+    ffmpegInitalize();
+    this.audio.onerror = async ()=> {
       console.log('Error ' + this.audio.error.code + '; details: ' + this.audio.error.message);
-            
-      if(this.loopMode != AudioLoopModeEnum.AUDIO_LOOP && this.playList.count() >= 1) {
-        let errorWindow = new MessageWindow;
-        errorWindow.value='Sound load failed.\nAudioFile decode failed.';
-        errorWindow.open();
-        errorWindow.close(2000);
-        let audioClip = this.autoNextClip;
-        if(audioClip == undefined){
-          this.pause();
-          this.eventSupport.dispatchEvent(this.audioUpdatedEvent);
-          return;
+      
+      if(this.audio.error.code == 4 && this.audio.src.includes('sound_create')) {
+        //MEDIA_ERR_SRC_NOT_SUPPORTED && defaultlink
+        this.audio.src = await conversionToWav(this.audio.src);
+        if(this.currentPlayState == AudioPlayStateEnum.PLAY) {
+          this.audio.play();
         }
-        this.eventSupport.dispatchEvent(this.audioUpdatedEvent);
-        this.play(audioClip);
-      } else {
-        let errorWindow = new MessageButtonWindow;
-        errorWindow.value='Sound load failed.\nAudioFile decode failed.';
-        errorWindow.addItem('OK', ()=>{
-          errorWindow.close();
-        });
-        errorWindow.open();
       }
     };
     this.eventSupport.addEventListener('audioSet', ()=>{
