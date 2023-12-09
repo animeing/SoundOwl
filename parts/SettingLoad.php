@@ -12,21 +12,30 @@ define("SETTING_INI", PARTS_DIRECTORY.'setting.ini');
 
 $setting = parse_ini_file(SETTING_INI);
 
-define("DB_IP_ADDRESS", array_key_exists('db_ip_address',$setting)?$setting['db_ip_address']:'');
+function getParam($name, $defaultValue = null) {
+  global $setting;
+  if (array_key_exists($name, $setting)) {
+    return $setting[$name];
+  } else {
+    return $defaultValue;
+  }
+}
 
-define('DB_NAME', array_key_exists('db_name',$setting)?$setting['db_name']:'');
+define("DB_IP_ADDRESS", getenv('DB_SERVER')?: getParam("db_ip_address","localhost"));
+
+define('DB_NAME', getParam('db_name', 'sound'));
 
 define("DB_DSN", 'mysql:host='.DB_IP_ADDRESS.';dbname='.DB_NAME);
 
-define("DB_USER", array_key_exists('db_user',$setting)?$setting['db_user']:'');
+define("DB_USER", getParam("db_user","sound"));
 
-define("DB_PASSWORD", array_key_exists('db_pass',$setting)?$setting['db_pass']:'');
+define("DB_PASSWORD", getParam("db_pass","sound"));
 
-define("SOUND_DIRECTORY", array_key_exists('sound_directory',$setting)?$setting['sound_directory']:'');
+define("SOUND_DIRECTORY", getParam("sound_directory","/"));
 
-define("WEBSOCKET_RETRY_COUNT_LIMIT", array_key_exists('websocket_retry_count', $setting)?$setting['websocket_retry_count'] : 0);
+define("WEBSOCKET_RETRY_COUNT_LIMIT", getParam("websocket_retry_count",0));
 
-define("WEBSOCKET_RETRY_INTERVAL", array_key_exists('websocket_retry_interval', $setting)? $setting['websocket_retry_interval'] : 10000);
+define("WEBSOCKET_RETRY_INTERVAL", getParam("websocket_retry_interval",10000));
 
 $setting = null;
 
