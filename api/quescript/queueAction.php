@@ -3,7 +3,9 @@
 require_once(__DIR__. '/../../vendor/autoload.php');
 require_once(__DIR__.'/../../parts/loader.php');
 
-$predis = new Predis\Client();
+$predis = new Predis\Client([
+    'host'=>REDIS_SERVER
+]);
 
 define('AUDIO_REGIST_LOCK_PATH', __DIR__.'/../lock/sound_volume_calc.lock');
 function calcVolume($filePath) {

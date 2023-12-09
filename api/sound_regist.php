@@ -12,7 +12,9 @@ if(!file_exists(LOCK_PATH)) {
     try{
         FileUtil::touchWithDir(LOCK_PATH);
 
-        $predis = new Predis\Client();
+        $predis = new Predis\Client([
+            'host'=>REDIS_SERVER
+        ]);
         function hasRegistedSound($file) {
             global $soundDao;
             foreach($soundDao->findSoundLink($file) as $find) {
