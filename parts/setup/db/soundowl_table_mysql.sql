@@ -107,7 +107,7 @@ CREATE TABLE `sound_link` (
   `track_no` text DEFAULT NULL,
   `play_count` int(11) NOT NULL DEFAULT 0,
   `data_link` varchar(4351) NOT NULL,
-  `loudness_target` decimal(5,2) NOT NULL,
+  `loudness_target` decimal(5,2) NOT NULL DEFAULT 0,
   UNIQUE KEY `sound_hash` (`sound_hash`),
   KEY `play_count` (`play_count`),
   KEY `album_title` (`album_title`(768)),
