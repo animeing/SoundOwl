@@ -6,6 +6,9 @@ services:
       - ${MUSIC_DIR}:/music
     ports:
       - "80:80"
+    environment:
+      REDIS_SERVER: soundowl-redis
+      DB_SERVER: soundowl-db
     depends_on:
       - db
       - redis
@@ -27,6 +30,7 @@ services:
       - db_data:/var/lib/mysql
       - ./parts/setup/db/soundowl_table_mysql.sql:/docker-entrypoint-initdb.d/init.sql
   redis:
+    container_name: soundowl-redis
     image: redis
     ports:
       - "6379:6379"
