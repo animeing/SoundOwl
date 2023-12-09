@@ -12,7 +12,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build Docker image
-      run: docker build -t soundowl:$(date +%s) .
+      run: docker build -t soundowl .
+      working-directory: ./
     - name: Run tests
       run: docker-compose up -d
+      working-directory: ./
   
