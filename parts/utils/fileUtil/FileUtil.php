@@ -89,4 +89,37 @@ final class FileUtil implements IMimeType{
             }
         }
     }
+
+    public static function databaseTableList() {
+        $sqlFile = __DIR__.'/../../setup/db/soundowl_table_mysql.sql';
+        $pattern = '/CREATE TABLE\s+`(.+?)`/';
+
+        $tableNames = [];
+        
+        $line = file($sqlFile);
+        foreach ($line as $line) {
+            if(preg_match($pattern, $line, $matches)) {
+                $tableNames[] = $matches[1];
+            }
+        }
+        return $tableNames;
+    }
+
+    public static function isDatabaseCreatedTables() {
+        $tables = self::databaseTableList();
+        try{
+            $connector = new db\Connector();
+            foreach ($tables as $table) {
+                $currentTablesSQL = "SHOW TABLES LIKE '{$table}'";
+                $pdo = $connector->getConnector();
+                $stmt = $pdo->query($currentTablesSQL);
+                if($stmt->fetchAll(PDO::FETCH_COLUMN) <= 0){
+                    return false;
+                }
+            }
+            return true;
+        }catch(Exception $e){
+            error_log($e->getMessage());
+        }
+    }
 }

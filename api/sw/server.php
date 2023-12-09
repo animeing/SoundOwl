@@ -16,11 +16,14 @@ class ServerMessage implements MessageComponentInterface {
     protected $artistDao;
     protected $albumDao;
 
+    protected $hasDatabaseTables = false;
+
     public function __construct() {
         $this->soundDao = new SoundLinkDao();
         $this->artistDao = new ArtistDao();
         $this->albumDao = new AlbumDao();
         $this->clients = new \SplObjectStorage;
+        $this->hasDatabaseTables = FileUtil::isDatabaseCreatedTables();
         $this->sendStatus();
     }
 
@@ -43,16 +46,18 @@ class ServerMessage implements MessageComponentInterface {
     }
 
     public function getStatus(){
+        $this->hasDatabaseTables = FileUtil::isDatabaseCreatedTables();
+
         $settings = (parse_ini_file(SETTING_INI));
         return array(
             'regist_status'=>file_exists(LOCK_PATH) || file_exists(AUDIO_REGIST_LOCK_PATH),
             'regist_status_step1'=>file_exists(LOCK_PATH) ,
             'regist_status_step2'=>file_exists(AUDIO_REGIST_LOCK_PATH),
             'regist_data_count'=>array(
-                'sound'=>$this->soundDao->count($this->soundDao->countQuery()),
-                'artist'=>$this->artistDao->count($this->artistDao->countQuery()),
-                'album'=>$this->albumDao->count($this->albumDao->countQuery()),
-                'analysis_sound'=>$this->soundDao->countInputedLoudnessTarget()
+                'sound'=> $this->hasDatabaseTables ? $this->soundDao->count($this->soundDao->countQuery()) : 0,
+                'artist'=> $this->hasDatabaseTables ? $this->artistDao->count($this->artistDao->countQuery()) : 0,
+                'album'=> $this->hasDatabaseTables ? $this->albumDao->count($this->albumDao->countQuery()) : 0,
+                'analysis_sound'=>$this->hasDatabaseTables ? $this->soundDao->countInputedLoudnessTarget() : 0
             ),
             'websocket'=>array(
                 'retry_count'=>(array_key_exists('websocket_retry_count', $settings)?$settings['websocket_retry_count'] : 0),
