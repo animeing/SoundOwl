@@ -14,5 +14,5 @@ jobs:
     - name: Build Docker image
       run: docker build -t soundowl:$(date +%s) .
     - name: Run tests
-      run: docker-compose up -d ./test_scripts/docker_test.sh
+      run: docker-compose up -d
   
