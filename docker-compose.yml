@@ -46,6 +46,9 @@ services:
     volumes:
       - ./api/lock:/var/www/html/api/lock
       - ./parts/setting.ini:/var/www/html/parts/setting.ini
+    environment:
+      REDIS_SERVER: soundowl-redis
+      DB_SERVER: soundowl-db
     depends_on:
       - db
       - redis
@@ -56,6 +59,9 @@ services:
       - ${MUSIC_DIR}:/music
       - ./api/lock:/var/www/html/api/lock
       - ./parts/setting.ini:/var/www/html/parts/setting.ini
+    environment:
+      REDIS_SERVER: soundowl-redis
+      DB_SERVER: soundowl-db
     depends_on:
       - db
       - redis

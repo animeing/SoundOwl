@@ -27,5 +27,9 @@ else
   export MUSIC_DIR=$music_dir
 fi
 
+
+chown www-data:www-data ./parts/setting.ini
+chown www-data:www-data ./api/lock
+
 # Dockerコンテナを起動
 docker-compose up -d
