@@ -52,3 +52,6 @@ Intranet 内でブラウザが入っている PC があれば視聴できるこ�
 - docker build -t soundowl:lastest .
 - chmod 755 make.sh
 - ./make.sh
+- ブラウザにて http://<Server の IPAddress>/#/setting にアクセス
+![image](https://github.com/animeing/SoundOwl/assets/24301121/318e6bfa-c9ef-456a-86ea-f7f6796d55a4)
+ - 設定を変更せずに "sound regist" ボタンを実行
