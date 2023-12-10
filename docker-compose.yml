@@ -47,6 +47,8 @@ services:
   que:
     build: .
     command: php /var/www/html/api/quescript/queueAction.php
+    volumes:
+      - ${MUSIC_DIR}:/music
     depends_on:
       - db
       - redis
