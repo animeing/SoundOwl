@@ -4,6 +4,8 @@ services:
     build: .
     volumes:
       - ${MUSIC_DIR}:/music
+      - ./api/lock:/var/www/html/api/lock
+      - ./parts/setting.ini:/var/www/html/parts/setting.ini
     ports:
       - "80:80"
     environment:
@@ -41,6 +43,9 @@ services:
     command: php /var/www/html/api/sw/server.php
     ports:
       - "8080:8080"
+    volumes:
+      - ./api/lock:/var/www/html/api/lock
+      - ./parts/setting.ini:/var/www/html/parts/setting.ini
     depends_on:
       - db
       - redis
@@ -49,6 +54,8 @@ services:
     command: php /var/www/html/api/quescript/queueAction.php
     volumes:
       - ${MUSIC_DIR}:/music
+      - ./api/lock:/var/www/html/api/lock
+      - ./parts/setting.ini:/var/www/html/parts/setting.ini
     depends_on:
       - db
       - redis
