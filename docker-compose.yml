@@ -11,6 +11,7 @@ services:
     environment:
       REDIS_SERVER: soundowl-redis
       DB_SERVER: soundowl-db
+      SOUND_PATH: /music
     depends_on:
       - db
       - redis
@@ -49,6 +50,7 @@ services:
     environment:
       REDIS_SERVER: soundowl-redis
       DB_SERVER: soundowl-db
+      SOUND_PATH: /music
     depends_on:
       - db
       - redis
@@ -62,6 +64,7 @@ services:
     environment:
       REDIS_SERVER: soundowl-redis
       DB_SERVER: soundowl-db
+      SOUND_PATH: /music
     depends_on:
       - db
       - redis

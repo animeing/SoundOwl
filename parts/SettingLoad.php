@@ -30,7 +30,7 @@ define("DB_USER", getParam("db_user","sound"));
 
 define("DB_PASSWORD", getParam("db_pass","sound"));
 
-define("SOUND_DIRECTORY", getParam("sound_directory","/"));
+define("SOUND_DIRECTORY", getenv('SOUND_PATH')?: getParam("sound_directory","/"));
 
 define("WEBSOCKET_RETRY_COUNT_LIMIT", getParam("websocket_retry_count",0));
 
