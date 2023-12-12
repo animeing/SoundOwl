@@ -9,7 +9,7 @@ $predis = new Predis\Client([
 
 define('AUDIO_REGIST_LOCK_PATH', __DIR__.'/../lock/sound_volume_calc.lock');
 function calcVolume($filePath) {
-    $command = "ffmpeg -i ".escapeshellarg($filePath)." -filter:a volumedetect -f null - 2>&1";
+    $command = "ffmpeg -i '".escapeshellarg($filePath)."' -filter:a volumedetect -f null - 2>&1";
     $output = shell_exec($command);
     $patterns = [
         'mean_volume' => "/mean_volume: ([\-\d\.]+) dB/",
