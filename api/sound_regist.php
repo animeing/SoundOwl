@@ -67,6 +67,15 @@ if(!file_exists(LOCK_PATH)) {
             $id3 = new getID3();
             $id3Analyze = $id3->analyze($file);
             if(!isset($id3Analyze['tags'])){
+                $soundDtos = $soundDao->find(sha1($file));
+                if(count($soundDtos) == 0){
+                    $soundLinkDto->setTitle(basename($file));
+                    $soundLinkDto->setDataLink($file);
+                    $soundLinkDto->setSoundHash(sha1($file));
+                    $soundLinkDto->setPlayCount(0);
+                    $soundLinkDto->setAddTime(date("Y-m-d H:i:s", filemtime($file)));
+                    $soundDao->insert($soundLinkDto);
+                }
                 return;
             }
             
