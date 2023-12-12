@@ -59,14 +59,14 @@ if(!file_exists(LOCK_PATH)) {
         $albumDao = new AlbumDao();
         function registSoundData($file) {
             global $artistDao, $albumDao, $soundDao, $predis;
-            if(!preg_match('/\.mp3|\.m4a|\.wav|\.ogg|\.flac]/', $file)){
+            if(!preg_match('/\.(mp3|m4a|wav|ogg|flac)$/', $file)){
                 return;
             }
             $soundLinkDto = new SoundLinkDto();
+            $soundLinkDto->setLoudnessTarget(0);
             $id3 = new getID3();
             $id3Analyze = $id3->analyze($file);
             if(!isset($id3Analyze['tags'])){
-                echo $file;
                 return;
             }
             
