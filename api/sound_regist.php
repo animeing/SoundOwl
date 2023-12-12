@@ -75,6 +75,8 @@ if(!file_exists(LOCK_PATH)) {
                     $soundLinkDto->setPlayCount(0);
                     $soundLinkDto->setAddTime(date("Y-m-d H:i:s", filemtime($file)));
                     $soundDao->insert($soundLinkDto);
+                    $jobData = json_encode(['file_path' => $file,'hash'=>$soundLinkDto->getSoundHash()]);
+                    $predis->lpush('queue:audio-processing', [$jobData]);
                 }
                 return;
             }
