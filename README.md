@@ -59,25 +59,24 @@ Intranet 内でブラウザが入っている PC があれば視聴できるこ�
 ## Function
 
 ### Equalizer
-  8Hz ～ 24kHz までの範囲を自由に変更して、お好みの音量に設定することが出来ます。
-  ※PresetでFlatを選ぶことで機能をOFFにすることが出来ます。
+  8Hz ～ 24kHz までの範囲を自由に変更して、お好みの音量に設定することが出来ます。<br>
+  ※PresetでFlatを選ぶことで機能をOFFにすることが出来ます。<br>
   ![image](https://github.com/animeing/SoundOwl/assets/24301121/ef815eb8-92de-4325-9c69-b32bfe578625)
 ### Visualizer
-  Visualizer を用いて音楽を視覚的にも楽しむことが出来ます。
+  Visualizer を用いて音楽を視覚的にも楽しむことが出来ます。<br>
   ![image](https://github.com/animeing/SoundOwl/assets/24301121/0c77fcb6-a252-424b-b5f3-ec8a7efb9cf4)
 ### SoundSculpt
-  再生する音源を動的に解析してその瞬間にもっとも目立たせたい音をより強調して聞こえるように自動で調整を行います。
+  再生する音源を動的に解析してその瞬間にもっとも目立たせたい音をより強調して聞こえるように自動で調整を行います。<br>
   ※[Setting->Effect->SoundSculpt]のチェックを外すことで機能をOFFにすることが出来ます。
 ### Loudness normalization
-  音楽ファイル毎の音量の差を自動で埋めて、音源ファイル毎に音量調整を行う手間を省きます。
-  ※[Setting->Effect->Loudness normalization]のチェックを外すことで機能をOFFにすることが出来ます。
-  ※この機能は[Setting->General->Regist Step2]で行っているため、このステータスが[Finished]になっている必要があります。
-  ※[Analysis/Sound Count]の項目の[Analysis]の数が Sound Count と一致していない場合、ノーマライズできない音源ファイルが存在している可能性があります。
+  音楽ファイル毎の音量の差を自動で埋めて、音源ファイル毎に音量調整を行う手間を省きます。<br>
+  ※[Setting->Effect->Loudness normalization]のチェックを外すことで機能をOFFにすることが出来ます。<br>
+  ※この機能は[Setting->General->Regist Step2]で行っているため、このステータスが[Finished]になっている必要があります。<br>
+  ※[Analysis/Sound Count]の項目の[Analysis]の数が Sound Count と一致していない場合、ノーマライズできない音源ファイルが存在している可能性があります。<br>
   ![image](https://github.com/animeing/SoundOwl/assets/24301121/b66d1122-5f4b-438e-8262-607ef6946eda)
 ### 幅広い音源ファイルに対応
-  mp3,m4a,wav,ogg,flac と幅広い音源ファイルに対応しており、例え Browser が音源ファイルの再生に対応してなくとも、
-  自動で wav に変換を行い、再生を試みます。
-  また、変換したデータは一定数を Browser に Cache するため、変換を待つストレスがありません。
-  ※変換したデータは fifo で一定数を超えた場合、古いものから順番に消えます。
-  ※wav に変換したデータはファイルとして保存することはしないので、Server の容量を無駄に圧迫する心配はありません。
+  mp3,m4a,wav,ogg,flac と幅広い音源ファイルに対応しており、例え Browser が音源ファイルの再生に対応してなくとも、自動で wav に変換を行い、再生を試みます。
+  変換したデータは一定数を Browser に Cache するため、変換を待つストレスがありません。<br>
+  ※変換したデータは fifo で一定数を超えた場合、古いものから順番に消えます。<br>
+  ※wav に変換したデータはファイルとして保存することはしないので、Server の容量を無駄に圧迫する心配はありません。<br>
 
