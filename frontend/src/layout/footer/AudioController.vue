@@ -24,6 +24,7 @@
             min="0"
             @changingValue="changeingPlayPoint"
             @changed="changedPlayPoint"
+            @valueSet="syncPlayPoint"
             @mousemove="hint" />
         <sw-v-progress
             :class="volumeClass()"
@@ -132,6 +133,7 @@ export default {
         target = event.target.parentNode;
       }
       audio.audio.currentTime = parseFloat(target._value);
+      this.playTime = parseFloat(target._value);
       if(rePoint == AudioPlayStateEnum.PLAY){
         setTimeout(()=>{
           audio.play();
@@ -144,10 +146,20 @@ export default {
       if(event.target.mousePositionvalue == undefined){
         target = event.target.parentNode;
       }
-      audio.audio.currentTime = target._value;
+      this.playTime = parseFloat(target._value);
+      audio.audio.currentTime = parseFloat(target._value);
       if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
         audio.audio.pause();
       }
+    },
+    syncPlayPoint(event) {
+      let target = event.target;
+      if(event.target.mousePositionvalue == undefined){
+        target = event.target.parentNode;
+      }
+      audio.audio.currentTime = parseFloat(target._value);
+      this.playTime = parseFloat(target._value);
+
     },
     hint(event){
       let positionTime = 0;
