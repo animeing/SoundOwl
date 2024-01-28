@@ -1515,18 +1515,20 @@ export class ProgressComposite extends HTMLElement {
     this.addEventListener('click', (e) => {
       if (this.readOnly) return;
       this.mouseMove(e);
+      this.dispatch('change');
       this.dispatch('changingValue');
+      this.dispatch('changed');
     });
   }
 
   static get observedAttributes() {
-    return ['value', 'max', 'min', 'readonly'];
+    return ['slider-value', 'max', 'min', 'readonly'];
   }
 
 
   attributeChangedCallback(name, _oldValue, newValue) {
     switch(name) {
-    case 'value':
+    case 'slider-value':
       this.queueValueUpdate(Number(newValue));
       break;
     case 'max':
@@ -1547,7 +1549,7 @@ export class ProgressComposite extends HTMLElement {
     this._pendingValue = newValue;
     clearTimeout(this._valueUpdateTimeout);
     this._valueUpdateTimeout = setTimeout(() => {
-      this.value = this._pendingValue;
+      this.sliderValue = this._pendingValue;
     });
   }
 
@@ -1558,7 +1560,7 @@ export class ProgressComposite extends HTMLElement {
   mouseMove(event) {
     const proposedValue = this.mousePositionvalue(event);
     let value = Math.min(Math.max(proposedValue, this.min), this.max);
-    this.setAttribute('value', value);
+    this.setAttribute('slider-value', value);
   }
 
   mousePositionvalue(event) {
@@ -1569,7 +1571,7 @@ export class ProgressComposite extends HTMLElement {
     return this.mousePosition.localMousePosition(event).x;
   }
 
-  update(value = this.value) {
+  update(value = this.sliderValue) {
     if (this.max === this.min) {
       return;
     }
@@ -1586,11 +1588,11 @@ export class ProgressComposite extends HTMLElement {
     return `scaleX(${this.per})`;
   }
 
-  get value() {
+  get sliderValue() {
     return +(this._value);
   }
 
-  set value(value) {
+  set sliderValue(value) {
     const validValue = isNaN(value) ? this._value : value;
     this.update(validValue);
   }
@@ -1620,7 +1622,7 @@ export class ProgressComposite extends HTMLElement {
   }
 
   get per() {
-    return this.range === 0 ? 0 : ((this.value - this.min) / this.range);
+    return this.range === 0 ? 0 : ((this.sliderValue - this.min) / this.range);
   }
 
   get range() {
@@ -1642,7 +1644,7 @@ class VerticalProgressComposite extends ProgressComposite{
   }
 
   mouseMove(event){
-    this.setAttribute('value', (this.getOffset(event) / this.clientHeight * this.range) + this.min);
+    this.setAttribute('slider-value', (this.getOffset(event) / this.clientHeight * this.range) + this.min);
   }
 
   getOffset(event){

@@ -35,7 +35,7 @@
                             class="setting-equalizer"
                             max="15"
                             min="-15"
-                            :value="item.gain"
+                            :slider-value="item.gain"
                             @valueSet="valueChange($event, item)" />
                     </p>
                 </div>
@@ -80,7 +80,7 @@ export default {
   },
   methods:{
     valueChange(event, value){
-      value.gain = (event.target.value);
+      value.gain = (event.target.sliderValue);
       audio.equalizer.setMonoGain(value.hz, value.gain);
       audioParamSave();
     },

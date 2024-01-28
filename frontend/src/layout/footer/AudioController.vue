@@ -19,16 +19,15 @@
         <sw-audio-progress
             class="progress-times"
             :data-hint="playTimeString"
-            :value="playTime"
+            :slider-value="playTime"
             :max="durationTime"
             min="0"
             @changingValue="changeingPlayPoint"
             @changed="changedPlayPoint"
-            @valueSet="syncPlayPoint"
             @mousemove="hint" />
         <sw-v-progress
             :class="volumeClass()"
-            :value="volume"
+            :slider-value="volume"
             max="1"
             min="0"
             @changingValue="changeVolume"
@@ -72,11 +71,19 @@ export default {
   created(){
     audioParamLoad();
     audio.eventSupport.addEventListener('audioSet',()=>{
-      this.currentPlaySoundClip = audio.currentAudioClip;
+      if(this.currentPlaySoundClip != audio.currentAudioClip) {
+        this.currentPlaySoundClip = audio.currentAudioClip;
+      }
+      if(this.playTime != audio.audio.currentTime) {
+        this.playTime = audio.audio.currentTime;
+      }
+      if(this.durationTime != audio.audio.duration) {
+        this.durationTime = audio.audio.duration;
+      }
     });
     audio.eventSupport.addEventListener('update', ()=>{
-      this.playTime = audio.audio.currentTime;
       this.durationTime = audio.audio.duration;
+      this.playTime = audio.audio.currentTime;
     });
     this.volume = audio.audio.volume;
   },
@@ -133,7 +140,6 @@ export default {
         target = event.target.parentNode;
       }
       audio.audio.currentTime = parseFloat(target._value);
-      this.playTime = parseFloat(target._value);
       if(rePoint == AudioPlayStateEnum.PLAY){
         setTimeout(()=>{
           audio.play();
@@ -146,20 +152,10 @@ export default {
       if(event.target.mousePositionvalue == undefined){
         target = event.target.parentNode;
       }
-      this.playTime = parseFloat(target._value);
       audio.audio.currentTime = parseFloat(target._value);
       if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
         audio.audio.pause();
       }
-    },
-    syncPlayPoint(event) {
-      let target = event.target;
-      if(event.target.mousePositionvalue == undefined){
-        target = event.target.parentNode;
-      }
-      audio.audio.currentTime = parseFloat(target._value);
-      this.playTime = parseFloat(target._value);
-
     },
     hint(event){
       let positionTime = 0;
@@ -171,7 +167,10 @@ export default {
         positionTime = target.mousePositionvalue(event);
       }
       let textTime = timeToText(positionTime);
-      this.playTimeString = textTime['min']+':'+textTime['sec'];
+      
+      this.$nextTick(() => {
+        this.playTimeString = textTime['min']+':'+textTime['sec'];
+      });
     }
   }
 };
