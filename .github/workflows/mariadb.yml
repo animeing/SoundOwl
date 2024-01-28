@@ -18,6 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Update APT repository
+        run: sudo apt-get update
+
       - name: Install MariaDB client
         run: sudo apt-get install mariadb-client
 
