@@ -119,6 +119,46 @@ BaseFrameWork.waitForValue=(checkValue, targetValue, timeout)=> {
   });
 };
 
+
+BaseFrameWork.LockAction = class {
+  constructor() {
+    this.isLocked = false;
+    /**
+     * @type {Object.<string,{function:Function, ejectFunction:Function, timeout:Number}>}
+     */
+    this.actionArray = [];
+  }
+
+  addLockEventListener(name, func, ejectFunc=()=>{}, timeout = 1e3) {
+    this.actionArray[name] = {'function':func, 'ejectFunction':ejectFunc, 'timeout':timeout};
+  }
+
+  action(name) {
+    let action = this.actionArray[name];
+    if(action == null){
+      return;
+    }
+    this.acquire(action.function, action.ejectFunction, action.timeout);
+  }
+
+  /**
+   * @private
+   * @param {Function} func 
+   */
+  async acquire(func, ejectFunc=()=>{},timeout = 1e3) {
+    await BaseFrameWork.waitForValue(()=>!this.isLocked, true, timeout).then(async ()=>{
+      this.isLocked = true;
+      try{
+        await func();
+      } finally {
+        this.isLocked = false;
+      }
+    }).catch(
+      ejectFunc
+    );
+  }
+};
+
 class MousePosition{
   _element = null;
   /**
