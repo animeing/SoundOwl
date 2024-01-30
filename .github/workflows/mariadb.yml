@@ -14,9 +14,6 @@ jobs:
           MYSQL_DATABASE: testdb
         ports:
           - 3306:3306
+        volumes: 
+          - parts/setup/db/soundowl_table_mysql.sql
 
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run SQL script
-        run: |
-          mysql -h mariadb -u root -ppassword testdb < parts/setup/db/soundowl_table_mysql.sql
