@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Copy SQL script to MariaDB container
-        run: docker cp parts/setup/db/soundowl_table_mysql.sql mariadb:/soundowl_table_mysql.sql
+        run: docker cp parts/setup/db/soundowl_table_mysql.sql ${{ job.services.mariadb.id }}:/soundowl_table_mysql.sql
 
       - name: Run SQL script inside MariaDB container
-        run: docker exec mariadb mysql -h localhost -u root -ppassword testdb < /soundowl_table_mysql.sql
+        run: docker exec ${{ job.services.mariadb.id }} mysql -h localhost -u root -ppassword testdb < /soundowl_table_mysql.sql
