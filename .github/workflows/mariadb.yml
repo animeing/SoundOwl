@@ -17,6 +17,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: PS
+        run: |
+          docker ps
       - name: Run SQL script
         run: |
           mysql -h mariadb --port 3306 -u root -ppassword testdb < parts/setup/db/soundowl_table_mysql.sql
