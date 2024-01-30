@@ -1514,9 +1514,9 @@ export class ProgressComposite extends HTMLElement {
 
     this.addEventListener('click', (e) => {
       if (this.readOnly) return;
-      this.mouseMove(e);
       this.dispatch('change');
       this.dispatch('changingValue');
+      this.mouseMove(e);
       this.dispatch('changed');
     });
   }
