@@ -19,4 +19,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run SQL script inside MariaDB container
-        run: mysql -h localhost -u root -ppassword testdb < parts/setup/db/soundowl_table_mysql.sql
+        run: mysql -h mariadb -u root -ppassword testdb < parts/setup/db/soundowl_table_mysql.sql
