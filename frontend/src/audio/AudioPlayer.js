@@ -26,6 +26,20 @@ class AudioPlayer{
     this.audioUpdatedEvent = new CustomEvent('updated');
     this.data = {};
     this.loadGiveUpTime = 10000;
+    this.lockEventTarget = new BaseFrameWork.LockAction;
+    this.lockEventTarget.addLockEventListener('setUpdate', ()=>{
+      if(this.updateJob == null){
+        this.updateJob = setInterval(()=>{
+          this.audioUpdate();
+        }, this.UPDATE_MILI_SEC);
+      }
+    });
+    this.lockEventTarget.addLockEventListener('setStopUpdate', ()=>{
+      if(this.updateJob != null){
+        clearInterval(this.updateJob);
+        this.updateJob = null;
+      }
+    });
 
     ffmpegInitalize();
     this.audio.onerror = async ()=> {
@@ -55,7 +69,7 @@ class AudioPlayer{
     this.exAudioEffect = new StereoExAudioEffect(this.equalizer.merger, this.audioContext, this.equalizer);
     this.exAudioEffect.connect(this.audioContext.destination);
 
-    this.setUpdate();
+    this.lockEventTarget.action('setUpdate');
   }
 
   /**
@@ -92,39 +106,7 @@ class AudioPlayer{
       });
     }
   }
-    
-  updateLockAccess = false;
-
-  /**
-     * @private
-     */
-  setUpdate(){
-    if(this.updateLockAccess) return;
-    this.updateLockAccess = true;
-    try {
-      if(this.updateJob == null){
-        this.updateJob = setInterval(()=>{
-          this.audioUpdate();
-        }, this.UPDATE_MILI_SEC);
-      }
-    } finally {
-      this.updateLockAccess = false;
-    }
-  }
-
-  setStopUpdate(){
-    if(this.updateLockAccess) return;
-    this.updateLockAccess = true;
-    try{
-      if(this.updateJob != null){
-        clearInterval(this.updateJob);
-        this.updateJob = null;
-      }
-    } finally {
-      this.updateLockAccess = false;
-    }
-  }
-
+  
   /**
      * @private
      */
@@ -291,7 +273,7 @@ class AudioPlayer{
     
 
   play(audioClip = undefined){
-    this.setStopUpdate();
+    this.lockEventTarget.action('setStopUpdate');
     if(audioClip != undefined){
       this.currentAudioClip = audioClip;
       this.audioDeployment();
@@ -321,7 +303,7 @@ class AudioPlayer{
         this.currentPlayState = AudioPlayStateEnum.PLAY;
         this.eventSupport.dispatchEvent(new CustomEvent('play'));
       }).finally(()=>{
-        this.setUpdate();
+        this.lockEventTarget.action('setUpdate');
       });
   }
   pause(){
