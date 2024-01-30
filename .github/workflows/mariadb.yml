@@ -18,5 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run SQL script inside MariaDB container
-        run: mysql -h mariadb -u root -ppassword testdb < parts/setup/db/soundowl_table_mysql.sql
+      - name: Run SQL script
+        run: |
+          mysql -h 127.0.0.1 --port 3306 -u root -ppassword testdb < parts/setup/db/soundowl_table_mysql.sql
