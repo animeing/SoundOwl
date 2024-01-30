@@ -43,7 +43,7 @@ import AudioCanvas from './parts/AudioCanvas.vue';
 import AudioIconControl from './parts/AudioIconControl.vue';
 import { AudioClip } from '../../audio/type/AudioClip';
 import audio from '../../audio/AudioPlayer';
-import { ContextMenu, timeToText } from '../../base';
+import { BaseFrameWork, ContextMenu, timeToText } from '../../base';
 import { AudioPlayStateEnum } from '../../audio/enum/AudioPlayStateEnum';
 import { audioParamLoad, audioParamSave } from '../../utilization/register';
 
@@ -132,22 +132,26 @@ export default {
       audioParamSave();
     },
     changedPlayPoint(event){
-      audio.updateLockAccess = true;
+      audio.lockEventTarget.action('setStopUpdate');
       let rePoint = audio.currentPlayState;
       audio.stop();
       let target = event.target;
       if(event.target.mousePositionvalue == undefined){
         target = event.target.parentNode;
       }
-      audio.audio.currentTime = parseFloat(target._value);
-      if(rePoint == AudioPlayStateEnum.PLAY){
-        setTimeout(()=>{
-          audio.play();
-        },1);
-      }
-      audio.updateLockAccess = false;
+      setTimeout(()=>{
+        audio.audio.currentTime = parseFloat(target._value);
+        if(rePoint == AudioPlayStateEnum.PLAY){
+          setTimeout(()=>{
+            audio.play();
+          },1);
+        }
+        audio.lockEventTarget.action('setUpdate');
+      },10);
+      
     },
     changeingPlayPoint(event) {
+      audio.lockEventTarget.action('setStopUpdate');
       let target = event.target;
       if(event.target.mousePositionvalue == undefined){
         target = event.target.parentNode;
