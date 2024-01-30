@@ -18,12 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update APT repository
-        run: sudo apt-get update
+      - name: Copy SQL script to MariaDB container
+        run: docker cp parts/setup/db/soundowl_table_mysql.sql mariadb:/soundowl_table_mysql.sql
 
-      - name: Install MariaDB client
-        run: sudo apt-get install mariadb-client
-
-      - name: Run SQL script
-        run: |
-          mysql -h 127.0.0.1 -u root -ppassword testdb < parts/setup/db/soundowl_table_mysql.sql
+      - name: Run SQL script inside MariaDB container
+        run: docker exec mariadb mysql -h localhost -u root -ppassword testdb < /soundowl_table_mysql.sql
