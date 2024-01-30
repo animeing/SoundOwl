@@ -19,4 +19,4 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run SQL script
         run: |
-          mysql -h 127.0.0.1 -u root -ppassword testdb < parts/setup/db/soundowl_table_mysql.sql
+          mysql -h mariadb -u root -ppassword testdb < parts/setup/db/soundowl_table_mysql.sql
