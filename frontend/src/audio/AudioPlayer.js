@@ -47,8 +47,10 @@ class AudioPlayer{
       
       if(this.audio.error.code == 4 && this.audio.src.includes('sound_create')) {
         //MEDIA_ERR_SRC_NOT_SUPPORTED && defaultlink
-        this.audio.src = await conversionToWav(this.audio.src);
-        if(this.currentPlayState == AudioPlayStateEnum.PLAY) {
+        let audiosrc = this.audio.src;
+        let wavBlob = await conversionToWav(audiosrc);
+        if(this.currentPlayState == AudioPlayStateEnum.PLAY && audiosrc == this.currentAudioClip.src) {
+          this.audio.src = wavBlob;
           this.audio.play();
         }
       }
