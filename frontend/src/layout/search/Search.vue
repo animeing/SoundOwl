@@ -130,8 +130,8 @@ export default {
         return;
       }
       let audioBeforeClip = audio.currentAudioClip;
-      if(!audio.playList.isSamePlaylist(this.newSoundClips)) {
-        audio.playList.updatePlaylist(this.newSoundClips);
+      if(!audio.playList.isSamePlaylist(this.soundClips)) {
+        audio.playList.updatePlaylist(this.soundClips);
       }
       if(audioBeforeClip == null) {
         audio.play(soundClip);
