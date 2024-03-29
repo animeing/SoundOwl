@@ -659,7 +659,7 @@ BaseFrameWork.List = class {
 
   /**
      * 配列に新しい要素を追加します。
-     * @param {any} value - 追加する要素
+     * @param {T} value - 追加する要素
      * @param {Number} index - 追加する位置（オプショナル、デフォルトは配列の末尾）
      */
   add(value, index = this.length) {
@@ -669,7 +669,7 @@ BaseFrameWork.List = class {
 
   /**
      * 配列から指定の要素を削除します。
-     * @param {any} value - 削除する要素
+     * @param {T} value - 削除する要素
      */
   remove(value) {
     const index = this.array.indexOf(value);
@@ -682,7 +682,7 @@ BaseFrameWork.List = class {
   /**
      * 配列の指定位置の要素を取得します。
      * @param {Number} index - 取得する要素の位置
-     * @returns {any} 指定位置の要素
+     * @returns {T | undefined} 指定位置の要素
      */
   get(index) {
     return this.array[index];
@@ -698,7 +698,7 @@ BaseFrameWork.List = class {
 
   /**
      * 指定した要素の位置（インデックス）を返します。
-     * @param {any} value - 検索する要素
+     * @param {T} value - 検索する要素
      * @returns {Number} 指定した要素の位置（見つからない場合は-1）
      */
   equalFindIndex(value) {
@@ -734,7 +734,7 @@ BaseFrameWork.List = class {
 
   /**
      * 配列の指定位置の要素を新しい要素で上書きします。
-     * @param {any} value - 新しい要素
+     * @param {T} value - 新しい要素
      * @param {Number} index - 上書きする位置
      */
   replace(value, index) {
@@ -746,8 +746,8 @@ BaseFrameWork.List = class {
 
   /**
      * 2つの要素の位置を交換（スワップ）します。
-     * @param {any} target - 位置を交換する1つ目の要素
-     * @param {any} change - 位置を交換する2つ目の要素
+     * @param {T} target - 位置を交換する1つ目の要素
+     * @param {T} change - 位置を交換する2つ目の要素
      */
   swap(target, change) {
     const targetIndex = this.equalFindIndex(target);

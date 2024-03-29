@@ -103,15 +103,15 @@ export default {
       if(ContextMenu.isVisible){
         return;
       }
-      audio.playList.removeAll();
-      for(const audioclip of this.newSoundClips) {
-        audio.playList.add(audioclip);
+      let audioBeforeClip = audio.currentAudioClip;
+      if(!audio.playList.isSamePlaylist(this.newSoundClips)) {
+        audio.playList.updatePlaylist(this.newSoundClips);
       }
-      if(audio.currentAudioClip == null){
+      if(audioBeforeClip == null) {
         audio.play(soundClip);
         return;
-      }            
-      if(soundClip.equals(audio.currentAudioClip)){
+      }
+      if(audioBeforeClip.equals(soundClip)){
         if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
           audio.play();
         } else {
@@ -128,15 +128,15 @@ export default {
       if(ContextMenu.isVisible){
         return;
       }
-      audio.playList.removeAll();
-      for(const audioclip of this.soundClips) {
-        audio.playList.add(audioclip);
+      let audioBeforeClip = audio.currentAudioClip;
+      if(!audio.playList.isSamePlaylist(this.soundClips)) {
+        audio.playList.updatePlaylist(this.soundClips);
       }
-      if(audio.currentAudioClip == null){
+      if(audioBeforeClip == null) {
         audio.play(soundClip);
         return;
-      }            
-      if(soundClip.equals(audio.currentAudioClip)){
+      }
+      if(audioBeforeClip.equals(soundClip)){
         if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
           audio.play();
         } else {
@@ -153,11 +153,10 @@ export default {
       let addNextSound = BaseFrameWork.createCustomElement('sw-libutton');
       addNextSound.menuItem.onclick=()=>{
         if(audio.currentAudioClip == undefined) {
-          audio.playList.add(soundClip, 0);
+          audio.playList.insertAudioClip(soundClip, 0);
           return;
         }
-        let appendPosition = audio.playList.equalFindIndex(audio.currentAudioClip);
-        audio.playList.add(soundClip, appendPosition+1);
+        audio.playList.appendAudioClipNext(soundClip);
       };
       addNextSound.menuItem.value = 'Add to playlist';
       ContextMenu.contextMenu.appendChild(addNextSound);

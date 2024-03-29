@@ -3,22 +3,21 @@ import { SoundInfomation, SoundPlayedAction } from '../page';
 import { StereoAudioEqualizer } from './effect/equalizer/StereoAudioEqualizer';
 import { LoudnessNormalize } from './effect/normalize/LoudnessNormalize';
 import { StereoExAudioEffect } from './effect/soundSculpt/StereoExAudioEffect';
-import { AudioLoopModeEnum } from './enum/AudioLoopModeEnum';
 import { AudioPlayStateEnum } from './enum/AudioPlayStateEnum';
 import { AudioStateEnum } from './enum/AudioStateEnum';
 import { conversionToWav, ffmpegInitalize } from './conversionToWav';
+import { Playlist } from './Playlist';
+import { AudioClip } from './type/AudioClip';
 
 class AudioPlayer{
-  _currentAudioClip = null;
   constructor(){
     this.audio = new Audio;
     this.audioContext = new AudioContext;
     this.source = this.audioContext.createMediaElementSource(this.audio);
     /**
-         * @type {BaseFrameWork.List<AudioClip>}
-         */
-    this.playList = new BaseFrameWork.List;
-    this.loopMode = AudioLoopModeEnum.NON_LOOP;
+     * @type {Playlist}
+     */
+    this.playList = new Playlist();
     this.currentPlayState = AudioPlayStateEnum.STOP;
     this.eventSupport = new EventTarget;
     this.stateInit();
@@ -49,10 +48,12 @@ class AudioPlayer{
         //MEDIA_ERR_SRC_NOT_SUPPORTED && defaultlink
         let audiosrc = this.audio.src;
         let wavBlob = await conversionToWav(audiosrc);
-        if(this.currentPlayState == AudioPlayStateEnum.PLAY && audiosrc == this.currentAudioClip.src) {
+        if(this.currentPlayState == AudioPlayStateEnum.PLAY && audiosrc == this.playList.currentAudioClip.src) {
           this.audio.src = wavBlob;
           this.audio.play();
         }
+        console.log(audiosrc+'    '+this.playList.currentAudioClip.src);
+        console.log(this.currentPlayState);
       }
     };
     this.eventSupport.addEventListener('audioSet', ()=>{
@@ -60,10 +61,10 @@ class AudioPlayer{
       request.httpRequestor.addEventListener('success', event=>{
         this.data = event.detail.response;
         this.loudnessNormalize.soundMeanVolume = this.data.loudness_target;
-        this.loudnessNormalize.soundClip = this.currentAudioClip;
+        this.loudnessNormalize.soundClip = this.playList.currentAudioClip;
         this.eventSupport.dispatchEvent(new CustomEvent('audio_info_loaded'));
       });
-      request.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
+      request.formDataMap.append('SoundHash', this.playList.currentAudioClip.soundHash);
       request.execute();
     });
     this.loudnessNormalize = new LoudnessNormalize(this.source, this.audioContext);
@@ -78,11 +79,11 @@ class AudioPlayer{
      * @type {AudioClip}
      */
   get currentAudioClip(){
-    return this._currentAudioClip;
+    return this.playList.currentAudioClip;
   }
 
   set currentAudioClip(currentAudioClip){
-    this._currentAudioClip = currentAudioClip;
+    this.playList.currentAudioClip = currentAudioClip;
   }
     
   stateInit() {
@@ -124,14 +125,14 @@ class AudioPlayer{
     {
       if(!this.isPlaying && !this.isLoading){
         let com = ()=>{
-          let audioClip = this.autoNextClip;
+          let audioClip = this.playList.next();
           if(audioClip == undefined){
             this.pause();
             this.eventSupport.dispatchEvent(this.audioUpdatedEvent);
             return;
           }
           this.eventSupport.dispatchEvent(this.audioUpdatedEvent);
-          this.play(audioClip);
+          this.play();
           this.errorTime = null;
         };
         let playError = () => {
@@ -166,9 +167,9 @@ class AudioPlayer{
         }
       }
       if(!this.isLoading && (this.audio.currentTime === this.audio.duration)){
-        let clip = this.autoNextClip;
+        let clip = this.playList.next();
         let playedAction = new SoundPlayedAction;
-        playedAction.formDataMap.append('SoundHash', this.currentAudioClip.soundHash);
+        playedAction.formDataMap.append('SoundHash', this.playList.currentAudioClip.soundHash);
         playedAction.execute();
         if(clip == null)
         {
@@ -186,17 +187,17 @@ class AudioPlayer{
      * @param {AudioClip} setAudioClip 
      */
   setCurrentAudioClip(setAudioClip){
-    if(this.currentAudioClip === setAudioClip || setAudioClip == undefined){
+    if(this.playList.currentAudioClip === setAudioClip || setAudioClip == undefined){
       return;
     }
-    this.currentAudioClip = setAudioClip;
+    this.playList.currentAudioClip = setAudioClip;
     this.audioDeployment();
     // this.audioUpdate(); //CHECK
   }
 
   audioDeployment(){
     this.eventSupport.dispatchEvent(new CustomEvent('audioSet'));
-    this.audio.src = this.currentAudioClip.src;
+    this.audio.src = this.playList.currentAudioClip.src;
     this.exAudioEffect.reset();
   }
 
@@ -220,76 +221,37 @@ class AudioPlayer{
             || this.audioState === AudioStateEnum.LOADED_METADATA
             || this.audioState === AudioStateEnum.LOADED_DATA);
   }
+  
 
   get isPlaying(){
     if(this.audio.currentTime == 0 && isNaN(this.audio.duration)) return false;
     return (this.audio.currentTime !== this.audio.duration);
   }
-  /**
-     * @private
-     */
-  get autoNextClip() {
-    if (this.currentAudioClip == null) {
-      return this.playList.get(0);
-    }
-    switch (this.loopMode) {
-    case AudioLoopModeEnum.AUDIO_LOOP:
-      return this.currentAudioClip;
-    case AudioLoopModeEnum.NON_LOOP:
-    case AudioLoopModeEnum.TRACK_LOOP:
-      return this.nextClip();
-    }
-    return undefined;
-  }
-    
-  nextClip() {
-    if (this.currentAudioClip == null) {
-      return this.playList.get(0);
-    }
-    
-    const clipIndex = this.playList.gets().findIndex(clip => clip != null && this.currentAudioClip != null && clip.soundHash == this.currentAudioClip.soundHash);
-    
-    if (clipIndex === -1) {
-      return this.currentAudioClip;
-    }
-    
-    const nextClip = this.playList.gets().slice(clipIndex + 1).find(clip => clip != null);
-        
-    if (nextClip) {
-      return nextClip;
-    } else {
-      return this.handleNoNextClip();
-    }
-  }
-    
-  handleNoNextClip() {
-    switch (this.loopMode) {
-    case AudioLoopModeEnum.AUDIO_LOOP:
-      return this.currentAudioClip;
-    case AudioLoopModeEnum.NON_LOOP:
-      return undefined;
-    case AudioLoopModeEnum.TRACK_LOOP:
-      return this.playList.get(0);
-    }
-  }
-    
 
+  /**
+   * 指定されたオーディオクリップを再生します。引数が未指定の場合、現在選択されているオーディオクリップを再生します。
+   * 引数で指定されたオーディオクリップがプレイリストに存在しない場合、プレイリストの次の位置に追加してから再生します。
+   * 指定されたオーディオクリップが現在のオーディオクリップと異なる場合、そのクリップを現在のオーディオクリップとして設定してから再生します。
+   * 引数が未指定で現在のオーディオクリップも未定義の場合は、何もしません。
+   * この関数は、オーディオの準備が整い次第再生を開始し、タイトルの設定と再生イベントの発火を行います。
+   * @param {AudioClip} audioClip - 再生するオーディオクリップ。未指定の場合、現在のオーディオクリップが使用されます。
+   */
   play(audioClip = undefined){
-    this.lockEventTarget.action('setStopUpdate');
-    if(audioClip != undefined){
-      this.currentAudioClip = audioClip;
-      this.audioDeployment();
-    } else if(this.currentAudioClip == null){
-      this.currentAudioClip = this.playList.get(0);
-      if(this.currentAudioClip == undefined){
-        return;
-      }
-      this.audioDeployment();
-    } else {
-      if(this.audio.src == null){
-        this.audioDeployment();
-      }
+    if(audioClip == undefined && this.playList.currentAudioClip == undefined) {
+      return;
     }
+    this.lockEventTarget.action('setStopUpdate');
+    if(audioClip != undefined && this.playList.findAudioClipPosition(audioClip) == -1) {
+      this.playList.appendAudioClipNext(audioClip);
+      this.playList.currentAudioClip = audioClip;
+      this.audioDeployment();
+    } else if( audioClip != undefined && (this.playList.currentAudioClip == undefined || !this.playList.currentAudioClip.equals(audioClip))) {
+      this.playList.currentAudioClip = audioClip;
+      this.audioDeployment();
+    } else if(audioClip != undefined && audioClip.equals(this.playList.currentAudioClip)) {
+      this.audioDeployment();
+    }
+
     BaseFrameWork.waitForValue(
       ()=>{
         if(this.loudnessNormalize.soundClip == null) {
@@ -297,10 +259,10 @@ class AudioPlayer{
         }
         return this.loudnessNormalize.soundClip.src;
       },
-      this.currentAudioClip.src,
+      this.playList.currentAudioClip.src,
       2e5).
       then(()=>{
-        setTitle(this.currentAudioClip.title);
+        setTitle(this.playList.currentAudioClip.title);
         this.audio.play();
         this.currentPlayState = AudioPlayStateEnum.PLAY;
         this.eventSupport.dispatchEvent(new CustomEvent('play'));

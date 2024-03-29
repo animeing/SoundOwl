@@ -53,7 +53,7 @@ export default {
     
   beforeRouteLeave(_to, _from, next)  {
     audio.eventSupport.removeEventListener('audioSet', this.playChange);
-    audio.playList.eventSupport.removeEventListener('change', this.playlistUpdate);
+    audio.playList.removeEventListener('change', this.playlistUpdate);
     next();
   },
   props:{
@@ -69,7 +69,7 @@ export default {
   },
   created(){
     audio.eventSupport.addEventListener('audioSet', this.playChange);
-    audio.playList.eventSupport.addEventListener('change', this.playlistUpdate);
+    audio.playList.addEventListener('change', this.playlistUpdate);
   },
   mounted() {
     let observer = new MutationObserver(()=>{
@@ -90,7 +90,7 @@ export default {
       {
         let clearPlaylist = BaseFrameWork.createCustomElement('sw-libutton');
         clearPlaylist.menuItem.onclick=()=>{
-          audio.playList.removeAll();
+          audio.playList.clearPlaylist();
         };
         clearPlaylist.menuItem.value = 'Clear playlist';
         ContextMenu.contextMenu.appendChild(clearPlaylist);
@@ -176,7 +176,7 @@ export default {
           if(!playListSoundClip.equals(soundClip)) {
             continue;
           }
-          audio.playList.remove(playListSoundClip);
+          audio.playList.removeClip(playListSoundClip);
           break;
         }
       };

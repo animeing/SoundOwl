@@ -6,7 +6,7 @@ export const audioParamSave=()=>{
   let saveParams = JSON.stringify(
     {
       'volume': audio.audio.volume,
-      'loopMode': audio.loopMode,
+      'loopMode': audio.playList.loopMode,
       'loadGiveUpTime':audio.loadGiveUpTime,
       'equalizerGains':audio.equalizer.gains,
       'soundSculpt':audio.exAudioEffect.isUseEffect,
@@ -23,7 +23,7 @@ export const audioParamLoad=()=>{
   }
   let audioParams = JSON.parse(audioParam);
   audio.audio.volume = audioParams.volume;
-  audio.loopMode = audioParams.loopMode;
+  audio.playList.loopMode = audioParams.loopMode;
   audio.loadGiveUpTime = audioParams.loadGiveUpTime;
   audio.equalizer.gains = audioParams.equalizerGains;
   audio.exAudioEffect.isUseEffect = audioParams.soundSculpt;

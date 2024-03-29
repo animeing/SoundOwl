@@ -129,15 +129,15 @@ export default {
       if(ContextMenu.isVisible){
         return;
       }
-      audio.playList.removeAll();
-      for(const audioclip of this.soundClips) {
-        audio.playList.add(audioclip);
+      let audioBeforeClip = audio.currentAudioClip;
+      if(!audio.playList.isSamePlaylist(this.soundClips)){
+        audio.playList.updatePlaylist(this.soundClips);
       }
       if(audio.currentAudioClip == null){
         audio.play(soundClip);
         return;
       }
-      if(soundClip.equals(audio.currentAudioClip)){
+      if(audioBeforeClip.equals(soundClip)){
         if(audio.currentPlayState === AudioPlayStateEnum.PAUSE || audio.currentPlayState === AudioPlayStateEnum.STOP ){
           audio.play();
         } else {

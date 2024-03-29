@@ -88,17 +88,17 @@ export default {
   },
   methods:{
     repeatIconClick(){
-      switch(audio.loopMode) {
+      switch(audio.playList.loopMode) {
         case AudioLoopModeEnum.NON_LOOP:{
-          audio.loopMode = AudioLoopModeEnum.TRACK_LOOP;
+          audio.playList.loopMode = AudioLoopModeEnum.TRACK_LOOP;
           break;
         }
         case AudioLoopModeEnum.TRACK_LOOP:{
-          audio.loopMode = AudioLoopModeEnum.AUDIO_LOOP;
+          audio.playList.loopMode = AudioLoopModeEnum.AUDIO_LOOP;
           break;
         }
         case AudioLoopModeEnum.AUDIO_LOOP:{
-          audio.loopMode = AudioLoopModeEnum.NON_LOOP;
+          audio.playList.loopMode = AudioLoopModeEnum.NON_LOOP;
           break;
         }
       }
@@ -106,7 +106,7 @@ export default {
       audioParamSave();
     },
     repeatName() {
-      switch(audio.loopMode) {
+      switch(audio.playList.loopMode) {
         case AudioLoopModeEnum.NON_LOOP:{
           return 'No loop';
         }
@@ -128,19 +128,16 @@ export default {
     },
     beforeIconClick(){
       if(ContextMenu.isVisible)return;
-      let currentIndex = audio.playList.equalFindIndex(audio.currentAudioClip);
-      let beforeAudioClip = audio.playList.get(--currentIndex);
+      let beforeAudioClip = audio.playList.previous();
       if(beforeAudioClip == null)return;
-      audio.setCurrentAudioClip(beforeAudioClip);
       if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
         audio.play(beforeAudioClip);
       }
       audio.audio.currentTime = 0;
     },
     nextIconClick(){
-      let nextAudioClip = audio.nextClip();
+      let nextAudioClip = audio.playList.next();
       if(nextAudioClip == null)return;
-      audio.setCurrentAudioClip(nextAudioClip);
       if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
         audio.play(nextAudioClip);
       }
