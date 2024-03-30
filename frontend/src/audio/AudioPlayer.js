@@ -48,7 +48,7 @@ class AudioPlayer{
         //MEDIA_ERR_SRC_NOT_SUPPORTED && defaultlink
         let audiosrc = this.audio.src;
         let wavBlob = await conversionToWav(audiosrc);
-        if(this.currentPlayState == AudioPlayStateEnum.PLAY && audiosrc == this.playList.currentAudioClip.src) {
+        if(this.currentPlayState == AudioPlayStateEnum.PLAY && decodeURI(audiosrc) == this.playList.currentAudioClip.src) {
           this.audio.src = wavBlob;
           this.audio.play();
         }
