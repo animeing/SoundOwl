@@ -60,8 +60,7 @@ export default {
             audio.playList.add(soundClip, 0);
             return;
           }
-          let appendPosition = audio.playList.equalFindIndex(audio.currentAudioClip);
-          audio.playList.add(soundClip, appendPosition+1);
+          audio.playList.appendAudioClipNext(soundClip);
         };
         addNextSound.menuItem.value = 'Add to playlist';
         ContextMenu.contextMenu.appendChild(addNextSound);
