@@ -99,8 +99,12 @@ export class Playlist extends EventTarget {
    * @param {number} position オーディオクリップを挿入する位置
    */
   insertAudioClip(audioClip, position) {
+    let nowPlaying = this.currentAudioClip;
     if (position >= 0 && position <= this._list.length) {
       this._list.add(audioClip, position);
+    }
+    if(nowPlaying != null) {
+      this.currentAudioClip = nowPlaying;
     }
   }
 
@@ -176,7 +180,11 @@ export class Playlist extends EventTarget {
     if(remove == this.PLAY_POSITION) {
       return;
     }
+    let nowPlaying = this.currentAudioClip;
     this._list.remove(audioClip);
+    if(nowPlaying != null) {
+      this.currentAudioClip = nowPlaying;
+    }
   }
 
   /**
