@@ -24,8 +24,8 @@ export async function ffmpegInitalize() {
   isLoaded = true;
 
   cacheList.addEventListener('delete',data=>{
-    ffmpeg.deleteFile(data.detail.value);
-    URL.revokeObjectURL(data.detail.objectUrl);
+    ffmpeg.deleteFile(data.detail.value.convert);
+    URL.revokeObjectURL(data.detail.value.objectUrl);
   });
 }
 
