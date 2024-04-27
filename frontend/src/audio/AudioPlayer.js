@@ -1,4 +1,4 @@
-import { BaseFrameWork, MessageWindow, setTitle } from '../base';
+import { BaseFrameWork, MessageWindow, setTitle, WakeLockManager } from '../base';
 import { SoundInfomation, SoundPlayedAction } from '../page';
 import { StereoAudioEqualizer } from './effect/equalizer/StereoAudioEqualizer';
 import { LoudnessNormalize } from './effect/normalize/LoudnessNormalize';
@@ -40,6 +40,10 @@ class AudioPlayer{
         this.updateJob = null;
       }
     });
+    const wakeLockManager = new WakeLockManager();
+    this.eventSupport.addEventListener('play',()=>{wakeLockManager.requestWakeLock();});
+    this.eventSupport.addEventListener('pause', ()=>{wakeLockManager.releaseWakeLock();});
+    this.eventSupport.addEventListener('stop', ()=>{wakeLockManager.releaseWakeLock();});
 
     ffmpegInitalize();
     this.audio.onerror = async ()=> {

@@ -600,6 +600,36 @@ BaseFrameWork.LimitedList = class extends EventTarget{
   }
 };
 
+export class WakeLockManager {
+  constructor() {
+    this.wakeLock = null;
+    this.active = false;
+  }
+
+  async requestWakeLock() {
+    if ('wakeLock' in navigator && !this.active) {
+      try {
+        this.wakeLock = await navigator.wakeLock.request('screen');
+        this.wakeLock.addEventListener('release', () => {
+          this.active = false;
+        });
+        this.active = true;
+      } catch (e) {
+        console.error(`Failed to acquire wake lock: ${e.name}, ${e.message}`);
+        this.active = false;
+      }
+    }
+  }
+
+  async releaseWakeLock() {
+    if (this.wakeLock !== null && this.active) {
+      await this.wakeLock.release();
+      this.wakeLock = null;
+      this.active = false;
+    }
+  }
+}
+
 /**
  * @template T
  */
