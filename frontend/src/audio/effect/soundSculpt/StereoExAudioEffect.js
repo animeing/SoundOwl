@@ -1,32 +1,30 @@
 import { SoundSculptEffect } from './SoundSculptEffect';
 
 export class StereoExAudioEffect {
+
+  constructor() {
+    this.leftExAudioEffect = new SoundSculptEffect();
+    this.rightExAudioEffect = new SoundSculptEffect();
+    this._isUseEffect = true;
+  }
   /**
-     * @param {AudioNode} audioSource 
+     * 
+     * @param {AudioNode} audioNode 
      * @param {AudioContext} audioContext 
      * @param {StereoAudioEqualizer} equalizer
+     * @param {AudioNode} destination 
      */
-  constructor(audioSource, audioContext, equalizer) {
-    this.audioSource = audioSource;
+  connect(audioNode, audioContext, equalizer, destination) {
+    this.audioSource = audioNode;
     this.audioContext = audioContext;
-    this.leftExAudioEffect = new SoundSculptEffect(this.audioSource, this.audioContext, equalizer.leftEqualizer);
-    this.rightExAudioEffect = new SoundSculptEffect(this.audioSource, this.audioContext, equalizer.rightEqualizer);
-    this._isUseEffect = true;
+    this.leftExAudioEffect.connect(this.audioSource, this.audioContext, equalizer.leftEqualizer, destination);
+    this.rightExAudioEffect.connect(this.audioSource, this.audioContext, equalizer.leftEqualizer, destination);
     this.leftExAudioEffect.isUseEffect;
   }
 
   reset() {
     this.leftExAudioEffect.reset();
     this.rightExAudioEffect.reset();
-  }
-
-  /**
-     * 
-     * @param {AudioNode} audioNode 
-     */
-  connect(audioNode) {
-    this.leftExAudioEffect.connect(audioNode);
-    this.rightExAudioEffect.connect(audioNode);
   }
 
   set isUseEffect(val) {

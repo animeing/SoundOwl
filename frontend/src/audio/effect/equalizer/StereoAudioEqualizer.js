@@ -1,24 +1,11 @@
 import { AudioEqualizer } from './AudioEqualizer';
 
 export class StereoAudioEqualizer {
-  /**
-     * 
-     * @param {AudioNode} audioSource 
-     * @param {AudioContext} audioContext 
-     */
-  constructor(audioSource, audioContext) {
-    this.splitter = audioContext.createChannelSplitter(2);
-    this.merger = audioContext.createChannelMerger(2);
+  constructor() {
     let AudioEqualizerStereo = class extends AudioEqualizer{
-      /**
-             * 
-             * @param {AudioNode} audioSource 
-             * @param {AudioContext} audioContext 
-             * @param {ChannelMergerNode} merger
-             */
-      constructor(audioSource, audioContext, merger) {
-        super(audioSource, audioContext);
-        this.merger = merger;
+
+      connect(audioSource, audioContext, merger) {
+        super.connect(audioSource, audioContext, merger);
         this._connect();
       }
     };
@@ -33,7 +20,9 @@ export class StereoAudioEqualizer {
         }
         this.filters[this.gains[this.gains.length - 1].hz].connect(this.merger, 0, 0);
       }
-    }(audioSource, audioContext, this.merger);
+    }();
+
+    
     this.rightEqualizer = new class extends AudioEqualizerStereo{
       /**
              * @param {AudioDestinationNode} _audioDestination
@@ -44,20 +33,24 @@ export class StereoAudioEqualizer {
         }
         this.filters[this.gains[this.gains.length - 1].hz].connect(this.merger, 0, 1);
       }
-    }(audioSource, audioContext, this.merger);
+    }();
+  }
 
-    audioSource.connect(this.splitter);
+  /**
+     * @param {AudioNode} audioSource 
+     * @param {AudioContext} audioContext 
+     */
+  connect(audioSource, audioContext) {
+    this.splitter = audioContext.createChannelSplitter(2);
+    this.merger = audioContext.createChannelMerger(2);
+    this.leftEqualizer.connect(audioSource, audioContext, this.merger);
+    this.rightEqualizer.connect(audioSource, audioContext, this.merger);
+
 
     this.splitter.connect(this.leftEqualizer.filters[this.leftEqualizer.gains[0].hz], 0);
     this.splitter.connect(this.rightEqualizer.filters[this.rightEqualizer.gains[0].hz], 1);
 
-  }
-
-  /**
-     * @param {AudioNode} audioNode 
-     */
-  connect(audioNode) {
-    this.merger.connect(audioNode);
+    // this.merger.connect(audioContext.destination);
   }
 
   /**

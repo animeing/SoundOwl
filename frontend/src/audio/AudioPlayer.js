@@ -12,8 +12,9 @@ import { AudioClip } from './type/AudioClip';
 class AudioPlayer{
   constructor(){
     this.audio = new Audio;
-    this.audioContext = new AudioContext;
-    this.source = this.audioContext.createMediaElementSource(this.audio);
+    this.loudnessNormalize = new LoudnessNormalize();
+    this.equalizer = new StereoAudioEqualizer();
+    this.exAudioEffect = new StereoExAudioEffect();
     /**
      * @type {Playlist}
      */
@@ -67,12 +68,21 @@ class AudioPlayer{
       request.formDataMap.append('SoundHash', this.playList.currentAudioClip.soundHash);
       request.execute();
     });
-    this.loudnessNormalize = new LoudnessNormalize(this.source, this.audioContext);
-    this.equalizer = new StereoAudioEqualizer(this.loudnessNormalize.gainNode, this.audioContext);
-    this.exAudioEffect = new StereoExAudioEffect(this.equalizer.merger, this.audioContext, this.equalizer);
-    this.exAudioEffect.connect(this.audioContext.destination);
 
     this.lockEventTarget.action('setUpdate');
+  }
+
+  initalize() {
+    
+    this.audioContext = new AudioContext;
+    this.source = this.audioContext.createMediaElementSource(this.audio);
+
+    this.loudnessNormalize.connect(this.source, this.audioContext);
+    this.equalizer.connect(this.loudnessNormalize.gainNode, this.audioContext);
+    this.exAudioEffect.connect(this.equalizer.merger, this.audioContext, this.equalizer,this.audioContext.destination);
+
+
+    this.eventSupport.dispatchEvent(new CustomEvent('initalize'));
   }
 
   /**
@@ -237,6 +247,9 @@ class AudioPlayer{
    * @param {AudioClip} audioClip - 再生するオーディオクリップ。未指定の場合、現在のオーディオクリップが使用されます。
    */
   play(audioClip = undefined){
+    if(this.audioContext == null) {
+      this.initalize();
+    }
     if(audioClip == undefined && this.playList.currentAudioClip == undefined) {
       return;
     }

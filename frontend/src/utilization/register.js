@@ -25,7 +25,7 @@ export const audioParamLoad=()=>{
   audio.audio.volume = audioParams.volume;
   audio.playList.loopMode = audioParams.loopMode;
   audio.loadGiveUpTime = audioParams.loadGiveUpTime;
-  audio.equalizer.gains = audioParams.equalizerGains;
   audio.exAudioEffect.isUseEffect = audioParams.soundSculpt;
   audio.loudnessNormalize.isUse = audioParams.audioLondnessNormalize;
+  audio.equalizer.gains = audioParams.equalizerGains;
 };

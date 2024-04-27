@@ -68,34 +68,36 @@ export default {
     this.ctx = this.$el.getContext('2d');
     this.animationId = requestAnimationFrame(this.run);
     this.canvasObjects = new BaseFrameWork.List();
-    this.analyser = audio.audioContext.createAnalyser();
-    this.analyser.fftSize = 1<<7+1;
-    audio.source.connect(this.analyser);
-    let filter = audio.audioContext.createBiquadFilter();
-    filter.type = 'allpass';
-    audio.source.connect(filter);
-        
-    let leng = this.analyser.frequencyBinCount;
-    this.spectrums = new Uint8Array(leng);
-    this.analyser.smoothingTimeConstant = .5;
-    this.analyser.getByteFrequencyData(this.spectrums);
-    for(let createCount = 0, len = this.spectrums.length; createCount < len; createCount++){
-      let box = new BaseFrameWork.Draw.Figure.BoxCanvasObject2D;
-      box.update = async ()=>{
-        if(this.spectrums != null){
-          box.transform.position.x = (createCount+1)*(this.$el.width / (len+4));
-          box.transform.position.y = 0;
-          box.transform.scale.x = (this.$el.width / len) >> 1;
-          box.transform.scale.y = (this.spectrums[createCount] / 0xff ) * (this.$el.height >> 1);
-        }
-      };
-      box.fcontext(this.ctx);
-      let scale = new BaseFrameWork.Draw.Point2D;
-      scale.x = this.$el.width;
-      scale.y = this.$el.height;
-      box.canvasScale = scale;
-      this.canvasObjects.add(box);
-    }
+    audio.eventSupport.addEventListener('initalize',()=>{
+      this.analyser = audio.audioContext.createAnalyser();
+      this.analyser.fftSize = 1<<7+1;
+      audio.source.connect(this.analyser);
+      let filter = audio.audioContext.createBiquadFilter();
+      filter.type = 'allpass';
+      audio.source.connect(filter);
+          
+      let leng = this.analyser.frequencyBinCount;
+      this.spectrums = new Uint8Array(leng);
+      this.analyser.smoothingTimeConstant = .5;
+      this.analyser.getByteFrequencyData(this.spectrums);
+      for(let createCount = 0, len = this.spectrums.length; createCount < len; createCount++){
+        let box = new BaseFrameWork.Draw.Figure.BoxCanvasObject2D;
+        box.update = async ()=>{
+          if(this.spectrums != null){
+            box.transform.position.x = (createCount+1)*(this.$el.width / (len+4));
+            box.transform.position.y = 0;
+            box.transform.scale.x = (this.$el.width / len) >> 1;
+            box.transform.scale.y = (this.spectrums[createCount] / 0xff ) * (this.$el.height >> 1);
+          }
+        };
+        box.fcontext(this.ctx);
+        let scale = new BaseFrameWork.Draw.Point2D;
+        scale.x = this.$el.width;
+        scale.y = this.$el.height;
+        box.canvasScale = scale;
+        this.canvasObjects.add(box);
+      }
+    });
   },
   methods: {
     contextCanvasMenu() {

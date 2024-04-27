@@ -1,12 +1,6 @@
 
 export class LoudnessNormalize {
-  /**
-     * @param {AudioNode} audioSource 
-     * @param {AudioContext} audioContext 
-     */
-  constructor(audioSource, audioContext) {
-    this.gainNode = audioContext.createGain();
-    audioSource.connect(this.gainNode);
+  constructor() {
     this._isUseEffect = true;
     this.desiredMeanVolume = -16;
     /**
@@ -19,13 +13,19 @@ export class LoudnessNormalize {
 
   /**
      * @param {AudioNode} audioSource 
+     * @param {AudioContext} audioContext 
      */
-  connect(audioSource){
-    this.gainNode.connect(audioSource);
+  connect(audioSource, audioContext){
+    this.gainNode = audioContext.createGain();
+    audioSource.connect(this.gainNode);
+    this.isUse = this._isUse;
   }
 
   set isUse(isUse) {
     this._isUse = isUse;
+    if(this.gainNode == null) {
+      return;
+    }
     if(isUse) {
       this.soundMeanVolume = this._decibel;
     } else {

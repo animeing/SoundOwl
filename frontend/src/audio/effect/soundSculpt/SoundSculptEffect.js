@@ -1,32 +1,19 @@
 
 export class SoundSculptEffect { 
-  /**
-     * @param {AudioNode} audioSource 
-     * @param {AudioContext} audioContext 
-     * @param {AudioEqualizer} equalizer
-     */
-  constructor(audioSource, audioContext, equalizer) {
-    this.audioContext = audioContext;
-    this.equalizer = equalizer;
+  constructor() {
     /**
          * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, smoothing: number, normalizedAvg: number, multiplier: number}>}
          */
     this.prevEffectHz = [];
 
-    this.analyser = this.audioContext.createAnalyser();
     this.voice = {'sum': 0, 'count':0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 64, 'maxHz': 8e3};
 
-    this.analyser.fftSize = 32768;
-    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-
-    audioSource.connect(this.analyser);
     /**
          * @type {number}
          */
     this.frameId = null;
     this._isUseEffect = true;
 
-    this.effectMain();
   }
 
   set isUseEffect(val) {
@@ -34,6 +21,9 @@ export class SoundSculptEffect {
       return;
     }
     this._isUseEffect = val;
+    if(this.audioContext == null) {
+      return;
+    }
     if(this._isUseEffect) {
       this.effectMain();
     } else if(this.frameId != null) {
@@ -50,10 +40,20 @@ export class SoundSculptEffect {
   }
   /**
      * 
-     * @param {AudioNode} audioNode 
+     * @param {AudioEqualizer} equalizer
+     * @param {AudioNode} destination 
      */
-  connect(audioNode) {
-    this.analyser.connect(audioNode);
+  connect(audioSource, audioContext, equalizer, destination) {
+    this.equalizer = equalizer;
+    this.audioContext = audioContext;
+    this.analyser = this.audioContext.createAnalyser();
+    this.analyser.fftSize = 32768;
+    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+
+    audioSource.connect(this.analyser);
+    this.analyser.connect(destination);
+    
+    this.isUseEffect = this._isUseEffect;
   }
   effectMain(){
     const SELF = this;
