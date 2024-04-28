@@ -567,6 +567,16 @@ export class DragMoveEvent extends Event{
   });
 })(Array.prototype);
 
+/**
+ * 
+ * @param {Element} element 
+ * @param {string} variableName 
+ * @returns 
+ */
+BaseFrameWork.getCSSProperty = (element, variableName)=> {
+  return getComputedStyle(element).getPropertyValue(variableName).trim();
+};
+
 BaseFrameWork.LimitedList = class extends EventTarget{
   constructor(limit) {
     super();
@@ -2406,6 +2416,22 @@ export class CanvasObjectColor{
   a = 100;
   get color(){
     return `rgb(${this.r},${this.g},${this.b},${this.a}%)`;
+  }
+
+  setRgb(hex) {
+    if(hex == null) {
+      return;
+    }
+    let sanitizedHex = hex.replace('#', '');
+  
+    if (sanitizedHex.length === 3) {
+      sanitizedHex = sanitizedHex.split('').map(char => char + char).join('');
+    }
+  
+    this.r = parseInt(sanitizedHex.substring(0, 2), 16);
+    this.g = parseInt(sanitizedHex.substring(2, 4), 16);
+    this.b = parseInt(sanitizedHex.substring(4, 6), 16);
+    this.a = 100;
   }
 }
 
