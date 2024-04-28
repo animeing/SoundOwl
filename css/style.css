@@ -3,6 +3,7 @@
   --subfontcolor: #828282;
   --basecolor: #eee;
   --subcolor: rgb(207, 207, 207);
+  --fillcontrollercolor: rgba(205,205,205,0.8);
   --subcoloraccentcolor: rgb(192, 192, 192);
   --accentcolor: rgb(255, 176, 72);
   --playerbgcolor: #dbdbdb;
@@ -910,7 +911,7 @@ a.audio-infomation {
  */
 .current-sound-controller-fill-layout{
   height: 100%;
-  background:rgba(50,50,50,0.8);
+  background:var(--fillcontrollercolor);
 }
 
 .current-sound-controller-fill-layout .sound-info-frame .audio-play-item-controller{
