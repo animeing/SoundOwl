@@ -497,17 +497,25 @@ input[type='button'].button:hover {
 #main-menu > .searchbox > span,
 #main-menu > .searchbox > input[type='text']{
   background: var(--playerfcbgcolor);
+  box-sizing: border-box;
   height: 23px;
+  display: inline-block;
+}
+
+#main-menu > .searchbox > span {
+  text-align: center;
+  line-height: 23px;
 }
 
 #main-menu > .searchbox{
   font-size: 1em;
   vertical-align: top;
   height: 25px;
-  margin: 10px;
+  margin: 0 10px;
   border-radius: 5px;
   padding: 0 5px;
   cursor: text;
+  overflow: hidden;
 }
 
 #main-menu > .searchbox{
