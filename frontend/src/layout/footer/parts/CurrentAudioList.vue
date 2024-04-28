@@ -193,7 +193,7 @@ export default {
       return 'audio-controller-playlist'+(this.isView?'':' height-hide');
     },
     audioListClass() {
-      return 'layout-base audio-list audio-list-frame'+(this.isView?'':' height-hide');
+      return 'audio-list audio-list-frame'+(this.isView?'':' height-hide');
     },
     playlistUpdate() {
       this.soundClips.splice(0);
