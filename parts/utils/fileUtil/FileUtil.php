@@ -75,9 +75,14 @@ final class FileUtil implements IMimeType{
     /**
      * @param function $action 引数はFilePathが入ってる。
      */
-    public static function fileListAction($dir, $action) {
+    public static function fileListAction($dir, $action, $exclusionPaths = array()) {
         if(strpos($dir,'RECYCLE.BIN') !== false) {
             return;
+        }
+        foreach($exclusionPaths as $exclusionPath) {
+            if (preg_match("/$exclusionPath/", $dir)) {
+                return array();
+            }
         }
         $files = glob(rtrim($dir, '/') .  '/*', GLOB_BRACE);
         foreach ($files as $file) {
@@ -85,7 +90,7 @@ final class FileUtil implements IMimeType{
                 $action($file);
             }
             if (is_dir($file)) {
-                FileUtil::fileListAction($file, $action);
+                FileUtil::fileListAction($file, $action, $exclusionPaths);
             }
         }
     }
