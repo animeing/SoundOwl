@@ -187,7 +187,7 @@ if(!file_exists(LOCK_PATH)) {
                 if(!hasRegistedSound($file)){
                     registSoundData($file);
                 }
-            });
+            }, EXCLUSION_PATHS);
         }
     } finally {
         unlink(LOCK_PATH);

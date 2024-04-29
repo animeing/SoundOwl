@@ -81,6 +81,10 @@
                 type="text"
                 :value="sound"
                 name="sound_directory" />
+            <sw-textarea-param 
+                data-title="Exclusion Paths"
+                :value="exclusionPaths"
+                name="exclusionPaths" />
         </div>
         <div class="block">
             <p class="title">
@@ -117,6 +121,7 @@ export default {
       user:'',
       pass:'',
       sound:'',
+      exclusionPaths: '',
       websocketRetryCount:0,
       websocketRetryIntervalMs:10000,
 
@@ -138,6 +143,7 @@ export default {
       this.user = event.detail.response.db_user;
       this.pass = event.detail.response.db_pass;
       this.sound = event.detail.response.sound_directory;
+      this.exclusionPaths = event.detail.response.exclusionPaths.replaceAll('|','\n');
       this.websocketRetryCount = event.detail.response.websocket_retry_count;
       this.websocketRetryIntervalMs = event.detail.response.websocket_retry_interval;
     });
