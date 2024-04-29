@@ -105,7 +105,7 @@
     </div>
 </template>
 <script>
-import { MessageButtonWindow, MessageWindow, toBoolean } from '../../base';
+import { BaseFrameWork, MessageButtonWindow, MessageWindow, toBoolean } from '../../base';
 import { SoundOwlProperty } from '../../layout';
 import { SiteStatus, SoundRegistAction, UpdateSetting } from '../../page';
 import SettingFormComponent from './contents/SettingFormComponent.vue';
@@ -174,7 +174,10 @@ export default {
       for(const element of Array.prototype.slice.call(document.getElementsByTagName('sw-input-param'))){
         updateSetting.formDataMap.set(element.name, element.value);
       }
-            
+      for(const element of Array.prototype.slice.call(document.getElementsByTagName('sw-textarea-param'))) {
+        updateSetting.formDataMap.set(element.name, BaseFrameWork.removeEmptyLines(element.value).replace(/\n/g, '|'));
+        element.value = BaseFrameWork.removeEmptyLines(element.value);
+      }
       updateSetting.execute();
     },
     async soundRegist() {

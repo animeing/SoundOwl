@@ -38,7 +38,9 @@ define("WEBSOCKET_RETRY_INTERVAL", getParam("websocket_retry_interval",10000));
 
 define("REDIS_SERVER", getenv('REDIS_SERVER')?: getParam("redis_ip_address","localhost"));
 
-define("EXCLUSION_PATHS", explode("|", getParam("exclusionPaths", "")));
+define("EXCLUSION_PATHS", array_filter(explode("|", getParam("exclusionPaths", "")), function($value) {
+  return $value !== "" && $value !== null;
+}));
 
 $setting = null;
 
