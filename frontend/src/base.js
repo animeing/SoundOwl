@@ -567,6 +567,22 @@ export class DragMoveEvent extends Event{
   });
 })(Array.prototype);
 
+BaseFrameWork.removeEmptyLines=(text)=>{
+  const lines = text.split('\n');
+  const filteredLines = lines.filter(line => line.trim() !== '');
+  return filteredLines.join('\n');
+};
+
+/**
+ * 
+ * @param {Element} element 
+ * @param {string} variableName 
+ * @returns 
+ */
+BaseFrameWork.getCSSProperty = (element, variableName)=> {
+  return getComputedStyle(element).getPropertyValue(variableName).trim();
+};
+
 BaseFrameWork.LimitedList = class extends EventTarget{
   constructor(limit) {
     super();
@@ -2239,6 +2255,140 @@ class InputParam extends HTMLElement {
 }
 BaseFrameWork.defineCustomElement('sw-input-param', InputParam);
 
+class TextAreaParam extends HTMLElement {
+  constructor() {
+    super();
+    this._title = document.createElement('span');
+    this._textarea = document.createElement('textarea');
+    this._textarea.addEventListener('contextmenu', ()=>{
+      ContextMenu.contextMenu.destoryChildren();
+      {
+        let copy = BaseFrameWork.createCustomElement('sw-libutton');
+        copy.menuItem.value = 'Copy';
+        copy.menuItem.onclick = ()=>{
+          ClipBoard.set(this._textarea.value);
+        };
+        ContextMenu.contextMenu.appendChild(copy);
+      }
+      {
+        let paste = BaseFrameWork.createCustomElement('sw-libutton');
+        paste.menuItem.value = 'Paste';
+        paste.menuItem.onclick = ()=>{
+          ClipBoard.get(this._textarea);
+        };
+        ContextMenu.contextMenu.appendChild(paste);
+      }
+    });
+    {
+      let val = this._textarea.value;
+      this._textarea.addEventListener('input', ()=>{
+        if(!this._textarea.hasAttribute('pattern')) {
+          return;
+        }
+        const pattern = new RegExp(this._textarea.getAttribute('pattern'));
+        if(!pattern.test('/^'+this._textarea.value+'$/')) {
+          this._textarea.value = val;
+          return;
+        }
+        val = this._textarea.value;
+      });
+    }
+  }
+    
+  static get observedAttributes() {
+    return ['value', 'data-title', 'pattern', 'name', 'readonly'];
+  }
+
+  attributeChangedCallback(name, _oldValue, newValue) {
+    if('value' == name) {
+      this._textarea.value = newValue;
+    }
+    if('data-title' == name) {
+      this._title.innerText = newValue;
+    }
+    if('pattern' == name) {
+      this._textarea.setAttribute('pattern', newValue);
+    }
+    if('name' == name) {
+      this._textarea.name = newValue;
+    }
+    if('readonly' == name) {
+      this._textarea.readOnly = newValue;
+    }
+  }
+
+  get value(){
+    return this._textarea.value;
+  }
+  set value(val) {
+    this.setAttribute('value', val);
+  }
+
+  get title() {
+    return this._title.innerText;
+  }
+  set title(title) {
+    this.setAttribute('data-title', title);
+  }
+
+  get pattern(){
+    return this._textarea.pattern;
+  }
+
+  set pattern(pattern){
+    this.setAttribute('pattern', pattern);
+  }
+
+  get name() {
+    return this._textarea.name;
+  }
+  set name(name) {
+    this.setAttribute('name', name);
+  }
+
+  get readOnly() {
+    return this._textarea.readOnly;
+  }
+  set readOnly(readOnly) {
+    this.setAttribute('readonly', readOnly);
+  }
+    
+  connectedCallback(){
+    let shadow = this.attachShadow({mode: 'closed'});
+    shadow.appendChild(this._title);
+    shadow.appendChild(this._textarea);
+    let style = document.createElement('style');
+    style.innerHTML = `
+        :host {
+            display: block;
+        }
+        
+        span{
+            min-width: 10em;
+            width: fit-content;
+            display: inline-block;
+            border-bottom: 2px solid var(--subfontcolor);
+            margin-bottom: 10px;
+        }
+          
+        textarea{
+            background-color: var(--playerbgcolor);
+            width: 100%;
+            border-radius: 5px;
+            font-size: 1em;
+            min-height: 100px;
+            color: var(--fontcolor);
+            -webkit-text-fill-color: var(--fontcolor);
+            border: none;
+            padding: 5px;
+            resize: none;
+        }`;
+    shadow.appendChild(style);
+  }
+}
+
+BaseFrameWork.defineCustomElement('sw-textarea-param', TextAreaParam);
+
 
 class AudioSlideList extends HTMLElement {
   constructor() {
@@ -2406,6 +2556,22 @@ export class CanvasObjectColor{
   a = 100;
   get color(){
     return `rgb(${this.r},${this.g},${this.b},${this.a}%)`;
+  }
+
+  setRgb(hex) {
+    if(hex == null) {
+      return;
+    }
+    let sanitizedHex = hex.replace('#', '');
+  
+    if (sanitizedHex.length === 3) {
+      sanitizedHex = sanitizedHex.split('').map(char => char + char).join('');
+    }
+  
+    this.r = parseInt(sanitizedHex.substring(0, 2), 16);
+    this.g = parseInt(sanitizedHex.substring(2, 4), 16);
+    this.b = parseInt(sanitizedHex.substring(4, 6), 16);
+    this.a = 100;
   }
 }
 

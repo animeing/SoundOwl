@@ -66,6 +66,7 @@ export default {
   },
   mounted() {
     this.ctx = this.$el.getContext('2d');
+    let color = BaseFrameWork.getCSSProperty(this.$el, '--box-color');
     this.animationId = requestAnimationFrame(this.run);
     this.canvasObjects = new BaseFrameWork.List();
     audio.eventSupport.addEventListener('initalize',()=>{
@@ -82,6 +83,7 @@ export default {
       this.analyser.getByteFrequencyData(this.spectrums);
       for(let createCount = 0, len = this.spectrums.length; createCount < len; createCount++){
         let box = new BaseFrameWork.Draw.Figure.BoxCanvasObject2D;
+        box.color.setRgb(color);
         box.update = async ()=>{
           if(this.spectrums != null){
             box.transform.position.x = (createCount+1)*(this.$el.width / (len+4));
