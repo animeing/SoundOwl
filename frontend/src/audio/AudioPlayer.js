@@ -181,10 +181,13 @@ class AudioPlayer{
         }
       }
       if(!this.isLoading && (this.audio.currentTime === this.audio.duration)){
-        let clip = this.playList.next();
+        if(this.playList.currentAudioClip == undefined) {
+          return;
+        }
         let playedAction = new SoundPlayedAction;
         playedAction.formDataMap.append('SoundHash', this.playList.currentAudioClip.soundHash);
         playedAction.execute();
+        let clip = this.playList.next();
         if(clip == null)
         {
           this.currentPlayState = AudioPlayStateEnum.STOP;
