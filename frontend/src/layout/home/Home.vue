@@ -1,17 +1,17 @@
 <template>
     <div>
         <SlideComponet
-            :slide-title="'New Sounds 40'"
+            :slide-title="'New Sounds 100'"
             :data-request="newSoundRequest"
             :context-menu="soundContext"
             :item-click="newSoundClipClick" />
         <SlideComponet
-            :slide-title="'Sound Top 20'"
+            :slide-title="'Sound Top 100'"
             :data-request="soundCountRequest"
             :context-menu="soundContext"
             :item-click="soundClipClick" />
         <SlideComponet
-            :slide-title="'Album Top 20'"
+            :slide-title="'Album Top 100'"
             :data-request="albumCountRequest"
             :item-click="albumClipClick" />
     </div>

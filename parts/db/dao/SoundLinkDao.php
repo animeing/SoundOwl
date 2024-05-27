@@ -18,7 +18,7 @@ class SoundLinkDao extends SqlCreater implements SoundLinkTable {
     }
 
     
-    function SoundFileTimeDesc($limit = 40) {
+    function SoundFileTimeDesc($limit = 100) {
         return $this->toDtoList(
             $this->execute(
                 $this->selectQuery().$this::ORDER_BY.$this::ADD_TIME.$this::DESC.$this::LIMIT,
@@ -31,7 +31,7 @@ class SoundLinkDao extends SqlCreater implements SoundLinkTable {
     /**
      * @return SoundLinkDto[]
      */
-    function getPlayCountDesc($limit = 20) {
+    function getPlayCountDesc($limit = 100) {
         return $this->toDtoList(
             $this->execute(
                 $this->selectQuery().$this::ORDER_BY.$this::PLAY_COUNT.$this::DESC.$this::LIMIT,
@@ -40,7 +40,7 @@ class SoundLinkDao extends SqlCreater implements SoundLinkTable {
         );
     }
 
-    function getAlbumPlayCountDesc($limit = 20) {
+    function getAlbumPlayCountDesc($limit = 100) {
         $ALBUM_PLAY_COUNT = ' album_play_count ';
         return $this->toDtoList(
             $this->execute(
