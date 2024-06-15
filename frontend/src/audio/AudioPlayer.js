@@ -1,20 +1,23 @@
 import { BaseFrameWork, MessageWindow, setTitle, WakeLockManager } from '../base';
 import { SoundInfomation, SoundPlayedAction } from '../page';
-import { StereoAudioEqualizer } from './effect/equalizer/StereoAudioEqualizer';
-import { LoudnessNormalize } from './effect/normalize/LoudnessNormalize';
-import { StereoExAudioEffect } from './effect/soundSculpt/StereoExAudioEffect';
 import { AudioPlayStateEnum } from './enum/AudioPlayStateEnum';
 import { AudioStateEnum } from './enum/AudioStateEnum';
 import { conversionToWav, ffmpegInitalize } from './conversionToWav';
 import { Playlist } from './Playlist';
 import { AudioClip } from './type/AudioClip';
+import { LoudnessNormalizeComponent } from './effect/normalize/LoudnessNormalizeComponent';
+import { StereoAudioEqualizerComposite } from './effect/equalizer/StereoAudioEqualizerComposite';
+import { SoundSculptEffectComposite } from './effect/soundSculpt/SoundSculptEffectComposite';
+import { AudioEffectManager } from './effect/AudioComponentManager';
 
 class AudioPlayer{
   constructor(){
     this.audio = new Audio;
-    this.loudnessNormalize = new LoudnessNormalize();
-    this.equalizer = new StereoAudioEqualizer();
-    this.exAudioEffect = new StereoExAudioEffect();
+    this.audioEffectManager = new AudioEffectManager(this.audio);
+
+    this.loudnessNormalize = new LoudnessNormalizeComponent();
+    this.equalizer = new StereoAudioEqualizerComposite();
+    this.exAudioEffect = new SoundSculptEffectComposite(this.equalizer);
     /**
      * @type {Playlist}
      */
@@ -65,8 +68,8 @@ class AudioPlayer{
       let request = new SoundInfomation();
       request.httpRequestor.addEventListener('success', event=>{
         this.data = event.detail.response;
+        this.loudnessNormalize.soundClip = this.currentAudioClip;
         this.loudnessNormalize.soundMeanVolume = this.data.loudness_target;
-        this.loudnessNormalize.soundClip = this.playList.currentAudioClip;
         this.eventSupport.dispatchEvent(new CustomEvent('audio_info_loaded'));
       });
       request.formDataMap.append('SoundHash', this.playList.currentAudioClip.soundHash);
@@ -77,13 +80,11 @@ class AudioPlayer{
   }
 
   initalize() {
-    
-    this.audioContext = new AudioContext;
-    this.source = this.audioContext.createMediaElementSource(this.audio);
+    this.audioEffectManager.initialize();
 
-    this.loudnessNormalize.connect(this.source, this.audioContext);
-    this.equalizer.connect(this.loudnessNormalize.gainNode, this.audioContext);
-    this.exAudioEffect.connect(this.equalizer.merger, this.audioContext, this.equalizer,this.audioContext.destination);
+    this.audioEffectManager.addEffect('equalizer', this.equalizer);
+    this.audioEffectManager.addEffect('loudnessNormalize', this.loudnessNormalize);
+    this.audioEffectManager.addEffect('soundSculpt', this.exAudioEffect);
 
 
     this.eventSupport.dispatchEvent(new CustomEvent('initalize'));
@@ -254,7 +255,7 @@ class AudioPlayer{
    * @param {AudioClip} audioClip - 再生するオーディオクリップ。未指定の場合、現在のオーディオクリップが使用されます。
    */
   play(audioClip = undefined){
-    if(this.audioContext == null) {
+    if(this.audioEffectManager.audioContext == null) {
       this.initalize();
     }
     if(audioClip == undefined && this.playList.currentAudioClip == undefined) {
