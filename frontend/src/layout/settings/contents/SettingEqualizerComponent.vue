@@ -81,7 +81,7 @@ export default {
   methods:{
     valueChange(event, value){
       value.gain = (event.target.sliderValue);
-      audio.equalizer.setMonoGain(value.hz, value.gain);
+      audio.equalizer.applyHzGain({left:{hz:value.hz,gain:value.gain},right:{hz:value.hz,gain:value.gain}});
       audioParamSave();
     },
     changedPreset(){

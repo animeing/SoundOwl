@@ -36,13 +36,13 @@ export default {
   
   data() {
     return {
-      isUseSoundSculpt:audio.exAudioEffect.isUseEffect,
+      isUseSoundSculpt:audio.exAudioEffect.isUse,
       isUseLoudnessNormalization:audio.loudnessNormalize.isUse
     };
   },
   methods: {
     toggleEffect() {
-      audio.exAudioEffect.isUseEffect = !audio.exAudioEffect.isUseEffect;
+      audio.exAudioEffect.isUse = !audio.exAudioEffect.isUse;
       audioParamSave();
     },
     toggleLoudnessNormalization() {

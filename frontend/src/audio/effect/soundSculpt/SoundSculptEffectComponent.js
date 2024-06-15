@@ -1,30 +1,39 @@
+import { AudioComponent } from '../AudioComponent';
+import { AudioEqualizerComponent } from '../equalizer/AudioEqualizerComponent';
 
-export class SoundSculptEffect { 
-  constructor() {
+export class SoundSculptEffectComponent extends AudioComponent {
+
+  /**
+   * 
+   * @param {AudioEqualizerComponent} audioEqualizer 
+   */
+  constructor(audioEqualizer) {
+    super();
     /**
-         * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, smoothing: number, normalizedAvg: number, multiplier: number}>}
-         */
+     * @type {AudioEqualizerComponent}
+     */
+    this.audioEqualizer = audioEqualizer;
+    /**
+     * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, smoothing: number, normalizedAvg: number, multiplier: number}>}
+     */
     this.prevEffectHz = [];
 
     this.voice = {'sum': 0, 'count':0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 64, 'maxHz': 8e3};
 
     /**
-         * @type {number}
-         */
+     * @type {number}
+     */
     this.frameId = null;
-    this._isUseEffect = true;
-
   }
 
-  set isUseEffect(val) {
-    if(this._isUseEffect == val) {
-      return;
-    }
-    this._isUseEffect = val;
+
+  _setUse(val) {
+    super._setUse(val);
+    this.isUse = val;
     if(this.audioContext == null) {
       return;
     }
-    if(this._isUseEffect) {
+    if(this.isUse) {
       this.effectMain();
     } else if(this.frameId != null) {
       cancelAnimationFrame(this.frameId);
@@ -32,72 +41,79 @@ export class SoundSculptEffect {
     }
   }
 
-  get isUseEffect() {
-    return this._isUseEffect;
+  setAudioContext(audioContext) {
+    super.setAudioContext(audioContext);
+    this.initializeNodes();
   }
-  reset() {
-    this.prevEffectHz = [];
-  }
-  /**
-     * 
-     * @param {AudioEqualizer} equalizer
-     * @param {AudioNode} destination 
-     */
-  connect(audioSource, audioContext, equalizer, destination) {
-    this.equalizer = equalizer;
-    this.audioContext = audioContext;
+
+  initializeNodes() {
     this.analyser = this.audioContext.createAnalyser();
     this.analyser.fftSize = 32768;
     this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
 
-    audioSource.connect(this.analyser);
-    this.analyser.connect(destination);
-    
-    this.isUseEffect = this._isUseEffect;
+    this.inputNode = this.analyser;
+    this.outputNode = this.inputNode;
+    return this.analyser;
   }
-  effectMain(){
-    const SELF = this;
-    let animationFrame =()=>{
-      SELF.analyser.getByteFrequencyData(SELF.dataArray);
+
+  effectMain() {
+    let animationFrame = () => {
+      this.analyser.getByteFrequencyData(this.dataArray);
       let effectHz = this.calcBandValue();
       const MIN_GAIN = -6;
       const MAX_GAIN = 6;
-      let logs = '';
       let newGains = {};
-      SELF.equalizer.gains.forEach(element=>{
-        let newGain = effectHz[element.hz+''].smoothing * effectHz[element.hz+''].multiplier;
+      this.audioEqualizer.gains.forEach(gain=>{
+        let newGain = effectHz[gain.hz+''].smoothing * effectHz[gain.hz+''].multiplier;
         if(isNaN(newGain)) {
           return;
         }
-        if (element.hz >= this.voice.minHz && element.hz <= this.voice.maxHz) {
+        if (gain.hz >= this.voice.minHz && gain.hz <= this.voice.maxHz) {
           let alpha = 0.5;
           newGain = (1-alpha)*this.voice.normalizedAvg + alpha * newGain;
         }
-        newGains[element.hz+''] = SELF.getAdjustedValue(
+        newGains[gain.hz+''] = this.getAdjustedValue(
           newGain,
           MAX_GAIN,
           MIN_GAIN,
           1.3);
-                
-        logs += 'hz ['+element.hz+'] newGain['+newGain+']\nhz ['+element.hz+']    Gain['+newGains[element.hz+'']+']\n';
       });
       newGains = this.equalizerWaveAdjustment(newGains);
       newGains = this.adjustmentAudioLevel(newGains);
 
-      SELF.equalizer.gains.forEach(element => {
+      this.audioEqualizer.gains.forEach(element => {
         if(newGains == null || newGains[element.hz+''] == null || isNaN(newGains[element.hz+''])) {
-          SELF.equalizer.filters[element.hz].gain.value = 0;
+          this.audioEqualizer.filters[element.hz].gain.value = 0;
           return;
         }
         const baseGain = (+element.gain);
-        SELF.equalizer.filters[element.hz].gain.value = newGains[element.hz+''] + baseGain;
+        this.audioEqualizer.filters[element.hz].gain.value = newGains[element.hz+''] + baseGain;
       });
 
-      // console.log(logs);
-      SELF.frameId = requestAnimationFrame(animationFrame);
+      this.frameId = requestAnimationFrame(animationFrame);
     };
     animationFrame();
   }
+  
+  /**
+     * 
+     * @param {Object.<string, {hz: number, count: number, sum: number, avg: number, smoothing: number, normalizedAvg: number, multiplier: number}>} effectHz 
+     */
+  smoothing(effectHz) {
+    if (this.prevEffectHz === null) {
+      this.prevEffectHz = JSON.parse(JSON.stringify(effectHz));
+      return;
+    }
+    for(const key in effectHz) {
+      if(this.prevEffectHz[key] == null) {
+        continue;
+      }
+      let alpha = 0.5;
+      effectHz[key].smoothing = (1 - alpha) * this.prevEffectHz[key].smoothing + alpha * effectHz[key].normalizedAvg;
+    }
+    this.prevEffectHz = JSON.parse(JSON.stringify(effectHz));
+  }
+
 
   /**
      * 
@@ -125,18 +141,6 @@ export class SoundSculptEffect {
     return newGains;
   }
 
-  /**
-     * @param {number} currentValue 
-     * @param {number} maxValue 
-     * @param {number} minValue 
-     * @returns 
-     */
-  getAdjustedValue(currentValue, maxValue, minValue, easeParameter = 2) {
-    const normalizedX = (currentValue - minValue) / (maxValue - minValue);
-    const easedX = Math.pow(normalizedX, easeParameter) / (Math.pow(normalizedX, easeParameter) + Math.pow(1 - normalizedX, easeParameter));
-    return easedX * (maxValue - minValue) + minValue;
-  }
-        
   /**
      * 
      * @param {Array<{hz: number, gain: number}>} newGains
@@ -175,22 +179,15 @@ export class SoundSculptEffect {
   }
 
   /**
-     * 
-     * @param {Object.<string, {hz: number, count: number, sum: number, avg: number, smoothing: number, normalizedAvg: number, multiplier: number}>} effectHz 
+     * @param {number} currentValue 
+     * @param {number} maxValue 
+     * @param {number} minValue 
+     * @returns 
      */
-  smoothing(effectHz) {
-    if (this.prevEffectHz === null) {
-      this.prevEffectHz = JSON.parse(JSON.stringify(effectHz));
-      return;
-    }
-    for(const key in effectHz) {
-      if(this.prevEffectHz[key] == null) {
-        continue;
-      }
-      let alpha = 0.5;
-      effectHz[key].smoothing = (1 - alpha) * this.prevEffectHz[key].smoothing + alpha * effectHz[key].normalizedAvg;
-    }
-    this.prevEffectHz = JSON.parse(JSON.stringify(effectHz));
+  getAdjustedValue(currentValue, maxValue, minValue, easeParameter = 2) {
+    const normalizedX = (currentValue - minValue) / (maxValue - minValue);
+    const easedX = Math.pow(normalizedX, easeParameter) / (Math.pow(normalizedX, easeParameter) + Math.pow(1 - normalizedX, easeParameter));
+    return easedX * (maxValue - minValue) + minValue;
   }
 
   calcBandValue(){
@@ -251,11 +248,10 @@ export class SoundSculptEffect {
     return effectHzs;
   }
   updateDefaultGainsFilter() {
-    this.equalizer.gains.forEach(element=>{
-      this.equalizer.filters[element.hz].gain.value = element.gain;
+    this.audioEqualizer.gains.forEach(element=>{
+      this.audioEqualizer.filters[element.hz].gain.value = element.gain;
     });
   }
-
   /**
      * 
      * @param {number} hz 
@@ -264,4 +260,9 @@ export class SoundSculptEffect {
   getRange(hz) {
     return {'min':(hz/2),'max':(hz*2)};
   }
+  
+  reset() {
+    this.prevEffectHz = [];
+  }
 }
+
