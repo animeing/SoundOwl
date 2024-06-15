@@ -70,12 +70,12 @@ export default {
     this.animationId = requestAnimationFrame(this.run);
     this.canvasObjects = new BaseFrameWork.List();
     audio.eventSupport.addEventListener('initalize',()=>{
-      this.analyser = audio.audioContext.createAnalyser();
+      this.analyser = audio.audioEffectManager.audioContext.createAnalyser();
       this.analyser.fftSize = 1<<7+1;
-      audio.source.connect(this.analyser);
-      let filter = audio.audioContext.createBiquadFilter();
+      audio.audioEffectManager.source.connect(this.analyser);
+      let filter = audio.audioEffectManager.audioContext.createBiquadFilter();
       filter.type = 'allpass';
-      audio.source.connect(filter);
+      audio.audioEffectManager.source.connect(filter);
           
       let leng = this.analyser.frequencyBinCount;
       this.spectrums = new Uint8Array(leng);
