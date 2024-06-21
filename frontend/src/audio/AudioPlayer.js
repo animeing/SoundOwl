@@ -9,6 +9,8 @@ import { LoudnessNormalizeComponent } from './effect/normalize/LoudnessNormalize
 import { StereoAudioEqualizerComposite } from './effect/equalizer/StereoAudioEqualizerComposite';
 import { SoundSculptEffectComposite } from './effect/soundSculpt/SoundSculptEffectComposite';
 import { AudioEffectManager } from './effect/AudioComponentManager';
+import { ImpulseResponseEffect } from './effect/effect3d/ImpulseResponseEffect';
+import { BASE } from '../utilization/path';
 
 class AudioPlayer{
   constructor(){
@@ -18,6 +20,7 @@ class AudioPlayer{
     this.loudnessNormalize = new LoudnessNormalizeComponent();
     this.equalizer = new StereoAudioEqualizerComposite();
     this.exAudioEffect = new SoundSculptEffectComposite(this.equalizer);
+    this.inpulseResponseEffect = new ImpulseResponseEffect();
     /**
      * @type {Playlist}
      */
@@ -82,10 +85,10 @@ class AudioPlayer{
   initalize() {
     this.audioEffectManager.initialize();
 
+    this.audioEffectManager.addEffect('impulseEffect', this.inpulseResponseEffect);
     this.audioEffectManager.addEffect('equalizer', this.equalizer);
     this.audioEffectManager.addEffect('loudnessNormalize', this.loudnessNormalize);
     this.audioEffectManager.addEffect('soundSculpt', this.exAudioEffect);
-
 
     this.eventSupport.dispatchEvent(new CustomEvent('initalize'));
   }
