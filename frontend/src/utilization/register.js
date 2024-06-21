@@ -10,7 +10,8 @@ export const audioParamSave=()=>{
       'loadGiveUpTime':audio.loadGiveUpTime,
       'equalizerGains':audio.equalizer.getGains(),
       'soundSculpt':audio.exAudioEffect.isUse,
-      'audioLondnessNormalize':audio.loudnessNormalize.isUse
+      'audioLondnessNormalize':audio.loudnessNormalize.isUse,
+      'audioIREffect':audio.inpulseResponseEffect.fileName
     });
   localStorageMap.set('audioParam', saveParams);
 };
@@ -28,4 +29,5 @@ export const audioParamLoad=()=>{
   audio.exAudioEffect.isUse = audioParams.soundSculpt;
   audio.loudnessNormalize.isUse = audioParams.audioLondnessNormalize;
   audio.equalizer.applyEffect(audioParams.equalizerGains);
+  audio.inpulseResponseEffect.applyEffect(audioParams.audioIREffect);
 };

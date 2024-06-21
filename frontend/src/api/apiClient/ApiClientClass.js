@@ -28,11 +28,12 @@ export class ApiClientClass {
    * @param {Array} [data=null] 
    */
   execute(data = null) {
+    let payload = (this.method.toLowerCase() != 'get' ? data : null);
     return apiClient.request({
       ...this.options,
       method: this.method,
-      url: this._buildUrl(data),
-      data: (this.method.toLowerCase() != 'get' ? data : null)
+      url: this.endPoint,
+      data: payload
     }).catch(error => {
       console.error('An error occurred:', error);
       throw error;
