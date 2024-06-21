@@ -2255,6 +2255,154 @@ class InputParam extends HTMLElement {
 }
 BaseFrameWork.defineCustomElement('sw-input-param', InputParam);
 
+class InputFile extends HTMLElement {
+  constructor() {
+    super();
+    this._title = document.createElement('span');
+    this._input = document.createElement('input');
+    this._input.type = 'file';
+    
+    this._input.addEventListener('change', () => {
+      this._files = this._input.files;
+      this.dispatchEvent(new CustomEvent('files-changed', { detail: this._files }));
+    });
+
+    this._input.addEventListener('contextmenu', () => {
+      ContextMenu.contextMenu.destoryChildren();
+      {
+        let clear = BaseFrameWork.createCustomElement('sw-libutton');
+        clear.menuItem.value = 'Clear';
+        clear.menuItem.onclick = () => {
+          this._input.value = '';
+          this._files = null;
+        };
+        ContextMenu.contextMenu.appendChild(clear);
+      }
+    });
+  }
+    
+  static get observedAttributes() {
+    return ['data-title', 'accept', 'multiple', 'name'];
+  }
+
+  attributeChangedCallback(name, _oldValue, newValue) {
+    if ('data-title' == name) {
+      this._title.innerText = newValue;
+    }
+    if ('accept' == name) {
+      this._input.accept = newValue;
+    }
+    if ('multiple' == name) {
+      this._input.multiple = newValue !== null;
+    }
+    if ('name' == name) {
+      this._input.name = newValue;
+    }
+  }
+
+  get files() {
+    return this._files;
+  }
+
+  set files(files) {
+    // This is read-only in normal usage, so we don't set it
+  }
+
+  get title() {
+    return this._title.innerText;
+  }
+
+  set title(title) {
+    this.setAttribute('data-title', title);
+  }
+
+  get accept() {
+    return this._input.accept;
+  }
+
+  set accept(accept) {
+    this.setAttribute('accept', accept);
+  }
+
+  get multiple() {
+    return this._input.multiple;
+  }
+
+  set multiple(multiple) {
+    if (multiple) {
+      this.setAttribute('multiple', '');
+    } else {
+      this.removeAttribute('multiple');
+    }
+  }
+
+  get name() {
+    return this._input.name;
+  }
+
+  set name(name) {
+    this.setAttribute('name', name);
+  }
+    
+  connectedCallback() {
+    let shadow = this.attachShadow({ mode: 'closed' });
+    shadow.appendChild(this._title);
+    shadow.appendChild(this._input);
+    let style = document.createElement('style');
+    style.innerHTML = `
+        :host {
+            display: block;
+            margin-bottom: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        span {
+            display: block;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--title-color);
+            margin-bottom: 5px;
+        }
+          
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--subcolor);
+            border-radius: 5px;
+            font-size: 1em;
+            background-color: var(--basecolor);
+            color: var(--input-color);
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        input[type="file"]:hover {
+            background-color: var(--subcoloraccentcolor);
+            border-color: var(--subcoloraccentcolor);
+        }
+
+        input[type="file"]::file-selector-button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            background-color: var(--playerbgcolor);
+            color: var(--button-color);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background-color: var(--subcoloraccentcolor);
+        }`;
+    shadow.appendChild(style);
+  }
+}
+
+BaseFrameWork.defineCustomElement('sw-input-file', InputFile);
+
+
+
 class TextAreaParam extends HTMLElement {
   constructor() {
     super();

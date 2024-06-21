@@ -54,6 +54,7 @@ export class AudioComponent {
   connect(target) {
     if (this.outputNode) {
       this.outputNode.connect(target.inputNode || target);
+      console.log(`Connected ${this.constructor.name} to ${target.constructor.name}`);
     }
   }
 

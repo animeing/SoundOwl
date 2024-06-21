@@ -19,13 +19,8 @@ export class AudioEffectManager {
       throw new Error(`Effect with name "${name}" already exists.`);
     }
     effect.setAudioContext(this.audioContext);
-    if (this.effects.size > 0) {
-      Array.from(this.effects.values()).slice(-1)[0].connect(effect);
-    } else {
-      this.source.connect(effect.inputNode);
-    }
-    effect.connect(this.audioContext.destination);
     this.effects.set(name, effect);
+    this.reconnectEffects();
   }
 
   removeEffect(name) {
@@ -42,8 +37,10 @@ export class AudioEffectManager {
     let previousNode = this.source;
     for (const effect of this.effects.values()) {
       previousNode.connect(effect.inputNode);
+      console.log(`Reconnected ${previousNode.constructor.name} to ${effect.constructor.name}`);
       previousNode = effect.outputNode;
     }
     previousNode.connect(this.audioContext.destination);
+    console.log(`Reconnected ${previousNode.constructor.name} to destination`);
   }
 }
