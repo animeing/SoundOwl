@@ -19,17 +19,23 @@ export class ImpulseResponseEffect extends AudioComponent {
       throw new Error('AudioContext is not set.');
     }
 
-    // Create a ConvolverNode for reverb
+    this.preGainNode = this.audioContext.createGain();
+    this.postGainNode = this.audioContext.createGain();
+
+    this.preGainNode.gain.value = 1.0;
+    this.postGainNode.gain.value = 1.0;
+
     this.reverbNode = this.audioContext.createConvolver();
 
-    // Create input and output nodes
     this.inputNode = this.audioContext.createGain();
     this.outputNode = this.audioContext.createGain();
 
-    // Connect nodes
-    this.inputNode.connect(this.reverbNode);
-    this.reverbNode.connect(this.outputNode);
-    if(this.fileName == null) {
+    this.inputNode.connect(this.preGainNode);
+    this.preGainNode.connect(this.reverbNode);
+    this.reverbNode.connect(this.postGainNode);
+    this.postGainNode.connect(this.outputNode);
+
+    if (this.fileName == null) {
       this.reverbNode.buffer = this.generateImpulseResponse(this.audioContext);
     } else {
       this.applyEffect(this.fileName);
@@ -52,10 +58,22 @@ export class ImpulseResponseEffect extends AudioComponent {
   loadImpulseResponse(impulseResponseData) {
     this.audioContext.decodeAudioData(impulseResponseData, (buffer) => {
       this.impulseResponseBuffer = buffer;
+      this.adjustGainForImpulseResponse(buffer);
       this.reverbNode.buffer = buffer;
     }, (error) => {
       console.error('Error decoding impulse response data:', error);
     });
+  }
+
+  adjustGainForImpulseResponse(buffer) {
+    const channelData = buffer.getChannelData(0);
+    const rms = Math.sqrt(channelData.reduce((sum, sample) => sum + sample * sample, 0) / channelData.length);
+
+    const targetRMS = 0.1;
+    const gainValue = targetRMS / rms;
+
+    this.preGainNode.gain.value = gainValue;
+    this.postGainNode.gain.value = 1.0 / gainValue;
   }
 
   generateImpulseResponse(audioContext, length = 1.0) {
