@@ -2,11 +2,7 @@ name: MySQL Initial SQL Test
 
 on:
   push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
 
 jobs:
   test-mysql:
