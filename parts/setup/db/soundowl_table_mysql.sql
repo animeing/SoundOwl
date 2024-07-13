@@ -190,5 +190,3 @@ SET character_set_client = @saved_cs_client;
 
 -- Dump completed on 2023-11-24 20:04:11
 
-
-SELECT * FROM non_existing_table;
