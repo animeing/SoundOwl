@@ -30,7 +30,7 @@ jobs:
       run: |
         retries=30
         while [ $retries -gt 0 ]; do
-          if docker exec mysql mysqladmin ping -uroot -proot_password --silent; then
+          if docker exec $(docker ps -q -f name=mysql) mysqladmin ping -uroot -proot_password --silent; then
             echo "MySQL is up and running!"
             break
           fi
@@ -40,14 +40,14 @@ jobs:
         done
         if [ $retries -eq 0 ]; then
           echo "MySQL did not become ready in time."
-          docker logs mysql
+          docker logs $(docker ps -q -f name=mysql)
           exit 1
         fi
 
     - name: Apply initial SQL
       run: |
-        docker exec -i mysql mysql -uroot -proot_password test_db < /parts/setup/db/soundowl_table_mysql.sql
+        docker exec -i $(docker ps -q -f name=mysql) mysql -uroot -proot_password test_db < /parts/setup/db/soundowl_table_mysql.sql
 
     - name: Verify tables
       run: |
-        docker exec mysql mysql -uroot -proot_password -e "SHOW TABLES IN test_db;"
+        docker exec $(docker ps -q -f name=mysql) mysql -uroot -proot_password -e "SHOW TABLES IN test_db;"
