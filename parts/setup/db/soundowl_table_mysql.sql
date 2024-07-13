@@ -187,6 +187,5 @@ SET character_set_client = @saved_cs_client;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
-SELECT * FROM non_existing_table;
 
 -- Dump completed on 2023-11-24 20:04:11
