@@ -1,0 +1,53 @@
+name: MariaDB Initial SQL Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-mariadb:
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:10.5
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: test_db
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Wait for MariaDB to be ready
+      run: |
+        retries=30
+        while [ $retries -gt 0 ]; do
+          if docker exec $(docker ps -q -f name=mariadb) mysqladmin ping -uroot -proot_password --silent; then
+            echo "MariaDB is up and running!"
+            break
+          fi
+          echo "Waiting for MariaDB to be ready..."
+          sleep 10
+          retries=$((retries - 1))
+        done
+        if [ $retries -eq 0 ]; then
+          echo "MariaDB did not become ready in time."
+          docker logs $(docker ps -q -f name=mariadb)
+          exit 1
+        fi
+
+    - name: Apply initial SQL
+      run: |
+        docker exec -i $(docker ps -q -f name=mariadb) mysql -uroot -proot_password test_db < parts/setup/db/soundowl_table_mysql.sql
+
+    - name: Verify tables
+      run: |
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW TABLES IN test_db;"
