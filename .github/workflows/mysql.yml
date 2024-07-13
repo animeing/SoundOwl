@@ -1,0 +1,53 @@
+name: MySQL Initial SQL Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-mysql:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: test_db
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Wait for MySQL to be ready
+      run: |
+        for i in {30..0}; do
+          if docker exec mysql mysql -uroot -proot_password -e "SELECT 1" &> /dev/null; then
+            break
+          fi
+          echo 'Waiting for MySQL to be ready...'
+          sleep 1
+        done
+        if [ "$i" = 0 ]; then
+          echo 'MySQL did not become ready in time.'
+          exit 1
+        fi
+
+    - name: Apply initial SQL
+      run: |
+        docker exec -i mysql mysql -uroot -proot_password test_db < /parts/setup/db/soundowl_table_mysql.sql
+
+    - name: Verify tables
+      run: |
+        docker exec mysql mysql -uroot -proot_password -e "SHOW TABLES IN test_db;"
