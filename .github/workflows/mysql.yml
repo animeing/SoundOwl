@@ -46,7 +46,7 @@ jobs:
 
     - name: Apply initial SQL
       run: |
-        docker exec -i $(docker ps -q -f name=mariadb) mysql -uroot -proot_password test_db < /parts/setup/db/soundowl_table_mysql.sql
+        docker exec -i $(docker ps -q -f name=mariadb) mysql -uroot -proot_password test_db < parts/setup/db/soundowl_table_mysql.sql
 
     - name: Verify tables
       run: |
