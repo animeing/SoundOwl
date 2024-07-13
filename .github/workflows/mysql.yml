@@ -1,16 +1,16 @@
-name: MySQL Initial SQL Test
+name: MariaDB Initial SQL Test
 
 on:
   push:
   pull_request:
 
 jobs:
-  test-mysql:
+  test-mariadb:
     runs-on: ubuntu-latest
 
     services:
-      mysql:
-        image: mysql:8.0
+      mariadb:
+        image: mariadb:latest
         ports:
           - 3306:3306
         options: >-
@@ -26,28 +26,28 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Wait for MySQL to be ready
+    - name: Wait for MariaDB to be ready
       run: |
         retries=30
         while [ $retries -gt 0 ]; do
-          if docker exec $(docker ps -q -f name=mysql) mysqladmin ping -uroot -proot_password --silent; then
-            echo "MySQL is up and running!"
+          if docker exec $(docker ps -q -f name=mariadb) mysqladmin ping -uroot -proot_password --silent; then
+            echo "MariaDB is up and running!"
             break
           fi
-          echo "Waiting for MySQL to be ready..."
+          echo "Waiting for MariaDB to be ready..."
           sleep 10
           retries=$((retries - 1))
         done
         if [ $retries -eq 0 ]; then
-          echo "MySQL did not become ready in time."
-          docker logs $(docker ps -q -f name=mysql)
+          echo "MariaDB did not become ready in time."
+          docker logs $(docker ps -q -f name=mariadb)
           exit 1
         fi
 
     - name: Apply initial SQL
       run: |
-        docker exec -i $(docker ps -q -f name=mysql) mysql -uroot -proot_password test_db < parts/setup/db/soundowl_table_mysql.sql
+        docker exec -i $(docker ps -q -f name=mariadb) mysql -uroot -proot_password test_db < /parts/setup/db/soundowl_table_mysql.sql
 
     - name: Verify tables
       run: |
-        docker exec $(docker ps -q -f name=mysql) mysql -uroot -proot_password -e "SHOW TABLES IN test_db;"
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW TABLES IN test_db;"
