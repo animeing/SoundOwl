@@ -24,27 +24,39 @@ Intranet 内でブラウザが入っている PC があれば視聴できるこ�
   - PHP8.1
 
 ## Install
+### 音楽ファイルのマウント手順
+Dockerを使わずに構築する場合で音源データがPC内に存在しない場合、自身で音源データのある場所をマウントする必要があります。
+音楽ファイルをネットワーク共有からマウントする場合、以下のコマンドを実行してください。
+```bash
+sudo mount -t cifs //<サーバー名>/<共有名> /mnt/music -o username=<ユーザー名>,password=<パスワード>
+```
+`/etc/fstab`に自動マウントの設定を追加するには、以下のエントリを追加してください。
+
+```bash
+//<サーバー名>/<共有名> /mnt/music cifs username=<ユーザー名>,password=<パスワード> 0 0
+```
 
 ### Linux
-
 - curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-- apt install -y redis ffmpeg screen php-xml php8.1-gd composer nodejs
+- apt update
+- apt install -y redis ffmpeg screen php-xml php8.1 php8.1-gd composer nodejs
 - git clone https://github.com/animeing/SoundOwl.git /var/www/html
+- cd /var/www/html
 - composer install
 - cd /var/www/html/frontend
 - npm install
 - npx webpack --config webpack.config.js
 - systemctl restart apache2
 - systemctl start redis-server
-- screen
-- php /var/www/html/api/quescript/queueAction.php
+- screen -dmS soundowl-queue php /var/www/html/api/quescript/queueAction.php
+- screen -dmS soundowl-websocket php /var/www/html/api/sw/server.php
+- chown www-data:www-data ./parts/setting.ini
+- chown www-data:www-data ./api/lock/
 - ブラウザにて http://<Server の IPAddress>/#/setup にアクセス
   <img src="https://user-images.githubusercontent.com/24301121/178284171-61d9077c-6517-4666-9d65-8187f935de9c.png" width="100%">
 
 - Database の情報と音源の存在するフォルダを入力(WebSocket は必要であれば変更してください。)
 - SetUp ボタンを押してしばらく待つ(対象の曲数によっては数日を要する場合がありますが、その SetUp 中も利用することは可能です。)
-- screen
-- php /var/www/html/api/sw/server.php
 - ※SetUp ボタンは WebSocket 通信が確立してない場合、押下することができません。
 - ※ラウンドネス・ノーマライゼーション機能を期待する場合は完全に SetUp が終わるのを待つ必要があります。
 
