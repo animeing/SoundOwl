@@ -37,21 +37,23 @@ sudo mount -t cifs //<サーバー名>/<共有名> /mnt/music -o username=<ユ�
 ```
 
 ### Linux
-- curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-- apt update
-- apt install -y redis ffmpeg screen php-xml php8.1 php8.1-gd composer nodejs
-- git clone https://github.com/animeing/SoundOwl.git /var/www/html
-- cd /var/www/html
-- composer install
-- cd /var/www/html/frontend
-- npm install
-- npx webpack --config webpack.config.js
-- systemctl restart apache2
-- systemctl start redis-server
-- screen -dmS soundowl-queue php /var/www/html/api/quescript/queueAction.php
-- screen -dmS soundowl-websocket php /var/www/html/api/sw/server.php
-- chown www-data:www-data ./parts/setting.ini
-- chown www-data:www-data ./api/lock/
+```bash
+curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+apt update
+apt install -y redis ffmpeg screen php-xml php8.1 php8.1-gd composer nodejs
+git clone https://github.com/animeing/SoundOwl.git /var/www/html
+cd /var/www/html
+composer install
+cd /var/www/html/frontend
+npm install
+npx webpack --config webpack.config.js
+systemctl restart apache2
+systemctl start redis-server
+screen -dmS soundowl-queue php /var/www/html/api/quescript/queueAction.php
+screen -dmS soundowl-websocket php /var/www/html/api/sw/server.php
+chown www-data:www-data ./parts/setting.ini
+chown www-data:www-data ./api/lock/
+```
 - ブラウザにて http://<Server の IPAddress>/#/setup にアクセス
   <img src="https://user-images.githubusercontent.com/24301121/178284171-61d9077c-6517-4666-9d65-8187f935de9c.png" width="100%">
 
@@ -61,13 +63,14 @@ sudo mount -t cifs //<サーバー名>/<共有名> /mnt/music -o username=<ユ�
 - ※ラウンドネス・ノーマライゼーション機能を期待する場合は完全に SetUp が終わるのを待つ必要があります。
 
 ### Docker
-
-- git clone https://github.com/animeing/SoundOwl.git
-- cd SoundOwl
-- apt install -y docker docker-compose
-- docker build -t soundowl:lastest .
-- chmod 755 make.sh
-- ./make.sh
+```bash
+git clone https://github.com/animeing/SoundOwl.git
+cd SoundOwl
+apt install -y docker docker-compose
+docker build -t soundowl:lastest .
+chmod 755 make.sh
+./make.sh
+```
 - ブラウザにて http://<Server の IPAddress>/#/setting にアクセス
 ![image](https://github.com/animeing/SoundOwl/assets/24301121/318e6bfa-c9ef-456a-86ea-f7f6796d55a4)
  - 設定を変更せずに "sound regist" ボタンを実行
