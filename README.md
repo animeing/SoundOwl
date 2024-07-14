@@ -1,3 +1,7 @@
+[![PHP Composer](https://github.com/animeing/SoundOwl/actions/workflows/php.yml/badge.svg)](https://github.com/animeing/SoundOwl/actions/workflows/php.yml)
+[![Docker Image CI](https://github.com/animeing/SoundOwl/actions/workflows/docker-image.yml/badge.svg)](https://github.com/animeing/SoundOwl/actions/workflows/docker-image.yml)
+[![NodeJS with Webpack](https://github.com/animeing/SoundOwl/actions/workflows/webpack.yml/badge.svg)](https://github.com/animeing/SoundOwl/actions/workflows/webpack.yml)
+[![MariaDB Initial SQL Test](https://github.com/animeing/SoundOwl/actions/workflows/mariadb.yml/badge.svg)](https://github.com/animeing/SoundOwl/actions/workflows/mariadb.yml)
 # SoundOwl
 
 Local で保存している音楽データをブラウザで再生するソフトです。<br>
