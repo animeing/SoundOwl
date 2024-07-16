@@ -50,4 +50,24 @@ jobs:
 
     - name: Verify tables
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW TABLES IN test_db;"
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW TABLES;"
+
+    - name: Verify procedures
+      run: |
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW PROCEDURE STATUS WHERE Db = 'test_db';"
+
+    - name: Verify events
+      run: |
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW EVENTS;"
+
+    - name: Run manage_partitions_and_compact_ids procedure
+      run: |
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "CALL manage_partitions_and_compact_ids();"
+
+    - name: Verify partitions
+      run: |
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'test_db' AND TABLE_NAME = 'sound_play_history';"
+
+    - name: Verify ID compaction
+      run: |
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SELECT * FROM sound_play_history ORDER BY id;"
