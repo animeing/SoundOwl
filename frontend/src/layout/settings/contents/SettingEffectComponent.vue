@@ -170,7 +170,7 @@ export default {
       new PulseDataListAction()
         .execute()
         .then(data=>this.presetNames = data.data)
-        .then(this.selectPreset = audio.inpulseResponseEffect.fileName);
+        .then(this.selectPreset = audio.inpulseResponseEffect.fileName??'OFF');
     },
     toggleEffect() {
       audio.exAudioEffect.isUse = !audio.exAudioEffect.isUse;
