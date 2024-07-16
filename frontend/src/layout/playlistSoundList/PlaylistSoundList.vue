@@ -15,7 +15,7 @@ import audio from '../../audio/AudioPlayer';
 import { AudioPlayStateEnum } from '../../audio/enum/AudioPlayStateEnum';
 import { AudioClip } from '../../audio/type/AudioClip';
 import { BaseFrameWork, ContextMenu, MessageWindow } from '../../base';
-import { SoundOwlProperty } from '../../layout';
+import { SoundOwlProperty } from '../../websocket';
 import { UpdateSoundInfomationAction } from '../../page';
 import { BASE } from '../../utilization/path';
 import SoundClipComponent from '../common/SoundClipComponent.vue';

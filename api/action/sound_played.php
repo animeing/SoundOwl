@@ -14,6 +14,11 @@ $soundDao = new SoundLinkDao();
 foreach($soundDao->find(ComplessUtil::decompless(BrowserUtil::getGetParam('SoundHash'))) as $soundDto) {
     $soundDto->setPlayCount($soundDto->getPlayCount() + 1);
     $soundDao->update($soundDto);
+    $soundHistoryDto = new SoundPlayHistoryDto();
+    $soundHistoryDto->setPlayDate(date("Y-m-d H:i:s"));
+    $soundHistoryDto->setSoundHash($soundDto->getSoundHash());
+    $soundPlayHistoryDao = new SoundPlayHistoryDao();
+    $soundPlayHistoryDao->insert($soundHistoryDto);
     break;
 }
 

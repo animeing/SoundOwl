@@ -11,6 +11,7 @@ import { SoundSculptEffectComposite } from './effect/soundSculpt/SoundSculptEffe
 import { AudioEffectManager } from './effect/AudioComponentManager';
 import { ImpulseResponseEffect } from './effect/effect3d/ImpulseResponseEffect';
 import { BASE } from '../utilization/path';
+import { SoundOwlProperty } from '../websocket';
 
 class AudioPlayer{
   constructor(){
@@ -191,6 +192,12 @@ class AudioPlayer{
         let playedAction = new SoundPlayedAction;
         playedAction.formDataMap.append('SoundHash', this.playList.currentAudioClip.soundHash);
         playedAction.execute();
+        SoundOwlProperty.WebSocket.Socket.send(JSON.stringify(
+          {
+            'eventType':'played',
+            'soundHash':this.playList.currentAudioClip.soundHash,
+          }
+        ));
         let clip = this.playList.next();
         if(clip == null)
         {
