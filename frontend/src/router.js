@@ -7,6 +7,7 @@ import Home from './layout/home/Home.vue';
 import ArtistList from './layout/artistList/ArtistList.vue';
 import PlayListNames from './layout/playlistList/PlayListNames.vue';
 import PlaylistSoundList from './layout/playlistSoundList/PlaylistSoundList.vue';
+import HistoryList from './layout/historyList/HistoryList.vue';
 import SettingVue from './layout/settings/SettingVue.vue';
 import SetUpVue from './layout/settings/SetupVue.vue';
 import { BASE } from './utilization/path';
@@ -36,6 +37,14 @@ const router = createRouter({
       component: ArtistList,
       meta:{
         title:'Artist List'
+      }
+    },
+    {
+      path:'/history_list',
+      name:'history_list',
+      component:HistoryList,
+      meta:{
+        title:'History List'
       }
     },
     {

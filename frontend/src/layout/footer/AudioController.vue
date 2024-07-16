@@ -166,8 +166,7 @@ export default {
       let target = event.target;
       if(event.target.mousePositionvalue == undefined){
         target = event.target.parentNode;
-      }
-      if(!isNaN(target.mousePositionvalue(event))) {
+      } else if(!isNaN(target.mousePositionvalue(event))) {
         positionTime = target.mousePositionvalue(event);
       }
       let textTime = timeToText(positionTime);
