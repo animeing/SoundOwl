@@ -19,7 +19,7 @@
 
 <script>
 import { ContextMenu } from '../../../base';
-import '../../../layout';
+import '../../../websocket';
 import { BASE } from '../../../utilization/path';
 
 export default {

@@ -110,7 +110,7 @@
     </div>
 </template>
 <script>
-import { SoundOwlProperty } from '../../../layout';
+import { SoundOwlProperty } from '../../../websocket';
 import { GetSetting } from '../../../page';
 export default {
   

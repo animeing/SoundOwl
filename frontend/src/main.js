@@ -3,6 +3,7 @@ import './base';
 import AudioController from './layout/footer/AudioController.vue';
 import router from './router';
 import { BaseFrameWork } from './base';
+import './layout';
 
 
 const searchBox = document.createElement('sw-searchbox');
@@ -29,6 +30,9 @@ export default searchBox;
     });
     dropdownMenu.addItem('Play List',()=>{
       router.push({name:'playlists'});
+    });
+    dropdownMenu.addItem('History List',()=>{
+      router.push({name:'history_list'});
     });
     dropdownMenu.addItem('Setting', ()=>{
       router.push({name:'setting'});

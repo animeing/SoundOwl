@@ -120,19 +120,163 @@ CREATE TABLE `sound_link` (
 --
 -- Table structure for table `sound_play_history`
 --
-
 DROP TABLE IF EXISTS `sound_play_history`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+
 CREATE TABLE `sound_play_history` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `sound_hash` varchar(255) NOT NULL,
   `play_date` datetime NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `sound_hash` (`sound_hash`),
-  CONSTRAINT `sound_play_history_ibfk_1` FOREIGN KEY (`sound_hash`) REFERENCES `sound_link` (`sound_hash`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-/*!40101 SET character_set_client = @saved_cs_client */;
+  PRIMARY KEY (`id`, `play_date`),
+  KEY `sound_hash` (`sound_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+PARTITION BY RANGE (TO_DAYS(`play_date`)) (
+  PARTITION p_initial VALUES LESS THAN (TO_DAYS('2023-01-01')) ENGINE = InnoDB
+);
+
+--
+-- Procedure `manage_partitions_and_compact_ids`
+--
+
+DROP PROCEDURE IF EXISTS manage_partitions_and_compact_ids;
+
+DELIMITER //
+
+CREATE PROCEDURE manage_partitions_and_compact_ids()
+BEGIN
+  DECLARE v_current_date DATE;
+  DECLARE v_future_date DATE;
+  DECLARE v_oldest_date DATE;
+  DECLARE v_partition_name VARCHAR(16);
+  DECLARE v_partition_date_int INT;
+  DECLARE v_exists INT DEFAULT 0;
+  DECLARE done INT DEFAULT 0;
+
+  -- カーソル宣言
+  DECLARE partition_cursor CURSOR FOR 
+    SELECT PARTITION_NAME 
+    FROM INFORMATION_SCHEMA.PARTITIONS 
+    WHERE TABLE_NAME = 'sound_play_history' 
+      AND PARTITION_DESCRIPTION < TO_DAYS(DATE_SUB(CURRENT_DATE, INTERVAL 1 YEAR));
+
+  -- ハンドラー宣言
+  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+  -- 現在の日付と未来の日付を取得
+  SET v_current_date = CURRENT_DATE;
+  SET v_future_date = DATE_ADD(v_current_date, INTERVAL 7 DAY);
+  SET v_oldest_date = DATE_SUB(v_current_date, INTERVAL 1 YEAR);
+
+  -- 未来のパーティションの作成
+  WHILE v_current_date <= v_future_date DO
+    SET v_partition_name = CONCAT('p', DATE_FORMAT(v_current_date, '%Y%m%d'));
+    SET v_partition_date_int = TO_DAYS(DATE_ADD(v_current_date, INTERVAL 1 DAY));
+    SELECT COUNT(1) INTO v_exists FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_NAME = 'sound_play_history' AND PARTITION_NAME = v_partition_name;
+    IF v_exists = 0 THEN
+      SET @create_partition = CONCAT('ALTER TABLE sound_play_history ADD PARTITION (PARTITION ', v_partition_name, ' VALUES LESS THAN (', v_partition_date_int, '))');
+      PREPARE stmt FROM @create_partition;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+    END IF;
+    SET v_current_date = DATE_ADD(v_current_date, INTERVAL 1 DAY);
+  END WHILE;
+
+  -- 古いパーティションの削除を確実に行うためにすべてのパーティションをチェック
+  OPEN partition_cursor;
+
+  partition_loop: LOOP
+    FETCH partition_cursor INTO v_partition_name;
+    IF done THEN
+      LEAVE partition_loop;
+    END IF;
+
+    SET @drop_partition = CONCAT('ALTER TABLE sound_play_history DROP PARTITION ', v_partition_name);
+    PREPARE stmt FROM @drop_partition;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+  END LOOP;
+
+  CLOSE partition_cursor;
+
+  -- IDのギャップを詰める
+  SET @row_num = 0;
+  CREATE TEMPORARY TABLE temp_table AS SELECT id, sound_hash, play_date FROM sound_play_history ORDER BY id;
+  TRUNCATE TABLE sound_play_history;
+  INSERT INTO sound_play_history (id, sound_hash, play_date)
+  SELECT @row_num := @row_num + 1, sound_hash, play_date FROM temp_table;
+  DROP TEMPORARY TABLE temp_table;
+END //
+
+DELIMITER ;
+
+--
+-- EventScheduler `manage_partitions_event`
+--
+
+DROP EVENT IF EXISTS manage_partitions_event;
+
+DELIMITER //
+
+CREATE EVENT IF NOT EXISTS manage_partitions_event
+ON SCHEDULE EVERY 1 DAY
+DO
+  BEGIN
+    CALL manage_partitions_and_compact_ids();
+  END //
+
+DELIMITER ;
+
+--
+-- Trigger `sound_link_before_delete`
+--
+
+DROP TRIGGER IF EXISTS sound_link_before_delete;
+
+DELIMITER //
+
+CREATE TRIGGER sound_link_before_delete
+BEFORE DELETE ON sound_link
+FOR EACH ROW
+BEGIN
+  DELETE FROM sound_play_history WHERE sound_hash = OLD.sound_hash;
+END //
+
+DELIMITER ;
+
+--
+-- View `v_history`
+--
+
+DROP VIEW IF EXISTS `v_history`;
+
+DELIMITER //
+
+CREATE VIEW `v_history` AS
+SELECT
+  `h`.`id` AS `id`,
+  `h`.`sound_hash` AS `sound_hash`,
+  `h`.`play_date` AS `play_date`,
+  `s`.`title` AS `title`,
+  `s`.`genre` AS `genre`,
+  `s`.`lyrics` AS `lyrics`,
+  `s`.`album_hash` AS `album_hash`,
+  `s`.`album_title` AS `album_title`,
+  `s`.`artist_id` AS `artist_id`,
+  `s`.`artist_name` AS `artist_name`,
+  `s`.`track_no` AS `track_no`,
+  `s`.`play_count` AS `play_count`,
+  `s`.`data_link` AS `data_link`,
+  `s`.`loudness_target` AS `loudness_target`
+FROM
+  `sound_play_history` `h`
+LEFT JOIN
+  `sound_link` `s` ON `h`.`sound_hash` = `s`.`sound_hash`
+ORDER BY
+  `h`.`play_date` DESC//
+
+DELIMITER ;
+
+-- Enable the event scheduler
+SET GLOBAL event_scheduler = ON;
 
 --
 -- Temporary table structure for view `v_playlist`
@@ -189,4 +333,3 @@ SET character_set_client = @saved_cs_client;
 
 
 -- Dump completed on 2023-11-24 20:04:11
-

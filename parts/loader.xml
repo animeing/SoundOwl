@@ -21,5 +21,6 @@
     <data table="PlayListTable.php" dto="PlayListDto.php" dao="PlayListDao.php" />
     <data table="VPlaylistTable.php" dto="VPlaylistDto.php" dao="VPlaylistDao.php" />
     <data table="PlaylistDataTable.php" dto="PlaylistDataDto.php" dao="PlaylistDataDao.php" />
+    <data table="VHistoryTable.php" dto="VHistoryDto.php" dao="VHistoryDao.php" />
 
 </scripts>

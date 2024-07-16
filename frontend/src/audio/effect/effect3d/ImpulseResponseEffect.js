@@ -99,6 +99,9 @@ export class ImpulseResponseEffect extends AudioComponent {
       return;
     }
     if(fileName == null) {
+      this.fileName == '';
+    }
+    if(fileName == null) {
       this.reverbNode.buffer = this.generateImpulseResponse(this.audioContext);
     }
     if (fileName) {

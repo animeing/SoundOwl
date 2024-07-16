@@ -106,7 +106,7 @@
 </template>
 <script>
 import { BaseFrameWork, MessageButtonWindow, MessageWindow, toBoolean } from '../../base';
-import { SoundOwlProperty } from '../../layout';
+import { SoundOwlProperty } from '../../websocket';
 import { SiteStatus, SoundRegistAction, UpdateSetting } from '../../page';
 import SettingFormComponent from './contents/SettingFormComponent.vue';
 import SettingEqualizerComponent from './contents/SettingEqualizerComponent.vue';
