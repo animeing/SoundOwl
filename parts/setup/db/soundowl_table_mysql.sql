@@ -123,26 +123,22 @@ CREATE TABLE `sound_link` (
 DROP TABLE IF EXISTS `sound_play_history`;
 
 CREATE TABLE `sound_play_history` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `sound_hash` varchar(255) NOT NULL,
-  `play_date` datetime NOT NULL
+  `play_date` datetime NOT NULL,
+  PRIMARY KEY (`id`, `play_date`),
+  KEY `sound_hash` (`sound_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-PARTITION BY RANGE (to_days(`play_date`))
-(
-PARTITION p20240714 VALUES LESS THAN (739447) ENGINE=InnoDB
+PARTITION BY RANGE (TO_DAYS(`play_date`)) (
+  PARTITION p_initial VALUES LESS THAN (TO_DAYS('2023-01-01')) ENGINE = InnoDB
 );
 
-ALTER TABLE `sound_play_history`
-  ADD PRIMARY KEY (`id`,`play_date`),
-  ADD KEY `sound_hash` (`sound_hash`);
+--
+-- Procedure `manage_partitions_and_compact_ids`
+--
 
-ALTER TABLE `sound_play_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-SET FOREIGN_KEY_CHECKS=1;
-COMMIT;
---
--- Procedure `sound_play_history` 
---
+DROP PROCEDURE IF EXISTS manage_partitions_and_compact_ids;
+
 DELIMITER //
 
 CREATE PROCEDURE manage_partitions_and_compact_ids()
@@ -208,29 +204,33 @@ BEGIN
   INSERT INTO sound_play_history (id, sound_hash, play_date)
   SELECT @row_num := @row_num + 1, sound_hash, play_date FROM temp_table;
   DROP TEMPORARY TABLE temp_table;
-
 END //
 
 DELIMITER ;
 
+--
+-- EventScheduler `manage_partitions_event`
+--
 
---
--- EventScheduler `sound_play_history` 
---
+DROP EVENT IF EXISTS manage_partitions_event;
+
 DELIMITER //
 
 CREATE EVENT IF NOT EXISTS manage_partitions_event
 ON SCHEDULE EVERY 1 DAY
 DO
   BEGIN
-    CALL manage_partitions();
+    CALL manage_partitions_and_compact_ids();
   END //
 
 DELIMITER ;
 
 --
--- Trigger `sound_play_history` 
+-- Trigger `sound_link_before_delete`
 --
+
+DROP TRIGGER IF EXISTS sound_link_before_delete;
+
 DELIMITER //
 
 CREATE TRIGGER sound_link_before_delete
@@ -241,6 +241,12 @@ BEGIN
 END //
 
 DELIMITER ;
+
+--
+-- View `v_history`
+--
+
+DROP VIEW IF EXISTS `v_history`;
 
 DELIMITER //
 
@@ -269,7 +275,7 @@ ORDER BY
 
 DELIMITER ;
 
-
+-- Enable the event scheduler
 SET GLOBAL event_scheduler = ON;
 
 --
@@ -327,4 +333,3 @@ SET character_set_client = @saved_cs_client;
 
 
 -- Dump completed on 2023-11-24 20:04:11
-
