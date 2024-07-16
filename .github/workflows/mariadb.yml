@@ -50,33 +50,33 @@ jobs:
 
     - name: Verify tables
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW TABLES IN test_db;"
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW TABLES;"
 
     - name: Verify procedures
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW PROCEDURE STATUS WHERE Db = 'test_db';"
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW PROCEDURE STATUS WHERE Db = 'test_db';"
 
     - name: Verify events
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW EVENTS WHERE Db = 'test_db';"
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW EVENTS;"
 
     - name: Insert test data
       run: |
         docker exec -i $(docker ps -q -f name=mariadb) mysql -uroot -proot_password test_db <<EOF
         INSERT INTO sound_play_history (sound_hash, play_date) VALUES
-          ('hash1', '2024-07-14'),
-          ('hash2', '2024-07-14'),
-          ('hash3', '2024-07-14');
+          ('hash1', '2023-01-01'),
+          ('hash2', '2023-02-01'),
+          ('hash3', '2023-03-01');
         EOF
 
     - name: Run manage_partitions_and_compact_ids procedure
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "CALL test_db.manage_partitions_and_compact_ids();"
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "CALL manage_partitions_and_compact_ids();"
 
     - name: Verify partitions
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'test_db' AND TABLE_NAME = 'sound_play_history';"
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'test_db' AND TABLE_NAME = 'sound_play_history';"
 
     - name: Verify ID compaction
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SELECT * FROM test_db.sound_play_history ORDER BY id;"
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SELECT * FROM sound_play_history ORDER BY id;"
