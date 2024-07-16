@@ -60,15 +60,6 @@ jobs:
       run: |
         docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW EVENTS;"
 
-    - name: Insert test data
-      run: |
-        docker exec -i $(docker ps -q -f name=mariadb) mysql -uroot -proot_password test_db <<EOF
-        INSERT INTO sound_play_history (sound_hash, play_date) VALUES
-          ('hash1', '2023-01-01'),
-          ('hash2', '2023-02-01'),
-          ('hash3', '2023-03-01');
-        EOF
-
     - name: Run manage_partitions_and_compact_ids procedure
       run: |
         docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "CALL manage_partitions_and_compact_ids();"
