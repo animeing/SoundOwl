@@ -8,6 +8,9 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::ID, $id);
     }
 
+    /**
+     * @db\Annotation\Column(id)
+     */
     public function getId() {
         return parent::getDtoCache()[VHistoryTable::ID];
     }
@@ -16,6 +19,9 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::SOUND_HASH, $soundHash);
     }
 
+    /**
+     * @db\Annotation\Column(sound_hash, true, true)
+     */
     public function getSoundHash() {
         return parent::getDtoCache()[VHistoryTable::SOUND_HASH];
     }
@@ -24,6 +30,9 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::PLAY_DATE, $playDate);
     }
 
+    /**
+     * @db\Annotation\Column(play_date)
+     */
     public function getPlayDate() {
         return parent::getDtoCache()[VHistoryTable::PLAY_DATE];
     }
@@ -32,6 +41,9 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::TITLE, $title);
     }
 
+    /**
+     * @db\Annotation\Column(title)
+     */
     public function getTitle() {
         return parent::getDtoCache()[VHistoryTable::TITLE];
     }
@@ -40,6 +52,9 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::GENRE, $genre);
     }
 
+    /**
+     * @db\Annotation\Column(genre)
+     */
     public function getGenre() {
         return parent::getDtoCache()[VHistoryTable::GENRE];
     }
@@ -48,6 +63,9 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::LYRICS, $lyrics);
     }
 
+    /**
+     * @db\Annotation\Column(lyrics)
+     */
     public function getLyrics() {
         return parent::getDtoCache()[VHistoryTable::LYRICS];
     }
@@ -56,6 +74,9 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::ALBUM_HASH, $albumHash);
     }
 
+    /**
+     * @db\Annotation\Column(album_hash, true, true)
+     */
     public function getAlbumHash() {
         return parent::getDtoCache()[VHistoryTable::ALBUM_HASH];
     }
@@ -64,14 +85,19 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::ALBUM_TITLE, $albumTitle);
     }
 
+    /**
+     * @db\Annotation\Column(album_title)
+     */
     public function getAlbumTitle() {
         return parent::getDtoCache()[VHistoryTable::ALBUM_TITLE];
     }
-
     public function setArtistId($artistId){
         parent::putDtoCache(VHistoryTable::ARTIST_ID, $artistId);
     }
 
+    /**
+     * @db\Annotation\Column(artist_id)
+     */
     public function getArtistId() {
         return parent::getDtoCache()[VHistoryTable::ARTIST_ID];
     }
@@ -80,6 +106,9 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::ARTIST_NAME, $artistName);
     }
 
+    /**
+     * @db\Annotation\Column(artist_name)
+     */
     public function getArtistName() {
         return parent::getDtoCache()[VHistoryTable::ARTIST_NAME];
     }
@@ -88,6 +117,9 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::TRACK_NO, $trackNo);
     }
 
+    /**
+     * @db\Annotation\Column(track_no)
+     */
     public function getTrackNo() {
         return parent::getDtoCache()[VHistoryTable::TRACK_NO];
     }
@@ -96,6 +128,9 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::PLAY_COUNT, $playCount);
     }
 
+    /**
+     * @db\Annotation\Column(play_count)
+     */
     public function getPlayCount() {
         return parent::getDtoCache()[VHistoryTable::PLAY_COUNT];
     }
@@ -104,6 +139,9 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::DATA_LINK, $dataLink);
     }
 
+    /**
+     * @db\Annotation\Column(data_link, false)
+     */
     public function getDataLink() {
         return parent::getDtoCache()[VHistoryTable::DATA_LINK];
     }
@@ -112,6 +150,9 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
         parent::putDtoCache(VHistoryTable::LOUDNESS_TARGET, $loudnessTarget);
     }
 
+    /**
+     * @db\Annotation\Column(loudness_target)
+     */
     public function getLoudnessTarget() {
         return parent::getDtoCache()[VHistoryTable::LOUDNESS_TARGET];
     }

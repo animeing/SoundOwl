@@ -8,6 +8,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::PLAY_LIST, $playList);
     }
 
+    /**
+     * @db\Annotation\Column(play_list)
+     */
     public function getPlayList() {
         return parent::getDtoCache()[VPlaylistTable::PLAY_LIST];
     }
@@ -16,6 +19,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::SOUND_POINT, $soundPoint);
     }
 
+    /**
+     * @db\Annotation\Column(sound_point)
+     */
     public function getSoundPoint() {
         return parent::getDtoCache()[VPlaylistTable::SOUND_POINT];
     }
@@ -24,6 +30,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::SOUND_HASH, $soundHash);
     }
 
+    /**
+     * @db\Annotation\Column(sound_hash, true, true)
+     */
     public function getSoundHash() {
         return parent::getDtoCache()[VPlaylistTable::SOUND_HASH];
     }
@@ -32,6 +41,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::TITLE, $title);
     }
 
+    /**
+     * @db\Annotation\Column(title)
+     */
     public function getTitle() {
         return parent::getDtoCache()[VPlaylistTable::TITLE];
     }
@@ -40,6 +52,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::GENRE, $genre);
     }
 
+    /**
+     * @db\Annotation\Column(genre)
+     */
     public function getGenre() {
         return parent::getDtoCache()[VPlaylistTable::GENRE];
     }
@@ -48,6 +63,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::LYRICS, $lyrics);
     }
 
+    /**
+     * @db\Annotation\Column(lyrics)
+     */
     public function getLyrics() {
         return parent::getDtoCache()[VPlaylistTable::LYRICS];
     }
@@ -56,6 +74,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::ALBUM_HASH, $albumHash);
     }
 
+    /**
+     * @db\Annotation\Column(album_hash)
+     */
     public function getAlbumHash() {
         return parent::getDtoCache()[VPlaylistTable::ALBUM_HASH];
     }
@@ -64,6 +85,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::ALBUM_TITLE, $albumTitle);
     }
 
+    /**
+     * @db\Annotation\Column(album_title)
+     */
     public function getAlbumTitle() {
         return parent::getDtoCache()[VPlaylistTable::ALBUM_TITLE];
     }
@@ -72,6 +96,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::ARTIST_ID, $artistId);
     }
 
+    /**
+     * @db\Annotation\Column(artist_id)
+     */
     public function getArtistId() {
         return parent::getDtoCache()[VPlaylistTable::ARTIST_ID];
     }
@@ -80,6 +107,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::ARTIST_NAME, $artistName);
     }
 
+    /**
+     * @db\Annotation\Column(artist_name)
+     */
     public function getArtistName() {
         return parent::getDtoCache()[VPlaylistTable::ARTIST_NAME];
     }
@@ -88,6 +118,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::TRACK_NO, $trackNo);
     }
 
+    /**
+     * @db\Annotation\Column(track_no)
+     */
     public function getTrackNo() {
         return parent::getDtoCache()[VPlaylistTable::TRACK_NO];
     }
@@ -96,6 +129,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::PLAY_COUNT, $playCount);
     }
 
+    /**
+     * @db\Annotation\Column(play_count)
+     */
     public function getPlayCount() {
         return parent::getDtoCache()[VPlaylistTable::PLAY_COUNT];
     }
@@ -104,6 +140,9 @@ class VPlaylistDto extends DtoBase implements VPlaylistTable {
         parent::putDtoCache(VPlaylistTable::DATA_LINK, $dataLink);
     }
 
+    /**
+     * @db\Annotation\Column(data_link)
+     */
     public function getDataLink() {
         return parent::getDtoCache()[VPlaylistTable::DATA_LINK];
     }
