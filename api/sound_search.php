@@ -9,15 +9,12 @@ if(isset($_POST['SearchWord'])) {
     $soundLinkDao = new SoundLinkDao;
     $soundLinkListDtos = $soundLinkDao->getWordSearchSounds($_POST['SearchWord']);
     foreach ($soundLinkListDtos as $soundLinkListDto) {
-        $soundList[] = array(
-            SoundLinkTable::SOUND_HASH=>ComplessUtil::compless($soundLinkListDto->getSoundHash()),
-            SoundLinkTable::TITLE=>$soundLinkListDto->getTitle(),
-            SoundLinkTable::ARTIST_NAME=>$soundLinkListDto->getArtistName(),
-            'album'=>array(
-                SoundLinkTable::ALBUM_HASH=>ComplessUtil::compless($soundLinkListDto->getAlbumHash()),
-                SoundLinkTable::ALBUM_TITLE=>$soundLinkListDto->getAlbumTitle()
-            )
+        $record = $soundLinkListDto->getVisibleRecord();
+        $record['album']=array(
+            SoundLinkTable::ALBUM_HASH=>ComplessUtil::compless($soundLinkListDto->getAlbumHash()),
+            SoundLinkTable::ALBUM_TITLE=>$soundLinkListDto->getAlbumTitle()
         );
+        $soundList[] = $record;
     }
 }
 echo json_encode($soundList);

@@ -65,6 +65,24 @@ final class StringUtil {
 	}
 
 	/**
+	 * 与えられた変数の値を型に応じて変換する関数
+	 *
+	 * @param mixed $value 変換対象の値
+	 * @return bool|int|string 変換後の値
+	 */
+	public static function convertToAppropriateType($value) {
+		if ($value === 'true') {
+				return true;
+		} elseif ($value === 'false') {
+				return false;
+		}
+		if (is_numeric($value)) {
+				return (int)$value;
+		}
+		return (string)$value;
+	}
+	
+	/**
 	 * @param string $javascript 
 	 * @return string
 	 */
