@@ -11,9 +11,7 @@ if(!isset($_GET['SoundHash'])) {
     return;
 }
 foreach( $soundDao->find(ComplessUtil::decompless(BrowserUtil::getGetParam('SoundHash'))) as $soundDto) {
-    $data = $soundDto->getDtoCache();
-    $data['mime'] = mime_content_type($soundDto->getDataLink());
-    echo json_encode($data);
+    echo $soundDto->toJson();
     return;
 }
 echo json_encode(array());

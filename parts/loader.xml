@@ -8,6 +8,9 @@
     <util>utils/fileUtil/FileUtil.php</util>
     <util>utils/fileUtil/IniWrite.php</util>
 
+    <base>annotation/Annotation.php</base>
+    <base>db/annotation/Column.php</base>
+    <base>db/annotation/JsonIgnore.php</base>
     <base>db/dao/ISql.php</base>
     <base>db/connector/Connector.php</base>
     <base>db/dao/SqlCreater.php</base>
