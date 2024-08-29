@@ -2,6 +2,13 @@
 
 class Annotation {
   private $reflection = null;
+  private $methods = [];
+  private $methodsComment = [];
+  private $properties = [];
+
+  private const DOC_COMMENT = 'DOC_COMMENT';
+
+  private $annotationInstanceCache = [];
 
   /**
    * コンストラクタ
@@ -12,6 +19,18 @@ class Annotation {
     $this->reflection = new ReflectionClass($clazz);
   }
 
+  public function getMethod($functionName){
+    if($this->methods == []) {
+      foreach($this->reflection->getMethods() as $method){
+        $this->methods[$method->getName()] = $method;
+      }
+    }
+    if(array_key_exists($functionName, $this->methods)) {
+      return $this->methods[$functionName];
+    } else {
+      return null;
+    }
+  }
 
   /**
    * 指定された関数のアノテーションインスタンスを取得する
@@ -22,16 +41,30 @@ class Annotation {
    * @return T|null アノテーションインスタンス、またはnull（アノテーションが存在しない場合）
   */
   public function getFunctionAnnotation($functionName, $annotationClassString) {
-    $functionReflection = $this->getReflection()->getMethod($functionName);
+    $functionReflection = $this->getMethod($functionName);
     if($functionReflection == null) {
       return null;
     }
-    
-    $classAnnotations = $this->parseDocComment($functionReflection->getDocComment());
+    $classAnnotations = null;
+    if(array_key_exists($functionReflection->getName(), $this->methodsComment)) {
+      $classAnnotations = $this->methodsComment[$functionReflection->getName()];
+      
+    } else {
+      $classAnnotations = $this->methodsComment[$functionReflection->getName()] = $this->parseDocComment($functionReflection->getDocComment());
+    }
     if(!array_key_exists($annotationClassString, $classAnnotations)) {
       return null;
     }
     return $this->createAnnotationClass($annotationClassString, $classAnnotations[$annotationClassString]);
+  }
+
+  public function getFunctionNames() {
+    if($this->methods == []) {
+      foreach($this->reflection->getMethods() as $method){
+        $this->methods[$method->getName()] = $method;
+      }
+    }
+    return array_keys($this->methods);
   }
 
   /**
@@ -58,23 +91,57 @@ class Annotation {
    * @return T|null アノテーションインスタンス、またはnull（アノテーションが存在しない場合）
   */
   public function getPropertyAnnotation($propertyName, $annotationClassString) {
-    $propertyNameReflection = $this->getReflection()->getProperty($propertyName);
+    $propertyNameReflection = $this->getProperty($propertyName);
     if($propertyNameReflection == null) {
       return null;
     }
-    $propertyAnnotations = $this->parseDocComment($propertyNameReflection->getDocComment());
+    $propertyAnnotations = null;
+    if(array_key_exists(self::DOC_COMMENT,$this->properties[$propertyNameReflection->getName()])) {
+      $propertyAnnotations = $this->properties[$propertyNameReflection->getName()][self::DOC_COMMENT];
+    } else {
+      $propertyAnnotations = $this->properties[$propertyNameReflection->getName()][self::DOC_COMMENT] = $this->parseDocComment($propertyNameReflection->getDocComment());
+    }
     if(!array_key_exists($annotationClassString, $propertyAnnotations)) {
       return null;
     }
     return $this->createAnnotationClass($annotationClassString, $propertyAnnotations[$annotationClassString]);
   }
 
-  private function createAnnotationClass($annotationClassName, ?array $args=null) {
-    $annotationClassReflection = new ReflectionClass($annotationClassName);
-    if($args == null || count($args) == 0) {
-      return $annotationClassReflection->newInstance();
+  public function getProperty($propertyName) {
+    if($this->properties == []) {
+      foreach($this->reflection->getProperties() as $property) {
+        $this->properties[$property->getName()] = $property;
+      }
     }
-    return $annotationClassReflection->newInstanceArgs($args);
+    if(array_key_exists($propertyName, $this->properties)) {
+      return $this->properties[$propertyName];
+    } else {
+      null;
+    }
+  }
+
+  public function getPropertyNames() {
+    if($this->properties == []) {
+      foreach($this->reflection->getProperties() as $property) {
+        $this->properties[$property->getName()] = $property;
+      }
+    }
+    return array_keys($this->properties);
+  }
+
+  private function createAnnotationClass($annotationClassName, ?array $args=null) {
+    $cacheKey = $annotationClassName . ($args ? ':' . implode(',', $args) : '');
+    if (isset($this->annotationInstanceCache[$cacheKey])) {
+      return $this->annotationInstanceCache[$cacheKey];
+    }
+    $annotationClassReflection = new ReflectionClass($annotationClassName);
+
+    if ($args == null || count($args) == 0) {
+      $instance = $annotationClassReflection->newInstance();
+    } else {
+      $instance = $annotationClassReflection->newInstanceArgs($args);
+    }
+    return $this->annotationInstanceCache[$cacheKey] = $instance;
   }
 
   /**

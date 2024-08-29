@@ -3,6 +3,7 @@
 namespace db\dto;
 
 use Annotation;
+use AnnotationManager;
 use ComplessUtil;
 use db\Annotation\Column;
 use db\Annotation\JsonIgnore;
@@ -39,33 +40,33 @@ abstract class DtoBase implements ISql{
     public function toJson() {
         return json_encode($this->getVisibleRecord());
     }
+    private static $time = 0.0;
     /**
      * @JsonIgnore
      * @return array
      */
     public function getVisibleRecord() {
         $result = [];
-        $annotation = new Annotation($this);
-        $methods = $annotation->getReflection()->getMethods(ReflectionMethod::IS_PUBLIC);
+        $annotation = AnnotationManager::getInstance()->getOrCreateAnnotation($this);
+        $methods = $annotation->getFunctionNames();
 
         foreach($methods as $method) {
-            if(strpos($method->getName(), 'get') === 0) {
-                $jsonIgnore = $annotation->getFunctionAnnotation($method->getName(), JsonIgnore::class);
+            if(strpos($method, 'get') === 0) {
+                $jsonIgnore = $annotation->getFunctionAnnotation($method, JsonIgnore::class);
                 if($jsonIgnore !== null) {
                     continue;
                 }
-                $column = $annotation->getFunctionAnnotation($method->getName(), Column::class);
+                $column = $annotation->getFunctionAnnotation($method, Column::class);
                 if($column === null || !$column->isVisible()) {
                     continue;
                 }
                 if($column->isCompless()) {
-                    $result[$column->getPropertyName()] = ComplessUtil::compless($method->invoke($this));
+                    $result[$column->getPropertyName()] = ComplessUtil::compless($this->getDtoCache()[$column->getPropertyName()]);
                 } else {
-                    $result[$column->getPropertyName()] = $method->invoke($this);   
+                    $result[$column->getPropertyName()] = $this->getDtoCache()[$column->getPropertyName()];
                 }
             }
         }
-
         return $result;
     }
 }
