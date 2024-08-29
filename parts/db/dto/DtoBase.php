@@ -60,10 +60,19 @@ abstract class DtoBase implements ISql{
                 if($column === null || !$column->isVisible()) {
                     continue;
                 }
-                if($column->isCompless()) {
-                    $result[$column->getPropertyName()] = ComplessUtil::compless($this->getDtoCache()[$column->getPropertyName()]);
+                $value = null;
+                if(array_key_exists($column->getPropertyName(), $this->getDtoCache())) {
+                    $value = $this->getDtoCache()[$column->getPropertyName()];
                 } else {
-                    $result[$column->getPropertyName()] = $this->getDtoCache()[$column->getPropertyName()];
+                    $method = $annotation->getMethod($column->getPropertyName());
+                    if($method != null) {
+                        $value = $method->invoke();
+                    }
+                }
+                if($column->isCompless()) {
+                    $result[$column->getPropertyName()] = ComplessUtil::compless($value);
+                } else {
+                    $result[$column->getPropertyName()] = $value;
                 }
             }
         }
