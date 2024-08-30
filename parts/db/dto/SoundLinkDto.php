@@ -147,7 +147,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
     }
 
     /**
-     * @db\Annotation\Column(mime)
+     * @db\Annotation\Column(mime, false)
      */
     public function getMime() {
         return mime_content_type($this->getDataLink());
