@@ -19,6 +19,11 @@ class Annotation {
     $this->reflection = new ReflectionClass($clazz);
   }
 
+  /**
+   * Summary of getMethod
+   * @param mixed $functionName
+   * @return \ReflectionMethod|null
+   */
   public function getMethod($functionName){
     if($this->methods == []) {
       foreach($this->reflection->getMethods() as $method){

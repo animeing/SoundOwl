@@ -8,6 +8,7 @@ use ComplessUtil;
 use db\Annotation\Column;
 use db\Annotation\JsonIgnore;
 use db\dao\ISql;
+use Exception;
 use ReflectionMethod;
 
 /**
@@ -64,9 +65,11 @@ abstract class DtoBase implements ISql{
                 if(array_key_exists($column->getPropertyName(), $this->getDtoCache())) {
                     $value = $this->getDtoCache()[$column->getPropertyName()];
                 } else {
-                    $method = $annotation->getMethod($column->getPropertyName());
-                    if($method != null) {
-                        $value = $method->invoke();
+                    try {
+                        $value = $this->$method();
+                    } catch (Exception $e) {
+                        // IGNORE
+                        $value = null;
                     }
                 }
                 if($column->isCompless()) {
