@@ -7,6 +7,8 @@
     <util>utils/fileUtil/IMimeType.php</util>
     <util>utils/fileUtil/FileUtil.php</util>
     <util>utils/fileUtil/IniWrite.php</util>
+    <util>utils/reflection/ReflectorInterface.php</util>
+    <util>utils/reflection/Reflection.php</util>
 
     <base>annotation/Annotation.php</base>
     <base>annotation/AnnotationManager.php</base>
