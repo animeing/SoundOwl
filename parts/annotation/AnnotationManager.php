@@ -1,5 +1,8 @@
 <?php
 
+namespace annotation;
+
+use annotation\Annotation;
 class AnnotationManager {
   
   private static $instance = null;
