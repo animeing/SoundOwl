@@ -2,14 +2,14 @@
 
 namespace db\dto;
 
-use Annotation;
-use AnnotationManager;
+use annotation\AnnotationManager;
 use ComplessUtil;
 use db\Annotation\Column;
 use db\Annotation\JsonIgnore;
 use db\dao\ISql;
 use Exception;
 use ReflectionMethod;
+use utils\Reflection\Reflection;
 
 /**
  * DtoのBase classです。
@@ -49,7 +49,7 @@ abstract class DtoBase implements ISql{
     public function getVisibleRecord() {
         $result = [];
         $annotation = AnnotationManager::getInstance()->getOrCreateAnnotation($this);
-        $methods = $annotation->getFunctionNames();
+        $methods = Reflection::getInstance()->getOrCreateReflection($this)->getMethodNames();
 
         foreach($methods as $method) {
             if(strpos($method, 'get') === 0) {
