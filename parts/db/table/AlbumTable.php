@@ -15,4 +15,5 @@ interface AlbumTable {
     const ALBUM_ART = 'album_art';
     const ART_MIME = 'art_mime';
     const ART_LENGTH = 'art_length';
+    const YEAR = 'year';
 }

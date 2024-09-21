@@ -59,4 +59,11 @@ class AlbumDto extends DtoBase implements AlbumTable {
     public function getArtLength() {
         return parent::getDtoCache()[AlbumTable::ART_LENGTH];
     }
+    public function setYear($year) {
+        parent::putDtoCache(AlbumTable::YEAR, $year);
+    }
+
+    public function getYear() {
+        return parent::getDtoCache()[AlbumTable::YEAR];
+    }
 }

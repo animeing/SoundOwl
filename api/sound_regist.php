@@ -64,9 +64,8 @@ if(!file_exists(LOCK_PATH)) {
             }
             $soundLinkDto = new SoundLinkDto();
             $soundLinkDto->setLoudnessTarget(0);
-            $id3 = new getID3();
-            $id3Analyze = $id3->analyze($file);
-            if(!isset($id3Analyze['tags'])){
+            $id3Facade = Id3Facade::getId3($file);
+            if(!$id3Facade->hasTag('tags')){
                 $soundDtos = $soundDao->find(sha1($file));
                 if(count($soundDtos) == 0){
                     $soundLinkDto->setTitle(basename($file));
@@ -80,11 +79,8 @@ if(!file_exists(LOCK_PATH)) {
                 }
                 return;
             }
-            
-            $id3Tags = $id3Analyze['tags'];
-            $tagNames = array_reverse(array_keys($id3Tags));
             {
-                $title = findId3TagValue('title', $id3Tags, $tagNames);
+                $title = $id3Facade->getfindId3TagValue('title');
                 if($title === false) {
                     $soundLinkDto->setTitle(pathinfo($file)['filename']);
                 } else {
@@ -92,7 +88,7 @@ if(!file_exists(LOCK_PATH)) {
                 }
             }
             {
-                $artist = findId3TagValue('artist', $id3Tags, $tagNames);
+                $artist = $id3Facade->getfindId3TagValue('artist');
                 if($artist !== false) {
                     $registedArtistDto = $artistDao->hasRegistedArtist($artist);
                     if($registedArtistDto === false) {
@@ -106,50 +102,49 @@ if(!file_exists(LOCK_PATH)) {
                 }
             }
             {
-                $album = findId3TagValue('album', $id3Tags, $tagNames);
+                $album = $id3Facade->getfindId3TagValue('album');
                 if($album === false) {
                     $soundLinkDto->setAlbumHash('');
                 } else {
-                    $albumDto = $albumDao->hasRegistedAlbum($album, $artist);
-                    if($albumDto === false) {
-                        $albumDto = new AlbumDto;
-                        $albumDto->setArtistId($soundLinkDto->getArtistId());
-                        $albumDto->setTitle($album);
-                        $albumDto->setAlbumId(sha1($album));
-                        if($albumDto->getArtistId() === null){
-                            $albumDto->setAlbumKey($albumDto->getAlbumId().'_'.StringUtil::uniqueRandom());
-                        } else {
-                            $albumDto->setAlbumKey($albumDto->getAlbumId().$albumDto->getArtistId());
-                        }
-                        if(isset($id3Analyze['comments']) && isset($id3Analyze['comments']['picture'][0])) {
-                            $albumArtData = $id3Analyze['comments']['picture'][0];
-                            $albumDto->setAlbumArt(isset($albumArtData['data'])?$albumArtData['data']:'');
-                            $albumDto->setArtMime(isset($albumArtData['image_mime'])?$albumArtData['image_mime']:'');
-                            $albumDto->setArtLength(isset($albumArtData['datalength'])?$albumArtData['datalength']:'');
-                        }
-                        $albumDao->insert($albumDto);
+                    $albumDto = new AlbumDto;
+                    $albumDto->setArtistId($soundLinkDto->getArtistId());
+                    $albumDto->setTitle($album);
+                    $albumDto->setAlbumId(sha1($album));
+                    if($albumDto->getArtistId() === null){
+                        $albumDto->setAlbumKey($albumDto->getAlbumId().'_'.StringUtil::uniqueRandom());
                     } else {
-                        if(isset($id3Analyze['comments']) && isset($id3Analyze['comments']['picture'][0])) {
-                            $albumArtData = $id3Analyze['comments']['picture'][0];
-                            $albumDto->setAlbumArt(isset($albumArtData['data'])?$albumArtData['data']:'');
-                            $albumDto->setArtMime(isset($albumArtData['image_mime'])?$albumArtData['image_mime']:'');
-                            $albumDto->setArtLength(isset($albumArtData['datalength'])?$albumArtData['datalength']:'');
-                        }
-                        $albumDao->update($albumDto);
+                        $albumDto->setAlbumKey($albumDto->getAlbumId().$albumDto->getArtistId());
                     }
-                    $soundLinkDto->setAlbumHash($albumDto->getAlbumKey());
-                    $soundLinkDto->setAlbumTitle($albumDto->getTitle());
+                    if($id3Facade->hasTag('comments') && isset($id3Facade->getTag('comments')['picture'][0])) {
+                        $albumArtData = $id3Facade->getTag('comments')['picture'][0];
+                        $albumDto->setAlbumArt(isset($albumArtData['data'])?$albumArtData['data']:'');
+                        $albumDto->setArtMime(isset($albumArtData['image_mime'])?$albumArtData['image_mime']:'');
+                        $albumDto->setArtLength(isset($albumArtData['datalength'])?$albumArtData['datalength']:'');
+                    }
+                    if($id3Facade->getfindId3TagValue('year') != null) {
+                        $albumDto->setYear($id3Facade->getfindId3TagValue('year'));
+                    }
+
+                    $findAlbumDto = $albumDao->findAlbum($albumDto);
+                    if($findAlbumDto === false) {
+                        $albumDao->insert($albumDto);
+                        $soundLinkDto->setAlbumHash($albumDto->getAlbumKey());
+                        $soundLinkDto->setAlbumTitle($albumDto->getTitle());
+                    } else {
+                        $soundLinkDto->setAlbumHash($findAlbumDto->getAlbumKey());
+                        $soundLinkDto->setAlbumTitle($findAlbumDto->getTitle());
+                    }
                 }
             }
             {
-                $lyrics = findId3TagValue('lyrics', $id3Tags, $tagNames);
+                $lyrics = $id3Facade->getfindId3TagValue('lyrics');
                 
                 if($lyrics !== false) {
                     $soundLinkDto->setLyrics($lyrics);
                 }
             }
             {
-                $genre = findId3TagValue('genre', $id3Tags, $tagNames);
+                $genre = $id3Facade->getfindId3TagValue('genre');
                 if($genre === false) {
                     $soundLinkDto->setGenre('');
                 } else {
@@ -157,7 +152,7 @@ if(!file_exists(LOCK_PATH)) {
                 }
             }
             {
-                $track = findId3TagValue('track_number', $id3Tags, $tagNames);
+                $track = $id3Facade->getfindId3TagValue('track_number');
                 if($track !== false) {
                     $soundLinkDto->setTrackNo($track);
                 }
