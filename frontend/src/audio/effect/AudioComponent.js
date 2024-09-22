@@ -10,7 +10,7 @@ export class AudioComponent {
      * @type {AudioNode}
      */
     this.outputNode = null;
-    this._isUse = true;
+    this._isUse = null;
   }
 
   /**

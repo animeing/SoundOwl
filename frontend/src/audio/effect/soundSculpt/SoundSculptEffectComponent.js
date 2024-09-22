@@ -44,6 +44,12 @@ export class SoundSculptEffectComponent extends AudioComponent {
   setAudioContext(audioContext) {
     super.setAudioContext(audioContext);
     this.initializeNodes();
+    if(this.isUse) {
+      this.effectMain();
+    } else if(this.frameId != null) {
+      cancelAnimationFrame(this.frameId);
+      this.updateDefaultGainsFilter();
+    }
   }
 
   initializeNodes() {
@@ -60,8 +66,8 @@ export class SoundSculptEffectComponent extends AudioComponent {
     let animationFrame = () => {
       this.analyser.getByteFrequencyData(this.dataArray);
       let effectHz = this.calcBandValue();
-      const MIN_GAIN = -6;
-      const MAX_GAIN = 6;
+      const MIN_GAIN = -7;
+      const MAX_GAIN = 7;
       let newGains = {};
       this.audioEqualizer.gains.forEach(gain=>{
         let newGain = effectHz[gain.hz+''].smoothing * effectHz[gain.hz+''].multiplier;
@@ -76,11 +82,15 @@ export class SoundSculptEffectComponent extends AudioComponent {
           newGain,
           MAX_GAIN,
           MIN_GAIN,
-          1.3);
+          1.5);
+        {
+          let keylength = Object.keys(effectHz).length;
+          let al = 2.5/keylength;
+          newGains[gain.hz+''] *= (al * (keylength - effectHz[gain.hz].order));
+        }
       });
       newGains = this.equalizerWaveAdjustment(newGains);
       newGains = this.adjustmentAudioLevel(newGains);
-
       this.audioEqualizer.gains.forEach(element => {
         if(newGains == null || newGains[element.hz+''] == null || isNaN(newGains[element.hz+''])) {
           this.audioEqualizer.filters[element.hz].gain.value = 0;
@@ -89,7 +99,6 @@ export class SoundSculptEffectComponent extends AudioComponent {
         const baseGain = (+element.gain);
         this.audioEqualizer.filters[element.hz].gain.value = newGains[element.hz+''] + baseGain;
       });
-
       this.frameId = requestAnimationFrame(animationFrame);
     };
     animationFrame();
@@ -108,7 +117,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
       if(this.prevEffectHz[key] == null) {
         continue;
       }
-      let alpha = 0.5;
+      let alpha = 0.05;
       effectHz[key].smoothing = (1 - alpha) * this.prevEffectHz[key].smoothing + alpha * effectHz[key].normalizedAvg;
     }
     this.prevEffectHz = JSON.parse(JSON.stringify(effectHz));
@@ -154,7 +163,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
     }
     let lowHzGain = 0;
     let toLow = +Object.keys(newGains)[0];
-    let maxDiff = 1.5;
+    let maxDiff = 1.7;
     for (const key in newGains) {
       if (Object.hasOwnProperty.call(newGains, key)) {
         const element = newGains[key];
@@ -186,6 +195,12 @@ export class SoundSculptEffectComponent extends AudioComponent {
      */
   getAdjustedValue(currentValue, maxValue, minValue, easeParameter = 2) {
     const normalizedX = (currentValue - minValue) / (maxValue - minValue);
+    if(normalizedX < 0) {
+      return minValue;
+    }
+    if(normalizedX > 1) {
+      return maxValue;
+    }
     const easedX = Math.pow(normalizedX, easeParameter) / (Math.pow(normalizedX, easeParameter) + Math.pow(1 - normalizedX, easeParameter));
     return easedX * (maxValue - minValue) + minValue;
   }
@@ -195,22 +210,22 @@ export class SoundSculptEffectComponent extends AudioComponent {
          * 周波数データを格納するオブジェクト。
          * 各キーは特定の周波数（Hz）を表し、それに関連するデータを持つ。
          * 
-         * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, smoothing: number, normalizedAvg: number, multiplier: number}>}
+         * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, smoothing: number, normalizedAvg: number, multiplier: number,order: number}>}
          */
     let effectHzs = {
-      '8':{'hz':8, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1},
-      '16':{'hz':16, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1.2},
-      '32':{'hz':32, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1.2},
-      '64':{'hz':64, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1.26},
-      '125':{'hz':125, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1.6},
-      '250':{'hz':250, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2},
-      '500':{'hz':500, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2.5},
-      '1000':{'hz':1e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2.5},
-      '2000':{'hz':2e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2.6},
-      '4000':{'hz':4e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2.7},
-      '8000':{'hz':8e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3},
-      '16000':{'hz':16e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3.7},
-      '24000':{'hz':24e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':4},
+      '8':{'hz':8, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1.2,"order":0},
+      '16':{'hz':16, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1,"order":0},
+      '32':{'hz':32, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':0.5,"order":0},
+      '64':{'hz':64, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':0.7,"order":0},
+      '125':{'hz':125, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2.6,"order":0},
+      '250':{'hz':250, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3,"order":0},
+      '500':{'hz':500, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3.5,"order":0},
+      '1000':{'hz':1e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3.5,"order":0},
+      '2000':{'hz':2e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3.6,"order":0},
+      '4000':{'hz':4e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3.7,"order":0},
+      '8000':{'hz':8e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':4,"order":0},
+      '16000':{'hz':16e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':4.7,"order":0},
+      '24000':{'hz':24e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':4,"order":0},
     };
     this.voice = {'hz':'voiceRange','sum': 0, 'count':0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 64, 'maxHz': 8e3};
     let total = {'count':0, 'sum':0};
@@ -238,7 +253,12 @@ export class SoundSculptEffectComponent extends AudioComponent {
     }
     this.voice.avg = this.voice.sum / this.voice.count;
     const overallAvg = total.sum / total.count;
-    const scaleFactor = 0;
+    const scaleFactor = 0.9;
+
+    const sortedKeys = Object.keys(effectHzs).sort((a, b) => effectHzs[b].avg - effectHzs[a].avg);
+    sortedKeys.forEach((key, index) => {
+      effectHzs[key].order = index + 1;
+    });
     for(const key in effectHzs) {
       const effectHz = effectHzs[key];
       effectHz.normalizedAvg = (effectHz.avg / overallAvg - 1.0) * (scaleFactor + 1.0);
