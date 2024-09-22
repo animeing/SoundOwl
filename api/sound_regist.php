@@ -24,34 +24,6 @@ if(!file_exists(LOCK_PATH)) {
             }
             return false;
         }
-
-
-        function findId3TagValue($key, $id3Tags, $tagNames) {
-            foreach($tagNames as $tagName) {
-                if(!isset($id3Tags[$tagName]) || !isset($id3Tags[$tagName][$key])) {
-                    continue;
-                }
-                $val = null;
-                if(is_array($id3Tags[$tagName][$key]) && isset($id3Tags[$tagName][$key][0])){
-                    $val = $id3Tags[$tagName][$key][0];
-                } else if(is_string($id3Tags[$tagName][$key])) {
-                    $val = $id3Tags[$tagName][$key];
-                } else {
-                    continue;
-                }
-                
-                $encode = mb_detect_encoding($val, 'auto', true);
-                if($encode === false) {
-                    continue;
-                }
-                $converted = mb_convert_encoding($val, "UTF-8", $encode);
-                if($converted !== false) {
-                    return $converted;
-                }
-            }
-            return false;
-        }
-
         
 
         $soundDao = new SoundLinkDao();
@@ -111,7 +83,7 @@ if(!file_exists(LOCK_PATH)) {
                     $albumDto->setTitle($album);
                     $albumDto->setAlbumId(sha1($album));
                     if($albumDto->getArtistId() === null){
-                        $albumDto->setAlbumKey($albumDto->getAlbumId().'_'.StringUtil::uniqueRandom());
+                        $albumDto->setAlbumKey($albumDto->getAlbumId().sha1(StringUtil::uniqueRandom()));
                     } else {
                         $albumDto->setAlbumKey($albumDto->getAlbumId().$albumDto->getArtistId());
                     }
