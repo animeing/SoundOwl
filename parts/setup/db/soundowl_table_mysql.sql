@@ -30,6 +30,7 @@ CREATE TABLE `album` (
   `album_art` longblob DEFAULT NULL,
   `art_mime` text DEFAULT NULL,
   `art_length` bigint(255) DEFAULT NULL,
+  `year` varchar(10) DEFAULT NULL,
   UNIQUE KEY `album_key` (`album_key`),
   KEY `artist_id` (`artist_id`(768))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
