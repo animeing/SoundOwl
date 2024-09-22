@@ -1729,12 +1729,13 @@ class VerticalProgressComposite extends ProgressComposite{
     this.classList.add`vertical-progress`;
   }
 
-  mouseMove(event){
-    this.setAttribute('slider-value', (this.getOffset(event) / this.clientHeight * this.range) + this.min);
+  mouseMove(event) {
+    const proposedValue = (this.getOffset(event) / this.clientHeight * this.range) + this.min;
+    const value = Math.min(Math.max(proposedValue, this.min), this.max);
+    this.setAttribute('slider-value', value);
   }
-
-  getOffset(event){
-    return this.getBoundingClientRect().bottom - event.clientY;
+  getOffset(event) {
+    return Math.max(0, this.getBoundingClientRect().bottom - event.clientY);
   }
   get scaleStyle(){
     return `scaleY(${this.per})`;
