@@ -31,6 +31,7 @@
             max="1"
             min="0"
             @changingValue="changeVolume"
+            @changed="changeVolume"
             @wheel="volumeAction" />
         <AudioCanvas
             :is-view="isFillLayout"
@@ -127,7 +128,7 @@ export default {
       return classList+(this.isVolumeViewOpen?' hide':'');
     },
     changeVolume(event) {
-      this.volume = event.target.getAttribute('value');
+      this.volume = event.target.getAttribute('slider-value');
       audio.audio.volume = this.volume;
       audioParamSave();
     },
