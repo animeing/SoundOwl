@@ -31,7 +31,7 @@ if(!file_exists(LOCK_PATH)) {
         $albumDao = new AlbumDao();
         function registSoundData($file) {
             global $artistDao, $albumDao, $soundDao, $predis;
-            if(!preg_match('/\.(mp3|m4a|wav|ogg|flac)$/', $file)){
+            if(!preg_match('/\.(mp3|m4a|wav|ogg|flac|ape)$/', $file)){
                 return;
             }
             $soundLinkDto = new SoundLinkDto();
@@ -91,10 +91,10 @@ if(!file_exists(LOCK_PATH)) {
                         $albumArtData = $id3Facade->getTag('comments')['picture'][0];
                         $albumDto->setAlbumArt(isset($albumArtData['data'])?$albumArtData['data']:'');
                         $albumDto->setArtMime(isset($albumArtData['image_mime'])?$albumArtData['image_mime']:'');
-                        $albumDto->setArtLength(isset($albumArtData['datalength'])?$albumArtData['datalength']:'');
+                        $albumDto->setArtLength(isset($albumArtData['datalength'])?$albumArtData['datalength']:strlen($albumArtData['data']));
                     }
                     if($id3Facade->getfindId3TagValue('year') != null) {
-                        $albumDto->setYear($id3Facade->getfindId3TagValue('year'));
+                        $albumDto->setYear(mb_substr($id3Facade->getfindId3TagValue('year'), 0, 10));
                     }
 
                     $findAlbumDto = $albumDao->findAlbum($albumDto);
