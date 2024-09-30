@@ -51,6 +51,7 @@ export default {
             audioClip.artist = response['artist_name'];
             audioClip.album = response['album']['album_title'];
             audioClip.albumKey = response['album']['album_hash'];
+            audioClip.artistKey = response['artist_id'];
             audioClip.no = listNo;
             listNo++;
             this.newSoundClips.push(audioClip);
@@ -75,6 +76,7 @@ export default {
             audioClip.artist = response['artist_name'];
             audioClip.album = response['album']['album_title'];
             audioClip.albumKey = response['album']['album_hash'];
+            audioClip.artistKey = response['artist_id'];
             audioClip.no = listNo;
             listNo++;
             this.soundClips.push(audioClip);
