@@ -4,12 +4,13 @@
             <CurrentAudioList :is-view="isAudioList" />
             <span class="audio-play-item">{{ currentPlaySoundClip.title }}</span>
             <span class="audio-play-item nonselectable">-</span>
-            <span class="audio-play-item">{{ currentPlaySoundClip.artist }}</span>
+            <a
+              :href="'#/artist?ArtistHash='+currentPlaySoundClip.artistKey"
+              class="audio-play-item">{{ currentPlaySoundClip.artist }}</a>
             <span class="audio-play-item nonselectable">-</span>
             <a
-                href="#"
-                class="audio-play-item"
-                @click.stop.prevent="albumClick()">{{ currentPlaySoundClip.album }}</a>
+                :href="'#/album?AlbumHash=' + currentPlaySoundClip.albumKey"
+                class="audio-play-item">{{ currentPlaySoundClip.album }}</a>
             <AudioIconControl
                 @togglePlayListView="togglePlayListView"
                 @toggleControllerFillView="toggleControllerFillView"
@@ -94,12 +95,6 @@ export default {
       this.volume -= e.deltaY/1e4;
       audio.audio.volume = this.volume;
       audioParamSave();
-    },
-    albumClick() {
-      if(ContextMenu.isVisible || this.currentPlaySoundClip.albumKey == ''){
-        return;
-      }
-      this.$router.push({name:'album', query: {AlbumHash: this.currentPlaySoundClip.albumKey}});
     },
     toggleView() {
       this.$el.parentNode.classList.toggle('analyser');

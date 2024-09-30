@@ -5,6 +5,7 @@ export class AudioClip{
     this.no=0;
     this.soundHash=null;
     this.artist=null;
+    this.artistKey=null;
     this.title=null;
     this.album=null;
     this.albumKey = null;

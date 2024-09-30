@@ -86,7 +86,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
     }
 
     /**
-     * @db\Annotation\Column(artist_id)
+     * @db\Annotation\Column(artist_id, true, true)
      */
     public function getArtistId(){
         return parent::getDtoCache()[SoundLinkTable::ARTIST_ID];
