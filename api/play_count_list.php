@@ -18,4 +18,4 @@ foreach($soundcountList->getPlayCountDesc() as $soundCountItem) {
     $soundList[] = $record;
 }
 
-echo json_encode($ret);
+echo json_encode($soundList);
