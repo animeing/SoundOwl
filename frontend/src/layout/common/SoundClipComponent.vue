@@ -12,9 +12,10 @@
                 {{ soundClip.title }}
             </p>
             <p class="audio-uploader">
-                <span
+                <a
                     class="audio-infomation"
-                    :data-hint="soundClip.artist">{{ soundClip.artist }}</span>
+                    :data-hint="soundClip.artist"
+                    @click.stop.prevent.capture="artistClipClick()">{{ soundClip.artist }}</a>
             </p>
             <a
                 v-show="hasAlbumData"
@@ -59,6 +60,12 @@ export default {
         return;
       }
       this.$router.push({name:'album', query: {AlbumHash: this.soundClip.albumKey}});
+    },
+    artistClipClick() {
+      if(ContextMenu.isVisible) {
+        return;
+      }
+      this.$router.push({name:'artist', query:{ArtistHash: this.soundClip.artistKey}})
     }
   }
 };

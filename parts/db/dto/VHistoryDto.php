@@ -96,7 +96,7 @@ class VHistoryDto extends DtoBase implements VHistoryTable {
     }
 
     /**
-     * @db\Annotation\Column(artist_id)
+     * @db\Annotation\Column(artist_id, true, true)
      */
     public function getArtistId() {
         return parent::getDtoCache()[VHistoryTable::ARTIST_ID];
