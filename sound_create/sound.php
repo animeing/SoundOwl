@@ -1,4 +1,8 @@
 <?php
+ini_set('output_buffering', 'Off');
+ini_set('realpath_cache_size', '16k');
+ini_set('zlib.output_compression', 'Off');
+
 require(dirname(__DIR__).'/parts/loader.php');
 
 $media_hash = $_GET["media_hash"] ?? '';
@@ -42,12 +46,14 @@ if (isset($_SERVER["HTTP_RANGE"])){
     set_time_limit(0);
     $contentPointer = fopen(PATH, "rb");
     fseek($contentPointer, $rangeOffset);
-    $load = 8192;
+    $load = 16384;
     $loop = ceil(($rangeLimit - $rangeOffset + 1) / $load);
     $counter = 0;
     $bf="";
     $limitLength = $contentLength;
-    @ob_end_clean();
+    while (ob_get_level()) {
+        @ob_end_clean();
+    }
     while($counter < $loop && !connection_aborted()){
         $load = min($limitLength, $load);
         $bf = fread($contentPointer, $load);
@@ -63,5 +69,8 @@ if (isset($_SERVER["HTTP_RANGE"])){
     header('Content-Length: ' . $fileSize );
     header("Content-Range: bytes 0-".($fileSize-1)."/".$fileSize );
     http_response_code(200);
+    while (ob_get_level()) {
+        @ob_end_clean();
+    }
     readfile(PATH);
 }
