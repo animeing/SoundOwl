@@ -12,11 +12,14 @@ services:
       REDIS_SERVER: soundowl-redis
       DB_SERVER: soundowl-db
       SOUND_PATH: /music
+    networks:
+      - app-network
     depends_on:
       - db
       - redis
       - websocket
       - que
+
   db:
     image: mariadb
     container_name: soundowl-db
@@ -25,20 +28,27 @@ services:
       MYSQL_DATABASE: sound
       MYSQL_USER: sound
       MYSQL_PASSWORD: sound
+      MYSQL_ROOT_HOST: "%"
     ports:
-      - target: 3306
-        protocol: tcp
-        mode: host
+      - "3306:3306/tcp"
+    hostname: soundowl-db
+    restart: always
+    networks:
+      - app-network
     volumes:
       - db_data:/var/lib/mysql
       - ./parts/setup/db/soundowl_table_mysql.sql:/docker-entrypoint-initdb.d/init.sql
+
   redis:
     container_name: soundowl-redis
     image: redis
     ports:
       - "6379:6379"
+    networks:
+      - app-network
     volumes:
       - "./data/redis:/data"
+
   websocket:
     build: .
     command: php /var/www/html/api/sw/server.php
@@ -51,9 +61,12 @@ services:
       REDIS_SERVER: soundowl-redis
       DB_SERVER: soundowl-db
       SOUND_PATH: /music
+    networks:
+      - app-network
     depends_on:
       - db
       - redis
+
   que:
     build: .
     command: php /var/www/html/api/quescript/queueAction.php
@@ -65,8 +78,15 @@ services:
       REDIS_SERVER: soundowl-redis
       DB_SERVER: soundowl-db
       SOUND_PATH: /music
+    networks:
+      - app-network
     depends_on:
       - db
       - redis
+
+networks:
+  app-network:
+    driver: bridge
+
 volumes:
   db_data:
