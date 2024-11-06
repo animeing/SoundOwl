@@ -14,275 +14,470 @@ export class SoundSculptEffectComponent extends AudioComponent {
      */
     this.audioEqualizer = audioEqualizer;
     /**
-     * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, smoothing: number, normalizedAvg: number, multiplier: number}>}
+     * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, previousAvg: number, smoothing: number, normalizedAvg: number, multiplier: number}>}
      */
-    this.prevEffectHz = [];
+    this.previousFrequencyEffects = {};
 
-    this.voice = {'sum': 0, 'count':0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 64, 'maxHz': 8e3};
+    this.voiceMetrics = { 'sum': 0, 'count': 0, 'avg': 0, 'previousAvg': 0, 'normalizedAvg': 0, 'minHz': 300, 'maxHz': 3400 };
 
     /**
      * @type {number}
      */
-    this.frameId = null;
+    this.animationFrameId = null;
+    
+    /**
+     * 前回のゲイン値を保存するオブジェクト
+     */
+    this.previousGains = {};
+
+    /**
+     * 周波数帯ごとの強調レベルを設定するオブジェクト
+     */
+    this.emphasisLevels = {
+      '8': 1.5,
+      '16': 1.5,
+      '32': 1.5,
+      '64': 1.5,
+      '125': 2.5,
+      '250': 1.5,
+      '500': 1.5,
+      '1000': 2.5,
+      '2000': 2.5,
+      '4000': 4.5,
+      '8000': 4.5,
+      '16000': 4.5,
+      '24000': 4.5
+    };
+
+    /**
+     * 周波数帯ごとの突発的な音とみなす変化量の閾値を設定するオブジェクト
+     */
+    this.suddenSoundThresholds = {
+      '8': 1.0,
+      '16': 1.0,
+      '32': 1.0,
+      '64': 1.0,
+      '125': 1.2,
+      '250': 1.5,
+      '500': 2.0,
+      '1000': 2.5,
+      '2000': 3.0,
+      '4000': 3.5,
+      '8000': 4.5,
+      '16000': 4.5,
+      '24000': 0.5
+    };
+
+    /**
+     * ゲインの1フレームあたりの最大変化量
+     */
+    this.maxGainChangePerFrame = 0.5;
   }
 
-
-  _setUse(val) {
-    super._setUse(val);
-    this.isUse = val;
-    if(this.audioContext == null) {
+  _setUse(isUse) {
+    super._setUse(isUse);
+    this.isUse = isUse;
+    if (this.audioContext == null) {
       return;
     }
-    if(this.isUse) {
-      this.effectMain();
-    } else if(this.frameId != null) {
-      cancelAnimationFrame(this.frameId);
-      this.updateDefaultGainsFilter();
+    if (this.isUse) {
+      this.startEffectLoop();
+    } else if (this.animationFrameId != null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.resetDefaultGains();
     }
   }
 
   setAudioContext(audioContext) {
     super.setAudioContext(audioContext);
     this.initializeNodes();
-    if(this.isUse) {
-      this.effectMain();
-    } else if(this.frameId != null) {
-      cancelAnimationFrame(this.frameId);
-      this.updateDefaultGainsFilter();
+    if (this.isUse) {
+      this.startEffectLoop();
+    } else if (this.animationFrameId != null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.resetDefaultGains();
     }
   }
 
   initializeNodes() {
-    this.analyser = this.audioContext.createAnalyser();
-    this.analyser.fftSize = 32768;
-    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+    this.analyserNode = this.audioContext.createAnalyser();
+    this.analyserNode.fftSize = 4096; // FFTサイズを中程度に設定
+    this.frequencyDataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
 
-    this.inputNode = this.analyser;
+    this.inputNode = this.analyserNode;
     this.outputNode = this.inputNode;
-    return this.analyser;
+    return this.analyserNode;
   }
 
-  effectMain() {
-    let animationFrame = () => {
-      this.analyser.getByteFrequencyData(this.dataArray);
-      let effectHz = this.calcBandValue();
-      const MIN_GAIN = -7;
-      const MAX_GAIN = 7;
-      let newGains = {};
-      this.audioEqualizer.gains.forEach(gain=>{
-        let newGain = effectHz[gain.hz+''].smoothing * effectHz[gain.hz+''].multiplier;
-        if(isNaN(newGain)) {
+  startEffectLoop() {
+    const loop = () => {
+      if (!this.isUse) {
+        cancelAnimationFrame(this.animationFrameId);
+        this.resetDefaultGains();
+        return;
+      }
+      this.analyserNode.getByteFrequencyData(this.frequencyDataArray);
+      let frequencyBands = this.calculateFrequencyBands();
+      const MIN_GAIN = -10; // ゲイン範囲を適度に調整
+      const MAX_GAIN = 10;
+      let updatedGains = {};
+      this.audioEqualizer.gains.forEach(gain => {
+        const hzKey = gain.hz+ '';
+        if (!frequencyBands[hzKey]) {
           return;
         }
-        if (gain.hz >= this.voice.minHz && gain.hz <= this.voice.maxHz) {
+        let newGain = frequencyBands[hzKey].smoothing * frequencyBands[hzKey].multiplier;
+        if (gain.hz >= this.voiceMetrics.minHz && gain.hz <= this.voiceMetrics.maxHz) {
           let alpha = 0.5;
-          newGain = (1-alpha)*this.voice.normalizedAvg + alpha * newGain;
+          newGain = (1 - alpha) * this.voiceMetrics.normalizedAvg + alpha * newGain;
         }
-        newGains[gain.hz+''] = this.getAdjustedValue(
-          newGain,
-          MAX_GAIN,
-          MIN_GAIN,
-          1.5);
-        {
-          let keylength = Object.keys(effectHz).length;
-          let al = 2.5/keylength;
-          newGains[gain.hz+''] *= (al * (keylength - effectHz[gain.hz].order));
+
+        if (isNaN(newGain)) {
+          return;
         }
+
+        updatedGains[hzKey] = newGain;
       });
-      newGains = this.equalizerWaveAdjustment(newGains);
-      newGains = this.adjustmentAudioLevel(newGains);
+
+      // ここで突発音の検出と適用量の計算を行う
+      let suddenAdjustments = this.calculateSuddenSoundAdjustments(updatedGains, frequencyBands);
+
+      updatedGains = this.adjustEqualizerWaves(updatedGains);
+      updatedGains = this.adjustAudioLevels(updatedGains);
+
+      // adjustmentAudioLevel 後に突発音の適用量を適用する
+      updatedGains = this.applySuddenSoundAdjustments(updatedGains, suddenAdjustments, MIN_GAIN, MAX_GAIN);
+
+      // ゲインをフィルターに適用
       this.audioEqualizer.gains.forEach(element => {
-        if(newGains == null || newGains[element.hz+''] == null || isNaN(newGains[element.hz+''])) {
+        const hzKey = element.hz+ '';
+        if (updatedGains == null || updatedGains[hzKey] == null || isNaN(updatedGains[hzKey])) {
           this.audioEqualizer.filters[element.hz].gain.value = 0;
           return;
         }
-        const baseGain = (+element.gain);
-        this.audioEqualizer.filters[element.hz].gain.value = newGains[element.hz+''] + baseGain;
+        const baseGain = Number(element.gain);
+        this.audioEqualizer.filters[element.hz].gain.value = updatedGains[hzKey] + baseGain;
       });
-      this.frameId = requestAnimationFrame(animationFrame);
+
+      // ログ出力
+      // this.logGains(updatedGains);
+
+      this.animationFrameId = requestAnimationFrame(loop);
     };
-    animationFrame();
+    loop();
   }
   
+
   /**
-     * 
-     * @param {Object.<string, {hz: number, count: number, sum: number, avg: number, smoothing: number, normalizedAvg: number, multiplier: number}>} effectHz 
-     */
-  smoothing(effectHz) {
-    if (this.prevEffectHz === null) {
-      this.prevEffectHz = JSON.parse(JSON.stringify(effectHz));
-      return;
-    }
-    for(const key in effectHz) {
-      if(this.prevEffectHz[key] == null) {
+   * 突発音の検出と適用量の計算を行います。
+   * @param {Object} updatedGains  
+   * @param {Object.<string, {hz: number, count: number, sum: number, avg: number, previousAvg: number, smoothing: number, normalizedAvg: number, multiplier: number}>} frequencyBands 
+   * @returns {Object} 突発音の適用量
+   */
+  calculateSuddenSoundAdjustments(updatedGains, frequencyBands) {
+    let adjustments = {};
+    const epsilon = 1e-8; // 非常に小さい定数
+    const MIN_ENERGY_THRESHOLD = 0.1; // 適切な値に調整
+  
+    for (const hzKey of Object.keys(updatedGains)) {
+      let prevAvg = frequencyBands[hzKey].previousAvg;
+      let currAvg = frequencyBands[hzKey].avg;
+      if(frequencyBands[hzKey].count == 0) {
         continue;
       }
-      let alpha = 0.05;
-      effectHz[key].smoothing = (1 - alpha) * this.prevEffectHz[key].smoothing + alpha * effectHz[key].normalizedAvg;
-    }
-    this.prevEffectHz = JSON.parse(JSON.stringify(effectHz));
-  }
-
-
-  /**
-     * 
-     * @param {Array} newGains 
-     * @returns 
-     */
-  adjustmentAudioLevel(newGains) {
-    if(newGains == null){
-      return;
-    }
-    if(Object.keys(newGains).length == 0){
-      return;
-    }
-    let sumGain = 0;
-    for (const key of Object.keys(newGains)) {
-      if(isNaN(newGains[key])) {
+  
+      // エネルギーが低い場合はスキップ
+      if (currAvg < MIN_ENERGY_THRESHOLD) {
+        adjustments[hzKey] = 1.0;
         continue;
       }
-      sumGain+=newGains[key];
+  
+      // previousAvg が小さい場合の対策
+      let adjustedPrevAvg = Math.max(prevAvg, epsilon);
+      let changeRate = (currAvg - adjustedPrevAvg) / adjustedPrevAvg;
+  
+      // 周波数帯ごとの強調レベルと突発的な音の閾値を取得
+      const emphasisLevel = this.emphasisLevels[hzKey] || 1.0;
+      const suddenThreshold = this.suddenSoundThresholds[hzKey] || 0.2;
+  
+      let adjustment = 1.0; // デフォルトでは変化なし
+  
+      if (changeRate > suddenThreshold && prevAvg != 0) {
+        // 突発的な音と判断した場合、強調を適用
+        adjustment = 1 + (changeRate - suddenThreshold) * emphasisLevel;
+        console.log('top effect : [' + hzKey + ']');
+      }
+  
+      adjustments[hzKey] = adjustment;
     }
-    let avgGain = (sumGain)/(Object.keys(newGains).length);
-    for (const key of Object.keys(newGains)) {
-      newGains[key] -= (avgGain);
+    return adjustments;
+  }
+  
+
+  /**
+   * 突発音の適用量を実際に適用します。
+   * @param {Object} updatedGains 
+   * @param {Object} adjustments 
+   * @param {number} MIN_GAIN
+   * @param {number} MAX_GAIN
+   * @returns {Object} 調整後のゲイン値
+   */
+  applySuddenSoundAdjustments(updatedGains, adjustments, MIN_GAIN, MAX_GAIN) {
+    for (const hzKey of Object.keys(updatedGains)) {
+      let newGain = updatedGains[hzKey];
+      if(newGain == undefined) {
+        continue;
+      }
+
+      // 突発音の適用量を適用
+      newGain *= adjustments[hzKey] || 1.0;
+
+      // 前回のゲイン値を取得し、ゲインの変化量を制限
+      const previousGain = this.previousGains[hzKey] || 0;
+      // 次のフレーム用にゲインを保存
+      this.previousGains[hzKey] = newGain;
+      const maxGainChange = this.maxGainChangePerFrame;
+      let gainDifference = newGain - previousGain;
+
+      if (gainDifference > maxGainChange) {
+        newGain = previousGain + maxGainChange;
+      } else if (gainDifference < -maxGainChange) {
+        newGain = previousGain - maxGainChange;
+      }
+
+      // ゲイン値を範囲内に調整
+      updatedGains[hzKey] = this.getAdjustedValue(
+        newGain,
+        MAX_GAIN,
+        MIN_GAIN,
+        1.5 // イーズパラメータを調整してレスポンスを中程度に
+      );
+
     }
-    return newGains;
+    return updatedGains;
   }
 
   /**
-     * 
-     * @param {Array<{hz: number, gain: number}>} newGains
-     */
-  equalizerWaveAdjustment(newGains){
-    if(newGains == null){
+   * ゲイン値をログ出力します。
+   * @param {Object} updatedGains 
+   */
+  logGains(updatedGains) {
+    // 100フレームに1回だけログを出力して負荷を軽減
+    if (!this.logCounter) {
+      this.logCounter = 0;
+    }
+    this.logCounter++;
+    if (this.logCounter % 10 === 0) {
+      console.log('Current Gains:', updatedGains);
+    }
+  }
+
+  /**
+   * 周波数帯ごとの強調レベルを設定します。
+   * @param {number} hzKey 
+   * @param {number} level 
+   */
+  setEmphasisLevel(hzKey, level) {
+    this.emphasisLevels[hzKey + ''] = level;
+  }
+
+  /**
+   * 周波数帯ごとの突発的な音の閾値を設定します。
+   * @param {number} hzKey 
+   * @param {number} threshold 
+   */
+  setSuddenSoundThreshold(hzKey, threshold) {
+    this.suddenSoundThresholds[hzKey + ''] = threshold;
+  }
+
+  /**
+   * 
+   * @param {Object.<string, {hz: number, count: number, sum: number, avg: number, previousAvg: number, smoothing: number, normalizedAvg: number, multiplier: number}>} frequencyBands 
+   */
+  applySmoothing(frequencyBands) {
+    for (const key in frequencyBands) {
+      if (!this.previousFrequencyEffects[key]) {
+        frequencyBands[key].smoothing = frequencyBands[key].normalizedAvg;
+      } else {
+        let alpha = 0.05; // 平滑化係数を中程度に設定
+        frequencyBands[key].smoothing = (1 - alpha) * this.previousFrequencyEffects[key].smoothing + alpha * frequencyBands[key].normalizedAvg;
+      }
+    }
+    this.previousFrequencyEffects = JSON.parse(JSON.stringify(frequencyBands));
+  }
+
+  /**
+   * 
+   * @param {Object} updatedGains
+   */
+  adjustEqualizerWaves(updatedGains) {
+    if (updatedGains == null) {
       return;
     }
-    if(Object.keys(newGains).length == 0){
+    if (Object.keys(updatedGains).length === 0) {
       return;
     }
-    let lowHzGain = 0;
-    let toLow = +Object.keys(newGains)[0];
-    let maxDiff = 1.7;
-    for (const key in newGains) {
-      if (Object.hasOwnProperty.call(newGains, key)) {
-        const element = newGains[key];
-        if(key == toLow) {
-          lowHzGain = element;
+    let baseGain = 0;
+    let firstKey = +Object.keys(updatedGains)[0];
+    let maxDifference = 2.0;
+    for (const key in updatedGains) {
+      if (Object.hasOwnProperty.call(updatedGains, key)) {
+        const currentGain = updatedGains[key];
+        if (key === firstKey) {
+          baseGain = currentGain;
           continue;
         }
-        const diff = Math.abs(lowHzGain - element);
-        if(diff < maxDiff) {
-          lowHzGain = element;
+        const difference = Math.abs(baseGain - currentGain);
+        if (difference < maxDifference) {
+          baseGain = currentGain;
           continue;
         }
-        if(lowHzGain > element) {
-          newGains[key+''] = lowHzGain - maxDiff;
+        if (baseGain > currentGain) {
+          updatedGains[key] = baseGain - maxDifference;
         } else {
-          newGains[key+''] = lowHzGain + maxDiff;
+          updatedGains[key] = baseGain + maxDifference;
         }
-        lowHzGain = newGains[key+''];
+        baseGain = updatedGains[key];
       }
     }
-    return newGains;
+    return updatedGains;
   }
 
   /**
-     * @param {number} currentValue 
-     * @param {number} maxValue 
-     * @param {number} minValue 
-     * @returns 
-     */
-  getAdjustedValue(currentValue, maxValue, minValue, easeParameter = 2) {
+   * 
+   * @param {Object} updatedGains 
+   * @returns 
+   */
+  adjustAudioLevels(updatedGains) {
+    if (updatedGains == null) {
+      return;
+    }
+    if (Object.keys(updatedGains).length === 0) {
+      return;
+    }
+    let totalGain = 0;
+    for (const key of Object.keys(updatedGains)) {
+      if (isNaN(updatedGains[key])) {
+        continue;
+      }
+      totalGain += updatedGains[key];
+    }
+    let averageGain = totalGain / Object.keys(updatedGains).length;
+    for (const key of Object.keys(updatedGains)) {
+      updatedGains[key] -= averageGain;
+    }
+    return updatedGains;
+  }
+
+  /**
+   * @param {number} currentValue 
+   * @param {number} maxValue 
+   * @param {number} minValue 
+   * @param {number} easeParameter 
+   * @returns 
+   */
+  getAdjustedValue(currentValue, maxValue, minValue, easeParameter = 1.5) {
     const normalizedX = (currentValue - minValue) / (maxValue - minValue);
-    if(normalizedX < 0) {
+    if (normalizedX < 0) {
       return minValue;
     }
-    if(normalizedX > 1) {
+    if (normalizedX > 1) {
       return maxValue;
     }
     const easedX = Math.pow(normalizedX, easeParameter) / (Math.pow(normalizedX, easeParameter) + Math.pow(1 - normalizedX, easeParameter));
     return easedX * (maxValue - minValue) + minValue;
   }
 
-  calcBandValue(){
+  calculateFrequencyBands() {
     /**
-         * 周波数データを格納するオブジェクト。
-         * 各キーは特定の周波数（Hz）を表し、それに関連するデータを持つ。
-         * 
-         * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, smoothing: number, normalizedAvg: number, multiplier: number,order: number}>}
-         */
-    let effectHzs = {
-      '8':{'hz':8, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1.2,"order":0},
-      '16':{'hz':16, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':1,"order":0},
-      '32':{'hz':32, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':0.5,"order":0},
-      '64':{'hz':64, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':0.7,"order":0},
-      '125':{'hz':125, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':2.6,"order":0},
-      '250':{'hz':250, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3,"order":0},
-      '500':{'hz':500, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3.5,"order":0},
-      '1000':{'hz':1e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3.5,"order":0},
-      '2000':{'hz':2e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3.6,"order":0},
-      '4000':{'hz':4e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':3.7,"order":0},
-      '8000':{'hz':8e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':4,"order":0},
-      '16000':{'hz':16e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':4.7,"order":0},
-      '24000':{'hz':24e3, 'count':0, 'sum':0, 'avg':0, 'smoothing':0, 'normalizedAvg':0, 'multiplier':4,"order":0},
+     * 周波数データを格納するオブジェクト。
+     * 各キーは特定の周波数（Hz）を表し、それに関連するデータを持つ。
+     * 
+     * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, previousAvg: number, smoothing: number, normalizedAvg: number, multiplier: number, order: number}>}
+     */
+    let frequencyBands = {
+      '8': { 'hz': 8, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.2, "order": 0 },
+      '16': { 'hz': 16, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.0, "order": 0 },
+      '32': { 'hz': 32, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.0, "order": 0 },
+      '64': { 'hz': 64, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.2, "order": 0 },
+      '125': { 'hz': 125, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.5, "order": 0 },
+      '250': { 'hz': 250, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.8, "order": 0 },
+      '500': { 'hz': 500, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.0, "order": 0 },
+      '1000': { 'hz': 1000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.2, "order": 0 },
+      '2000': { 'hz': 2000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.5, "order": 0 },
+      '4000': { 'hz': 4000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.8, "order": 0 },
+      '8000': { 'hz': 8000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 3.0, "order": 0 },
+      '16000': { 'hz': 16000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 3.2, "order": 0 },
+      '24000': { 'hz': 24000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 3.5, "order": 0 }
     };
-    this.voice = {'hz':'voiceRange','sum': 0, 'count':0, 'avg': 0, 'normalizedAvg': 0, 'minHz': 64, 'maxHz': 8e3};
-    let total = {'count':0, 'sum':0};
-    for (const key in effectHzs) {
-      if (!Object.hasOwnProperty.call(effectHzs, key)) {
+    this.voiceMetrics = { 'hz': 'voiceRange', 'sum': 0, 'count': 0, 'avg': 0, 'previousAvg': 0, 'normalizedAvg': 0, 'minHz': 300, 'maxHz': 3400 };
+    let total = { 'count': 0, 'sum': 0 };
+    for (const key in frequencyBands) {
+      if (!Object.hasOwnProperty.call(frequencyBands, key)) {
         continue;
       }
-      const effectHz = effectHzs[key];
-      const RANGE = this.getRange(effectHz.hz);
-            
-      for (let i = RANGE.min; i < RANGE.max; i++) {
-        if(this.dataArray[i] == 0 || isNaN(this.dataArray[i])) {
+      const band = frequencyBands[key];
+      const RANGE = this.getFrequencyRange(band.hz);
+
+      for (let i = RANGE.min; i <= RANGE.max; i++) {
+        if (this.frequencyDataArray[i] === 0 || isNaN(this.frequencyDataArray[i])) {
           continue;
         }
-        if (effectHz.hz >= this.voice.minHz && effectHz.hz <= this.voice.maxHz) {
-          this.voice.sum += this.dataArray[i];
-          this. voice.count++;
+        const frequency = i * (this.audioContext.sampleRate / this.analyserNode.fftSize);
+        if (frequency >= this.voiceMetrics.minHz && frequency <= this.voiceMetrics.maxHz) {
+          this.voiceMetrics.sum += this.frequencyDataArray[i];
+          this.voiceMetrics.count++;
         }
-        effectHz.sum += this.dataArray[i];
-        effectHz.count++;
-        total.sum += this.dataArray[i];
+        band.sum += this.frequencyDataArray[i];
+        band.count++;
+        total.sum += this.frequencyDataArray[i];
         total.count++;
       }
-      effectHz.avg = effectHz.count != 0 ? effectHz.sum / effectHz.count : 0;
+      band.previousAvg = this.previousFrequencyEffects[key]?.avg || band.avg;
+      band.avg = band.count !== 0 ? band.sum / band.count : 0;
     }
-    this.voice.avg = this.voice.sum / this.voice.count;
-    const overallAvg = total.sum / total.count;
-    const scaleFactor = 0.9;
+    this.voiceMetrics.previousAvg = this.previousFrequencyEffects['voice']?.avg || this.voiceMetrics.avg;
+    this.voiceMetrics.avg = this.voiceMetrics.count !== 0 ? this.voiceMetrics.sum / this.voiceMetrics.count : 0;
+    const overallAvg = total.count !== 0 ? total.sum / total.count : 1;
+    const scaleFactor = 0.9; // スケールファクターを調整
 
-    const sortedKeys = Object.keys(effectHzs).sort((a, b) => effectHzs[b].avg - effectHzs[a].avg);
+    const sortedKeys = Object.keys(frequencyBands).sort((a, b) => frequencyBands[b].avg - frequencyBands[a].avg);
     sortedKeys.forEach((key, index) => {
-      effectHzs[key].order = index + 1;
+      frequencyBands[key].order = index + 1;
     });
-    for(const key in effectHzs) {
-      const effectHz = effectHzs[key];
-      effectHz.normalizedAvg = (effectHz.avg / overallAvg - 1.0) * (scaleFactor + 1.0);
+    for (const key in frequencyBands) {
+      const band = frequencyBands[key];
+      band.normalizedAvg = (band.avg / overallAvg - 1.0) * (scaleFactor + 1.0);
     }
-    this.voice.normalizedAvg = (this.voice.avg / overallAvg -1.0) * (scaleFactor + 1.0);
-    this.smoothing(effectHzs);
-    return effectHzs;
+    this.voiceMetrics.normalizedAvg = (this.voiceMetrics.avg / overallAvg - 1.0) * (scaleFactor + 1.0);
+    this.applySmoothing(frequencyBands);
+    return frequencyBands;
   }
-  updateDefaultGainsFilter() {
-    this.audioEqualizer.gains.forEach(element=>{
+
+  resetDefaultGains() {
+    this.audioEqualizer.gains.forEach(element => {
       this.audioEqualizer.filters[element.hz].gain.value = element.gain;
     });
   }
+
   /**
-     * 
-     * @param {number} hz 
-     * @returns 
-     */
-  getRange(hz) {
-    return {'min':(hz/2),'max':(hz*2)};
+   * 
+   * @param {number} hz 
+   * @returns 
+   */
+  getFrequencyRange(hz) {
+    const nyquist = this.audioContext.sampleRate / 2;
+    const index = Math.round(hz / nyquist * this.analyserNode.frequencyBinCount);
+    const bandwidthHz = hz * 0.2;
+    const bandwidth = Math.round(bandwidthHz / nyquist * this.analyserNode.frequencyBinCount);
+    return {
+      min: Math.max(0, index - bandwidth),
+      max: Math.min(this.analyserNode.frequencyBinCount - 1, index + bandwidth)
+    };
   }
-  
+
   reset() {
-    this.prevEffectHz = [];
+    this.previousFrequencyEffects = {};
+    this.previousGains = {};
   }
 }
-
