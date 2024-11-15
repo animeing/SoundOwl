@@ -34,10 +34,10 @@ export class SoundSculptEffectComponent extends AudioComponent {
      * 周波数帯ごとの強調レベルを設定するオブジェクト
      */
     this.emphasisLevels = {
-      '8': 1.5,
-      '16': 1.5,
-      '32': 1.5,
-      '64': 1.5,
+      '8': 1.9,
+      '16': 1.9,
+      '32': 1.9,
+      '64': 1.9,
       '125': 2.5,
       '250': 1.5,
       '500': 1.5,
@@ -101,7 +101,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
 
   initializeNodes() {
     this.analyserNode = this.audioContext.createAnalyser();
-    this.analyserNode.fftSize = 4096; // FFTサイズを中程度に設定
+    this.analyserNode.fftSize = 4096;
     this.frequencyDataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
 
     this.inputNode = this.analyserNode;
@@ -118,7 +118,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
       }
       this.analyserNode.getByteFrequencyData(this.frequencyDataArray);
       let frequencyBands = this.calculateFrequencyBands();
-      const MIN_GAIN = -10; // ゲイン範囲を適度に調整
+      const MIN_GAIN = -10;
       const MAX_GAIN = 10;
       let updatedGains = {};
       this.audioEqualizer.gains.forEach(gain => {
@@ -139,16 +139,13 @@ export class SoundSculptEffectComponent extends AudioComponent {
         updatedGains[hzKey] = newGain;
       });
 
-      // ここで突発音の検出と適用量の計算を行う
       let suddenAdjustments = this.calculateSuddenSoundAdjustments(updatedGains, frequencyBands);
 
       updatedGains = this.adjustEqualizerWaves(updatedGains);
       updatedGains = this.adjustAudioLevels(updatedGains);
 
-      // adjustmentAudioLevel 後に突発音の適用量を適用する
       updatedGains = this.applySuddenSoundAdjustments(updatedGains, suddenAdjustments, MIN_GAIN, MAX_GAIN);
 
-      // ゲインをフィルターに適用
       this.audioEqualizer.gains.forEach(element => {
         const hzKey = element.hz+ '';
         if (updatedGains == null || updatedGains[hzKey] == null || isNaN(updatedGains[hzKey])) {
@@ -176,12 +173,14 @@ export class SoundSculptEffectComponent extends AudioComponent {
    */
   calculateSuddenSoundAdjustments(updatedGains, frequencyBands) {
     let adjustments = {};
-    const epsilon = 1e-8; // 非常に小さい定数
-    const MIN_ENERGY_THRESHOLD = 0.1; // 適切な値に調整
+    const epsilon = 1e-8;
+    const MIN_ENERGY_THRESHOLD = 0.1;
   
     for (const hzKey of Object.keys(updatedGains)) {
       let prevAvg = frequencyBands[hzKey].previousAvg;
       let currAvg = frequencyBands[hzKey].avg;
+
+      // 入力の無い音域のデータはスキップ
       if(frequencyBands[hzKey].count == 0) {
         continue;
       }
@@ -245,12 +244,11 @@ export class SoundSculptEffectComponent extends AudioComponent {
         newGain = previousGain - maxGainChange;
       }
 
-      // ゲイン値を範囲内に調整
       updatedGains[hzKey] = this.getAdjustedValue(
         newGain,
         MAX_GAIN,
         MIN_GAIN,
-        1.5 // イーズパラメータを調整してレスポンスを中程度に
+        1.5
       );
 
     }
@@ -299,7 +297,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
       if (!this.previousFrequencyEffects[key]) {
         frequencyBands[key].smoothing = frequencyBands[key].normalizedAvg;
       } else {
-        let alpha = 0.05; // 平滑化係数を中程度に設定
+        let alpha = 0.05;
         frequencyBands[key].smoothing = (1 - alpha) * this.previousFrequencyEffects[key].smoothing + alpha * frequencyBands[key].normalizedAvg;
       }
     }
@@ -396,11 +394,11 @@ export class SoundSculptEffectComponent extends AudioComponent {
      * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, previousAvg: number, smoothing: number, normalizedAvg: number, multiplier: number, order: number}>}
      */
     let frequencyBands = {
-      '8': { 'hz': 8, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.2, "order": 0 },
-      '16': { 'hz': 16, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.0, "order": 0 },
-      '32': { 'hz': 32, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.0, "order": 0 },
-      '64': { 'hz': 64, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.2, "order": 0 },
-      '125': { 'hz': 125, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.5, "order": 0 },
+      '8': { 'hz': 8, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 0.01, "order": 0 },
+      '16': { 'hz': 16, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 0.01, "order": 0 },
+      '32': { 'hz': 32, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 0.01, "order": 0 },
+      '64': { 'hz': 64, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 0.01, "order": 0 },
+      '125': { 'hz': 125, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.3, "order": 0 },
       '250': { 'hz': 250, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.8, "order": 0 },
       '500': { 'hz': 500, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.0, "order": 0 },
       '1000': { 'hz': 1000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.2, "order": 0 },
@@ -439,7 +437,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
     this.voiceMetrics.previousAvg = this.previousFrequencyEffects['voice']?.avg || this.voiceMetrics.avg;
     this.voiceMetrics.avg = this.voiceMetrics.count !== 0 ? this.voiceMetrics.sum / this.voiceMetrics.count : 0;
     const overallAvg = total.count !== 0 ? total.sum / total.count : 1;
-    const scaleFactor = 0.9; // スケールファクターを調整
+    const scaleFactor = 0.9;
 
     const sortedKeys = Object.keys(frequencyBands).sort((a, b) => frequencyBands[b].avg - frequencyBands[a].avg);
     sortedKeys.forEach((key, index) => {
