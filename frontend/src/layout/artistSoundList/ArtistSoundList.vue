@@ -57,7 +57,7 @@ export default {
         let addNextSound = BaseFrameWork.createCustomElement('sw-libutton');
         addNextSound.menuItem.onclick=()=>{
           if(audio.currentAudioClip == undefined) {
-            audio.playList.add(soundClip, 0);
+            audio.playList.appendAudioClipNext(soundClip);
             return;
           }
           audio.playList.appendAudioClipNext(soundClip);

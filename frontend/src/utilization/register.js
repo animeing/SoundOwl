@@ -5,7 +5,7 @@ export const audioParamSave=()=>{
   let localStorageMap = new BaseFrameWork.Storage.Application.LocalStorageMap();
   let saveParams = JSON.stringify(
     {
-      'volume': audio.audio.volume,
+      'volume': audio.volume,
       'loopMode': audio.playList.loopMode,
       'loadGiveUpTime':audio.loadGiveUpTime,
       'equalizerGains':audio.equalizer.getGains(),
@@ -23,7 +23,7 @@ export const audioParamLoad=()=>{
     return;
   }
   let audioParams = JSON.parse(audioParam);
-  audio.audio.volume = audioParams.volume;
+  audio.volume = audioParams.volume;
   audio.playList.loopMode = audioParams.loopMode;
   audio.loadGiveUpTime = audioParams.loadGiveUpTime;
   audio.exAudioEffect.isUse = audioParams.soundSculpt;

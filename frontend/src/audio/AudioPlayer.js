@@ -10,8 +10,8 @@ import { StereoAudioEqualizerComposite } from './effect/equalizer/StereoAudioEqu
 import { SoundSculptEffectComposite } from './effect/soundSculpt/SoundSculptEffectComposite';
 import { AudioEffectManager } from './effect/AudioComponentManager';
 import { ImpulseResponseEffect } from './effect/effect3d/ImpulseResponseEffect';
-import { BASE } from '../utilization/path';
 import { SoundOwlProperty } from '../websocket';
+import { VolumeComponent } from './effect/volume/VolumeComponent';
 
 class AudioPlayer{
   constructor(){
@@ -22,6 +22,7 @@ class AudioPlayer{
     this.equalizer = new StereoAudioEqualizerComposite();
     this.exAudioEffect = new SoundSculptEffectComposite(this.equalizer);
     this.inpulseResponseEffect = new ImpulseResponseEffect();
+    this.volumeComponent = new VolumeComponent();
     /**
      * @type {Playlist}
      */
@@ -84,14 +85,29 @@ class AudioPlayer{
   }
 
   initalize() {
+
     this.audioEffectManager.initialize();
 
-    this.audioEffectManager.addEffect('impulseEffect', this.inpulseResponseEffect);
-    this.audioEffectManager.addEffect('equalizer', this.equalizer);
     this.audioEffectManager.addEffect('loudnessNormalize', this.loudnessNormalize);
     this.audioEffectManager.addEffect('soundSculpt', this.exAudioEffect);
+    this.audioEffectManager.addEffect('volume', this.volumeComponent);
+    this.audioEffectManager.addEffect('equalizer', this.equalizer);
+    this.audioEffectManager.addEffect('impulseEffect', this.inpulseResponseEffect);
+
+    this.audioEffectManager.apply();
 
     this.eventSupport.dispatchEvent(new CustomEvent('initalize'));
+  }
+
+  set volume(volume) {
+    volume = +volume;
+    if (volume < 0.0) volume = 0.0;
+    if (volume > 1.0) volume = 1.0;
+    this.volumeComponent.applyEffect(volume);
+  }
+
+  get volume() {
+    return +this.volumeComponent.volume;
   }
 
   /**

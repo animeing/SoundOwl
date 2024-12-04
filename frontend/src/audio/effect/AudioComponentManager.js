@@ -1,5 +1,3 @@
-import { AudioComponent } from './AudioComponent';
-
 export class AudioEffectManager {
   constructor(audioElement) {
     this.audioElement = audioElement;
@@ -20,7 +18,6 @@ export class AudioEffectManager {
     }
     effect.setAudioContext(this.audioContext);
     this.effects.set(name, effect);
-    this.reconnectEffects();
   }
 
   removeEffect(name) {
@@ -30,10 +27,17 @@ export class AudioEffectManager {
     const effect = this.effects.get(name);
     effect.disconnect();
     this.effects.delete(name);
+  }
+
+  apply() {
     this.reconnectEffects();
   }
 
   reconnectEffects() {
+    // すべての接続を解除
+    this.audioContext.destination.disconnect();
+    this.source.disconnect();
+
     let previousNode = this.source;
     for (const effect of this.effects.values()) {
       previousNode.connect(effect.inputNode);

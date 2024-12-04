@@ -87,13 +87,14 @@ export default {
       this.durationTime = audio.audio.duration;
       this.playTime = audio.audio.currentTime;
     });
-    this.volume = audio.audio.volume;
+    this.volume = audio.volume;
   },
   methods:{
     volumeAction(e) {
       e.preventDefault();
       this.volume -= e.deltaY/1e4;
-      audio.audio.volume = this.volume;
+      audio.volume = this.volume;
+      this.volume = audio.volume;
       audioParamSave();
     },
     toggleView() {
@@ -124,7 +125,7 @@ export default {
     },
     changeVolume(event) {
       this.volume = event.target.getAttribute('slider-value');
-      audio.audio.volume = this.volume;
+      audio.volume = this.volume;
       audioParamSave();
     },
     changedPlayPoint(event){
