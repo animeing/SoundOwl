@@ -14,8 +14,8 @@
 
     <base>annotation/Annotation.php</base>
     <base>annotation/AnnotationManager.php</base>
-    <base>db/annotation/Column.php</base>
-    <base>db/annotation/JsonIgnore.php</base>
+    <base>db/attribute/Column.php</base>
+    <base>db/attribute/JsonIgnore.php</base>
     <base>db/dao/ISql.php</base>
     <base>db/connector/Connector.php</base>
     <base>db/dao/SqlCreater.php</base>

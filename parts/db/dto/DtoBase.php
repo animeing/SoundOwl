@@ -2,12 +2,13 @@
 
 namespace db\dto;
 
-use annotation\AnnotationManager;
-use ComplessUtil;
-use db\Annotation\Column;
-use db\Annotation\JsonIgnore;
+use db\Attributes\Column;
+use db\Attributes\JsonIgnore;
 use db\dao\ISql;
+use db\validation\Attributes\Validate;
+use db\validation\Attributes\ValidationType;
 use Exception;
+use ReflectionClass;
 use ReflectionMethod;
 use utils\Reflection\Reflection;
 
@@ -15,70 +16,71 @@ use utils\Reflection\Reflection;
  * DtoのBase classです。
  */
 abstract class DtoBase implements ISql{
-    private $dtoCache = array();
-    protected function putDtoCache($key, $data){
+    private array $dtoCache = [];
+
+    protected function putDtoCache(string $key, $data): void {
         $this->dtoCache[$key] = $data;
     }
-    public function putAllDtoCache(array $dto){
+
+    public function putAllDtoCache(array $dto): void {
         $this->dtoCache = $dto;
     }
-    /**
-     * @JsonIgnore
-     * @return array
-     */
-    public function getDtoCache(){
+
+    #[JsonIgnore]
+    public function getDtoCache(): array {
         return $this->dtoCache;
     }
-    
-    /**
-     * @JsonIgnore
-     * @return mixed
-     */
-    public function getPrimaryKey(){
-        return $this->getDtoCache()[$this::PRIMARY_KEY];
+
+    #[JsonIgnore]
+    public function getPrimaryKey() {
+        return $this->dtoCache[$this::PRIMARY_KEY];
     }
 
-    public function toJson() {
+    public function toJson(): string {
         return json_encode($this->getVisibleRecord());
     }
-    private static $time = 0.0;
-    /**
-     * @JsonIgnore
-     * @return array
-     */
-    public function getVisibleRecord() {
-        $result = [];
-        $annotation = AnnotationManager::getInstance()->getOrCreateAnnotation($this);
-        $methods = Reflection::getInstance()->getOrCreateReflection($this)->getMethodNames();
 
-        foreach($methods as $method) {
-            if(strpos($method, 'get') === 0) {
-                $jsonIgnore = $annotation->getFunctionAnnotation($method, JsonIgnore::class);
-                if($jsonIgnore !== null) {
-                    continue;
-                }
-                $column = $annotation->getFunctionAnnotation($method, Column::class);
-                if($column === null || !$column->isVisible()) {
-                    continue;
-                }
-                $value = null;
-                if(array_key_exists($column->getPropertyName(), $this->getDtoCache())) {
-                    $value = $this->getDtoCache()[$column->getPropertyName()];
-                } else {
-                    try {
-                        $value = $this->$method();
-                    } catch (Exception $e) {
-                        // IGNORE
-                        $value = null;
-                    }
-                }
-                if($column->isCompless()) {
-                    $result[$column->getPropertyName()] = ComplessUtil::compless($value);
-                } else {
-                    $result[$column->getPropertyName()] = $value;
-                }
+    #[JsonIgnore]
+    public function getVisibleRecord(): array {
+        $result = [];
+        $reflection = Reflection::getInstance()->getOrCreateReflection($this);
+
+        $methodNames = $reflection->getMethodNames();
+
+        foreach ($methodNames as $methodName) {
+            if (strpos($methodName, 'get') !== 0) {
+                continue;
             }
+            $method = $reflection->getMethod($methodName);
+            // JsonIgnore属性の確認
+            $jsonIgnoreAttributes = $method->getAttributes(JsonIgnore::class);
+            if (!empty($jsonIgnoreAttributes)) {
+                continue;
+            }
+
+            // Column属性の取得
+            $columnAttributes = $method->getAttributes(Column::class);
+            if (empty($columnAttributes)) {
+                continue;
+            }
+
+            /** @var Column $column */
+            $column = $columnAttributes[0]->newInstance();
+
+            if (!$column->isVisible) {
+                continue;
+            }
+
+            $propertyName = $column->propertyName;
+            $value = $this->dtoCache[$propertyName] ?? null;
+
+            if ($column->isCompless) {
+                $value = \ComplessUtil::compless($value);
+            }
+
+            $result[$propertyName] = $value;
         }
+
         return $result;
     }
 }
