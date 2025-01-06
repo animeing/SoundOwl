@@ -37,20 +37,7 @@ SoundOwlProperty.WebSocket = {
     <link rel="manifest" href="manifest.json">
     <script src="js/main.bundle.js" defer></script>
 </head>
-<body>
-	<header>
-		<a href="#" name="home" class="page-title" title="Home">SoundOwl</a>
-        <span id='view-name'></span>
-		<span id="main-menu">
-
-		</span>
-	</header>
-    <div id="controller" class="audio-play-controller analyser">
-        <audio-controller></audio-controller>
-    </div>
-    <div id="base" class="layout-base">
-        <router-view></router-view>
-    </div>
+<body id="app">
 
 </body>
 </html>

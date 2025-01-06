@@ -4,6 +4,9 @@ namespace annotation;
 
 use utils\Reflection\Reflection;
 
+/**
+ * @deprecated
+ */
 class Annotation {
   private $reflection = null;
   private $methodsComment = [];

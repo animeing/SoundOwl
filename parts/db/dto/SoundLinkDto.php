@@ -1,6 +1,8 @@
 <?php
 
 use db\dto\DtoBase;
+use db\Attributes\Column;
+use db\Attributes\JsonIgnore;
 
 class SoundLinkDto extends DtoBase implements SoundLinkTable {
     
@@ -8,9 +10,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         parent::putDtoCache(SoundLinkTable::SOUND_HASH, $soundHash);
     }
 
-    /**
-     * @db\Annotation\Column(sound_hash, true, true)
-     */
+    #[Column(propertyName: "sound_hash", isVisible: true, isCompless: true)]
     public function getSoundHash() {
         return parent::getDtoCache()[SoundLinkTable::SOUND_HASH];
     }
@@ -19,9 +19,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         parent::putDtoCache(SoundLinkTable::ADD_TIME, $addTime);
     }
 
-    /**
-     * @db\Annotation\Column(add_time)
-     */
+    #[Column(propertyName: "add_time")]
     public function getAddTime() {
         return parent::getDtoCache()[SoundLinkTable::ADD_TIME];
     }
@@ -30,9 +28,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         parent::putDtoCache(SoundLinkTable::TITLE, $title);
     }
 
-    /**
-     * @db\Annotation\Column(title)
-     */
+    #[Column(propertyName: "title")]
     public function getTitle(){
         return parent::getDtoCache()[SoundLinkTable::TITLE];
     }
@@ -41,9 +37,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         return parent::putDtoCache(SoundLinkTable::LYRICS, $lyrics);
     }
 
-    /**
-     * @db\Annotation\Column(lyrics)
-     */
+    #[Column(propertyName: "lyrics")]
     public function getLyrics() {
         return parent::getDtoCache()[SoundLinkTable::LYRICS];
     }
@@ -52,9 +46,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         parent::putDtoCache(SoundLinkTable::GENRE, $genre);
     }
 
-    /**
-     * @db\Annotation\Column(genre)
-     */
+    #[Column(propertyName: "genre")]
     public function getGenre(){
         return parent::getDtoCache()[SoundLinkTable::GENRE];
     }
@@ -63,9 +55,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         parent::putDtoCache(SoundLinkTable::ALBUM_HASH, $albumId);
     }
 
-    /**
-     * @db\Annotation\Column(album_hash, true, true)
-     */
+    #[Column(propertyName: "album_hash", isVisible: true, isCompless: true)]
     public function getAlbumHash(){
         return parent::getDtoCache()[SoundLinkTable::ALBUM_HASH];
     }
@@ -74,9 +64,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         parent::putDtoCache(SoundLinkTable::ALBUM_TITLE, $albumTitle);
     }
 
-    /**
-     * @db\Annotation\Column(album_title)
-     */
+    #[Column(propertyName: "album_title")]
     public function getAlbumTitle(){
         return parent::getDtoCache()[SoundLinkTable::ALBUM_TITLE];
     }
@@ -85,9 +73,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         parent::putDtoCache(SoundLinkTable::ARTIST_ID, $artistId);
     }
 
-    /**
-     * @db\Annotation\Column(artist_id, true, true)
-     */
+    #[Column(propertyName: "artist_id", isVisible: true, isCompless: true)]
     public function getArtistId(){
         return parent::getDtoCache()[SoundLinkTable::ARTIST_ID];
     }
@@ -96,9 +82,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         parent::putDtoCache(SoundLinkTable::ARTIST_NAME, $artistName);
     }
 
-    /**
-     * @db\Annotation\Column(artist_name)
-     */
+    #[Column(propertyName: "artist_name")]
     public function getArtistName() {
         return parent::getDtoCache()[SoundLinkTable::ARTIST_NAME];
     }
@@ -107,9 +91,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         parent::putDtoCache(SoundLinkTable::TRACK_NO, $trackNo);
     }
 
-    /**
-     * @db\Annotation\Column(track_no)
-     */
+    #[Column(propertyName: "track_no")]
     public function getTrackNo(){
         return parent::getDtoCache()[SoundLinkTable::TRACK_NO];
     }
@@ -118,9 +100,7 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         parent::putDtoCache(SoundLinkTable::PLAY_COUNT, $playCount);
     }
 
-    /**
-     * @db\Annotation\Column(play_count)
-     */
+    #[Column(propertyName: "play_count")]
     public function getPlayCount(){
         return parent::getDtoCache()[SoundLinkTable::PLAY_COUNT];
     }
@@ -129,26 +109,21 @@ class SoundLinkDto extends DtoBase implements SoundLinkTable {
         parent::putDtoCache(SoundLinkTable::DATA_LINK, $dataLink);
     }
 
-    /**
-     * @db\Annotation\Column(data_link, false)
-     */
+    #[Column(propertyName: "data_link", isVisible: false)]
     public function getDataLink(){
         return parent::getDtoCache()[SoundLinkTable::DATA_LINK];
     }
+
     public function setLoudnessTarget($loudnessTarget) {
         return parent::putDtoCache(SoundLinkTable::LOUDNESS_TARGET, $loudnessTarget);
     }
 
-    /**
-     * @db\Annotation\Column(loudness_target)
-     */
+    #[Column(propertyName: "loudness_target")]
     public function getLoudnessTarget() {
         return parent::getDtoCache()[SoundLinkTable::LOUDNESS_TARGET];
     }
 
-    /**
-     * @db\Annotation\Column(mime, false)
-     */
+    #[Column(propertyName: "mime", isVisible: false)]
     public function getMime() {
         return mime_content_type($this->getDataLink());
     }

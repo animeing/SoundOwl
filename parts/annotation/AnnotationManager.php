@@ -3,6 +3,9 @@
 namespace annotation;
 
 use annotation\Annotation;
+/**
+ * @deprecated
+ */
 class AnnotationManager {
   
   private static $instance = null;
