@@ -1,7 +1,7 @@
 <template>
     <ul class="tabmenu">
         <TabItem
-            name="General"
+            name="Server"
             link="setting" />
         <TabItem
             name="Equalizer"

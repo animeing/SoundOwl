@@ -92,7 +92,7 @@ const router = createRouter({
       name: 'setting',
       component: SettingVue,
       meta:{
-        title:'General'
+        title:'Server'
       }
     },
     {
