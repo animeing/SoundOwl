@@ -12,16 +12,20 @@
                 {{ soundClip.title }}
             </p>
             <p class="audio-uploader">
-                <a
+                <router-link
+                    :to=" {name:'artist', query:{ArtistHash: soundClip.artistKey}}"
                     class="audio-infomation"
                     :data-hint="soundClip.artist"
-                    @click.stop.prevent.capture="artistClipClick()">{{ soundClip.artist }}</a>
+                    @click.stop
+                >{{ soundClip.artist }}</router-link>
             </p>
-            <a
+            <router-link
+                :to="{name:'album', query: {AlbumHash: soundClip.albumKey}}"
                 v-show="hasAlbumData"
                 class="audio-infomation audio-discription"
                 :data-hint="soundClip.album"
-                @click.stop.prevent.capture="albumClipClick()">{{ soundClip.album }}</a>
+                @click.stop
+            >{{ soundClip.album }}</router-link>
         </div>
     </div>
 </template>
@@ -53,19 +57,6 @@ export default {
   methods:{
     createImageSrc(albumKey) {
       return `${BASE.HOME}img/album_art.php?media_hash=`+albumKey;
-    },
-
-    albumClipClick() {
-      if(ContextMenu.isVisible){
-        return;
-      }
-      this.$router.push({name:'album', query: {AlbumHash: this.soundClip.albumKey}});
-    },
-    artistClipClick() {
-      if(ContextMenu.isVisible) {
-        return;
-      }
-      this.$router.push({name:'artist', query:{ArtistHash: this.soundClip.artistKey}})
     }
   }
 };

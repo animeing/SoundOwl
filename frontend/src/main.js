@@ -44,20 +44,29 @@ export default searchBox;
 
 })();
 
-
-
-
-
-
-const footer = createApp({});
-footer.component('AudioController', AudioController);
-footer.mount('#controller');
 const app = createApp({
   template:`
-    <router-view></router-view>`
-});
+	<header>
+		<router-link :to="{name:'home'}" class="page-title" title="Home">SoundOwl</router-link>
+        <span id='view-name'></span>
+		<span id="main-menu">
+
+		</span>
+	</header>
+    <div id="controller" class="audio-play-controller analyser">
+        <AudioController ></AudioController>
+    </div>
+    <div id="base" class="layout-base">
+        <router-view></router-view>
+    </div>
+  `,
+  components:{
+    AudioController
+  }
+})
 
 app.use(router);
+app.mount('#app');
 
 
 router.afterEach((to, _from) =>{
@@ -70,6 +79,5 @@ router.afterEach((to, _from) =>{
   }
 });
 
-app.mount('#base');
 
 
