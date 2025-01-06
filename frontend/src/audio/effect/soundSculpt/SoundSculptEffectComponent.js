@@ -148,6 +148,9 @@ export class SoundSculptEffectComponent extends AudioComponent {
 
       this.audioEqualizer.gains.forEach(element => {
         const hzKey = element.hz+ '';
+        if(this.audioEqualizer.filters[element.hz] == undefined) {
+          return;
+        }
         if (updatedGains == null || updatedGains[hzKey] == null || isNaN(updatedGains[hzKey])) {
           this.audioEqualizer.filters[element.hz].gain.value = 0;
           return;
