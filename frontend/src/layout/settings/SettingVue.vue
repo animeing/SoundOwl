@@ -8,6 +8,7 @@
     </div>
 </template>
 <script>
+import { markRaw } from 'vue';
 import SettingServerComponent from './contents/SettingServerComponent.vue';
 import SettingEqualizerComponent from './contents/SettingEqualizerComponent.vue';
 import SettingEffectComponent from './contents/SettingEffectComponent.vue';
@@ -26,7 +27,7 @@ export default {
       isGeneral:true,
       isEqualizer:false,
       isEffect:false,
-      component: "SettingServerComponent",
+      component: markRaw(SettingServerComponent),
     };
   },
   watch: {
@@ -41,16 +42,16 @@ export default {
     updateComponent(){ 
       switch (this.$route.name) {
         case 'setting':
-          this.component = "SettingServerComponent";
+          this.component = markRaw(SettingServerComponent);
           break;
         case 'equalizer':
-          this.component = "SettingEqualizerComponent";
+          this.component = markRaw(SettingEqualizerComponent);
           break;
         case 'effect':
-          this.component = "SettingEffectComponent";
+          this.component = markRaw(SettingEffectComponent);
           break;
         default:
-          this.component = "SettingServerComponent";
+          this.component = markRaw(SettingServerComponent);
           break;
       }
     }
