@@ -61,6 +61,9 @@ if(!file_exists(LOCK_PATH)) {
             }
             {
                 $artist = $id3Facade->getfindId3TagValue('artist');
+                if($artist === false || $artist == '') {
+                    $artist = $id3Facade->getfindId3TagValue('band');
+                }
                 if($artist !== false) {
                     $registedArtistDto = $artistDao->hasRegistedArtist($artist);
                     if($registedArtistDto === false) {
@@ -75,6 +78,9 @@ if(!file_exists(LOCK_PATH)) {
             }
             {
                 $album = $id3Facade->getfindId3TagValue('album');
+                if($album === false || $album == '') {
+                    $album = $id3Facade->getfindId3TagValue('product');
+                }
                 if($album === false) {
                     $soundLinkDto->setAlbumHash('');
                 } else {
