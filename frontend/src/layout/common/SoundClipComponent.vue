@@ -1,15 +1,27 @@
 <template>
     <div>
         <div class="album">
-            <img
+            <v-img
                 loading="lazy"
+                aspect-ratio="1"
+                :width="album_width"
+                :height="album_height"
                 :src="createImageSrc(soundClip.albumKey)">
+                <template v-slot:placeholder>
+                  <div class="d-flex align-center justify-center fill-height">
+                    <v-progress-circular
+                      color="grey-lighten-4"
+                      indeterminate
+                    ></v-progress-circular>
+                  </div>
+                </template>
+            </v-img>
         </div>
         <div class="layout-box">
             <p
                 class="audio-title"
                 :data-hint="soundClip.title">
-                {{ soundClip.title }}
+                {{  soundClip.title }}
             </p>
             <p class="audio-uploader">
                 <router-link
@@ -44,6 +56,14 @@ export default {
       default(){
         return new AudioClip;
       }
+    },
+    'album_height':{
+      type:Number,
+      default: 170
+    },
+    'album_width':{
+      type:Number,
+      default: 199
     }
   },
   data() {
@@ -61,4 +81,10 @@ export default {
   }
 };
 </script>
-
+<style scoped>
+.album {
+  border: 1px solid var(--itemfcbgcolor);
+  display: inline;
+  width: 199px;
+}
+</style>

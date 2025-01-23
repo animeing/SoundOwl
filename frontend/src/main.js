@@ -4,6 +4,11 @@ import AudioController from './layout/footer/AudioController.vue';
 import router from './router';
 import { BaseFrameWork } from './base';
 import './layout';
+import 'vuetify/styles';
+import { createVuetify } from 'vuetify';
+import * as components from 'vuetify/components';
+import * as directives from 'vuetify/directives';
+import '@mdi/font/css/materialdesignicons.css'
 
 
 const searchBox = document.createElement('sw-searchbox');
@@ -44,6 +49,20 @@ export default searchBox;
 
 })();
 
+const vuetify = createVuetify({
+  components,
+  directives
+});
+
+
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+
+vuetify.theme.global.name.value = prefersDark.matches ? 'dark' : 'light'
+
+prefersDark.addEventListener('change', (e) => {
+  vuetify.theme.global.name.value = e.matches ? 'dark' : 'light'
+})
+
 const app = createApp({
   template:`
 	<header>
@@ -63,7 +82,7 @@ const app = createApp({
   components:{
     AudioController
   }
-})
+}).use(vuetify);
 
 app.use(router);
 app.mount('#app');

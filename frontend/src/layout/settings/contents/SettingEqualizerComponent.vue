@@ -4,23 +4,16 @@
             <p class="title">
                 Equalizer
             </p>
-            <div class="block">
-                <p class="title">
-                    Preset
-                </p>
-                <div>
-                    <select
-                        v-model="selectPreset"
-                        @change="changedPreset">
-                        <option
-                            v-for="(key,index) in presetNames"
-                            :key="index"
-                            :value="key">
-                            {{ key }}
-                        </option>
-                    </select>
-                </div>
-            </div>
+            <v-select
+              v-model="selectPreset"
+              :items="presetNames"
+              @update:modelValue="changedPreset"
+              label="Preset"
+              outlined
+              dense
+              hide-details
+              class="equalizer-preset-select"></v-select>
+
             <div class="block">
                 <p class="title">
                     Setting

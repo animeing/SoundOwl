@@ -6,9 +6,21 @@
                 :key="item.id"
                 @click.right.prevent="contextmenu(item)"
                 @click="click(item)">
-                <img
+                <v-img
                     loading="lazy"
+                    aspect-ratio="1"
+                    :height='225'
+                    :width='250'
                     :src="createImageSrc(item.albumKey)">
+                  <template v-slot:placeholder>
+                    <div class="d-flex align-center justify-center fill-height">
+                      <v-progress-circular
+                        color="grey-lighten-4"
+                        indeterminate
+                      ></v-progress-circular>
+                    </div>
+                  </template>
+                </v-img>
                 <p :data-hint="item.title">
                     {{ item.title }}
                 </p>
@@ -74,3 +86,10 @@ export default {
   }
 };
 </script>
+<style scoped>
+sw-audio-slide-list > div > button {
+  width: 250px;
+  height: 250px;
+  background-color: var(--basecolor);
+}
+</style>

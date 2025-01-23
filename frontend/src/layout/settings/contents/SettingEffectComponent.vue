@@ -50,41 +50,29 @@
                     <p class="title">
                         Delete
                     </p>
-                    <select
-                        v-model="selectDelete">
-                        <option
-                            v-for="(key, index) in presetNames"
-                            :key="index"
-                            :value="key">
-                            {{ key }}
-                        </option>
-                    </select>
+                    <v-select
+                        v-model="selectDelete"
+                        :items="presetNames"
+                        label="Delete item"
+                        clearable
+                        @change="deletePreset"></v-select>
                     <div>
-                        <input
-                            type="button"
-                            class="button"
-                            value="Delete"
-                            @click="deletePreset">
+                      <v-btn
+                            @click="deletePreset"
+                            :disabled="!selectDelete">
+                            Delete</v-btn>
                     </div>
                 </div>
                 <div class="block">
                     <p class="title">
                         Apply Data
                     </p>
-                    
-                    <select
+                    <v-select
                         v-model="selectPreset"
-                        @change="changeReverbEffect">
-                        <option value="OFF">
-                            OFF
-                        </option>
-                        <option
-                            v-for="(key, index) in presetNames"
-                            :key="index"
-                            :value="key">
-                            {{ key }}
-                        </option>
-                    </select>
+                        :items="presetNames"
+                        label="Preset"
+                        clearable
+                        @update:modelValue="changeReverbEffect"></v-select>
                 </div>
             </div>
         </div>
@@ -167,10 +155,17 @@ export default {
         });
     },
     updatePresetList() {
-      new PulseDataListAction()
-        .execute()
-        .then(data=>this.presetNames = data.data)
-        .then(this.selectPreset = audio.inpulseResponseEffect.fileName??'OFF');
+      console.log(audio.inpulseResponseEffect.fileName);
+      new Promise((resolve)=>{
+        new PulseDataListAction()
+          .execute()
+          .then(data=>{
+            this.presetNames = data.data;
+            resolve();
+          });
+      }).then(()=>{
+        this.selectPreset = this.presetNames.includes(audio.inpulseResponseEffect.fileName)?audio.inpulseResponseEffect.fileName:'OFF';
+      });
     },
     toggleEffect() {
       audio.exAudioEffect.isUse = !audio.exAudioEffect.isUse;
@@ -182,10 +177,12 @@ export default {
     },
     changeReverbEffect() {
       console.log(this.selectPreset);
-      if(this.selectPreset == 'OFF') {
-        audio.inpulseResponseEffect.applyEffect();
-      } else {
-        audio.inpulseResponseEffect.applyEffect(this.selectPreset);
+      if(this.selectPreset == null) {
+        this.selectPreset = '';
+      }
+      audio.inpulseResponseEffect.applyEffect(this.selectPreset);
+      if(this.selectPreset == '') {
+        this.selectPreset = 'OFF';
       }
       audioParamSave();
     }
