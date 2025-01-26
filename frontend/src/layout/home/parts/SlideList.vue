@@ -1,32 +1,47 @@
-<template>
-    <sw-audio-slide-list>
-        <div>
-            <button
-                v-for="item in data"
-                :key="item.id"
-                @click.right.prevent="contextmenu(item)"
-                @click="click(item)">
-                <v-img
-                    loading="lazy"
-                    aspect-ratio="1"
-                    :height='225'
-                    :width='250'
-                    :src="createImageSrc(item.albumKey)">
-                  <template v-slot:placeholder>
-                    <div class="d-flex align-center justify-center fill-height">
-                      <v-progress-circular
-                        color="grey-lighten-4"
-                        indeterminate
-                      ></v-progress-circular>
-                    </div>
-                  </template>
-                </v-img>
-                <p :data-hint="item.title">
-                    {{ item.title }}
-                </p>
-            </button>
-        </div>
-    </sw-audio-slide-list>
+<template> 
+  <v-slide-group
+    v-model="model"
+    show-arrows
+    color="grey-darken-4"
+    center-active
+    class="pa-4"
+  >
+    <v-slide-group-item
+      v-for="item in data"
+      :key="item.id"
+      :value="item.id"
+    >
+      <v-card
+        class="ma-4 d-flex flex-column"
+        color="grey-lighten-1"
+        height="300"
+        width="250"
+        @click.right.prevent="contextmenu(item)"
+        @click="click(item)"
+      >
+        <v-img
+          loading="lazy"
+          aspect-ratio="1"
+          :src="createImageSrc(item.albumKey)"
+          height="225"
+        >
+          <template v-slot:placeholder>
+            <div class="d-flex align-center justify-center fill-height">
+              <v-progress-circular
+                color="grey-lighten-4"
+                indeterminate
+              ></v-progress-circular>
+            </div>
+          </template>
+        </v-img>
+        <v-card-actions class="d-flex justify-center">
+          <p :data-hint="item.title" class="text-center">
+            {{ item.title }}
+          </p>
+        </v-card-actions>
+      </v-card>
+    </v-slide-group-item>
+  </v-slide-group>
 </template>
 
 <script>
@@ -38,29 +53,30 @@ export default {
   props: {
     dataRequest: {
       type: Function,
-      require: true,
-      default(){
-        return ()=>{};
-      }
+      required: true,
+      default() {
+        return () => {};
+      },
     },
     onClick: {
       type: Function,
-      require: true,
-      default(){
-        return ()=>{};
-      }
+      required: true,
+      default() {
+        return () => {};
+      },
     },
     contextMenu: {
       type: Function,
-      require: true,
-      default(){
-        return ()=>{};
-      }
-    }
+      required: true,
+      default() {
+        return () => {};
+      },
+    },
   },
   data() {
     return {
-      data: []
+      data: [],
+      model: null,
     };
   },
   created() {
@@ -74,22 +90,36 @@ export default {
       if (this.onClick) {
         this.onClick(soundClip);
       }
-      return;
     },
     contextmenu(item) {
-      ContextMenu.contextMenu.destoryChildren();
-      if(!this.contextMenu) {
+      ContextMenu.contextMenu.destroyChildren();
+      if (!this.contextMenu) {
         return;
       }
       this.contextMenu(item);
-    }
-  }
+    },
+  },
 };
 </script>
+
 <style scoped>
-sw-audio-slide-list > div > button {
+.v-slide-group .v-card {
   width: 250px;
-  height: 250px;
+  height: 300px;
   background-color: var(--basecolor);
+  display: flex;
+  flex-direction: column;
 }
+
+.v-card-actions {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.v-card-actions p {
+  word-wrap: break-word;
+  white-space: normal;
+}
+
 </style>

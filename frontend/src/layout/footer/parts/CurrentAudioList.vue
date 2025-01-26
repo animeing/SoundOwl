@@ -32,7 +32,7 @@
                 class="draggable-item"
                 @click.right.prevent="contextMenu(item)"
                 @click="click(item)">
-                <SoundClipComponentVue :sound-clip="item" />
+                <SoundClipComponent :sound-clip="item" :album-height=115 :album-width=108 />
             </button>
         </div>
     </sw-resize>
@@ -42,13 +42,13 @@ import {BaseFrameWork, ContextMenu} from '../../../base';
 import {AudioPlayStateEnum} from '../../../audio/enum/AudioPlayStateEnum';
 import audio from '../../../audio/AudioPlayer';
 import { AudioClip } from '../../../audio/type/AudioClip';
-import SoundClipComponentVue from '../../common/SoundClipComponent.vue';
+import SoundClipComponent from '../../common/SoundClipComponent.vue';
 import { BASE } from '../../../utilization/path';
 
 export default {
   name:'CurrentAudioList',
   components:{
-    SoundClipComponentVue
+    SoundClipComponent
   },
     
   beforeRouteLeave(_to, _from, next)  {
@@ -75,7 +75,7 @@ export default {
     let observer = new MutationObserver(()=>{
       let audioElement = document.querySelector('.audio-controller-playlist .audio-list-nowplaying');
       if(audioElement){
-        document.getElementById('current-audio-list').scroll({top: audioElement.offsetTop-42});
+        // document.getElementById('current-audio-list').scroll({top: audioElement.offsetTop-42});
       }
     });
     observer.observe(this.$el, {childList:true,attributes:true,subtree: true});
@@ -103,7 +103,7 @@ export default {
 
           messageWindow.addItem('OK',()=>{
             messageWindow.close();
-            let playlistName = messageWindow.inputText.value;                        
+            let playlistName = messageWindow.inputText.value;
             let action = new class extends BaseFrameWork.Network.RequestServerBase {
               constructor() {
                 super(null, BASE.API+'playlist_action.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);

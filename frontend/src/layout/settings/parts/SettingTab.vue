@@ -1,22 +1,21 @@
 <template>
-    <ul class="tabmenu">
-        <TabItem
-            name="Server"
-            link="setting" />
-        <TabItem
-            name="Equalizer"
-            link="equalizer" />
-        <TabItem
-            name="Effect"
-            link="effect" />
-    </ul>
+  <TabMenu :menuItems="menuItems"></TabMenu>
 </template>
 <script>
-import TabItem from '../../common/TabItem.vue';
+import TabMenu from '../../common/TabMenu.vue';
 
 export default {
   components:{
-    TabItem
+    TabMenu
+  },
+  data(){
+    return {
+      menuItems:[
+        {title:'General', route:{name: 'setting'}},
+        {title:'Equalizer', route:{name:'equalizer'}},
+        {title:'Effect', route:{name:'effect'}}
+      ]
+    };
   }
 };
 </script>

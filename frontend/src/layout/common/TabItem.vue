@@ -46,3 +46,23 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+li {
+  flex-grow: 1;
+  height: inherit;
+  border-top: 1px solid var(--subcoloraccentcolor);
+  border-left: 1px solid var(--subcoloraccentcolor);
+  border-right: 1px solid var(--subcoloraccentcolor);
+
+  border-radius: 20px 20px 0 0;
+  overflow: hidden;
+}
+li:not(.active) {
+  background: var(--subcoloraccentcolor);
+}
+li > button {
+  width: 100%;
+  height: inherit;
+}
+</style>
