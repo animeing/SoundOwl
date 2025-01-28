@@ -15,6 +15,7 @@
     </v-toolbar-title>
     <v-spacer></v-spacer>
     <v-text-field
+      v-model="q"
       placeholder="Search..."
       flat
       rounded
@@ -22,6 +23,7 @@
       prepend-inner-icon="mdi-magnify"
       variant="outlined"
       density="compact"
+      @keydown.enter="submit"
     ></v-text-field>
     <Menu></Menu>
   </v-app-bar>
@@ -34,6 +36,16 @@ export default {
   name: 'Header',
   components: {
     Menu
-  }
+  },
+  data() {
+    return {
+      q: '',
+    };
+  },
+  methods: {
+    submit() {
+      this.$router.push({ name: 'search', query: { SearchWord: this.q } });
+    },
+  },
 }
 </script>

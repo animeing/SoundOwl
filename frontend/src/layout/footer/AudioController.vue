@@ -1,23 +1,64 @@
 <template>
-    <div>
-        <p class="sound-info-frame">
-            <CurrentAudioList :is-view="isAudioList" />
-            <span class="audio-play-item">{{ currentPlaySoundClip.title }}</span>
-            <span class="audio-play-item nonselectable">-</span>
-            <a
-              :href="'#/artist?ArtistHash='+currentPlaySoundClip.artistKey"
-              class="audio-play-item">{{ currentPlaySoundClip.artist }}</a>
-            <span class="audio-play-item nonselectable">-</span>
-            <a
-                :href="'#/album?AlbumHash=' + currentPlaySoundClip.albumKey"
-                class="audio-play-item">{{ currentPlaySoundClip.album }}</a>
-            <AudioIconControl
-                @togglePlayListView="togglePlayListView"
-                @toggleControllerFillView="toggleControllerFillView"
-                @toggleVolumeView="toggleVolumeView" />
-        </p>
-        <span class="progress-times progress-time nonselectable">{{ progressText() }}</span>
-        <sw-audio-progress
+  <v-container
+    style="
+      background-color: black;
+      color: white;
+      padding: 16px;
+      border-radius: 8px;
+    "
+    fluid
+    justify="center"
+    class="align-center"
+  >
+    <v-row>
+      <v-col cols="4" style="display: flex; align-items: center">
+        <v-row fill-height>
+          <v-col cols="1" class="pa-0" style="display: flex; align-items: center">
+            <v-icon>mdi-music</v-icon>
+          </v-col>
+          <v-col>
+            <v-row>
+              <span>{{ currentPlaySoundClip.title }}</span>
+            </v-row>
+            <v-row>
+              <span>{{ currentPlaySoundClip.artist }}</span>
+            </v-row>
+            <v-row>
+              <span>{{ currentPlaySoundClip.album }}</span>
+            </v-row>
+          </v-col>
+        </v-row>
+      </v-col>
+      <v-divider vertical></v-divider>
+      <v-col cols="8">
+        <v-row>
+          <v-col class="d-flex justify-center pa-0">
+            <v-btn icon @click="beforeIconClick">
+              <v-icon>mdi-skip-previous</v-icon>
+            </v-btn>
+            <v-btn icon v-if="!isPlaying" @click="playPauseIconClick">
+              <v-icon>mdi-play</v-icon>
+            </v-btn>
+            <v-btn icon v-if="isPlaying" @click="playPauseIconClick">
+              <v-icon>mdi-pause</v-icon>
+            </v-btn>
+            <v-btn icon @click="nextIconClick">
+              <v-icon>mdi-skip-next</v-icon>
+            </v-btn>
+          </v-col>
+          <v-col class="d-flex justify-end pa-0">
+            <v-btn icon>
+              <v-icon>mdi-playlist-music</v-icon>
+            </v-btn>
+            <v-btn icon>
+              <v-icon>mdi-volume-high</v-icon>
+            </v-btn>
+          </v-col>
+        </v-row>
+        <v-row
+        :height="35">
+          <v-col class="px-5 py-0">
+            <sw-audio-progress
             class="progress-times"
             :data-hint="playTimeString"
             :slider-value="playTime"
@@ -26,38 +67,27 @@
             @changingValue="changeingPlayPoint"
             @changed="changedPlayPoint"
             @mousemove="hint" />
-        <sw-v-progress
-            :class="volumeClass()"
-            :slider-value="volume"
-            max="1"
-            min="0"
-            @changingValue="changeVolume"
-            @changed="changeVolume"
-            @wheel="volumeAction" />
-        <AudioCanvas
-            :is-view="isFillLayout"
-            @toggleView="toggleView" />
-    </div>
+          </v-col>
+          <!-- 再生時間 -->
+          <v-col class="d-flex justify-end pa-0" cols="1">
+            <span style="color: back">{{ progressText() }}</span>
+          </v-col>
+        </v-row>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
+
 <script>
-import CurrentAudioList from './parts/CurrentAudioList.vue';
-import AudioCanvas from './parts/AudioCanvas.vue';
-import AudioIconControl from './parts/AudioIconControl.vue';
 import { AudioClip } from '../../audio/type/AudioClip';
 import audio from '../../audio/AudioPlayer';
+import { AudioLoopModeEnum } from '../../audio/enum/AudioLoopModeEnum';
+import {AudioPlayStateEnum} from '../../audio/enum/AudioPlayStateEnum';
 import { BaseFrameWork, ContextMenu, timeToText } from '../../base';
-import { AudioPlayStateEnum } from '../../audio/enum/AudioPlayStateEnum';
 import { audioParamLoad, audioParamSave } from '../../utilization/register';
-
-
 export default {
-  name:'AudioController',
-  components:{
-    CurrentAudioList,
-    AudioCanvas,
-    AudioIconControl
-  },
-  data(){
+  name: 'MusicControlBarWithProgress',
+  data() {
     return {
       currentPlaySoundClip:(audio.currentAudioClip != null?audio.currentAudioClip:new AudioClip),
       durationTime:0,
@@ -67,8 +97,9 @@ export default {
       volume:1,
       playTimeString:'',
       isFillLayout:false,
-      isVisibleAnalyser:true
-    };
+      isVisibleAnalyser:true,
+      isPlaying: true
+    }
   },
   created(){
     audioParamLoad();
@@ -88,6 +119,33 @@ export default {
       this.playTime = audio.audio.currentTime;
     });
     this.volume = audio.volume;
+    
+    
+    audio.eventSupport.addEventListener('play', ()=>{
+      this.audioPlayState = audio.currentPlayState;
+      //PauseIcon
+      this.actionName = 'Pause';
+      this.isPlaying = true;
+    });
+    audio.eventSupport.addEventListener('stop', ()=>{
+      this.audioPlayState = audio.currentPlayState;
+      //PlayIcon
+      this.actionName = 'Play';
+      this.isPlaying = false;
+    });
+    audio.eventSupport.addEventListener('pause',()=>{
+      this.audioPlayState = audio.currentPlayState;
+      //PlayIcon
+      this.actionName = 'Play';
+      this.isPlaying = false;
+    });
+    audio.eventSupport.addEventListener('update', ()=>{
+      this.durationTime = audio.audio.duration;
+      this.playTime = audio.audio.currentTime;
+    });
+    this.actionName = 'Pause';
+    this.isPlaying = false;
+    this.loopName = this.repeatName();
   },
   methods:{
     volumeAction(e) {
@@ -101,13 +159,9 @@ export default {
       this.$el.parentNode.classList.toggle('analyser');
       this.$el.parentNode.classList.toggle('lyrics');
     },
-    isPlaying() {
-      return audio.currentPlayState === AudioPlayStateEnum.PLAY && audio.isPlaying;
-    },
     progressText(){
-      let durationText = timeToText(this.durationTime);
       let currentText = timeToText(this.playTime);
-      return currentText['min']+':'+currentText['sec']+'/'+durationText['min']+':'+durationText['sec'];
+      return currentText['min']+':'+currentText['sec'];
     },
     togglePlayListView() {
       this.isAudioList = !this.isAudioList;
@@ -127,6 +181,48 @@ export default {
       this.volume = event.target.getAttribute('slider-value');
       audio.volume = this.volume;
       audioParamSave();
+    },
+    beforeIconClick(){
+      if(ContextMenu.isVisible)return;
+      let beforeAudioClip = audio.playList.previous();
+      if(beforeAudioClip == null)return;
+      if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+        audio.play(beforeAudioClip);
+      }
+      audio.audio.currentTime = 0;
+      audio.audioDeployment();
+    },
+    nextIconClick(){
+      let nextAudioClip = audio.playList.next();
+      if(nextAudioClip == null)return;
+      if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+        audio.play(nextAudioClip);
+      }
+      audio.audio.currentTime = 0;
+      audio.audioDeployment();
+    },
+    playPauseIconClick(){
+      if(ContextMenu.isVisible)return;
+      if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+        audio.pause();
+        this.isPlaying = false;
+      } else {
+        audio.play();
+        this.isPlaying = true;
+      }
+    },
+    repeatName() {
+      switch(audio.playList.loopMode) {
+        case AudioLoopModeEnum.NON_LOOP:{
+          return 'No loop';
+        }
+        case AudioLoopModeEnum.TRACK_LOOP:{
+          return 'Track loop';
+        }
+        case AudioLoopModeEnum.AUDIO_LOOP:{
+          return 'Audio loop';
+        }
+      }
     },
     changedPlayPoint(event){
       audio.lockEventTarget.action('setStopUpdate');
@@ -173,5 +269,5 @@ export default {
       });
     }
   }
-};
+}
 </script>

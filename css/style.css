@@ -305,6 +305,7 @@ sw-audio-progress {
   border: #5a5a5a 2px solid;
   flex-grow: 1;
   position: relative;
+  overflow: hidden;
 }
 
 sw-h-progress,
@@ -865,7 +866,7 @@ a.audio-infomation {
 
 .audio-play-controller sw-audio-progress:not(.audio-controller-volume) {
   position: relative;
-  width: calc(100vw - 8.5em - 20px);
+  width: 100%;
   right: 0;
   display: inline-block;
 }

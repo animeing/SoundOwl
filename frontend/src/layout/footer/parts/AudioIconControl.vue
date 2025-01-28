@@ -143,6 +143,31 @@ export default {
       }
       audio.audio.currentTime = 0;
     },
+    playIconClick(){
+      if(ContextMenu.isVisible)return;
+      if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+        audio.pause();
+      } else {
+        audio.play();
+      }
+    },
+    beforeIconClick(){
+      if(ContextMenu.isVisible)return;
+      let beforeAudioClip = audio.playList.previous();
+      if(beforeAudioClip == null)return;
+      if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+        audio.play(beforeAudioClip);
+      }
+      audio.audio.currentTime = 0;
+    },
+    nextIconClick(){
+      let nextAudioClip = audio.playList.next();
+      if(nextAudioClip == null)return;
+      if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+        audio.play(nextAudioClip);
+      }
+      audio.audio.currentTime = 0;
+    },
     togglePlayListView() {
       this.$emit('togglePlayListView');
     },

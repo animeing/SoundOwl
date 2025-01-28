@@ -1,63 +1,67 @@
 <template>
-  <v-row :class="['sound-clip-container', { 'small-height': isSmallHeight }]" align="center" justify="start">
-    <v-col cols="auto" class="album">
-      <v-img
-        :src="createImageSrc(soundClip.albumKey)"
-        :aspect-ratio="1"
-        :width="albumWidth"
-        :height="albumHeight"
-        class="album-image"
-        lazy-src="img/placeholder-image.webp"
-      >
-        <template #placeholder>
-          <v-skeleton-loader type="image" class="fill-height"></v-skeleton-loader>
-        </template>
-      </v-img>
-    </v-col>
+  <v-card
+    color="grey-darken-3"
+  >
+    <v-row :class="['sound-clip-container', { 'small-height': isSmallHeight }]" align="center" justify="start">
+      <v-col cols="auto" class="album">
+        <v-img
+          :src="createImageSrc(soundClip.albumKey)"
+          :aspect-ratio="1"
+          :width="albumWidth"
+          :height="albumHeight"
+          class="album-image"
+          lazy-src="img/placeholder-image.webp"
+        >
+          <template #placeholder>
+            <v-skeleton-loader type="image" class="fill-height"></v-skeleton-loader>
+          </template>
+        </v-img>
+      </v-col>
 
-    <v-col class="layout-box">
-      <v-tooltip bottom>
-        <template #activator="{ props }">
-          <div
-            v-bind="props"
-            class="audio-title"
-            :title="soundClip.title"
-          >
-            {{ soundClip.title }}
-          </div>
-        </template>
-        <span>{{ soundClip.title }}</span>
-      </v-tooltip>
+      <v-col class="layout-box">
+        <v-tooltip bottom>
+          <template #activator="{ props }">
+            <div
+              v-bind="props"
+              class="audio-title"
+              :title="soundClip.title"
+            >
+              {{ soundClip.title }}
+            </div>
+          </template>
+          <span>{{ soundClip.title }}</span>
+        </v-tooltip>
 
-      <v-tooltip bottom>
-        <template #activator="{ props }">
-          <router-link
-            v-bind="props"
-            :to="{ name: 'artist', query: { ArtistHash: soundClip.artistKey } }"
-            class="audio-information"
-            @click.stop
-          >
-            {{ soundClip.artist }}
-          </router-link>
-        </template>
-        <span>{{ soundClip.artist }}</span>
-      </v-tooltip>
+        <v-tooltip bottom>
+          <template #activator="{ props }">
+            <router-link
+              v-bind="props"
+              :to="{ name: 'artist', query: { ArtistHash: soundClip.artistKey } }"
+              class="audio-information"
+              @click.stop
+            >
+              {{ soundClip.artist }}
+            </router-link>
+          </template>
+          <span>{{ soundClip.artist }}</span>
+        </v-tooltip>
 
-      <v-tooltip bottom v-if="hasAlbumData">
-        <template #activator="{ props }">
-          <router-link
-            v-bind="props"
-            :to="{ name: 'album', query: { AlbumHash: soundClip.albumKey } }"
-            class="audio-information audio-description"
-            @click.stop
-          >
-            {{ soundClip.album }}
-          </router-link>
-        </template>
-        <span>{{ soundClip.album }}</span>
-      </v-tooltip>
-    </v-col>
-  </v-row>
+        <v-tooltip bottom v-if="hasAlbumData">
+          <template #activator="{ props }">
+            <router-link
+              v-bind="props"
+              :to="{ name: 'album', query: { AlbumHash: soundClip.albumKey } }"
+              class="audio-information audio-description"
+              @click.stop
+            >
+              {{ soundClip.album }}
+            </router-link>
+          </template>
+          <span>{{ soundClip.album }}</span>
+        </v-tooltip>
+      </v-col>
+    </v-row>
+  </v-card>
 </template>
 
 
