@@ -18,13 +18,54 @@
           </v-col>
           <v-col>
             <v-row>
-              <span>{{ currentPlaySoundClip.title }}</span>
+              <v-tooltip bottom>
+                <template #activator="{ props }">
+                  <div
+                    v-bind="props"
+                    class="audio-title"
+                    :title="currentPlaySoundClip.title"
+                  >
+                  <span>{{ currentPlaySoundClip.title }}</span>
+                  </div>
+                </template>
+                {{ currentPlaySoundClip.title }}
+              </v-tooltip>
             </v-row>
             <v-row>
-              <span>{{ currentPlaySoundClip.artist }}</span>
+              <v-tooltip bottom>
+                <template #activator="{ props }">
+                  <div
+                    v-bind="props"
+                    class="audio-title"
+                    :title="currentPlaySoundClip.artist"
+                  >
+                  <router-link
+                    v-bind="props"
+                    :to="{ name: 'artist', query: { ArtistHash: currentPlaySoundClip.artistKey } }">
+                    <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.artist }}</span>
+                  </router-link>
+                  </div>
+                </template>
+                {{ currentPlaySoundClip.artist }}
+              </v-tooltip>
             </v-row>
             <v-row>
-              <span>{{ currentPlaySoundClip.album }}</span>
+              <v-tooltip bottom>
+                <template #activator="{ props }">
+                  <div
+                    v-bind="props"
+                    class="audio-title"
+                    :title="currentPlaySoundClip.album"
+                  >
+                  <router-link
+                    v-bind="props"
+                    :to="{ name: 'album', query: { AlbumHash: currentPlaySoundClip.albumKey } }">
+                    <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.album }}</span>
+                  </router-link>
+                  </div>
+                </template>
+                {{ currentPlaySoundClip.album }}
+              </v-tooltip>
             </v-row>
           </v-col>
         </v-row>
@@ -33,16 +74,16 @@
       <v-col cols="8">
         <v-row>
           <v-col class="d-flex justify-center pa-0">
-            <v-btn icon @click="beforeIconClick">
+            <v-btn icon @click="beforeIconClick" data-hint="Previous">
               <v-icon>mdi-skip-previous</v-icon>
             </v-btn>
-            <v-btn icon v-if="!isPlaying" @click="playPauseIconClick">
+            <v-btn icon v-if="!isPlaying" @click="playPauseIconClick" data-hint="Play">
               <v-icon>mdi-play</v-icon>
             </v-btn>
-            <v-btn icon v-if="isPlaying" @click="playPauseIconClick">
+            <v-btn icon v-if="isPlaying" @click="playPauseIconClick" data-hint="Pause">
               <v-icon>mdi-pause</v-icon>
             </v-btn>
-            <v-btn icon @click="nextIconClick">
+            <v-btn icon @click="nextIconClick" data-hint="Next">
               <v-icon>mdi-skip-next</v-icon>
             </v-btn>
           </v-col>
@@ -271,3 +312,19 @@ export default {
   }
 }
 </script>
+<style scoped>
+
+.audio-title {
+  font-size: 1rem;
+  font-weight: bold;
+  text-wrap: wrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0;
+  font-size: 0.9rem;
+}
+
+.sub{
+  font-size: 0.8rem;
+}
+</style>
