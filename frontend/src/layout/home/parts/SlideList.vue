@@ -11,35 +11,45 @@
       :key="item.id"
       :value="item.id"
     >
-      <v-card
-        class="ma-4 d-flex flex-column"
-        color="grey-lighten-1"
-        height="300"
-        width="250"
-        @click.right.prevent="contextmenu(item)"
-        @click="click(item)"
-      >
-        <v-img
-          loading="lazy"
-          aspect-ratio="1"
-          :src="createImageSrc(item.albumKey)"
-          height="225"
-        >
-          <template v-slot:placeholder>
-            <div class="d-flex align-center justify-center fill-height">
-              <v-progress-circular
-                color="grey-lighten-4"
-                indeterminate
-              ></v-progress-circular>
+      <v-tooltip bottom>
+        <template #activator="{ props }">
+          <div
+            v-bind="props">
+            <v-card
+              class="ma-4 d-flex flex-column"
+              color="grey-lighten-1"
+              height="300"
+              width="250"
+              @click.right.prevent="contextmenu(item)"
+              @click="click(item)"
+            >
+              <v-img
+                loading="lazy"
+                aspect-ratio="1"
+                :src="createImageSrc(item.albumKey)"
+                height="225"
+              >
+                <template v-slot:placeholder>
+                  <div class="d-flex align-center justify-center fill-height">
+                    <v-progress-circular
+                      color="grey-lighten-4"
+                      indeterminate
+                    ></v-progress-circular>
+                  </div>
+                </template>
+              </v-img>
+              <v-card-actions class="d-flex justify-center">
+                <p :data-hint="item.title" class="text-center">
+                  {{ item.title }}
+                </p>
+              </v-card-actions>
+            </v-card>
             </div>
-          </template>
-        </v-img>
-        <v-card-actions class="d-flex justify-center">
-          <p :data-hint="item.title" class="text-center">
-            {{ item.title }}
-          </p>
-        </v-card-actions>
-      </v-card>
+        </template>
+        <p>Title : {{ item.title }}</p>
+        <p>Artist : {{ item.artist }}</p>
+        <p>Album : {{ item.album }}</p>
+      </v-tooltip>
     </v-slide-group-item>
   </v-slide-group>
 </template>
