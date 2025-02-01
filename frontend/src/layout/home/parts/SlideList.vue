@@ -151,5 +151,8 @@ export default {
   .v-img {
     height: 100px;
   }
+  p {
+    font-size:0.8em;
+  }
 }
 </style>
