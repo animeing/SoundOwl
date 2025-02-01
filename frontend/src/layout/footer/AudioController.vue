@@ -12,10 +12,7 @@
   >
     <v-row>
       <v-col cols="4" style="display: flex; align-items: center">
-        <v-row fill-height>
-          <v-col cols="1" class="pa-0" style="display: flex; align-items: center">
-            <v-icon>mdi-music</v-icon>
-          </v-col>
+        <v-row fill-height style="max-width: 100%;">
           <v-col>
             <v-row>
               <v-tooltip bottom>
@@ -25,7 +22,9 @@
                     class="audio-title"
                     :title="currentPlaySoundClip.title"
                   >
-                  <span>{{ currentPlaySoundClip.title }}</span>
+                  <PingPongMarquee>
+                    <span>{{ currentPlaySoundClip.title }}</span>
+                  </PingPongMarquee>
                   </div>
                 </template>
                 {{ currentPlaySoundClip.title }}
@@ -42,7 +41,9 @@
                   <router-link
                     v-bind="props"
                     :to="{ name: 'artist', query: { ArtistHash: currentPlaySoundClip.artistKey } }">
-                    <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.artist }}</span>
+                    <MarqueeText style="max-width: 100%;">
+                      <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.artist }}</span>
+                    </MarqueeText>
                   </router-link>
                   </div>
                 </template>
@@ -59,8 +60,10 @@
                   >
                   <router-link
                     v-bind="props"
-                    :to="{ name: 'album', query: { AlbumHash: currentPlaySoundClip.albumKey } }">
-                    <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.album }}</span>
+                    :to="{ name: 'album', query: { AlbumHash: currentPlaySoundClip.albumKey } }">                      
+                    <MarqueeText style="max-width: 100%;">
+                      <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.album }}</span>
+                    </MarqueeText>
                   </router-link>
                   </div>
                 </template>
@@ -126,6 +129,8 @@ import { AudioLoopModeEnum } from '../../audio/enum/AudioLoopModeEnum';
 import {AudioPlayStateEnum} from '../../audio/enum/AudioPlayStateEnum';
 import { BaseFrameWork, ContextMenu, timeToText } from '../../base';
 import { audioParamLoad, audioParamSave } from '../../utilization/register';
+import MarqueeText from '../common/MarqueeText.vue';
+import PingPongMarquee from '../common/PingPongMarquee.vue';
 export default {
   name: 'MusicControlBarWithProgress',
   data() {
@@ -141,6 +146,10 @@ export default {
       isVisibleAnalyser:true,
       isPlaying: true
     }
+  },
+  components: {
+    MarqueeText,
+    PingPongMarquee
   },
   created(){
     audioParamLoad();

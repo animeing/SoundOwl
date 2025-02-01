@@ -159,6 +159,28 @@ BaseFrameWork.LockAction = class {
   }
 };
 
+BaseFrameWork.AnimationFrame = class {
+  _animationFrameId = null;
+  /**
+   * 
+   * @param {function} func 
+   */
+  startAnimation(func) {
+    if(this._animationFrameId != null) {
+      cancelAnimationFrame(this._animationFrameId);
+      this._animationFrameId = null;
+    }
+    this._animationFrameId = requestAnimationFrame(func);
+  }
+  stopAnimation() {
+    if(this._animationFrameId == null) {
+      return;
+    }
+    cancelAnimationFrame(this._animationFrameId);
+    this._animationFrameId = null;
+  }
+}
+
 class MousePosition{
   _element = null;
   /**
