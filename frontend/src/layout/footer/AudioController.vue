@@ -11,8 +11,8 @@
     class="align-center"
   >
     <v-row>
-      <v-col cols="4" style="display: flex; align-items: center">
-        <v-row fill-height style="max-width: 100%;">
+      <v-col cols="4" style="display: flex; align-items: center" class="footer-media">
+        <v-row fill-height style="min-width: calc(100% + 24px);">
           <v-col>
             <v-row>
               <v-tooltip bottom>
@@ -73,8 +73,8 @@
           </v-col>
         </v-row>
       </v-col>
-      <v-divider vertical></v-divider>
-      <v-col cols="8">
+      <v-divider vertical class="space"></v-divider>
+      <v-col cols="8" class="footer-media">
         <v-row>
           <v-col class="d-flex justify-center pa-0">
             <v-btn icon @click="beforeIconClick" data-hint="Previous">
@@ -101,7 +101,7 @@
         </v-row>
         <v-row
         :height="35">
-          <v-col class="px-5 py-0">
+          <v-col class="pr-5 py-0">
             <sw-audio-progress
             class="progress-times"
             :data-hint="playTimeString"
@@ -335,5 +335,16 @@ export default {
 
 .sub{
   font-size: 0.8rem;
+}
+
+@media screen and (max-width: 768px) {
+  .footer-media {
+    min-width: 100%;
+    width: 100%;
+  }
+  .space {
+    visibility: hidden;
+    display: none;
+  }
 }
 </style>
