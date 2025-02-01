@@ -4,7 +4,6 @@
     show-arrows
     color="grey-darken-4"
     center-active
-    class="pa-4"
   >
     <v-slide-group-item
       v-for="item in data"
@@ -16,10 +15,8 @@
           <div
             v-bind="props">
             <v-card
-              class="ma-4 d-flex flex-column"
+              class="ma-sm-4 d-flex flex-column"
               color="grey-lighten-1"
-              height="300"
-              width="250"
               @click.right.prevent="contextmenu(item)"
               @click="click(item)"
             >
@@ -27,7 +24,6 @@
                 loading="lazy"
                 aspect-ratio="1"
                 :src="createImageSrc(item.albumKey)"
-                height="225"
               >
                 <template v-slot:placeholder>
                   <div class="d-flex align-center justify-center fill-height">
@@ -39,9 +35,11 @@
                 </template>
               </v-img>
               <v-card-actions class="d-flex justify-center">
-                <p :data-hint="item.title" class="text-center">
-                  {{ item.title }}
-                </p>
+                <PingPongMarquee>
+                  <p :data-hint="item.title" class="text-center">
+                    {{ item.title }}
+                  </p>
+                </PingPongMarquee>
               </v-card-actions>
             </v-card>
             </div>
@@ -58,6 +56,7 @@
 import { ContextMenu } from '../../../base';
 import '../../../websocket';
 import { BASE } from '../../../utilization/path';
+import PingPongMarquee from '../../common/PingPongMarquee.vue';
 
 export default {
   props: {
@@ -82,6 +81,9 @@ export default {
         return () => {};
       },
     },
+  },
+  components: {
+    PingPongMarquee
   },
   data() {
     return {
@@ -113,12 +115,16 @@ export default {
 </script>
 
 <style scoped>
-.v-slide-group .v-card {
+.v-card {
   width: 250px;
   height: 300px;
   background-color: var(--basecolor);
   display: flex;
   flex-direction: column;
+}
+
+.v-img {
+  height:225px;
 }
 
 .v-card-actions {
@@ -127,9 +133,23 @@ export default {
   align-items: center;
   justify-content: center;
 }
-.v-card-actions p {
-  word-wrap: break-word;
-  white-space: normal;
-}
 
+@media screen and (max-width: 768px) {
+  .v-slide-group .v-card {
+    width: 175px;
+    height: 210px;
+  }
+  .v-img {
+    height: 135px;
+  }
+}
+@media screen and (max-width: 425px) {
+  .v-slide-group .v-card {
+    width: 125px;
+    height: 150px;
+  }
+  .v-img {
+    height: 100px;
+  }
+}
 </style>

@@ -1,6 +1,6 @@
 <template>
     <div class="box">
-        <p>{{ slideTitle }}</p>
+        <p class="px-4">{{ slideTitle }}</p>
         <SlideList
             :on-click="itemClick"
             :context-menu="contextmenu"
