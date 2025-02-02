@@ -54,21 +54,21 @@ class AudioPlayer{
     this.eventSupport.addEventListener('stop', ()=>{wakeLockManager.releaseWakeLock();});
 
     ffmpegInitalize();
-    this.audio.onerror = async ()=> {
-      console.log('Error ' + this.audio.error.code + '; details: ' + this.audio.error.message);
+    this.audio.addEventListener('error', async function (){
+      console.log('Error ' + audio.audio.error.code + '; details: ' + audio.audio.error.message);
       
-      if(this.audio.error.code == 4 && this.audio.src.includes('sound_create')) {
+      if(audio.audio.error.code == 4 && audio.audio.src.includes('sound_create')) {
         //MEDIA_ERR_SRC_NOT_SUPPORTED && defaultlink
-        let audiosrc = this.audio.src;
+        let audiosrc = audio.audio.src;
         let wavBlob = await conversionToWav(audiosrc);
-        if(this.currentPlayState == AudioPlayStateEnum.PLAY && decodeURI(audiosrc) == this.playList.currentAudioClip.src) {
-          this.audio.src = wavBlob;
-          this.audio.play();
+        if(audio.currentPlayState == AudioPlayStateEnum.PLAY && decodeURI(audiosrc) == audio.playList.currentAudioClip.src) {
+          audio.audio.src = wavBlob;
+          audio.audio.play();
         }
-        console.log(audiosrc+'    '+this.playList.currentAudioClip.src);
-        console.log(this.currentPlayState);
+        console.log(audiosrc+'    '+audio.playList.currentAudioClip.src);
+        console.log(audio.currentPlayState);
       }
-    };
+    });
     this.eventSupport.addEventListener('audioSet', ()=>{
       let request = new SoundInfomation();
       request.httpRequestor.addEventListener('success', event=>{
