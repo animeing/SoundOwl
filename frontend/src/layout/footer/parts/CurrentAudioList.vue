@@ -70,6 +70,7 @@ export default {
   created(){
     audio.eventSupport.addEventListener('audioSet', this.playChange);
     audio.playList.addEventListener('change', this.playlistUpdate);
+    this.playlistUpdate();
   },
   mounted() {
     let observer = new MutationObserver(()=>{

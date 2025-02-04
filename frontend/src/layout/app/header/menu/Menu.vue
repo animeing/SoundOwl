@@ -8,7 +8,7 @@
     <template #activator="{ props }">
       <v-btn
         v-bind="props"
-        :width="130"
+        width="5%"
         variant="elevated">Menu</v-btn>
     </template>
     <v-list>

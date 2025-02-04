@@ -112,9 +112,6 @@ async function updateMeasurementsAndRestart() {
   // テキストがコンテナに収まるならスクロール不要
   if (textWidth.value <= containerWidthValue.value) {
     offset.value = 0
-    console.log(
-      `Marquee not needed: ${textWidth.value} ≤ ${containerWidthValue.value}`
-    )
     return
   }
 
@@ -147,9 +144,6 @@ onMounted(async () => {
   })
 
   if (textWidth.value <= containerWidthValue.value) {
-    console.log(
-      `Marquee not needed: ${textWidth.value} ≤ ${containerWidthValue.value}`
-    )
     return
   }
   offset.value = 0

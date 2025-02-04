@@ -9,6 +9,7 @@
     fluid
     justify="center"
     class="align-center"
+    ref="parentContainer"
   >
     <v-row>
       <v-col cols="4" style="display: flex; align-items: center" class="footer-media">
@@ -91,7 +92,7 @@
             </v-btn>
           </v-col>
           <v-col class="d-flex justify-end pa-0">
-            <v-btn icon>
+            <v-btn icon @click="toggleAudioList">
               <v-icon>mdi-playlist-music</v-icon>
             </v-btn>
             <v-btn icon>
@@ -120,6 +121,16 @@
       </v-col>
     </v-row>
   </v-container>
+      <teleport to="body">
+        <keep-alive>
+          <CurrentAudioList
+            :isView="true"
+            v-if="isAudioListVisible"
+            class="audio-list-overlay"
+          :style="currentPlayListStyle"
+            />
+        </keep-alive>
+      </teleport>
 </template>
 
 <script>
@@ -131,6 +142,9 @@ import { BaseFrameWork, ContextMenu, timeToText } from '../../base';
 import { audioParamLoad, audioParamSave } from '../../utilization/register';
 import MarqueeText from '../common/MarqueeText.vue';
 import PingPongMarquee from '../common/PingPongMarquee.vue';
+import CurrentAudioList from './parts/CurrentAudioList.vue';
+import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
+
 export default {
   name: 'MusicControlBarWithProgress',
   data() {
@@ -144,12 +158,48 @@ export default {
       playTimeString:'',
       isFillLayout:false,
       isVisibleAnalyser:true,
-      isPlaying: true
+      isPlaying: true,
+      isAudioListVisible: false,
     }
+  },
+  setup() {
+    const parentContainer = ref(null);
+    const containerHeight = ref(0);
+    let resizeObserver = null;
+
+    onMounted(() => {
+      // Vuetify コンポーネントの場合は、$el に実際の DOM 要素が存在する
+      const el = (parentContainer.value && parentContainer.value.$el) || parentContainer.value;
+      if (el) {
+        containerHeight.value = el.offsetHeight;
+        resizeObserver = new ResizeObserver(entries => {
+          for (const entry of entries) {
+            containerHeight.value = entry.target.offsetHeight;
+          }
+        });
+        resizeObserver.observe(el);
+      }
+    });
+    onBeforeUnmount(() => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    });
+    const currentPlayListStyle = computed(() => {
+      return {
+        background: 'rgb(var(--v-theme-surface))',
+        bottom: containerHeight.value + 'px'
+      };
+    });
+    return {
+      parentContainer,
+      currentPlayListStyle
+    };
   },
   components: {
     MarqueeText,
-    PingPongMarquee
+    PingPongMarquee,
+    CurrentAudioList
   },
   created(){
     audioParamLoad();
@@ -317,6 +367,11 @@ export default {
       this.$nextTick(() => {
         this.playTimeString = textTime['min']+':'+textTime['sec'];
       });
+    },
+
+    toggleAudioList() {
+      console.log(this.isAudioListVisible);
+      this.isAudioListVisible = !this.isAudioListVisible;
     }
   }
 }
@@ -335,6 +390,15 @@ export default {
 
 .sub{
   font-size: 0.8rem;
+}
+
+
+.audio-list-overlay {
+  position: fixed;
+  right: 0;
+  z-index: 50;
+  width: 564px;
+  height: 80vh;
 }
 
 @media screen and (max-width: 768px) {
