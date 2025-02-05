@@ -188,7 +188,8 @@ export default {
     const currentPlayListStyle = computed(() => {
       return {
         background: 'rgb(var(--v-theme-surface))',
-        bottom: containerHeight.value + 'px'
+        bottom: containerHeight.value + 'px',
+        'max-height': `calc(100vh - ${containerHeight.value}px - 48px)`
       };
     });
     return {
@@ -398,7 +399,7 @@ export default {
   right: 0;
   z-index: 50;
   width: 564px;
-  height: 80vh;
+  height: 100vw;
 }
 
 @media screen and (max-width: 768px) {
