@@ -95,9 +95,26 @@
             <v-btn icon @click="toggleAudioList">
               <v-icon>mdi-playlist-music</v-icon>
             </v-btn>
-            <v-btn icon>
-              <v-icon>mdi-volume-high</v-icon>
-            </v-btn>
+            <v-menu v-model="volumeMenu" offset-y :close-on-content-click="false">
+              <template #activator="{ props }">
+                <v-btn icon v-bind="props">
+                  <v-icon>mdi-volume-high</v-icon>
+                </v-btn>
+              </template>
+              <v-card>
+                <v-card-text>
+                  <v-slider
+                    direction="vertical"
+                    height="150"
+                    v-model="volume"
+                    :max="1"
+                    :min="0"
+                    :step="0.01"
+                    @update:model-value="onVolumeChanged"
+                  />
+                </v-card-text>
+              </v-card>
+            </v-menu>
           </v-col>
         </v-row>
         <v-row
@@ -155,6 +172,7 @@ export default {
       isAudioList:false,
       isVolumeViewOpen:true,
       volume:1,
+      volumeMenu: false,
       playTimeString:'',
       isFillLayout:false,
       isVisibleAnalyser:true,
@@ -249,9 +267,8 @@ export default {
     this.loopName = this.repeatName();
   },
   methods:{
-    volumeAction(e) {
-      e.preventDefault();
-      this.volume -= e.deltaY/1e4;
+    onVolumeChanged(value) {
+      console.log('音量が変更されました:', value);
       audio.volume = this.volume;
       this.volume = audio.volume;
       audioParamSave();
