@@ -5,58 +5,68 @@
     color="grey-darken-4"
     center-active
   >
-    <v-slide-group-item
-      v-for="item in data"
-      :key="item.id"
-      :value="item.id"
-    >
-      <v-tooltip bottom>
-        <template #activator="{ props }">
-          <div
-            v-bind="props">
-            <v-card
-              class="ma-sm-4 d-flex flex-column"
-              color="grey-lighten-1"
-              @click.right.prevent="contextmenu(item)"
-              @click="click(item)"
-            >
-              <v-img
-                loading="lazy"
-                aspect-ratio="1"
-                :src="createImageSrc(item.albumKey)"
-              >
-                <template v-slot:placeholder>
-                  <div class="d-flex align-center justify-center fill-height">
-                    <v-progress-circular
-                      color="grey-lighten-4"
-                      indeterminate
-                    ></v-progress-circular>
-                  </div>
-                </template>
-              </v-img>
-              <v-card-actions class="d-flex justify-center">
-                <PingPongMarquee>
-                  <p :data-hint="item.title" class="text-center">
-                    {{ item.title }}
-                  </p>
-                </PingPongMarquee>
-              </v-card-actions>
-            </v-card>
-            </div>
-        </template>
-        <p>Title : {{ item.title }}</p>
-        <p>Artist : {{ item.artist }}</p>
-        <p>Album : {{ item.album }}</p>
-      </v-tooltip>
-    </v-slide-group-item>
+    <ContextMenu
+          v-for="item in data"
+          :key="item.id"
+          :value="item.id">
+      <template #main>
+        <v-slide-group-item>
+          <v-tooltip bottom>
+            <template #activator="{ props }">
+              <div
+                v-bind="props">
+                <v-card
+                  class="ma-sm-4 d-flex flex-column"
+                  color="grey-lighten-1"
+                  @click="click(item)"
+                >
+                  <v-img
+                    loading="lazy"
+                    aspect-ratio="1"
+                    :src="createImageSrc(item.albumKey)"
+                  >
+                    <template v-slot:placeholder>
+                      <div class="d-flex align-center justify-center fill-height">
+                        <v-progress-circular
+                          color="grey-lighten-4"
+                          indeterminate
+                        ></v-progress-circular>
+                      </div>
+                    </template>
+                  </v-img>
+                  <v-card-actions class="d-flex justify-center">
+                    <HoverPingPongMarquee>
+                      <p :data-hint="item.title" class="text-center">
+                        {{ item.title }}
+                      </p>
+                    </HoverPingPongMarquee>
+                  </v-card-actions>
+                </v-card>
+                </div>
+            </template>
+            <p>Title : {{ item.title }}</p>
+            <p>Artist : {{ item.artist }}</p>
+            <p>Album : {{ item.album }}</p>
+          </v-tooltip>
+        </v-slide-group-item>
+      </template>
+      <template #menu>
+        <v-list-item class="pa-0" style="height:100%;">
+          <button @click="addPlayList(item)" style="height:100%;" class="px-6 py-2">
+            AddPlayList
+          </button>
+        </v-list-item>
+      </template>
+    </ContextMenu>
   </v-slide-group>
 </template>
 
 <script>
-import { ContextMenu } from '../../../base';
+import ContextMenu from '../../common/ContextMenu.vue';
 import '../../../websocket';
 import { BASE } from '../../../utilization/path';
-import PingPongMarquee from '../../common/PingPongMarquee.vue';
+import HoverPingPongMarquee from '../../common/HoverPingPongMarquee.vue';
+import audio from '../../../audio/AudioPlayer';
 
 export default {
   props: {
@@ -83,7 +93,8 @@ export default {
     },
   },
   components: {
-    PingPongMarquee
+    HoverPingPongMarquee,
+    ContextMenu
   },
   data() {
     return {
@@ -103,13 +114,13 @@ export default {
         this.onClick(soundClip);
       }
     },
-    contextmenu(item) {
-      ContextMenu.contextMenu.destroyChildren();
-      if (!this.contextMenu) {
+    addPlayList(item) {
+      if(audio.currentAudioClip == undefined) {
+        audio.playList.insertAudioClip(item, 0);
         return;
       }
-      this.contextMenu(item);
-    },
+      audio.playList.appendAudioClipNext(item);
+    }
   },
 };
 </script>

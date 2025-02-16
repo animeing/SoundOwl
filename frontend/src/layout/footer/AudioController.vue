@@ -1,11 +1,6 @@
 <template>
   <v-container
-    style="
-      background-color: black;
-      color: white;
-      padding: 16px;
-      border-radius: 8px;
-    "
+    style="background-color: black; color: white; padding: 16px; border-radius: 8px;"
     fluid
     justify="center"
     class="align-center"
@@ -13,19 +8,16 @@
   >
     <v-row>
       <v-col cols="4" style="display: flex; align-items: center" class="footer-media">
+        <!-- 左側の情報（タイトル、アーティスト、アルバム） -->
         <v-row fill-height style="min-width: calc(100% + 24px);">
           <v-col>
             <v-row>
               <v-tooltip bottom>
                 <template #activator="{ props }">
-                  <div
-                    v-bind="props"
-                    class="audio-title"
-                    :title="currentPlaySoundClip.title"
-                  >
-                  <PingPongMarquee>
-                    <span>{{ currentPlaySoundClip.title }}</span>
-                  </PingPongMarquee>
+                  <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.title">
+                    <PingPongMarquee>
+                      <span>{{ currentPlaySoundClip.title }}</span>
+                    </PingPongMarquee>
                   </div>
                 </template>
                 {{ currentPlaySoundClip.title }}
@@ -34,18 +26,15 @@
             <v-row>
               <v-tooltip bottom>
                 <template #activator="{ props }">
-                  <div
-                    v-bind="props"
-                    class="audio-title"
-                    :title="currentPlaySoundClip.artist"
-                  >
-                  <router-link
-                    v-bind="props"
-                    :to="{ name: 'artist', query: { ArtistHash: currentPlaySoundClip.artistKey } }">
-                    <MarqueeText style="max-width: 100%;">
-                      <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.artist }}</span>
-                    </MarqueeText>
-                  </router-link>
+                  <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.artist">
+                    <router-link
+                      v-bind="props"
+                      :to="{ name: 'artist', query: { ArtistHash: currentPlaySoundClip.artistKey } }"
+                    >
+                      <MarqueeText style="max-width: 100%;">
+                        <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.artist }}</span>
+                      </MarqueeText>
+                    </router-link>
                   </div>
                 </template>
                 {{ currentPlaySoundClip.artist }}
@@ -54,18 +43,15 @@
             <v-row>
               <v-tooltip bottom>
                 <template #activator="{ props }">
-                  <div
-                    v-bind="props"
-                    class="audio-title"
-                    :title="currentPlaySoundClip.album"
-                  >
-                  <router-link
-                    v-bind="props"
-                    :to="{ name: 'album', query: { AlbumHash: currentPlaySoundClip.albumKey } }">                      
-                    <MarqueeText style="max-width: 100%;">
-                      <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.album }}</span>
-                    </MarqueeText>
-                  </router-link>
+                  <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.album">
+                    <router-link
+                      v-bind="props"
+                      :to="{ name: 'album', query: { AlbumHash: currentPlaySoundClip.albumKey } }"
+                    >
+                      <MarqueeText style="max-width: 100%;">
+                        <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.album }}</span>
+                      </MarqueeText>
+                    </router-link>
                   </div>
                 </template>
                 {{ currentPlaySoundClip.album }}
@@ -95,6 +81,12 @@
             <v-btn icon @click="toggleAudioList">
               <v-icon>mdi-playlist-music</v-icon>
             </v-btn>
+            <!-- 全画面オーバーレイを表示するボタン -->
+            <v-btn icon @click="toggleFullScreenOverlay">
+              <v-icon>
+                {{ isFullScreenOverlay ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}
+              </v-icon>
+            </v-btn>
             <v-menu v-model="volumeMenu" offset-y :close-on-content-click="false">
               <template #activator="{ props }">
                 <v-btn icon v-bind="props">
@@ -117,20 +109,20 @@
             </v-menu>
           </v-col>
         </v-row>
-        <v-row
-        :height="35">
+        <v-row :height="35">
           <v-col class="pr-5 py-0">
             <sw-audio-progress
-            class="progress-times"
-            :data-hint="playTimeString"
-            :slider-value="playTime"
-            :max="durationTime"
-            min="0"
-            @changingValue="changeingPlayPoint"
-            @changed="changedPlayPoint"
-            @mousemove="hint" />
+              class="progress-times"
+              :data-hint="playTimeString"
+              :slider-value="playTime"
+              :max="durationTime"
+              min="0"
+              @changingValue="changeingPlayPoint"
+              @changed="changedPlayPoint"
+              @mousemove="hint"
+            />
           </v-col>
-          <!-- 再生時間 -->
+          <!-- 再生時間表示 -->
           <v-col class="d-flex justify-end pa-0" cols="1">
             <span style="color: back">{{ progressText() }}</span>
           </v-col>
@@ -138,46 +130,64 @@
       </v-col>
     </v-row>
   </v-container>
-      <teleport to="body">
-        <keep-alive>
-          <CurrentAudioList
-            :isView="true"
-            v-if="isAudioListVisible"
-            class="audio-list-overlay"
-          :style="currentPlayListStyle"
-            />
-        </keep-alive>
-      </teleport>
+
+  <!-- 全画面オーバーレイ -->
+  <teleport to="body">
+    <div v-if="isFullScreenOverlay" class="fullscreen-overlay">
+      <!-- オーバーレイ内の閉じるボタン -->
+      <v-btn icon class="close-overlay" @click="toggleFullScreenOverlay">
+        <v-icon>mdi-close</v-icon>
+      </v-btn>
+      <!-- ここに歌詞、アルバムアート、アナライザ等のコンポーネントを配置する -->
+      <div class="overlay-content">
+        <AudioCanvas @toggleView="toggleView" ></AudioCanvas>
+      </div>
+    </div>
+  </teleport>
+
+  <teleport to="body">
+    <keep-alive>
+      <CurrentAudioList
+        :isView="true"
+        v-if="isAudioListVisible"
+        class="audio-list-overlay"
+        :style="currentPlayListStyle"
+      />
+    </keep-alive>
+  </teleport>
 </template>
 
 <script>
 import { AudioClip } from '../../audio/type/AudioClip';
 import audio from '../../audio/AudioPlayer';
 import { AudioLoopModeEnum } from '../../audio/enum/AudioLoopModeEnum';
-import {AudioPlayStateEnum} from '../../audio/enum/AudioPlayStateEnum';
+import { AudioPlayStateEnum } from '../../audio/enum/AudioPlayStateEnum';
 import { BaseFrameWork, ContextMenu, timeToText } from '../../base';
 import { audioParamLoad, audioParamSave } from '../../utilization/register';
 import MarqueeText from '../common/MarqueeText.vue';
 import PingPongMarquee from '../common/PingPongMarquee.vue';
 import CurrentAudioList from './parts/CurrentAudioList.vue';
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
+import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue';
+import AudioCanvas from './parts/AudioCanvas.vue';
 
 export default {
   name: 'MusicControlBarWithProgress',
   data() {
     return {
-      currentPlaySoundClip:(audio.currentAudioClip != null?audio.currentAudioClip:new AudioClip),
-      durationTime:0,
-      playTime:0,
-      isAudioList:false,
-      isVolumeViewOpen:true,
-      volume:1,
+      currentPlaySoundClip: audio.currentAudioClip != null ? audio.currentAudioClip : new AudioClip,
+      durationTime: 0,
+      playTime: 0,
+      isAudioList: false,
+      isVolumeViewOpen: true,
+      volume: 1,
       volumeMenu: false,
-      playTimeString:'',
-      isFillLayout:false,
-      isVisibleAnalyser:true,
+      playTimeString: '',
+      isFillLayout: false,
+      isVisibleAnalyser: true,
       isPlaying: true,
       isAudioListVisible: false,
+      // 全画面オーバーレイ状態管理
+      isFullScreenOverlay: false,
     }
   },
   setup() {
@@ -186,7 +196,6 @@ export default {
     let resizeObserver = null;
 
     onMounted(() => {
-      // Vuetify コンポーネントの場合は、$el に実際の DOM 要素が存在する
       const el = (parentContainer.value && parentContainer.value.$el) || parentContainer.value;
       if (el) {
         containerHeight.value = el.offsetHeight;
@@ -218,47 +227,50 @@ export default {
   components: {
     MarqueeText,
     PingPongMarquee,
-    CurrentAudioList
+    CurrentAudioList,
+    AudioCanvas
   },
-  created(){
+  created() {
+    watch(
+      () => this.isFullScreenOverlay,
+      (newVal) => {
+        document.html().setAttribute('style', `overflow:${newVal ? 'hidden' : ''};`);
+      }
+    );
     audioParamLoad();
-    audio.eventSupport.addEventListener('audioSet',()=>{
-      if(this.currentPlaySoundClip != audio.currentAudioClip) {
+    audio.eventSupport.addEventListener('audioSet', () => {
+      if (this.currentPlaySoundClip != audio.currentAudioClip) {
         this.currentPlaySoundClip = audio.currentAudioClip;
       }
-      if(this.playTime != audio.audio.currentTime) {
+      if (this.playTime != audio.audio.currentTime) {
         this.playTime = audio.audio.currentTime;
       }
-      if(this.durationTime != audio.audio.duration) {
+      if (this.durationTime != audio.audio.duration) {
         this.durationTime = audio.audio.duration;
       }
     });
-    audio.eventSupport.addEventListener('update', ()=>{
+    audio.eventSupport.addEventListener('update', () => {
       this.durationTime = audio.audio.duration;
       this.playTime = audio.audio.currentTime;
     });
     this.volume = audio.volume;
-    
-    
-    audio.eventSupport.addEventListener('play', ()=>{
+
+    audio.eventSupport.addEventListener('play', () => {
       this.audioPlayState = audio.currentPlayState;
-      //PauseIcon
       this.actionName = 'Pause';
       this.isPlaying = true;
     });
-    audio.eventSupport.addEventListener('stop', ()=>{
+    audio.eventSupport.addEventListener('stop', () => {
       this.audioPlayState = audio.currentPlayState;
-      //PlayIcon
       this.actionName = 'Play';
       this.isPlaying = false;
     });
-    audio.eventSupport.addEventListener('pause',()=>{
+    audio.eventSupport.addEventListener('pause', () => {
       this.audioPlayState = audio.currentPlayState;
-      //PlayIcon
       this.actionName = 'Play';
       this.isPlaying = false;
     });
-    audio.eventSupport.addEventListener('update', ()=>{
+    audio.eventSupport.addEventListener('update', () => {
       this.durationTime = audio.audio.duration;
       this.playTime = audio.audio.currentTime;
     });
@@ -266,9 +278,8 @@ export default {
     this.isPlaying = false;
     this.loopName = this.repeatName();
   },
-  methods:{
+  methods: {
     onVolumeChanged(value) {
-      console.log('音量が変更されました:', value);
       audio.volume = this.volume;
       this.volume = audio.volume;
       audioParamSave();
@@ -277,9 +288,9 @@ export default {
       this.$el.parentNode.classList.toggle('analyser');
       this.$el.parentNode.classList.toggle('lyrics');
     },
-    progressText(){
+    progressText() {
       let currentText = timeToText(this.playTime);
-      return currentText['min']+':'+currentText['sec'];
+      return currentText['min'] + ':' + currentText['sec'];
     },
     togglePlayListView() {
       this.isAudioList = !this.isAudioList;
@@ -289,39 +300,39 @@ export default {
       this.isFillLayout = !this.isFillLayout;
     },
     toggleVolumeView() {
-      this.isVolumeViewOpen =! this.isVolumeViewOpen;
+      this.isVolumeViewOpen = !this.isVolumeViewOpen;
     },
-    volumeClass(){
+    volumeClass() {
       let classList = 'audio-controller-volume vertical-progress';
-      return classList+(this.isVolumeViewOpen?' hide':'');
+      return classList + (this.isVolumeViewOpen ? ' hide' : '');
     },
     changeVolume(event) {
       this.volume = event.target.getAttribute('slider-value');
       audio.volume = this.volume;
       audioParamSave();
     },
-    beforeIconClick(){
-      if(ContextMenu.isVisible)return;
+    beforeIconClick() {
+      if (ContextMenu.isVisible) return;
       let beforeAudioClip = audio.playList.previous();
-      if(beforeAudioClip == null)return;
-      if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+      if (beforeAudioClip == null) return;
+      if (audio.currentPlayState === AudioPlayStateEnum.PLAY) {
         audio.play(beforeAudioClip);
       }
       audio.audio.currentTime = 0;
       audio.audioDeployment();
     },
-    nextIconClick(){
+    nextIconClick() {
       let nextAudioClip = audio.playList.next();
-      if(nextAudioClip == null)return;
-      if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+      if (nextAudioClip == null) return;
+      if (audio.currentPlayState === AudioPlayStateEnum.PLAY) {
         audio.play(nextAudioClip);
       }
       audio.audio.currentTime = 0;
       audio.audioDeployment();
     },
-    playPauseIconClick(){
-      if(ContextMenu.isVisible)return;
-      if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+    playPauseIconClick() {
+      if (ContextMenu.isVisible) return;
+      if (audio.currentPlayState === AudioPlayStateEnum.PLAY) {
         audio.pause();
         this.isPlaying = false;
       } else {
@@ -330,86 +341,86 @@ export default {
       }
     },
     repeatName() {
-      switch(audio.playList.loopMode) {
-        case AudioLoopModeEnum.NON_LOOP:{
+      switch (audio.playList.loopMode) {
+        case AudioLoopModeEnum.NON_LOOP: {
           return 'No loop';
         }
-        case AudioLoopModeEnum.TRACK_LOOP:{
+        case AudioLoopModeEnum.TRACK_LOOP: {
           return 'Track loop';
         }
-        case AudioLoopModeEnum.AUDIO_LOOP:{
+        case AudioLoopModeEnum.AUDIO_LOOP: {
           return 'Audio loop';
         }
       }
     },
-    changedPlayPoint(event){
+    changedPlayPoint(event) {
       audio.lockEventTarget.action('setStopUpdate');
       let rePoint = audio.currentPlayState;
       audio.stop();
       let target = event.target;
-      if(event.target.mousePositionvalue == undefined){
+      if (event.target.mousePositionvalue == undefined) {
         target = event.target.parentNode;
       }
-      setTimeout(()=>{
+      setTimeout(() => {
         audio.audio.currentTime = parseFloat(target._value);
-        if(rePoint == AudioPlayStateEnum.PLAY){
-          setTimeout(()=>{
+        if (rePoint == AudioPlayStateEnum.PLAY) {
+          setTimeout(() => {
             audio.play();
-          },1);
+          }, 1);
         }
         audio.lockEventTarget.action('setUpdate');
-      },10);
-      
+      }, 10);
     },
     changeingPlayPoint(event) {
       audio.lockEventTarget.action('setStopUpdate');
       let target = event.target;
-      if(event.target.mousePositionvalue == undefined){
+      if (event.target.mousePositionvalue == undefined) {
         target = event.target.parentNode;
       }
       audio.audio.currentTime = parseFloat(target._value);
-      if(audio.currentPlayState === AudioPlayStateEnum.PLAY){
+      if (audio.currentPlayState === AudioPlayStateEnum.PLAY) {
         audio.audio.pause();
       }
     },
-    hint(event){
+    hint(event) {
       let positionTime = 0;
       let target = event.target;
-      if(event.target.mousePositionvalue == undefined){
+      if (event.target.mousePositionvalue == undefined) {
         target = event.target.parentNode;
-      } else if(!isNaN(target.mousePositionvalue(event))) {
+      } else if (!isNaN(target.mousePositionvalue(event))) {
         positionTime = target.mousePositionvalue(event);
       }
       let textTime = timeToText(positionTime);
-      
+
       this.$nextTick(() => {
-        this.playTimeString = textTime['min']+':'+textTime['sec'];
+        this.playTimeString = textTime['min'] + ':' + textTime['sec'];
       });
     },
-
     toggleAudioList() {
       console.log(this.isAudioListVisible);
       this.isAudioListVisible = !this.isAudioListVisible;
+    },
+    // 全画面オーバーレイの開閉
+    toggleFullScreenOverlay() {
+      this.isFullScreenOverlay = !this.isFullScreenOverlay;
+      document.body.style.overflow = this.isFullScreenOverlay?'hidden':'';
     }
   }
 }
 </script>
-<style scoped>
 
+<style scoped>
 .audio-title {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: bold;
-  text-wrap: wrap;
   overflow: hidden;
   text-overflow: ellipsis;
   margin-bottom: 0;
-  font-size: 0.9rem;
 }
 
-.sub{
+.sub {
   font-size: 0.8rem;
 }
-
 
 .audio-list-overlay {
   position: fixed;
@@ -419,6 +430,28 @@ export default {
   height: 100vw;
 }
 
+/* 全画面オーバーレイのスタイル */
+.fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 9999;
+  color: white;
+}
+.close-overlay {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10000;
+}
+.overlay-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
 @media screen and (max-width: 768px) {
   .footer-media {
     min-width: 100%;
