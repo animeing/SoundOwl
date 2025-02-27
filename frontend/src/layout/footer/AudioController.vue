@@ -10,6 +10,20 @@
       <v-col cols="4" style="display: flex; align-items: center" class="footer-media">
         <!-- 左側の情報（タイトル、アーティスト、アルバム） -->
         <v-row fill-height style="min-width: calc(100% + 24px);">
+          <v-col style="flex-grow: 0; padding: 2px;">
+            <v-img
+              :src="createImageSrc(currentPlaySoundClip.albumKey)"
+              aspect-raito="1"
+              width="70"
+              height="66"
+              class="album-image"
+              lazy-src="img/placeholder-image.webp"
+              >
+              <template #placeholder>
+                <v-skeleton-loader type="image" class="fill-height"></v-skeleton-loader>
+              </template>
+            </v-img>
+          </v-col>
           <v-col>
             <v-row>
               <v-tooltip bottom>
@@ -81,12 +95,6 @@
             <v-btn icon @click="toggleAudioList">
               <v-icon>mdi-playlist-music</v-icon>
             </v-btn>
-            <!-- 全画面オーバーレイを表示するボタン -->
-            <v-btn icon @click="toggleFullScreenOverlay">
-              <v-icon>
-                {{ isFullScreenOverlay ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}
-              </v-icon>
-            </v-btn>
             <v-menu v-model="volumeMenu" offset-y :close-on-content-click="false">
               <template #activator="{ props }">
                 <v-btn icon v-bind="props">
@@ -107,6 +115,12 @@
                 </v-card-text>
               </v-card>
             </v-menu>
+            <!-- 全画面オーバーレイを表示するボタン -->
+            <v-btn icon @click="toggleFullScreenOverlay">
+              <v-icon>
+                {{ isFullScreenOverlay ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}
+              </v-icon>
+            </v-btn>
           </v-col>
         </v-row>
         <v-row :height="35">
@@ -131,20 +145,6 @@
     </v-row>
   </v-container>
 
-  <!-- 全画面オーバーレイ -->
-  <teleport to="body">
-    <div v-if="isFullScreenOverlay" class="fullscreen-overlay">
-      <!-- オーバーレイ内の閉じるボタン -->
-      <v-btn icon class="close-overlay" @click="toggleFullScreenOverlay">
-        <v-icon>mdi-close</v-icon>
-      </v-btn>
-      <!-- ここに歌詞、アルバムアート、アナライザ等のコンポーネントを配置する -->
-      <div class="overlay-content">
-        <AudioCanvas @toggleView="toggleView" ></AudioCanvas>
-      </div>
-    </div>
-  </teleport>
-
   <teleport to="body">
     <keep-alive>
       <CurrentAudioList
@@ -155,6 +155,16 @@
       />
     </keep-alive>
   </teleport>
+  <!-- 全画面オーバーレイ -->
+  <teleport to="body">
+    <div v-if="isFullScreenOverlay" class="fullscreen-overlay" :style="overlayHeightStyle">
+      <!-- ここに歌詞、アルバムアート、アナライザ等のコンポーネントを配置する -->
+      <div class="overlay-content">
+        <AudioCanvas @toggleView="toggleView" ></AudioCanvas>
+      </div>
+    </div>
+  </teleport>
+
 </template>
 
 <script>
@@ -169,6 +179,7 @@ import PingPongMarquee from '../common/PingPongMarquee.vue';
 import CurrentAudioList from './parts/CurrentAudioList.vue';
 import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue';
 import AudioCanvas from './parts/AudioCanvas.vue';
+import { BASE } from '../../utilization/path';
 
 export default {
   name: 'MusicControlBarWithProgress',
@@ -216,10 +227,19 @@ export default {
       return {
         background: 'rgb(var(--v-theme-surface))',
         bottom: containerHeight.value + 'px',
+        'z-index': 2000,
         'max-height': `calc(100vh - ${containerHeight.value}px - 48px)`
       };
     });
+
+    const overlayHeightStyle = computed(()=>{
+      return {
+        bottom: `${{containerHeight}}px`,
+        'max-height': `calc(100vh - ${containerHeight.value}px )`
+      }
+    });
     return {
+      overlayHeightStyle,
       parentContainer,
       currentPlayListStyle
     };
@@ -279,6 +299,9 @@ export default {
     this.loopName = this.repeatName();
   },
   methods: {
+    createImageSrc(albumKey) {
+      return `${BASE.HOME}img/album_art.php?media_hash=${albumKey}`;
+    },
     onVolumeChanged(value) {
       audio.volume = this.volume;
       this.volume = audio.volume;
@@ -410,6 +433,13 @@ export default {
 </script>
 
 <style scoped>
+
+.album-image {
+  border-radius: 8px;
+  max-width: 100%;
+  max-height: 100%;
+}
+
 .audio-title {
   font-size: 0.9rem;
   font-weight: bold;
@@ -436,15 +466,10 @@ export default {
   top: 0;
   left: 0;
   width: 100vw;
+  height: 100vh;
   background: rgba(0, 0, 0, 0.9);
-  z-index: 9999;
+  z-index: 1999;
   color: white;
-}
-.close-overlay {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 10000;
 }
 .overlay-content {
   display: flex;
