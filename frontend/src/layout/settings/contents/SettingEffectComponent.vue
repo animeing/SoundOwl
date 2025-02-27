@@ -4,11 +4,11 @@
     <v-row>
       <v-col>
         <!-- 「Effect」の大枠カード -->
-        <v-card outlined>
+        <v-card style="background: inherit;">
           <v-card-title>Effect</v-card-title>
           <v-card-text>
             <!-- SoundSculpt -->
-            <v-card class="mb-4" outlined>
+            <v-card class="mb-4" outlined style="background: inherit;">
               <v-card-title>SoundSculpt</v-card-title>
               <v-card-text>
                 SoundSculpt dynamically adjusts audio frequencies in real-time,
@@ -26,7 +26,7 @@
             </v-card>
 
             <!-- Loudness Normalization -->
-            <v-card class="mb-4" outlined>
+            <v-card class="mb-4" outlined style="background: inherit;">
               <v-card-title>Loudness normalization</v-card-title>
               <v-card-text>
                 Loudness normalization is a process used in audio mastering
@@ -45,7 +45,7 @@
             </v-card>
 
             <!-- Impulse Response Effect -->
-            <v-card class="mb-4" outlined>
+            <v-card class="mb-4" outlined style="background: inherit;">
               <v-card-title>Impulse Response Effect</v-card-title>
               <v-card-text>
                 Impulse Response Effect uses impulse response data to simulate

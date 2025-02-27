@@ -1,9 +1,7 @@
 <template>
     <div>
       <SettingTab />
-      <v-card outlined>
-        <component :is="component" />
-      </v-card>
+      <component :is="component" />
     </div>
 </template>
 <script>

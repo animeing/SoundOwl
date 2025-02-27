@@ -1,5 +1,4 @@
 <template>
-  <v-card>
     <v-tabs v-model="tab">
       <v-tab
         v-for="(item, index) in menuItems"
@@ -9,7 +8,6 @@
         {{ item.title }}
       </v-tab>
     </v-tabs>
-  </v-card>
 </template>
 
 <script>
