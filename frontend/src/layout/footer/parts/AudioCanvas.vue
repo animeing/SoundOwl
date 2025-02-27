@@ -2,6 +2,7 @@
     <canvas
         v-if="isVisibleAnalyser"
         class="analyser-view"
+        style="height: 100%;display: block;"
         :width="width"
         :height="height"
         @click.right.prevent="contextCanvasMenu()" />
@@ -14,7 +15,9 @@
     </div>
 </template>
 <script>
+import { onBeforeUnmount } from 'vue';
 import audio from '../../../audio/AudioPlayer';
+import { AudioPlayStateEnum } from '../../../audio/enum/AudioPlayStateEnum';
 import { BaseFrameWork, ContextMenu } from '../../../base';
 
 export default {
@@ -27,7 +30,7 @@ export default {
   emits: {'toggleView': null},
   data() {
     return {
-      width:window.innerWidth - 56,
+      width:window.innerWidth,
       height:window.innerHeight - 45,
       isVisibleAnalyser:true,
       lyrics:''
@@ -69,7 +72,7 @@ export default {
     let color = BaseFrameWork.getCSSProperty(this.$el, '--box-color');
     this.animationId = requestAnimationFrame(this.run);
     this.canvasObjects = new BaseFrameWork.List();
-    audio.eventSupport.addEventListener('initalize',()=>{
+    const initalize = ()=>{
       this.analyser = audio.audioEffectManager.audioContext.createAnalyser();
       this.analyser.fftSize = 1<<7+1;
       audio.audioEffectManager.source.connect(this.analyser);
@@ -99,7 +102,15 @@ export default {
         box.canvasScale = scale;
         this.canvasObjects.add(box);
       }
-    });
+      audio.eventSupport.removeEventListener('play', initalize);
+    };
+    audio.eventSupport.addEventListener('play',initalize);
+    if(audio.currentPlayState == AudioPlayStateEnum.PLAY) {
+      initalize();
+    }
+    onBeforeUnmount(()=>{
+      audio.eventSupport.removeEventListener('play', initalize);
+    })
   },
   methods: {
     contextCanvasMenu() {
@@ -160,3 +171,8 @@ export default {
   }
 };
 </script>
+<style scope>
+canvas {
+  --box-color: #aaa;
+}
+</style>
