@@ -1,40 +1,41 @@
 <template>
-    <div>
-        <div class="block">
-            <p class="title">
-                Equalizer
-            </p>
-            <v-select
-              v-model="selectPreset"
-              :items="presetNames"
-              @update:modelValue="changedPreset"
-              label="Preset"
-              outlined
-              dense
-              hide-details
-              class="equalizer-preset-select"></v-select>
-
-            <div class="block">
-                <p class="title">
-                    Setting
-                </p>
+  <v-container class="py-4" fluid>
+    <v-card style="background: inherit;">
+      <v-card-title>Equalizer</v-card-title>
+        <v-card-actions>
+          <v-select
+            v-model="selectPreset"
+            :items="presetNames"
+            @update:modelValue="changedPreset"
+            label="Preset"
+            outlined
+            dense
+            hide-details
+            class="equalizer-preset-select"></v-select>
+        </v-card-actions>
+        <v-card-text>
+          <v-card class="mb-4" outlined style="background: inherit;">
+            <v-card-title>Setting</v-card-title>
+            <v-card-text>
                 <div class="equalizer-setting-container">
-                    <p
-                        v-for="(item, index) in hzArray"
-                        :key="index"
-                        class="equalizer-setting-item">
-                        <span>{{ toViewName(item.hz) }}</span>
-                        <sw-h-progress
-                            class="setting-equalizer"
-                            max="15"
-                            min="-15"
-                            :slider-value="item.gain"
-                            @valueSet="valueChange($event, item)" />
-                    </p>
+                  <p
+                    v-for="(item, index) in hzArray"
+                    :key="index"
+                    class="equalizer-setting-item">
+                    <span>{{ toViewName(item.hz) }}</span>
+                    <sw-h-progress
+                      class="setting-equalizer"
+                      max="15"
+                      min="-15"
+                      :slider-value="item.gain"
+                      @valueSet="valueChange($event, item)" />
+                  </p>
                 </div>
-            </div>
-        </div>
-    </div>
+              </v-card-text>
+            </v-card>
+          </v-card-text>
+        </v-card>
+    </v-container>
 </template>
 <script>
 import audio from '../../../audio/AudioPlayer';
