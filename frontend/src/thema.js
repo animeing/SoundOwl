@@ -14,7 +14,7 @@ const thema = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark'
 export const colorThema = {
   background: thema === 'dark' ? '#3F3F3F' : '#EEE',
   'on-background': thema === 'dark' ? '#c7c7c7' : '#000000',
-
+  'on-surface': thema === 'dark' ? '#c7c7c7' : '#000000',
 };
 
 const vuetify = createVuetify({
