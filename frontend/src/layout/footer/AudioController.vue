@@ -24,7 +24,7 @@
               </template>
             </v-img>
           </v-col>
-          <v-col>
+          <v-col width="100" style="overflow: hidden;">
             <v-row>
               <v-tooltip bottom>
                 <template #activator="{ props }">
