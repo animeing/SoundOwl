@@ -47,6 +47,9 @@ export class Playlist extends EventTarget {
       });
   }
 
+  get length() { 
+    return this._list.length;
+  }
 
   /**
    * 現在再生中のオーディオクリップを取得します。選択されているクリップがない場合は undefined を返します。

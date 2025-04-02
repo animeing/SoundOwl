@@ -8,8 +8,10 @@
     <ContextMenu
           v-for="item in data"
           :key="item.id"
-          :value="item.id">
-      <template #main>
+          :value="item.id"
+          :items="menuData"
+          @select="(select)=>{contextMenuSelection(select, item)}"
+          >
         <v-slide-group-item>
           <v-tooltip bottom>
             <template #activator="{ props }">
@@ -49,14 +51,6 @@
             <p>Album : {{ item.album }}</p>
           </v-tooltip>
         </v-slide-group-item>
-      </template>
-      <template #menu>
-        <v-list-item class="pa-0" style="height:100%;">
-          <button @click="addPlayList(item)" style="height:100%;" class="px-6 py-2">
-            AddPlayList
-          </button>
-        </v-list-item>
-      </template>
     </ContextMenu>
   </v-slide-group>
 </template>
@@ -100,12 +94,27 @@ export default {
     return {
       data: [],
       model: null,
+      menuData: [
+        { label: 'Add to PlayList',
+          children:[
+            { label: 'Play Next', action: 'playNext' },
+            { label: 'Add to Last', action: 'addLast' }
+          ]
+        },
+      ],
     };
   },
   created() {
     this.data = this.dataRequest();
   },
   methods: {
+    contextMenuSelection(select, item) {
+      if(select.action == 'playNext') {
+        this.addPlayList(item);
+      } else if(select.action == 'addLast') {
+        this.addPlayList(item, audio.playList.length);
+      }
+    },
     createImageSrc(albumKey) {
       return `${BASE.HOME}img/album_art.php?media_hash=` + albumKey;
     },
@@ -114,12 +123,17 @@ export default {
         this.onClick(soundClip);
       }
     },
-    addPlayList(item) {
-      if(audio.currentAudioClip == undefined) {
+    addPlayList(item, point=0) {
+      if(audio.currentAudioClip == undefined && point == 0) {
         audio.playList.insertAudioClip(item, 0);
         return;
       }
-      audio.playList.appendAudioClipNext(item);
+      if(point == 0) {
+        audio.playList.appendAudioClipNext(item);
+        return;
+      } else {
+        audio.playList.insertAudioClip(item, point);
+      }
     }
   },
 };
