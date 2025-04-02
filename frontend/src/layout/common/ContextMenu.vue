@@ -11,7 +11,8 @@
       content-class="custom-context-menu"
       :style="{
         top:adjustedY+'px',
-        left: adjustedX+'px'
+        left: adjustedX+'px',
+        zIndex: 5000
       }"
     >
       <v-list>
@@ -83,19 +84,19 @@
 
   // 表示されたメニューのサイズを取得し、画面外に出ないように座標を調整
   function adjustPosition() {
-    const menuEl = document.querySelector('.custom-context-menu')
-    if (!menuEl || typeof menuEl.getBoundingClientRect !== 'function') return
-    const rect = menuEl.getBoundingClientRect()
-    let newX = x.value
-    let newY = y.value
+    const menuEl = $refs.menuRef?.$el;
+    if (!menuEl || typeof menuEl.getBoundingClientRect !== 'function') return;
+    const rect = menuEl.getBoundingClientRect();
+    let newX = x.value;
+    let newY = y.value;
     if (newX + rect.width > window.innerWidth) {
-      newX = window.innerWidth - rect.width
+      newX = window.innerWidth - rect.width;
     }
     if (newY + rect.height > window.innerHeight) {
-      newY = window.innerHeight - rect.height
+      newY = window.innerHeight - rect.height;
     }
-    adjustedX.value = newX
-    adjustedY.value = newY
+    adjustedX.value = newX;
+    adjustedY.value = newY;
   }
 
   function selectItem(item) {
@@ -108,4 +109,10 @@
   .context-menu-wrapper {
     position: relative;
   }
+.custom-context-menu {
+  z-index: 3000 !important;
+}
+.context-menu-wrapper {
+  position: relative;
+}
 </style>

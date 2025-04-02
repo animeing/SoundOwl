@@ -2,10 +2,12 @@
     <sw-resize
         :class="audioFrameClass()"
         resize-direction="top-left">
+      <ContextMenu
+          :items="menuData"
+          @select="contextMenuSelection">
         <span class="menu-icon-frame">
             <button
-                class="menu-icon"
-                @click="contextmenu($event)">
+                class="menu-icon">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="29"
@@ -15,40 +17,47 @@
                         d="M1.334 2.666h26.665l.037.001a1.334 1.334 0 1 0 0-2.668L27.997 0h.002H1.334a1.334 1.334 0 0 0-.002 2.666h.002zm26.665 2.667H1.334a1.334 1.334 0 0 0-.002 2.666h26.667l.037.001a1.334 1.334 0 1 0 0-2.668l-.039.001zm0 5.334H1.334a1.334 1.334 0 0 0-.002 2.666h26.667a1.334 1.334 0 0 0 .002-2.666zm0 10.666H1.334a1.334 1.334 0 0 0-.002 2.666h26.667a1.334 1.334 0 0 0 .002-2.666zm0-5.333H1.334a1.334 1.334 0 0 0-.002 2.666h26.667A1.334 1.334 0 0 0 28.001 16z" /></svg>
             </button>
         </span>
-        <p
-            class="play-list-title"
-            @click.right.prevent="contextmenu()">
+      </ContextMenu>
+        <button
+          @click="savePlaylistData"
+            class="play-list-title">
             Play List
-        </p>
+        </button>
         <div
             id="current-audio-list"
             :class="audioListClass()"
             style="overflow-y: scroll;">
+          <ContextMenu
+              v-for="(item, index) in soundClips"
+              :items="soundMenuData"
+              @select="(select)=>{soundContextMenuSelection(select, item)}">
             <button
-                v-for="(item, index) in soundClips"
                 :key="index"
                 drag-item
                 :class="audioItemClass(item)"
                 class="draggable-item"
-                @click.right.prevent="contextMenu(item)"
                 @click="click(item)">
-                <SoundClipComponent :sound-clip="item" :album-height=115 :album-width=108 />
+                  <SoundClipComponent :sound-clip="item" :album-height=115 :album-width=108 />
+                
             </button>
+          </ContextMenu>
         </div>
     </sw-resize>
 </template>
 <script>
-import {BaseFrameWork, ContextMenu} from '../../../base';
+import {BaseFrameWork} from '../../../base';
 import {AudioPlayStateEnum} from '../../../audio/enum/AudioPlayStateEnum';
 import audio from '../../../audio/AudioPlayer';
 import { AudioClip } from '../../../audio/type/AudioClip';
 import SoundClipComponent from '../../common/SoundClipComponent.vue';
 import { BASE } from '../../../utilization/path';
+import ContextMenu from '../../common/ContextMenu.vue';
 
 export default {
   name:'CurrentAudioList',
   components:{
-    SoundClipComponent
+    SoundClipComponent,
+    ContextMenu
   },
     
   beforeRouteLeave(_to, _from, next)  {
@@ -64,7 +73,14 @@ export default {
   data() {
     return {
       soundClips:[],
-      currentPlaySoundClip:new AudioClip
+      currentPlaySoundClip:new AudioClip,
+      menuData:[
+        {label:'Clear playlist', action:()=>{audio.playList.clearPlaylist();}},
+        {label:'Save playlist', action:()=>{this.savePlaylistData();}},
+      ],
+      soundMenuData:[
+        {label:'Remove', action:(item)=>{audio.playList.removeClip(item);}}
+      ]
     };
   },
   created(){
@@ -82,6 +98,54 @@ export default {
     observer.observe(this.$el, {childList:true,attributes:true,subtree: true});
   },
   methods:{
+    contextMenuSelection(select) {
+      select.action();
+    },
+    soundContextMenuSelection(select, item) {
+      select.action(item);
+    },
+    savePlaylistData() {
+      let messageWindow = document.createElement('sw-save-message');
+      messageWindow.value = 'Do you want to save the playlist?\nPlease enter the playlist name.';
+
+      messageWindow.addItem('OK',()=>{
+        messageWindow.close();
+        let playlistName = messageWindow.inputText.value;
+        let action = new class extends BaseFrameWork.Network.RequestServerBase {
+          constructor() {
+            super(null, BASE.API+'playlist_action.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+          }
+        };
+        action.formDataMap.append('method', 'create');
+        action.formDataMap.append('playlist_name', playlistName);
+        for (const soundClip of this.soundClips) {
+          action.formDataMap.append('sounds[]', soundClip.soundHash);
+        }
+        action.httpRequestor.addEventListener('success', event=>{
+          let message = document.createElement('sw-message-button');
+          message.addItem('OK', ()=>{
+            message.close();
+          });
+          message.value = event.detail.response.detail;
+          if(event.detail.response.status == 'success'){
+            message.close(6000);
+          }
+        });
+        action.httpRequestor.addEventListener('error', ()=>{
+          let message = document.createElement('sw-message-button');
+          message.addItem('OK', ()=>{
+            message.close();
+          });
+          message.value = `Action error ${action.httpRequestor.status}`;
+          message.open();
+        });
+        action.execute();
+      });
+      messageWindow.addItem('CANCEL',()=>{
+        messageWindow.close();
+      });
+      messageWindow.open();
+    },
     contextmenu(event = undefined){
       ContextMenu.contextMenu.destoryChildren();
       if(event !== undefined && ContextMenu.isVisible) {
