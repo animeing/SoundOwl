@@ -222,7 +222,7 @@ input[type="button"] {
 
 .fixed-window {
   position: fixed;
-  z-index: 109;
+  z-index: 1109;
   min-width: 100vw;
   width: 100vw;
   top: 0em;
@@ -418,7 +418,6 @@ sw-save-message {
   text-align: center;
   max-height: 500px;
   overflow: hidden;
-  z-index: 110;
   display: block;
 }
 
