@@ -10,14 +10,14 @@
     <v-menu
       ref="menuRef"
       v-model="menuVisible"
-      absolute
       offset-y
       eager
       content-class="custom-context-menu"
       :style="{
         top: adjustedY + 'px',
         left: adjustedX + 'px',
-        zIndex: 5000
+        zIndex: 5000,
+        position: 'fixed',
       }"
     >
       <v-list>
