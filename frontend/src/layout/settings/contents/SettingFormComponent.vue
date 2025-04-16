@@ -1,113 +1,99 @@
 <template>
-    <div>
-        <div class="block">
-            <p class="title">
-                Current Status
-            </p>
-            <div>
-                <div style="display: flex;justify-content: space-around;">
-                    <div class="block">
-                        <p class="title">
-                            Regist Status
-                        </p>
-                        <p>{{ registStatus?'Action':'Finished' }}</p>
-                    </div>
-                    <div class="block">
-                        <p class="title">
-                            Regist Step1
-                        </p>
-                        <p>{{ registStatusStep1?'Action':'Finished' }}</p>
-                    </div>
-                    <div class="block">
-                        <p class="title">
-                            Regist Step2
-                        </p>
-                        <p>{{ registStatusStep2?'Action':'Finished' }}</p>
-                    </div>
-                </div>
-                <div style="display: flex;justify-content: space-around;">
-                    <div class="block">
-                        <p class="title">
-                            Analysis/Sound Count
-                        </p>
-                        <p><span>{{ analysisSoundCount }}</span>/<span>{{ registSoundCount }}</span></p>
-                    </div>
-                    <div class="block">
-                        <p class="title">
-                            Album Count
-                        </p>
-                        <p>{{ albumCount }}</p>
-                    </div>
-                    <div class="block">
-                        <p class="title">
-                            Artist Count
-                        </p>
-                        <p>{{ artistCount }}</p>
-                    </div>
-                </div>
+  <v-container class="py-4" fluid>
+    <v-card style="background: inherit;">
+      <v-card-title>Current Status</v-card-title>
+        <div>
+          <div style="display: flex;justify-content: space-around;">
+            <div class="block">
+              <p class="title">Regist Status</p>
+              <p>{{ registStatus?'Action':'Finished' }}</p>
+            </div>
+            <div class="block">
+              <p class="title">Regist Step1</p>
+              <p>{{ registStatusStep1?'Action':'Finished' }}</p>
+            </div>
+            <div class="block">
+              <p class="title">Regist Step2</p>
+              <p>{{ registStatusStep2?'Action':'Finished' }}</p>
             </div>
         </div>
-        <div class="block">
-            <p class="title">
-                DB
-            </p>
-            <sw-input-param
-                data-title="IP Address"
-                type="text"
-                :value="ip"
-                name="db_ip_address" />
-            <sw-input-param
-                data-title="DB Name"
-                type="text"
-                :value="dbName"
-                name="db_name" />
-            <sw-input-param
-                data-title="User"
-                type="text"
-                :value="user"
-                name="db_user" />
-            <sw-input-param
-                data-title="Password"
-                type="password"
-                :value="pass"
-                name="db_pass" />
-        </div>
-        <div class="block">
-            <p class="title">
-                Sound
-            </p>
-            <sw-input-param
-                data-title="Sound Directory"
-                type="text"
-                :value="sound"
-                name="sound_directory" />
-            <sw-textarea-param 
-                data-title="Exclusion Paths"
-                :value="exclusionPaths"
-                name="exclusionPaths" />
-        </div>
-        <div class="block">
-            <p class="title">
-                WebSocket
-            </p>
-            <sw-input-param
-                data-title="Retry Count Limit"
-                :value="websocketRetryCount"
-                name="websocket_retry_count"
-                type="number"
-                min="0"
-                max="100"
-                pattern="[0-9]" />
-            <sw-input-param
-                data-title="Reconnection Interval (ms)"
-                :value="websocketRetryIntervalMs"
-                name="websocket_retry_interval"
-                type="number"
-                min="0"
-                max="999999"
-                pattern="[0-9]" />
+        <div style="display: flex;justify-content: space-around;">
+          <div class="block">
+            <p class="title">Analysis/Sound Count</p>
+            <p><span>{{ analysisSoundCount }}</span>/<span>{{ registSoundCount }}</span></p>
+          </div>
+          <div class="block">
+            <p class="title">Album Count</p>
+            <p>{{ albumCount }}</p>
+          </div>
+          <div class="block">
+            <p class="title">Artist Count</p>
+            <p>{{ artistCount }}</p>
+          </div>
         </div>
     </div>
+    </v-card>
+    <v-card style="background: inherit;">
+      <v-card-title>DB</v-card-title>
+      <v-card-text>
+        <sw-input-param
+          data-title="IP Address"
+          type="text"
+          :value="ip"
+          name="db_ip_address" />
+        <sw-input-param
+          data-title="DB Name"
+          type="text"
+          :value="dbName"
+          name="db_name" />
+        <sw-input-param
+          data-title="User"
+          type="text"
+          :value="user"
+          name="db_user" />
+        <sw-input-param
+          data-title="Password"
+          type="password"
+          :value="pass"
+          name="db_pass" />
+      </v-card-text>
+    </v-card>
+    <v-card style="background: inherit;">
+      <v-card-title>Sound</v-card-title>
+      <v-card-text>
+        <sw-input-param
+          data-title="Sound Directory"
+          type="text"
+          :value="sound"
+          name="sound_directory" />
+        <sw-textarea-param 
+          data-title="Exclusion Paths"
+          :value="exclusionPaths"
+          name="exclusionPaths" />
+      </v-card-text>
+    </v-card>
+    <v-card style="background: inherit;">
+      <v-card-title>WebSocket</v-card-title>
+      <v-card-text>
+        <sw-input-param
+          data-title="Retry Count Limit"
+          :value="websocketRetryCount"
+          name="websocket_retry_count"
+          type="number"
+          min="0"
+          max="100"
+          pattern="[0-9]" />
+        <sw-input-param
+          data-title="Reconnection Interval (ms)"
+          :value="websocketRetryIntervalMs"
+          name="websocket_retry_interval"
+          type="number"
+          min="0"
+          max="999999"
+          pattern="[0-9]" />
+      </v-card-text>
+    </v-card>
+  </v-container>
 </template>
 <script>
 import { SoundOwlProperty } from '../../../websocket';
