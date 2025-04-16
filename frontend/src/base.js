@@ -3007,11 +3007,6 @@ export const ContextMenu = {
   }
 };
 
-window.addEventListener('contextmenu', (e)=>{
-  ContextMenu.visible(e);
-  e.stopPropagation();
-});
-
 
 addBottomEvent(window);
 

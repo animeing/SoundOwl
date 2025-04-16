@@ -1,29 +1,45 @@
 <template>
   <div @contextmenu.prevent="openMenu($event)" class="context-menu-wrapper">
     <slot></slot>
+    <!-- オーバーレイ：ContextMenu が開いている間、全画面を覆ってクリックをキャッチ -->
+    <div
+      v-if="menuVisible"
+      class="context-menu-overlay"
+      @click.stop="closeMenu"
+    ></div>
     <v-menu
       ref="menuRef"
       v-model="menuVisible"
       absolute
       offset-y
-      teleport="false"
       eager
       content-class="custom-context-menu"
       :style="{
-        top:adjustedY+'px',
-        left: adjustedX+'px',
+        top: adjustedY + 'px',
+        left: adjustedX + 'px',
         zIndex: 5000
       }"
     >
       <v-list>
         <template v-for="(item, index) in items" :key="index">
-          <!-- 子要素がある場合は、親項目自体を activator とする -->
+          <!-- 子要素がある場合 -->
           <template v-if="item.children">
-            <v-menu open-on-hover offset-x teleport="false" eager>
+            <v-menu
+              open-on-hover
+              offset-x
+              eager
+              v-if="menuVisible"
+              :style="{
+                    zIndex: 6000
+                  }"
+            >
               <template #activator="{ props }">
                 <v-list-item v-bind="props">
-                  <v-list-item-title>{{ item.label }}</v-list-item-title>
-                  <v-icon>mdi-chevron-right</v-icon>
+                  <v-list-item-title
+                    >{{ item.label }}<v-icon
+                      >mdi-chevron-right</v-icon
+                    ></v-list-item-title
+                  >
                 </v-list-item>
               </template>
               <v-list>
@@ -50,7 +66,7 @@
 </template>
 
 <script setup>
-  import { ref, nextTick, watch } from 'vue'
+  import { ref, nextTick, watch, onMounted, onUnmounted } from 'vue'
 
   const props = defineProps({
     items: {
@@ -66,10 +82,16 @@
   const adjustedX = ref(0)
   const adjustedY = ref(0)
 
+  function closeMenu() {
+    menuVisible.value = false
+    console.log('closeMenu')
+  }
+
   function openMenu(event) {
+    // ContextMenu を開く前に全体のクリックをブロックするため、すべてのメニューを閉じる処理（前回の実装があればここで実施）
+    window.dispatchEvent(new CustomEvent('closeAllContextMenus'))
     x.value = event.clientX
     y.value = event.clientY
-    // 初期値として調整前の座標を設定
     adjustedX.value = x.value
     adjustedY.value = y.value
     menuVisible.value = true
@@ -81,27 +103,31 @@
       adjustPosition()
     }
   })
-
-  // 表示されたメニューのサイズを取得し、画面外に出ないように座標を調整
+  onMounted(() => {
+    window.addEventListener('scroll', closeMenu)
+  })
+  onUnmounted(() => {
+    window.removeEventListener('scroll', closeMenu)
+  })
   function adjustPosition() {
-    const menuEl = $refs.menuRef?.$el;
-    if (!menuEl || typeof menuEl.getBoundingClientRect !== 'function') return;
-    const rect = menuEl.getBoundingClientRect();
-    let newX = x.value;
-    let newY = y.value;
+    const menuEl = document.querySelector('.custom-context-menu')
+    if (!menuEl || typeof menuEl.getBoundingClientRect !== 'function') return
+    const rect = menuEl.getBoundingClientRect()
+    let newX = x.value
+    let newY = y.value
     if (newX + rect.width > window.innerWidth) {
-      newX = window.innerWidth - rect.width;
+      newX = window.innerWidth - rect.width
     }
     if (newY + rect.height > window.innerHeight) {
-      newY = window.innerHeight - rect.height;
+      newY = window.innerHeight - rect.height
     }
-    adjustedX.value = newX;
-    adjustedY.value = newY;
+    adjustedX.value = newX
+    adjustedY.value = newY
   }
 
   function selectItem(item) {
     emit('select', item)
-    menuVisible.value = false
+    closeMenu()
   }
 </script>
 
@@ -109,10 +135,18 @@
   .context-menu-wrapper {
     position: relative;
   }
-.custom-context-menu {
-  z-index: 3000 !important;
-}
-.context-menu-wrapper {
-  position: relative;
-}
+
+  /* オーバーレイで全画面を覆い、下層へのクリックを防止 */
+  .context-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 4000; /* ContextMenuの5000より低く設定 */
+    background: transparent;
+  }
+  .custom-context-menu {
+    z-index: 5000 !important;
+  }
 </style>
