@@ -1,39 +1,69 @@
 <template>
   <v-container class="py-4" fluid>
-    <v-card style="background: inherit;">
+    <v-card class="box">
       <v-card-title>Current Status</v-card-title>
+        <v-divider></v-divider>
         <div>
-          <div style="display: flex;justify-content: space-around;">
-            <div class="block">
-              <p class="title">Regist Status</p>
-              <p>{{ registStatus?'Action':'Finished' }}</p>
+          <v-card style="background: inherit;">
+            <v-card-title>
+              <v-chip  color="red" v-if="registStatus">Action</v-chip>
+              <v-chip color="green" v-else>Finished</v-chip>
+              Regist Status
+            </v-card-title>
+            <v-card-text>
+              <v-expansion-panels>
+                <v-expansion-panel>
+                  <v-expansion-panel-title>Detail</v-expansion-panel-title>
+                  <v-expansion-panel-text>
+                    <p>Regist Step1: 
+                      <v-chip  color="red" v-if="registStatusStep1">
+                        Action
+                      </v-chip>
+                      <v-chip color="green" v-else>
+                        Finished
+                      </v-chip>
+                    </p>
+                    <p>Regist Step2: 
+                      <v-chip  color="red" v-if="registStatusStep2">
+                        Action
+                      </v-chip>
+                      <v-chip color="green" v-else>
+                        Finished
+                      </v-chip>
+                    </p>
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+              </v-expansion-panels>
+            </v-card-text>
+          </v-card>
+          <v-card>
+            <div class="d-flex" style="flex-wrap: wrap;align-content: space-around;">
+              <v-card style="flex-shrink: 1; flex-grow: 1;">
+                <v-card-title>Analysis/Sound Count</v-card-title>
+                <v-card-text>
+                  <v-divider></v-divider>
+                  <span>{{ analysisSoundCount }}</span>/<span>{{ registSoundCount }}</span>
+                </v-card-text>
+              </v-card>
+              <v-card style="flex-shrink: 1; flex-grow: 1;">
+                <v-card-title>Album Count</v-card-title>
+                <v-card-text>
+                  <v-divider></v-divider>
+                  {{ albumCount }}
+                </v-card-text>
+              </v-card>
+              <v-card style="flex-shrink: 1; flex-grow: 1;">
+                <v-card-title>Artist Count</v-card-title>
+                <v-card-text>
+                  <v-divider></v-divider>
+                  {{ artistCount }}
+                </v-card-text>
+              </v-card>
             </div>
-            <div class="block">
-              <p class="title">Regist Step1</p>
-              <p>{{ registStatusStep1?'Action':'Finished' }}</p>
-            </div>
-            <div class="block">
-              <p class="title">Regist Step2</p>
-              <p>{{ registStatusStep2?'Action':'Finished' }}</p>
-            </div>
+          </v-card>
         </div>
-        <div style="display: flex;justify-content: space-around;">
-          <div class="block">
-            <p class="title">Analysis/Sound Count</p>
-            <p><span>{{ analysisSoundCount }}</span>/<span>{{ registSoundCount }}</span></p>
-          </div>
-          <div class="block">
-            <p class="title">Album Count</p>
-            <p>{{ albumCount }}</p>
-          </div>
-          <div class="block">
-            <p class="title">Artist Count</p>
-            <p>{{ artistCount }}</p>
-          </div>
-        </div>
-    </div>
     </v-card>
-    <v-card style="background: inherit;">
+    <v-card class="box">
       <v-card-title>DB</v-card-title>
       <v-card-text>
         <sw-input-param
@@ -58,7 +88,7 @@
           name="db_pass" />
       </v-card-text>
     </v-card>
-    <v-card style="background: inherit;">
+    <v-card class="box">
       <v-card-title>Sound</v-card-title>
       <v-card-text>
         <sw-input-param
@@ -72,7 +102,7 @@
           name="exclusionPaths" />
       </v-card-text>
     </v-card>
-    <v-card style="background: inherit;">
+    <v-card class="box">
       <v-card-title>WebSocket</v-card-title>
       <v-card-text>
         <sw-input-param
