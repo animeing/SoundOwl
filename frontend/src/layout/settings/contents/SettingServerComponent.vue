@@ -1,5 +1,5 @@
 <template>
-  <SettingFormComponent />
+  <SettingFormComponent ref="formRef" />
   <div class="d-flex justify-start mb-6">
     <v-btn
       :disabled="isAction && !isConnectWebSocket"
@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import { BaseFrameWork, MessageButtonWindow, MessageWindow, toBoolean } from '../../../base';
+import { MessageButtonWindow, MessageWindow, toBoolean } from '../../../base';
 import SettingFormComponent from './SettingFormComponent.vue';
 import { SiteStatus, SoundRegistAction, UpdateSetting } from '../../../page';
 import { SoundOwlProperty } from '../../../websocket';
@@ -51,21 +51,17 @@ export default {
   },
   methods:{
     settingUpdate(){
-      let updateSetting = new UpdateSetting;
-      updateSetting.httpRequestor.addEventListener('success', _event=>{
-        let message = new MessageWindow;
+      const formData = this.$refs.formRef.getFormData();
+      const updateSetting = new UpdateSetting();
+      for(const [key, value] of Object.entries(formData)) {
+        updateSetting.formDataMap.set(key, value);
+      }
+      updateSetting.httpRequestor.addEventListener('success', () => {
+        const message = new MessageWindow();
         message.value = 'Updated.';
         message.open();
         message.close(500);
       });
-
-      for(const element of Array.prototype.slice.call(document.getElementsByTagName('sw-input-param'))){
-        updateSetting.formDataMap.set(element.name, element.value);
-      }
-      for(const element of Array.prototype.slice.call(document.getElementsByTagName('sw-textarea-param'))) {
-        updateSetting.formDataMap.set(element.name, BaseFrameWork.removeEmptyLines(element.value).replace(/\n/g, '|'));
-        element.value = BaseFrameWork.removeEmptyLines(element.value);
-      }
       updateSetting.execute();
     },
     updateWebConnection() {
