@@ -1,98 +1,77 @@
 <template>
-  <!-- コンテナ全体 -->
   <v-container class="py-4" fluid>
-    <v-row>
-      <v-col>
-        <!-- 「Effect」の大枠カード -->
-        <v-card style="background: inherit;">
-          <v-card-title>Effect</v-card-title>
-          <v-card-text>
+        <v-card outlined style="background: inherit;">
+          <v-card-title>Effect Settings</v-card-title>
+          <v-divider></v-divider>
+          <v-expansion-panels multiple style="background: inherit;">
             <!-- SoundSculpt -->
-            <v-card class="mb-4" outlined style="background: inherit;">
-              <v-card-title>SoundSculpt</v-card-title>
-              <v-card-text>
-                SoundSculpt dynamically adjusts audio frequencies in real-time,
-                enhancing or attenuating different frequency bands to provide a
-                richer audio experience.
-              </v-card-text>
-              <v-card-actions>
-                <v-checkbox
-                  v-model="isUseSoundSculpt"
-                  label="Enable SoundSculpt"
-                  hide-details
-                  @change="toggleEffect"
-                />
-              </v-card-actions>
-            </v-card>
+            <v-expansion-panel style="background: inherit;">
+              <v-expansion-panel-title style="background: inherit;">
+                <div class="d-flex align-center justify-space-between w-100">
+                  <span>SoundSculpt</span>
+                  <v-switch
+                    v-model="isUseSoundSculpt"
+                    inset
+                    hide-details
+                    @change="toggleEffect"
+                  ></v-switch>
+                </div>
+              </v-expansion-panel-title>
+              <v-expansion-panel-text>
+                SoundSculpt dynamically adjusts audio frequencies in real‑time, enhancing or attenuating different frequency bands to provide a richer audio experience.
+              </v-expansion-panel-text>
+            </v-expansion-panel>
 
             <!-- Loudness Normalization -->
-            <v-card class="mb-4" outlined style="background: inherit;">
-              <v-card-title>Loudness normalization</v-card-title>
-              <v-card-text>
-                Loudness normalization is a process used in audio mastering
-                where the average loudness of a recording is adjusted to a
-                consistent level. This ensures that all tracks or programs sound
-                at a similar volume level...
-              </v-card-text>
-              <v-card-actions>
-                <v-checkbox
-                  v-model="isUseLoudnessNormalization"
-                  label="Enable Loudness Normalization"
-                  hide-details
-                  @change="toggleLoudnessNormalization"
-                />
-              </v-card-actions>
-            </v-card>
+            <v-expansion-panel style="background: inherit;">
+              <v-expansion-panel-title style="background: inherit;">
+                <div class="d-flex align-center justify-space-between w-100">
+                  <span>Loudness Normalization</span>
+                  <v-switch
+                    v-model="isUseLoudnessNormalization"
+                    inset
+                    hide-details
+                    @change="toggleLoudnessNormalization"
+                  ></v-switch>
+                </div>
+              </v-expansion-panel-title>
+              <v-expansion-panel-text>
+                Loudness normalization adjusts the average loudness of a recording to a consistent level, ensuring that all tracks or programs sound at a similar volume.
+              </v-expansion-panel-text>
+            </v-expansion-panel>
 
             <!-- Impulse Response Effect -->
-            <v-card class="mb-4" outlined style="background: inherit;">
-              <v-card-title>Impulse Response Effect</v-card-title>
-              <v-card-text>
-                Impulse Response Effect uses impulse response data to simulate
-                the acoustics of various spaces, altering audio quality by
-                adding realistic reverberation, echo, and other spatial
-                characteristics. Users can upload their own files...
-              </v-card-text>
+            <v-expansion-panel style="background: inherit;">
+              <v-expansion-panel-title style="background: inherit;">Impulse Response Effect</v-expansion-panel-title>
+              <v-expansion-panel-text>
+                <p>
+                  Impulse Response Effect uses impulse response data to simulate the acoustics of various spaces, altering audio quality by adding realistic reverberation, echo, and other spatial characteristics.
+                </p>
+                <v-divider class="my-2"></v-divider>
 
-              <!-- アップロード -->
-              <v-divider class="my-2"></v-divider>
-              <v-card-subtitle>Upload</v-card-subtitle>
-              <v-card-text>
-                <sw-input-file
-                  accept="wav,mp3"
-                  @files-changed="handleFileUpload"
-                />
-              </v-card-text>
-              <v-card-actions>
-                <v-btn color="primary" @click="uploadFile">Upload</v-btn>
-              </v-card-actions>
+                <!-- Upload -->
+                <div class="text-subtitle-1 font-weight-medium mb-2">Upload</div>
+                <sw-input-file accept="wav,mp3" @files-changed="handleFileUpload" />
+                <v-btn class="mt-2" color="primary" @click="uploadFile" :disabled="!file">
+                  Upload
+                </v-btn>
 
-              <!-- 削除 -->
-              <v-divider class="my-2"></v-divider>
-              <v-card-subtitle>Delete</v-card-subtitle>
-              <v-card-text>
+                <!-- Delete -->
+                <v-divider class="my-4"></v-divider>
+                <div class="text-subtitle-1 font-weight-medium mb-2">Delete</div>
                 <v-select
                   v-model="selectDelete"
                   :items="presetNames"
                   label="Delete item"
                   clearable
-                  @change="deletePreset"
                 />
-              </v-card-text>
-              <v-card-actions>
-                <v-btn
-                  color="error"
-                  @click="deletePreset"
-                  :disabled="!selectDelete"
-                >
+                <v-btn color="error" class="mt-2" @click="deletePreset" :disabled="!selectDelete">
                   Delete
                 </v-btn>
-              </v-card-actions>
 
-              <!-- 適用(Apply Data) -->
-              <v-divider class="my-2"></v-divider>
-              <v-card-subtitle>Apply Data</v-card-subtitle>
-              <v-card-text>
+                <!-- Apply -->
+                <v-divider class="my-4"></v-divider>
+                <div class="text-subtitle-1 font-weight-medium mb-2">Apply Data</div>
                 <v-select
                   v-model="selectPreset"
                   :items="presetNames"
@@ -100,12 +79,10 @@
                   clearable
                   @update:modelValue="changeReverbEffect"
                 />
-              </v-card-text>
-            </v-card>
-          </v-card-text>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
         </v-card>
-      </v-col>
-    </v-row>
   </v-container>
 </template>
 
@@ -118,6 +95,7 @@ import { MessageWindow } from '../../../base';
 import { audioParamSave } from '../../../utilization/register';
 
 export default {
+  name: 'EffectSettings',
   data() {
     return {
       isUseSoundSculpt: audio.exAudioEffect.isUse,
@@ -142,21 +120,13 @@ export default {
         new PulseDataUploadAction()
           .execute(formData)
           .then(() => {
-            let message = new MessageWindow();
-            message.value = 'File has been uploaded.';
-            message.open();
-            message.close(3000);
+            new MessageWindow({ value: 'File has been uploaded.' }).open(3000);
           })
           .catch(() => {
-            let message = new MessageWindow();
-            message.value = 'File upload failed.';
-            message.open();
-            message.close(3000);
+            new MessageWindow({ value: 'File upload failed.' }).open(3000);
           })
           .finally(() => {
-            setTimeout(() => {
-              this.updatePresetList();
-            }, 0.5);
+            setTimeout(this.updatePresetList, 500);
           });
       }
     },
@@ -164,38 +134,26 @@ export default {
       new PulseDataDeleteAction()
         .execute(this.selectDelete)
         .then(() => {
-          let message = new MessageWindow();
-          message.value = 'The file has been deleted.';
-          message.open();
-          message.close(3000);
+          new MessageWindow({ value: 'The file has been deleted.' }).open(3000);
         })
         .catch(() => {
-          let message = new MessageWindow();
-          message.value = 'Failed to delete file.';
-          message.open();
-          message.close(3000);
+          new MessageWindow({ value: 'Failed to delete file.' }).open(3000);
         })
         .finally(() => {
-          setTimeout(() => {
-            this.updatePresetList();
-          }, 0.5);
+          setTimeout(this.updatePresetList, 500);
         });
     },
     updatePresetList() {
-      console.log(audio.inpulseResponseEffect.fileName);
-      new Promise((resolve) => {
-        new PulseDataListAction()
-          .execute()
-          .then((data) => {
-            this.presetNames = data.data;
-            resolve();
-          });
-      }).then(() => {
-        this.selectPreset =
-          this.presetNames.includes(audio.inpulseResponseEffect.fileName)
+      new PulseDataListAction()
+        .execute()
+        .then((data) => {
+          this.presetNames = data.data;
+        })
+        .finally(() => {
+          this.selectPreset = this.presetNames.includes(audio.inpulseResponseEffect.fileName)
             ? audio.inpulseResponseEffect.fileName
             : 'OFF';
-      });
+        });
     },
     toggleEffect() {
       audio.exAudioEffect.isUse = !audio.exAudioEffect.isUse;
@@ -206,14 +164,9 @@ export default {
       audioParamSave();
     },
     changeReverbEffect() {
-      console.log(this.selectPreset);
-      if (this.selectPreset == null) {
-        this.selectPreset = '';
-      }
+      if (this.selectPreset == null) this.selectPreset = '';
       audio.inpulseResponseEffect.applyEffect(this.selectPreset);
-      if (this.selectPreset == '') {
-        this.selectPreset = 'OFF';
-      }
+      if (this.selectPreset === '') this.selectPreset = 'OFF';
       audioParamSave();
     }
   }
