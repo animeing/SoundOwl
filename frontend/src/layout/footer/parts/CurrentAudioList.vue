@@ -1,6 +1,7 @@
 <template>
     <sw-resize
         :class="audioFrameClass()"
+        :style="{maxWidth: (currentAudioListWidth+'%')}"
         resize-direction="top-left">
       <ContextMenu
           :items="menuData"
@@ -84,6 +85,7 @@ export default {
       ],
       albumWidth: (isMobile() ? 54 : 108),
       albumHeight: (isMobile() ? 57.5 : 115),
+      currentAudioListWidth: (isMobile() ? 100: 50),
       soundMenuData:[
         {label:'Remove', action:(item)=>{audio.playList.removeClip(item);}}
       ]
