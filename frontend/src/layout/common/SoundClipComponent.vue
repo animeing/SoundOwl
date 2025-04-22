@@ -70,6 +70,10 @@ import { defineComponent, computed } from 'vue';
 import { AudioClip } from '../../audio/type/AudioClip';
 import { BASE } from '../../utilization/path';
 
+const isMobile = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia('(max-width: 600px)').matches;
+
 export default defineComponent({
   name: 'SoundClipComponent',
   props: {
@@ -80,11 +84,11 @@ export default defineComponent({
     },
     albumHeight: {
       type: Number,
-      default: 170,
+      default: () => (isMobile() ? 85 : 170),
     },
     albumWidth: {
       type: Number,
-      default: 199,
+      default: () => (isMobile() ? 99 : 199),
     },
   },
   data() {

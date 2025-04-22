@@ -37,7 +37,7 @@
                 :class="audioItemClass(item)"
                 class="draggable-item"
                 @click="click(item)">
-                  <SoundClipComponent :sound-clip="item" :album-height=115 :album-width=108 />
+                  <SoundClipComponent :sound-clip="item" :album-height="albumHeight" :album-width="albumWidth" />
                 
             </button>
           </ContextMenu>
@@ -52,6 +52,10 @@ import { AudioClip } from '../../../audio/type/AudioClip';
 import SoundClipComponent from '../../common/SoundClipComponent.vue';
 import { BASE } from '../../../utilization/path';
 import ContextMenu from '../../common/ContextMenu.vue';
+
+const isMobile = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia('(max-width: 600px)').matches;
 
 export default {
   name:'CurrentAudioList',
@@ -78,6 +82,8 @@ export default {
         {label:'Clear playlist', action:()=>{audio.playList.clearPlaylist();}},
         {label:'Save playlist', action:()=>{this.savePlaylistData();}},
       ],
+      albumWidth: (isMobile() ? 54 : 108),
+      albumHeight: (isMobile() ? 57.5 : 115),
       soundMenuData:[
         {label:'Remove', action:(item)=>{audio.playList.removeClip(item);}}
       ]
