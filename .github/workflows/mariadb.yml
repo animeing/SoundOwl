@@ -78,8 +78,8 @@ jobs:
 
     - name: Verify events
       run: |
-        # soundowl_table_mysql.sqlからCREATE EVENT文のイベント名を抽出
-        expected_events=($(grep -oP '^CREATE EVENT `\K[^`]+(?=`)' parts/setup/db/soundowl_table_mysql.sql))
+        # soundowl_table_mysql.sqlからCREATE EVENT文のイベント名を抽出（IF NOT EXISTS・バッククォート有無両対応）
+        expected_events=($(grep -oP '^CREATE EVENT (?:IF NOT EXISTS )?(?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
         actual_events=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW EVENTS;" | awk 'NR>1{print $1}')
         for evt in "${expected_events[@]}"; do
           echo "$actual_events" | grep -wq "$evt"
@@ -89,6 +89,34 @@ jobs:
           fi
         done
         echo "All expected events exist: ${expected_events[*]}"
+
+    - name: Verify triggers
+      run: |
+        # soundowl_table_mysql.sqlからCREATE TRIGGER文のトリガー名を抽出（バッククォート有無両対応）
+        expected_triggers=($(grep -oP '^CREATE TRIGGER (?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
+        actual_triggers=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW TRIGGERS;" | awk '{print $1}')
+        for trg in "${expected_triggers[@]}"; do
+          echo "$actual_triggers" | grep -wq "$trg"
+          if [ $? -ne 0 ]; then
+            echo "Trigger $trg is missing!" >&2
+            exit 1
+          fi
+        done
+        echo "All expected triggers exist: ${expected_triggers[*]}"
+
+    - name: Verify views
+      run: |
+        # soundowl_table_mysql.sqlからCREATE VIEW文のビュー名を抽出（バッククォート有無両対応）
+        expected_views=($(grep -oP '^CREATE VIEW (?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
+        actual_views=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW FULL TABLES WHERE Table_type = 'VIEW';" | awk '{print $1}')
+        for vw in "${expected_views[@]}"; do
+          echo "$actual_views" | grep -wq "$vw"
+          if [ $? -ne 0 ]; then
+            echo "View $vw is missing!" >&2
+            exit 1
+          fi
+        done
+        echo "All expected views exist: ${expected_views[*]}"
 
     - name: Run manage_partitions_and_compact_ids procedure
       run: |
