@@ -28,14 +28,14 @@ jobs:
 
     - name: Wait for MariaDB to be ready
       run: |
-        retries=30
+        retries=60  # Increase retries for MariaDB readiness
         while [ $retries -gt 0 ]; do
           if docker exec $(docker ps -q -f name=mariadb) mysqladmin ping -uroot -proot_password --silent; then
             echo "MariaDB is up and running!"
             break
           fi
           echo "Waiting for MariaDB to be ready..."
-          sleep 10
+          sleep 5  # Retry every 5 seconds
           retries=$((retries - 1))
         done
         if [ $retries -eq 0 ]; then
@@ -53,6 +53,8 @@ jobs:
         # soundowl_table_mysql.sqlからCREATE TABLE文のテーブル名を抽出
         expected_tables=($(grep -oP '^CREATE TABLE `\K[^`]+(?=`)' parts/setup/db/soundowl_table_mysql.sql))
         actual_tables=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW TABLES;")
+        echo "Expected Tables: ${expected_tables[*]}"
+        echo "Actual Tables: $actual_tables"
         for tbl in "${expected_tables[@]}"; do
           echo "$actual_tables" | grep -wq "$tbl"
           if [ $? -ne 0 ]; then
@@ -67,6 +69,8 @@ jobs:
         # soundowl_table_mysql.sqlからCREATE PROCEDURE文のプロシージャ名を抽出（バッククォート有無両対応）
         expected_procs=($(grep -oP '^CREATE PROCEDURE (?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
         actual_procs=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW PROCEDURE STATUS WHERE Db = 'test_db';" | awk '{print $2}')
+        echo "Expected Procedures: ${expected_procs[*]}"
+        echo "Actual Procedures: $actual_procs"
         for proc in "${expected_procs[@]}"; do
           echo "$actual_procs" | grep -wq "$proc"
           if [ $? -ne 0 ]; then
@@ -81,6 +85,8 @@ jobs:
         # soundowl_table_mysql.sqlからCREATE EVENT文のイベント名を抽出（IF NOT EXISTS・バッククォート有無両対応）
         expected_events=($(grep -oP '^CREATE EVENT (?:IF NOT EXISTS )?(?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
         actual_events=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW EVENTS;" | awk 'NR>1{print $2}')
+        echo "Expected Events: ${expected_events[*]}"
+        echo "Actual Events: $actual_events"
         for evt in "${expected_events[@]}"; do
           echo "$actual_events" | grep -wq "$evt"
           if [ $? -ne 0 ]; then
