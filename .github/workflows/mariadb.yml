@@ -48,6 +48,27 @@ jobs:
       run: |
         docker exec -i $(docker ps -q -f name=mariadb) mysql -uroot -proot_password test_db < parts/setup/db/soundowl_table_mysql.sql
 
+    - name: Enable Event Scheduler
+      run: |
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SET GLOBAL event_scheduler = ON;"
+
+    - name: Verify Event Scheduler and Privileges
+      run: |
+        event_scheduler_status=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW VARIABLES LIKE 'event_scheduler';" | grep -w "ON")
+        if [ -z "$event_scheduler_status" ]; then
+          echo "Event scheduler is not enabled!" >&2
+          exit 1
+        fi
+        grants=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW GRANTS FOR CURRENT_USER;" | grep -w "EVENT")
+        if [ -z "$grants" ]; then
+          echo "EVENT privilege is missing!" >&2
+          exit 1
+        fi
+
+    - name: Reapply Initial SQL
+      run: |
+        docker exec -i $(docker ps -q -f name=mariadb) mysql -uroot -proot_password test_db < parts/setup/db/soundowl_table_mysql.sql
+
     - name: Verify tables
       run: |
         # soundowl_table_mysql.sqlからCREATE TABLE文のテーブル名を抽出
