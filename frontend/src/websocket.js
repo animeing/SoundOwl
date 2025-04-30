@@ -34,6 +34,7 @@ SoundOwlProperty.SoundRegist.RegistDataCount.artist = 0;
 SoundOwlProperty.SoundRegist.RegistDataCount.album = 0;
 
 (()=>{
+  const maxRetryLimit = 10; // Maximum number of retries allowed
   let retryCount = 0;
   const webSocketAction = () =>{
     SoundOwlProperty.WebSocket.Socket = new WebSocket(`ws://${BASE.WEBSOCKET}:8080`);
@@ -78,17 +79,12 @@ SoundOwlProperty.SoundRegist.RegistDataCount.album = 0;
       }
       setTimeout(()=>{
         retryCount++;
-        if(retryCount >= SoundOwlProperty.WebSocket.retryCount){
-                    
+        if(retryCount >= SoundOwlProperty.WebSocket.retryCount || retryCount >= maxRetryLimit){
           let message = document.createElement('sw-message-button');
-          message.addItem('Reconnect', ()=>{
-            webSocketAction();
-            message.close();
-          });
           message.addItem('Close', ()=>{
             message.close();
           });
-          message.value = 'Failed to connect to the server.';
+          message.value = 'Failed to connect to the server after maximum retries.';
           message.open();
           return;
         }
