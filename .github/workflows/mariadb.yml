@@ -80,7 +80,7 @@ jobs:
       run: |
         # soundowl_table_mysql.sqlからCREATE EVENT文のイベント名を抽出（IF NOT EXISTS・バッククォート有無両対応）
         expected_events=($(grep -oP '^CREATE EVENT (?:IF NOT EXISTS )?(?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
-        actual_events=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW EVENTS;" | awk 'NR>1{print $1}')
+        actual_events=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW EVENTS;" | awk 'NR>1{print $2}')
         for evt in "${expected_events[@]}"; do
           echo "$actual_events" | grep -wq "$evt"
           if [ $? -ne 0 ]; then
