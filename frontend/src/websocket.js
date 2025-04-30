@@ -55,7 +55,11 @@ SoundOwlProperty.SoundRegist.RegistDataCount.album = 0;
     SoundOwlProperty.WebSocket.Socket.onmessage = function(event) {
       let websocketData = JSON.parse(event.data);
       SoundOwlProperty.WebSocket.retryCount = websocketData.context.websocket.retry_count;
-      SoundOwlProperty.WebSocket.retryInterval = websocketData.context.websocket.retry_interval;
+      let retryInterval = websocketData.context.websocket.retry_interval;
+      if (typeof retryInterval !== 'number' || retryInterval < 100 || retryInterval > 10000) {
+        retryInterval = 1000; // Default to 1000ms if invalid
+      }
+      SoundOwlProperty.WebSocket.retryInterval = retryInterval;
       SoundOwlProperty.SoundRegist.RegistDataCount.sound = websocketData.context.regist_data_count.sound;
       SoundOwlProperty.SoundRegist.RegistDataCount.album = websocketData.context.regist_data_count.album;
       SoundOwlProperty.SoundRegist.RegistDataCount.artist = websocketData.context.regist_data_count.artist;
@@ -89,7 +93,7 @@ SoundOwlProperty.SoundRegist.RegistDataCount.album = 0;
           return;
         }
         webSocketAction();
-      }, SoundOwlProperty.WebSocket.retryInterval);
+      }, SoundOwlProperty.WebSocket.retryInterval); // Already validated above
     };
   };
   webSocketAction();
