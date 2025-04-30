@@ -57,7 +57,8 @@ SoundOwlProperty.SoundRegist.RegistDataCount.album = 0;
       let websocketData = JSON.parse(event.data);
       SoundOwlProperty.WebSocket.retryCount = websocketData.context.websocket.retry_count;
       let retryInterval = websocketData.context.websocket.retry_interval;
-      if (typeof retryInterval !== 'number' || retryInterval < 100 || retryInterval > 10000) {
+      if (typeof retryInterval !== 'number' || retryInterval < 100 || retryInterval > 5000) {
+        console.warn('Invalid retryInterval received. Falling back to default value of 1000ms.');
         retryInterval = 1000; // Default to 1000ms if invalid
       }
       SoundOwlProperty.WebSocket.retryInterval = retryInterval;
