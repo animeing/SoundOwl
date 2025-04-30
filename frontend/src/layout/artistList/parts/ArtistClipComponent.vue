@@ -4,8 +4,8 @@
             <v-img
                 loading="lazy"
                 aspect-ratio="1"
-                :width="199"
-                :height="170"
+                :width="albumWidth"
+                :height="albumHeight"
                 :src="createImageSrc(artistClip.album.album_key)">
                 <template v-slot:placeholder>
                   <div class="d-flex align-center justify-center fill-height">
@@ -27,12 +27,24 @@
     </div>
 </template>
 <script>
-import {BASE} from '../../../utilization/path';
+import { BASE } from '../../../utilization/path';
+
+const isMobile = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia('(max-width: 600px)').matches;
+
 export default {
   name: 'ArtistClipComponent',
   props:{
-    'artistClip':{
-    }
+    'artistClip': {},
+    albumHeight: {
+      type: Number,
+      default: () => (isMobile() ? 85 : 170),
+    },
+    albumWidth: {
+      type: Number,
+      default: () => (isMobile() ? 99 : 199),
+    },
   },
   methods:{
     createImageSrc(albumKey) {
@@ -46,5 +58,10 @@ export default {
   border: 1px solid var(--itemfcbgcolor);
   display: inline;
   width: 199px;
+}
+@media (max-width: 600px) {
+  .album {
+    width: 99px;
+  }
 }
 </style>
