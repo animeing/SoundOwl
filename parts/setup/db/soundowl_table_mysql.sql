@@ -278,6 +278,9 @@ DELIMITER ;
 
 -- Enable the event scheduler
 SET GLOBAL event_scheduler = ON;
+GRANT EVENT ON *.* TO 'root'@'%';
+FLUSH PRIVILEGES;
+
 
 --
 -- Temporary table structure for view `v_playlist`
