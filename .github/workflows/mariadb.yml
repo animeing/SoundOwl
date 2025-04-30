@@ -64,8 +64,8 @@ jobs:
 
     - name: Verify procedures
       run: |
-        # soundowl_table_mysql.sqlからCREATE PROCEDURE文のプロシージャ名を抽出
-        expected_procs=($(grep -oP '^CREATE PROCEDURE `\K[^`]+(?=`)' parts/setup/db/soundowl_table_mysql.sql))
+        # soundowl_table_mysql.sqlからCREATE PROCEDURE文のプロシージャ名を抽出（バッククォート有無両対応）
+        expected_procs=($(grep -oP '^CREATE PROCEDURE (?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
         actual_procs=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW PROCEDURE STATUS WHERE Db = 'test_db';" | awk '{print $2}')
         for proc in "${expected_procs[@]}"; do
           echo "$actual_procs" | grep -wq "$proc"
