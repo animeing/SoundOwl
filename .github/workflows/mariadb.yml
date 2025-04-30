@@ -54,11 +54,16 @@ jobs:
 
     - name: Verify Event Scheduler and Privileges
       run: |
+        echo "Checking Event Scheduler status..."
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW VARIABLES LIKE 'event_scheduler';"
         event_scheduler_status=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW VARIABLES LIKE 'event_scheduler';" | grep -w "ON")
         if [ -z "$event_scheduler_status" ]; then
           echo "Event scheduler is not enabled!" >&2
           exit 1
         fi
+
+        echo "Checking EVENT privilege..."
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW GRANTS FOR CURRENT_USER;"
         grants=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW GRANTS FOR CURRENT_USER;" | grep -w "EVENT")
         if [ -z "$grants" ]; then
           echo "EVENT privilege is missing!" >&2
