@@ -21,6 +21,8 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root_password
           MYSQL_DATABASE: test_db
+        command: >
+          --event-scheduler=ON
 
     steps:
     - name: Checkout repository
@@ -51,6 +53,11 @@ jobs:
     - name: Enable Event Scheduler
       run: |
         docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SET GLOBAL event_scheduler = ON;"
+
+    - name: Grant EVENT Privilege
+      run: |
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "GRANT EVENT ON *.* TO 'root'@'%';"
+        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "FLUSH PRIVILEGES;"
 
     - name: Verify Event Scheduler and Privileges
       run: |
