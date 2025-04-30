@@ -880,7 +880,6 @@ a.audio-infomation {
   width: 100%;
   display: none;
   overflow-y: scroll;
-  margin: 5px;
   padding: 5px;
   box-sizing: border-box;
   white-space: pre-line;

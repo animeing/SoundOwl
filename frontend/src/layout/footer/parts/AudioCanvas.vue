@@ -1,178 +1,158 @@
 <template>
+  <ContextMenu
+    :items="menuItems"
+    @select="(item) => item.action()"
+    style="height: 100%;width: 100%;"
+  >
     <canvas
-        v-if="isVisibleAnalyser"
-        class="analyser-view"
-        style="height: 100%;display: block;"
-        :width="width"
-        :height="height"
-        @click.right.prevent="contextCanvasMenu()" />
+      ref="canvas"
+      v-if="isVisibleAnalyser"
+      class="analyser-view"
+      style="height: 100%;display: block;"
+      :width="width"
+      :height="height"
+    />
 
     <div
-        v-else
-        class="lyrics-view"
-        @click.right.prevent="contextCanvasMenu()">
-        {{ lyrics }}
+      v-else
+      class="lyrics-view"
+    >
+      <pre>{{ lyrics }}</pre>
     </div>
+  </ContextMenu>
 </template>
 <script>
 import { onBeforeUnmount } from 'vue';
 import audio from '../../../audio/AudioPlayer';
 import { AudioPlayStateEnum } from '../../../audio/enum/AudioPlayStateEnum';
-import { BaseFrameWork, ContextMenu } from '../../../base';
+import { BaseFrameWork } from '../../../base';
+import ContextMenu from '../../common/ContextMenu.vue';
 
 export default {
-  name:'AudioCanvas',
-  props:{
-    'isView':{
-      type:Boolean
+  name: 'AudioCanvas',
+  components: { ContextMenu },
+  props: {
+    isView: {
+      type: Boolean
     }
   },
-  emits: {'toggleView': null},
+  emits: { 'toggleView': null },
   data() {
     return {
-      width:window.innerWidth,
-      height:window.innerHeight - 45,
-      isVisibleAnalyser:true,
-      lyrics:''
+      width: window.innerWidth,
+      height: window.innerHeight - 45,
+      isVisibleAnalyser: true,
+      lyrics: '',
+      menuItems: [
+        { label: 'Lyrics', action: () => { this.isVisibleAnalyser = false; this.$emit('toggleView'); this.resetCanvas(); } },
+        { label: 'Visualizer', action: () => { this.isVisibleAnalyser = true; this.$emit('toggleView'); this.resetCanvas(); } }
+      ]
     };
   },
-  watch:{
-    isView(){
-      this.resize();
-    },
-    isVisibleAnalyser(){
-      this.$nextTick(()=>{
-        if(this.isVisibleAnalyser) {
-          this.ctx = this.$el.getContext('2d');
-          this.animationId = requestAnimationFrame(this.run);
-          for (const box of this.canvasObjects) {
-            box.fcontext(this.ctx);
-          }
-        } else {
-          cancelAnimationFrame(this.animationId);
-          this.$el.scroll({top: 0});
-        }
-      });
-    }
-  },
-  created(){
-    window.addEventListener('resize', ()=>{
-      this.resize();
-    });
-    audio.eventSupport.addEventListener('audio_info_loaded', ()=>{
-      this.lyrics = '';
-      if( audio.data.lyrics == undefined) {
-        return;
-      }
-      this.lyrics = audio.data.lyrics;
-    });
-  },
   mounted() {
-    this.ctx = this.$el.getContext('2d');
-    let color = BaseFrameWork.getCSSProperty(this.$el, '--box-color');
-    this.animationId = requestAnimationFrame(this.run);
-    this.canvasObjects = new BaseFrameWork.List();
-    const initalize = ()=>{
+    this.initializeCanvas();
+    this.updateLyrics();
+    audio.eventSupport.addEventListener('audio_info_loaded', this.updateLyrics);
+  },
+  beforeUnmount() {
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+    }
+    audio.eventSupport.removeEventListener('audio_info_loaded', this.updateLyrics);
+  },
+  methods: {
+    initializeCanvas() {
+      const canvas = this.$refs.canvas;
+      if (canvas && canvas.getContext) {
+        this.ctx = canvas.getContext('2d');
+        this.animationId = requestAnimationFrame(this.run);
+        this.setupVisualizer();
+      } else {
+        console.error('Canvas element not found or getContext is not a function');
+      }
+    },
+    resetCanvas() {
+      if (this.isVisibleAnalyser) {
+        this.$nextTick(() => {
+          const canvas = this.$refs.canvas;
+          if (canvas) {
+            this.initializeCanvas();
+          } else {
+            console.warn('Canvas element not found during resetCanvas after DOM update');
+          }
+        });
+      } else {
+        if (this.animationId) {
+          cancelAnimationFrame(this.animationId);
+          this.animationId = null;
+        }
+      }
+    },
+    setupVisualizer() {
+      const color = BaseFrameWork.getCSSProperty(this.$refs.canvas, '--box-color');
+      this.canvasObjects = new BaseFrameWork.List();
       this.analyser = audio.audioEffectManager.audioContext.createAnalyser();
       this.analyser.fftSize = 1<<7+1;
-      audio.audioEffectManager.source.connect(this.analyser);
-      let filter = audio.audioEffectManager.audioContext.createBiquadFilter();
-      filter.type = 'allpass';
-      audio.audioEffectManager.source.connect(filter);
-          
-      let leng = this.analyser.frequencyBinCount;
-      this.spectrums = new Uint8Array(leng);
       this.analyser.smoothingTimeConstant = .5;
-      this.analyser.getByteFrequencyData(this.spectrums);
-      for(let createCount = 0, len = this.spectrums.length; createCount < len; createCount++){
-        let box = new BaseFrameWork.Draw.Figure.BoxCanvasObject2D;
+      audio.audioEffectManager.source.connect(this.analyser);
+      const createCount = this.analyser.frequencyBinCount;
+      this.spectrums = new Uint8Array(createCount);
+      for (let createIndex = 0; createIndex < createCount; createIndex++) {
+        const box = new BaseFrameWork.Draw.Figure.BoxCanvasObject2D();
         box.color.setRgb(color);
-        box.update = async ()=>{
-          if(this.spectrums != null){
-            box.transform.position.x = (createCount+1)*(this.$el.width / (len+4));
+        box.update = () => {
+          if (this.spectrums) {
+            box.transform.position.x = (createIndex + 1) * (this.width / (createCount + 4));
             box.transform.position.y = 0;
-            box.transform.scale.x = (this.$el.width / len) >> 1;
-            box.transform.scale.y = (this.spectrums[createCount] / 0xff ) * (this.$el.height >> 1);
+            box.transform.scale.x = (this.width / createCount) >> 1;
+            box.transform.scale.y = (this.spectrums[createIndex] / 0xff) * (this.height >> 1);
           }
         };
         box.fcontext(this.ctx);
-        let scale = new BaseFrameWork.Draw.Point2D;
-        scale.x = this.$el.width;
-        scale.y = this.$el.height;
-        box.canvasScale = scale;
         this.canvasObjects.add(box);
       }
-      audio.eventSupport.removeEventListener('play', initalize);
-    };
-    audio.eventSupport.addEventListener('play',initalize);
-    if(audio.currentPlayState == AudioPlayStateEnum.PLAY) {
-      initalize();
-    }
-    onBeforeUnmount(()=>{
-      audio.eventSupport.removeEventListener('play', initalize);
-    })
-  },
-  methods: {
-    contextCanvasMenu() {
-      ContextMenu.contextMenu.destoryChildren();
-      let lyricsView = BaseFrameWork.createCustomElement('sw-libutton');
-      if(this.isVisibleAnalyser) {
-        lyricsView.menuItem.value = 'Lyrics';
-      } else {
-        lyricsView.menuItem.value = 'Visualizer';
+    },
+    run() {
+      if (this.ctx) {
+        this.clear();
+        this.renderVisualizer();
+        this.animationId = requestAnimationFrame(this.run);
       }
-      lyricsView.menuItem.onclick=()=>{
-        this.isVisibleAnalyser = !this.isVisibleAnalyser;
-        this.$emit('toggleView');
-      };
-      ContextMenu.contextMenu.appendChild(lyricsView);
-    },
-    run(){
-      this.clear();
-      this.reset();
-      this.earlyRender();
-      this.render();
-      this.lateRender();
-      this.animationId = requestAnimationFrame(this.run);
-    },
-    resize() {
-      this.width = window.innerWidth - 56;
-      this.height = window.innerHeight - 45;
     },
     clear() {
-      this.ctx.clearRect(
-        0,
-        0,
-        this.$el.width,
-        this.$el.height
-      );
-    },
-    reset() {
-      for (const canvasObject of this.canvasObjects) {
-        canvasObject.renderObjectBase();
+      if (this.ctx) {
+        this.ctx.clearRect(0, 0, this.width, this.height);
       }
     },
-    earlyRender() {
-
-    },
-    render() {
-      if(this.analyser != null){
-        let leng = this.analyser.frequencyBinCount;
-        this.spectrums = new Uint8Array(leng);
+    renderVisualizer() {
+      if (this.analyser) {
         this.analyser.getByteFrequencyData(this.spectrums);
-      }
-      for (const canvasObject of this.canvasObjects) {
-        canvasObject.update();
+        for (const box of this.canvasObjects) {
+          box.update();
+          box.renderObjectBase();
+        }
       }
     },
-    lateRender() {
-
+    updateLyrics() {
+      this.lyrics = audio.data.lyrics || 'No lyrics available';
     }
   }
 };
 </script>
-<style scope>
+<style scoped>
 canvas {
   --box-color: #aaa;
+}
+.lyrics-view {
+  white-space: pre-wrap;
+  padding: 10px;
+  font-size: 1.2em;
+  line-height: 1.5;
+  color: var(--box-color);
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  overflow-y: auto;
+  height: 100%;
+  display: block; /* Ensure the lyrics-view is visible */
 }
 </style>
