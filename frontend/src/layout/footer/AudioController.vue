@@ -149,6 +149,7 @@
     <keep-alive>
       <CurrentAudioList
         :isView="true"
+        ref="currentAudioList"
         v-if="isAudioListVisible"
         class="audio-list-overlay"
         :style="currentPlayListStyle"
@@ -158,7 +159,6 @@
   <!-- 全画面オーバーレイ -->
   <teleport to="body">
     <div v-if="isFullScreenOverlay" class="fullscreen-overlay" :style="overlayHeightStyle">
-      <!-- ここに歌詞、アルバムアート、アナライザ等のコンポーネントを配置する -->
       <div class="overlay-content">
         <AudioCanvas @toggleView="toggleView" ></AudioCanvas>
       </div>
@@ -422,6 +422,12 @@ export default {
     toggleAudioList() {
       console.log(this.isAudioListVisible);
       this.isAudioListVisible = !this.isAudioListVisible;
+      // 開いた直後だけ現在再生中へスクロール
+      if (this.isAudioListVisible) {
+        this.$nextTick(() => {
+          this.$refs.currentAudioList?.scrollToCurrentPlaying?.();
+        });
+      }
     },
     // 全画面オーバーレイの開閉
     toggleFullScreenOverlay() {
