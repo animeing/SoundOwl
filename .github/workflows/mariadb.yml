@@ -50,15 +50,45 @@ jobs:
 
     - name: Verify tables
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW TABLES;"
+        # soundowl_table_mysql.sqlからCREATE TABLE文のテーブル名を抽出
+        expected_tables=($(grep -oP '^CREATE TABLE `\K[^`]+(?=`)' parts/setup/db/soundowl_table_mysql.sql))
+        actual_tables=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW TABLES;")
+        for tbl in "${expected_tables[@]}"; do
+          echo "$actual_tables" | grep -wq "$tbl"
+          if [ $? -ne 0 ]; then
+            echo "Table $tbl is missing!" >&2
+            exit 1
+          fi
+        done
+        echo "All expected tables exist: ${expected_tables[*]}"
 
     - name: Verify procedures
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW PROCEDURE STATUS WHERE Db = 'test_db';"
+        # soundowl_table_mysql.sqlからCREATE PROCEDURE文のプロシージャ名を抽出
+        expected_procs=($(grep -oP '^CREATE PROCEDURE `\K[^`]+(?=`)' parts/setup/db/soundowl_table_mysql.sql))
+        actual_procs=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW PROCEDURE STATUS WHERE Db = 'test_db';" | awk '{print $2}')
+        for proc in "${expected_procs[@]}"; do
+          echo "$actual_procs" | grep -wq "$proc"
+          if [ $? -ne 0 ]; then
+            echo "Procedure $proc is missing!" >&2
+            exit 1
+          fi
+        done
+        echo "All expected procedures exist: ${expected_procs[*]}"
 
     - name: Verify events
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW EVENTS;"
+        # soundowl_table_mysql.sqlからCREATE EVENT文のイベント名を抽出
+        expected_events=($(grep -oP '^CREATE EVENT `\K[^`]+(?=`)' parts/setup/db/soundowl_table_mysql.sql))
+        actual_events=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW EVENTS;" | awk 'NR>1{print $1}')
+        for evt in "${expected_events[@]}"; do
+          echo "$actual_events" | grep -wq "$evt"
+          if [ $? -ne 0 ]; then
+            echo "Event $evt is missing!" >&2
+            exit 1
+          fi
+        done
+        echo "All expected events exist: ${expected_events[*]}"
 
     - name: Run manage_partitions_and_compact_ids procedure
       run: |
