@@ -377,7 +377,7 @@ export default {
       }
     },
     changedPlayPoint(event) {
-      audio.lockEventTarget.action('setStopUpdate');
+      audio.audioPlayStateAction.lockEventTarget.action('setStopUpdate');
       let rePoint = audio.currentPlayState;
       audio.stop();
       let target = event.target;
@@ -391,11 +391,11 @@ export default {
             audio.play();
           }, 1);
         }
-        audio.lockEventTarget.action('setUpdate');
+        audio.audioPlayStateAction.lockEventTarget.action('setUpdate');
       }, 10);
     },
     changeingPlayPoint(event) {
-      audio.lockEventTarget.action('setStopUpdate');
+      audio.audioPlayStateAction.lockEventTarget.action('setStopUpdate');
       let target = event.target;
       if (event.target.mousePositionvalue == undefined) {
         target = event.target.parentNode;
