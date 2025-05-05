@@ -12,7 +12,7 @@
         "james-heinrich/getid3": "^1.9",
         "kenangundogan/fontisto": "^3.0",
         "cboden/ratchet": "^0.4.3",
-        "predis/predis":"^2.2",
+        "predis/predis":"^3.0",
         "neitanod/forceutf8": "^2.0"
     }
 }
