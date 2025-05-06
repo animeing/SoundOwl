@@ -452,7 +452,13 @@ export class SoundSculptEffectComponent extends AudioComponent {
   }
 
   resetDefaultGains() {
+    if (this.audioEqualizer == null || this.audioEqualizer.gains == null) {
+      return;
+    }
     this.audioEqualizer.gains.forEach(element => {
+      if (this.audioEqualizer.filters[element.hz] == undefined || this.audioEqualizer.filters[element.hz].gain == undefined) {
+        return;
+      }
       this.audioEqualizer.filters[element.hz].gain.value = element.gain;
     });
   }
