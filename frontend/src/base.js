@@ -211,7 +211,10 @@ BaseFrameWork.LockAction = class {
   }
 };
 
-
+/**
+ * requestAnimationFrameを利用したアニメーション制御用のユーティリティクラス。
+ * アニメーションの開始・停止を簡単に行うことができます。
+ */
 BaseFrameWork.AnimationFrame = class {
   _animationFrameId = null;
   /**
@@ -219,11 +222,12 @@ BaseFrameWork.AnimationFrame = class {
    * @param {function} func 
    */
   startAnimation(func) {
-    if(this._animationFrameId != null) {
-      cancelAnimationFrame(this._animationFrameId);
-      this._animationFrameId = null;
+    const loop = () => {
+      func();
+      this._animationFrameId = requestAnimationFrame(loop);
     }
-    this._animationFrameId = requestAnimationFrame(func);
+    this.stopAnimation();
+    this._animationFrameId = requestAnimationFrame(loop);
   }
   stopAnimation() {
     if(this._animationFrameId == null) {

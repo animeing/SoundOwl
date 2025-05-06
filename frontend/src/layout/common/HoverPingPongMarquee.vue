@@ -58,8 +58,7 @@ function scrollTo(targetOffset) {
       ) {
         offset.value = targetOffset
         resolve()
-      } else {
-        animationFrame.startAnimation(step)
+        animationFrame.stopAnimation()
       }
     }
     animationFrame.startAnimation(step)
