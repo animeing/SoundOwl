@@ -13,7 +13,8 @@ export default {
       menuItems:[
         {title:'General', route:{name: 'setting'}},
         {title:'Equalizer', route:{name:'equalizer'}},
-        {title:'Effect', route:{name:'effect'}}
+        {title:'Effect', route:{name:'effect'}},
+        {title:'SoundSculptDebug', route:{name:'soundSculptDebug'}}
       ]
     };
   }
