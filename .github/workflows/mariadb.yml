@@ -14,12 +14,10 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --event-scheduler=ON 
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
-          --name mariadb
         env:
           MYSQL_ROOT_PASSWORD: root_password
           MYSQL_DATABASE: test_db
@@ -31,7 +29,7 @@ jobs:
     - name: Wait for MariaDB to be ready
       run: |
         for i in {1..60}; do
-          if mysqladmin ping -h mariadb -uroot -proot_password --silent; then
+          if mysqladmin ping -h mariadb -P 3306 -uroot -proot_password --silent; then
             echo "MariaDB ready"; exit 0
           fi
           sleep 5
@@ -44,26 +42,27 @@ jobs:
 
     - name: Enable Event Scheduler
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SET GLOBAL event_scheduler = ON;"
+        mysql -h mariadb -P 3306 -uroot -proot_password \
+              -e "SET GLOBAL event_scheduler = ON;"
 
     - name: Grant EVENT Privilege
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "GRANT EVENT ON *.* TO 'root'@'%';"
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "FLUSH PRIVILEGES;"
+        mysql -uroot -proot_password -e "GRANT EVENT ON *.* TO 'root'@'%';"
+        mysql -uroot -proot_password -e "FLUSH PRIVILEGES;"
 
     - name: Verify Event Scheduler and Privileges
       run: |
         echo "Checking Event Scheduler status..."
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW VARIABLES LIKE 'event_scheduler';"
-        event_scheduler_status=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW VARIABLES LIKE 'event_scheduler';" | grep -w "ON")
+        mysql -uroot -proot_password -e "SHOW VARIABLES LIKE 'event_scheduler';"
+        event_scheduler_status=$(mysql -uroot -proot_password -e "SHOW VARIABLES LIKE 'event_scheduler';" | grep -w "ON")
         if [ -z "$event_scheduler_status" ]; then
           echo "Event scheduler is not enabled!" >&2
           exit 1
         fi
 
         echo "Checking EVENT privilege..."
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW GRANTS FOR CURRENT_USER;"
-        grants=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -e "SHOW GRANTS FOR CURRENT_USER;" | grep -w "EVENT")
+        mysql -uroot -proot_password -e "SHOW GRANTS FOR CURRENT_USER;"
+        grants=$(mysql -uroot -proot_password -e "SHOW GRANTS FOR CURRENT_USER;" | grep -w "EVENT")
         if [ -z "$grants" ]; then
           echo "EVENT privilege is missing!" >&2
           exit 1
@@ -71,13 +70,14 @@ jobs:
 
     - name: Reapply Initial SQL
       run: |
-        docker exec -i $(docker ps -q -f name=mariadb) mysql -uroot -proot_password test_db < parts/setup/db/soundowl_table_mysql.sql
+        mysql -h mariadb -P 3306 -uroot -proot_password test_db \
+              < parts/setup/db/soundowl_table_mysql.sql
 
     - name: Verify tables
       run: |
         # soundowl_table_mysql.sqlからCREATE TABLE文のテーブル名を抽出
         expected_tables=($(grep -oP '^CREATE TABLE `\K[^`]+(?=`)' parts/setup/db/soundowl_table_mysql.sql))
-        actual_tables=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW TABLES;")
+        actual_tables=$(mysql -uroot -proot_password -D test_db -N -e "SHOW TABLES;")
         echo "Expected Tables: ${expected_tables[*]}"
         echo "Actual Tables: $actual_tables"
         for tbl in "${expected_tables[@]}"; do
@@ -93,7 +93,7 @@ jobs:
       run: |
         # soundowl_table_mysql.sqlからCREATE PROCEDURE文のプロシージャ名を抽出（バッククォート有無両対応）
         expected_procs=($(grep -oP '^CREATE PROCEDURE (?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
-        actual_procs=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW PROCEDURE STATUS WHERE Db = 'test_db';" | awk '{print $2}')
+        actual_procs=$(mysql -uroot -proot_password -D test_db -N -e "SHOW PROCEDURE STATUS WHERE Db = 'test_db';" | awk '{print $2}')
         echo "Expected Procedures: ${expected_procs[*]}"
         echo "Actual Procedures: $actual_procs"
         for proc in "${expected_procs[@]}"; do
@@ -109,7 +109,7 @@ jobs:
       run: |
         # soundowl_table_mysql.sqlからCREATE EVENT文のイベント名を抽出（IF NOT EXISTS・バッククォート有無両対応）
         expected_events=($(grep -oP '^CREATE EVENT (?:IF NOT EXISTS )?(?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
-        actual_events=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW EVENTS;" | awk 'NR>1{print $2}')
+        actual_events=$(mysql -uroot -proot_password -D test_db -N -e "SHOW EVENTS;" | awk 'NR>1{print $2}')
         echo "Expected Events: ${expected_events[*]}"
         echo "Actual Events: $actual_events"
         for evt in "${expected_events[@]}"; do
@@ -125,7 +125,7 @@ jobs:
       run: |
         # soundowl_table_mysql.sqlからCREATE TRIGGER文のトリガー名を抽出（バッククォート有無両対応）
         expected_triggers=($(grep -oP '^CREATE TRIGGER (?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
-        actual_triggers=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW TRIGGERS;" | awk '{print $1}')
+        actual_triggers=$(mysql -uroot -proot_password -D test_db -N -e "SHOW TRIGGERS;" | awk '{print $1}')
         for trg in "${expected_triggers[@]}"; do
           echo "$actual_triggers" | grep -wq "$trg"
           if [ $? -ne 0 ]; then
@@ -139,7 +139,7 @@ jobs:
       run: |
         # soundowl_table_mysql.sqlからCREATE VIEW文のビュー名を抽出（バッククォート有無両対応）
         expected_views=($(grep -oP '^CREATE VIEW (?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
-        actual_views=$(docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -N -e "SHOW FULL TABLES WHERE Table_type = 'VIEW';" | awk '{print $1}')
+        actual_views=$(mysql -uroot -proot_password -D test_db -N -e "SHOW FULL TABLES WHERE Table_type = 'VIEW';" | awk '{print $1}')
         for vw in "${expected_views[@]}"; do
           echo "$actual_views" | grep -wq "$vw"
           if [ $? -ne 0 ]; then
@@ -151,12 +151,12 @@ jobs:
 
     - name: Run manage_partitions_and_compact_ids procedure
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "CALL manage_partitions_and_compact_ids();"
+        mysql -uroot -proot_password -D test_db -e "CALL manage_partitions_and_compact_ids();"
 
     - name: Verify partitions
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'test_db' AND TABLE_NAME = 'sound_play_history';"
+        mysql -uroot -proot_password -D test_db -e "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'test_db' AND TABLE_NAME = 'sound_play_history';"
 
     - name: Verify ID compaction
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SELECT * FROM sound_play_history ORDER BY id;"
+        mysql -uroot -proot_password -D test_db -e "SELECT * FROM sound_play_history ORDER BY id;"
