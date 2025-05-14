@@ -11,34 +11,31 @@ jobs:
     services:
       mariadb:
         image: mariadb:10.5
-        ports:
-          - 3306:3306               # runner から 127.0.0.1:3306 で到達
         env:
           MYSQL_ROOT_PASSWORD: root_password
           MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
 
+    env:                      # どのステップでも使える共通エイリアス
+      MYSQL:   mysql   -h 127.0.0.1 -P 3306 -uroot -proot_password
+      MYSQLADM: mysqladmin -h 127.0.0.1 -P 3306 -uroot -proot_password
+
     steps:
     - uses: actions/checkout@v2
 
-    # Ubuntu-latest には入っているが、将来の runner で削除されても壊れないよう保険
-    - name: Install client
-      run: sudo apt-get update -qq && sudo apt-get install -y mariadb-client
+    # Ubuntu-latest には最初から MySQL クライアントが入っている。
+    # 追加インストールはパッケージ競合を起こすため “入れない” のが正解。
 
-    # ─────────────────────────────────────────────
-    # 以降はすべて $MYSQL コマンドで実行する
-    # ─────────────────────────────────────────────
-    - name: Define MYSQL helper
-      run: echo "MYSQL='mysql -h 127.0.0.1 -P 3306 -uroot -proot_password'" >> "$GITHUB_ENV"
-
-    - name: Wait for MariaDB
+    - name: Wait until MariaDB responds
       run: |
         for i in {1..60}; do
-          if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -proot_password --silent; then
+          if $MYSQLADM ping --silent; then
             echo "MariaDB ready"; exit 0
           fi
           sleep 5
@@ -49,43 +46,37 @@ jobs:
       run: |
         $MYSQL test_db < parts/setup/db/soundowl_table_mysql.sql
 
-    - name: Enable Event Scheduler & grant privilege
+    - name: Enable event scheduler & grant privilege
       run: |
         $MYSQL -e "SET GLOBAL event_scheduler = ON;"
         $MYSQL -e "GRANT EVENT ON *.* TO 'root'@'%'; FLUSH PRIVILEGES;"
 
-    # ───────── 検証ブロック ─────────
-    - name: Verify objects
+    # ───────── オブジェクト検証 ─────────
+    - name: Verify tables / procedures / events / triggers / views
       run: |
-        # 期待リストを抽出
-        tables=($(grep -oP '^CREATE TABLE `\K[^`]+(?=`)' parts/setup/db/soundowl_table_mysql.sql))
-        procs=($(grep -oP '^CREATE PROCEDURE (?:`)?\K\w+'           parts/setup/db/soundowl_table_mysql.sql))
-        events=($(grep -oP '^CREATE EVENT (?:IF NOT EXISTS )?(?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
-        triggers=($(grep -oP '^CREATE TRIGGER (?:`)?\K\w+'           parts/setup/db/soundowl_table_mysql.sql))
-        views=($(grep -oP '^CREATE VIEW (?:`)?\K\w+'                 parts/setup/db/soundowl_table_mysql.sql))
+        extract() { grep -oP "$1" parts/setup/db/soundowl_table_mysql.sql; }
 
-        # テーブル
-        actual=$($MYSQL -N -e "SHOW TABLES FROM test_db;")
-        for t in "${tables[@]}"; do echo "$actual" | grep -qw "$t" || { echo "Missing table $t"; exit 1; }; done
+        tables=$(   extract '^CREATE TABLE `\K[^`]+(?=`)' )
+        procs=$(    extract '^CREATE PROCEDURE (?:`)?\K\w+' )
+        events=$(   extract '^CREATE EVENT (?:IF NOT EXISTS )?(?:`)?\K\w+' )
+        triggers=$( extract '^CREATE TRIGGER (?:`)?\K\w+' )
+        views=$(    extract '^CREATE VIEW (?:`)?\K\w+' )
 
-        # プロシージャ
-        actual=$($MYSQL -N -e "SHOW PROCEDURE STATUS WHERE Db='test_db';" | awk '{print $2}')
-        for p in "${procs[@]}";   do echo "$actual" | grep -qw "$p" || { echo "Missing proc $p";   exit 1; }; done
+        check_exist () {
+          local sql="$1" name="$2" list="$3"
+          actual=$($MYSQL -N -e "$sql")
+          for n in $list; do echo "$actual" | grep -qw "$n" || { echo "Missing $name $n"; exit 1; }; done
+        }
 
-        # イベント
-        actual=$($MYSQL -N -e "SHOW EVENTS FROM test_db;" | awk '{print $2}')
-        for e in "${events[@]}";  do echo "$actual" | grep -qw "$e" || { echo "Missing event $e";  exit 1; }; done
-
-        # トリガ
-        actual=$($MYSQL -N -e "SHOW TRIGGERS FROM test_db;" | awk '{print $1}')
-        for g in "${triggers[@]}";do echo "$actual" | grep -qw "$g" || { echo "Missing trigger $g";exit 1; }; done
-
-        # ビュー
-        actual=$($MYSQL -N -e "SHOW FULL TABLES WHERE Table_type='VIEW';" | awk '{print $1}')
-        for v in "${views[@]}";   do echo "$actual" | grep -qw "$v" || { echo "Missing view $v";   exit 1; }; done
+        check_exist "SHOW TABLES FROM test_db;"                                      "table"   "$tables"
+        check_exist "SHOW PROCEDURE STATUS WHERE Db='test_db';"                     "proc"    "$(echo "$procs" | awk '{print $1}')"
+        check_exist "SHOW EVENTS FROM test_db;"                                     "event"   "$events"
+        check_exist "SHOW TRIGGERS FROM test_db;"                                   "trigger" "$triggers"
+        check_exist "SHOW FULL TABLES WHERE Table_type='VIEW';"                     "view"    "$views"
 
     - name: Run manage_partitions_and_compact_ids & final checks
       run: |
         $MYSQL -D test_db -e "CALL manage_partitions_and_compact_ids();"
         $MYSQL -D test_db -e "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA='test_db' AND TABLE_NAME='sound_play_history';"
-        $MYSQL -D test_db -e "SELECT * FROM sound_play_history ORDER BY id;"
+        $MYSQL -D test_db -e "SELECT COUNT(*) AS rows_after_compaction FROM sound_play_history;"
+
