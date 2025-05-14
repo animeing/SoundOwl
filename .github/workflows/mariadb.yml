@@ -38,7 +38,7 @@ jobs:
 
     - name: Apply initial SQL
       run: |
-        mysql -h mariadb -uroot -proot_password test_db < parts/setup/db/soundowl_table_mysql.sql
+        mysql -h 127.0.0.1 -uroot -proot_password test_db < parts/setup/db/soundowl_table_mysql.sql
 
     - name: Enable Event Scheduler
       run: |
