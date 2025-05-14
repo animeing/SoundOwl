@@ -22,37 +22,31 @@ jobs:
           --health-timeout=5s
           --health-retries=10
 
-    env:                      # どのステップでも使える共通エイリアス
+    env:
       MYSQL:   mysql   -h 127.0.0.1 -P 3306 -uroot -proot_password
       MYSQLADM: mysqladmin -h 127.0.0.1 -P 3306 -uroot -proot_password
 
     steps:
     - uses: actions/checkout@v2
 
-    # Ubuntu-latest には最初から MySQL クライアントが入っている。
-    # 追加インストールはパッケージ競合を起こすため “入れない” のが正解。
-
     - name: Wait until MariaDB responds
       run: |
         for i in {1..60}; do
-          if $MYSQLADM ping --silent; then
-            echo "MariaDB ready"; exit 0
-          fi
+          $MYSQLADM ping --silent && { echo "MariaDB ready"; exit 0; }
           sleep 5
         done
         echo "MariaDB not ready" && exit 1
 
     - name: Apply initial SQL
-      run: |
-        $MYSQL test_db < parts/setup/db/soundowl_table_mysql.sql
+      run: $MYSQL test_db < parts/setup/db/soundowl_table_mysql.sql
 
     - name: Enable event scheduler & grant privilege
       run: |
-        $MYSQL -e "SET GLOBAL event_scheduler = ON;"
-        $MYSQL -e "GRANT EVENT ON *.* TO 'root'@'%'; FLUSH PRIVILEGES;"
+        $MYSQL    -e "SET GLOBAL event_scheduler = ON;"
+        $MYSQL    -e "GRANT EVENT ON *.* TO 'root'@'%'; FLUSH PRIVILEGES;"
 
     # ───────── オブジェクト検証 ─────────
-    - name: Verify tables / procedures / events / triggers / views
+    - name: Verify objects
       run: |
         extract() { grep -oP "$1" parts/setup/db/soundowl_table_mysql.sql; }
 
@@ -62,21 +56,19 @@ jobs:
         triggers=$( extract '^CREATE TRIGGER (?:`)?\K\w+' )
         views=$(    extract '^CREATE VIEW (?:`)?\K\w+' )
 
-        check_exist () {
-          local sql="$1" name="$2" list="$3"
-          actual=$($MYSQL -N -e "$sql")
-          for n in $list; do echo "$actual" | grep -qw "$n" || { echo "Missing $name $n"; exit 1; }; done
+        check () {   # $1=SQL、$2=種類、$3=期待リスト
+          act=$($MYSQL -N -e "$1")
+          for n in $3; do echo "$act" | grep -qw "$n" || { echo "$2 $n is missing"; exit 1; }; done
         }
 
-        check_exist "SHOW TABLES FROM test_db;"                                      "table"   "$tables"
-        check_exist "SHOW PROCEDURE STATUS WHERE Db='test_db';"                     "proc"    "$(echo "$procs" | awk '{print $1}')"
-        check_exist "SHOW EVENTS FROM test_db;"                                     "event"   "$events"
-        check_exist "SHOW TRIGGERS FROM test_db;"                                   "trigger" "$triggers"
-        check_exist "SHOW FULL TABLES WHERE Table_type='VIEW';"                     "view"    "$views"
+        check "SHOW TABLES FROM test_db;"                               table   "$tables"
+        check "SHOW PROCEDURE STATUS WHERE Db='test_db';"              proc    "$procs"
+        check "SHOW EVENTS FROM test_db;"                              event   "$events"
+        check "SHOW TRIGGERS FROM test_db;"                            trigger "$triggers"
+        check "SHOW FULL TABLES FROM test_db WHERE Table_type='VIEW';"  view    "$views"
 
     - name: Run manage_partitions_and_compact_ids & final checks
       run: |
         $MYSQL -D test_db -e "CALL manage_partitions_and_compact_ids();"
         $MYSQL -D test_db -e "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA='test_db' AND TABLE_NAME='sound_play_history';"
         $MYSQL -D test_db -e "SELECT COUNT(*) AS rows_after_compaction FROM sound_play_history;"
-
