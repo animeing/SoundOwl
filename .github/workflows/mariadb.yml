@@ -29,7 +29,7 @@ jobs:
     - name: Wait for MariaDB to be ready
       run: |
         for i in {1..60}; do
-          if mysqladmin ping -h mariadb -P 3306 -uroot -proot_password --silent; then
+          if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -proot_password --silent; then
             echo "MariaDB ready"; exit 0
           fi
           sleep 5
@@ -42,7 +42,7 @@ jobs:
 
     - name: Enable Event Scheduler
       run: |
-        mysql -h mariadb -P 3306 -uroot -proot_password \
+        mysql -h 127.0.0.1 -P 3306 -uroot -proot_password \
               -e "SET GLOBAL event_scheduler = ON;"
 
     - name: Grant EVENT Privilege
@@ -70,7 +70,7 @@ jobs:
 
     - name: Reapply Initial SQL
       run: |
-        mysql -h mariadb -P 3306 -uroot -proot_password test_db \
+        mysql -h 127.0.0.1 -P 3306 -uroot -proot_password test_db \
               < parts/setup/db/soundowl_table_mysql.sql
 
     - name: Verify tables
