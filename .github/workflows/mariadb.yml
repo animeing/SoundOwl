@@ -14,15 +14,15 @@ jobs:
         ports:
           - 3306:3306
         options: >-
+          --event-scheduler=ON 
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
+          --name mariadb
         env:
           MYSQL_ROOT_PASSWORD: root_password
           MYSQL_DATABASE: test_db
-        command: >
-          --event-scheduler=ON
 
     steps:
     - name: Checkout repository
@@ -30,25 +30,17 @@ jobs:
 
     - name: Wait for MariaDB to be ready
       run: |
-        retries=60  # Increase retries for MariaDB readiness
-        while [ $retries -gt 0 ]; do
-          if docker exec $(docker ps -q -f name=mariadb) mysqladmin ping -uroot -proot_password --silent; then
-            echo "MariaDB is up and running!"
-            break
+        for i in {1..60}; do
+          if mysqladmin ping -h mariadb -uroot -proot_password --silent; then
+            echo "MariaDB ready"; exit 0
           fi
-          echo "Waiting for MariaDB to be ready..."
-          sleep 5  # Retry every 5 seconds
-          retries=$((retries - 1))
+          sleep 5
         done
-        if [ $retries -eq 0 ]; then
-          echo "MariaDB did not become ready in time."
-          docker logs $(docker ps -q -f name=mariadb)
-          exit 1
-        fi
+        echo "MariaDB not ready" && exit 1
 
     - name: Apply initial SQL
       run: |
-        docker exec -i $(docker ps -q -f name=mariadb) mysql -uroot -proot_password test_db < parts/setup/db/soundowl_table_mysql.sql
+        mysql -h mariadb -uroot -proot_password test_db < parts/setup/db/soundowl_table_mysql.sql
 
     - name: Enable Event Scheduler
       run: |
