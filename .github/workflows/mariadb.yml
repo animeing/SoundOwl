@@ -12,21 +12,30 @@ jobs:
       mariadb:
         image: mariadb:10.5
         ports:
-          - 3306:3306
+          - 3306:3306               # runner から 127.0.0.1:3306 で到達
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: test_db
         options: >-
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
-        env:
-          MYSQL_ROOT_PASSWORD: root_password
-          MYSQL_DATABASE: test_db
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-    - name: Wait for MariaDB to be ready
+    # Ubuntu-latest には入っているが、将来の runner で削除されても壊れないよう保険
+    - name: Install client
+      run: sudo apt-get update -qq && sudo apt-get install -y mariadb-client
+
+    # ─────────────────────────────────────────────
+    # 以降はすべて $MYSQL コマンドで実行する
+    # ─────────────────────────────────────────────
+    - name: Define MYSQL helper
+      run: echo "MYSQL='mysql -h 127.0.0.1 -P 3306 -uroot -proot_password'" >> "$GITHUB_ENV"
+
+    - name: Wait for MariaDB
       run: |
         for i in {1..60}; do
           if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -proot_password --silent; then
@@ -38,125 +47,45 @@ jobs:
 
     - name: Apply initial SQL
       run: |
-        mysql -h 127.0.0.1 -uroot -proot_password test_db < parts/setup/db/soundowl_table_mysql.sql
+        $MYSQL test_db < parts/setup/db/soundowl_table_mysql.sql
 
-    - name: Enable Event Scheduler
+    - name: Enable Event Scheduler & grant privilege
       run: |
-        mysql -h 127.0.0.1 -P 3306 -uroot -proot_password \
-              -e "SET GLOBAL event_scheduler = ON;"
+        $MYSQL -e "SET GLOBAL event_scheduler = ON;"
+        $MYSQL -e "GRANT EVENT ON *.* TO 'root'@'%'; FLUSH PRIVILEGES;"
 
-    - name: Grant EVENT Privilege
+    # ───────── 検証ブロック ─────────
+    - name: Verify objects
       run: |
-        mysql -uroot -proot_password -e "GRANT EVENT ON *.* TO 'root'@'%';"
-        mysql -uroot -proot_password -e "FLUSH PRIVILEGES;"
+        # 期待リストを抽出
+        tables=($(grep -oP '^CREATE TABLE `\K[^`]+(?=`)' parts/setup/db/soundowl_table_mysql.sql))
+        procs=($(grep -oP '^CREATE PROCEDURE (?:`)?\K\w+'           parts/setup/db/soundowl_table_mysql.sql))
+        events=($(grep -oP '^CREATE EVENT (?:IF NOT EXISTS )?(?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
+        triggers=($(grep -oP '^CREATE TRIGGER (?:`)?\K\w+'           parts/setup/db/soundowl_table_mysql.sql))
+        views=($(grep -oP '^CREATE VIEW (?:`)?\K\w+'                 parts/setup/db/soundowl_table_mysql.sql))
 
-    - name: Verify Event Scheduler and Privileges
+        # テーブル
+        actual=$($MYSQL -N -e "SHOW TABLES FROM test_db;")
+        for t in "${tables[@]}"; do echo "$actual" | grep -qw "$t" || { echo "Missing table $t"; exit 1; }; done
+
+        # プロシージャ
+        actual=$($MYSQL -N -e "SHOW PROCEDURE STATUS WHERE Db='test_db';" | awk '{print $2}')
+        for p in "${procs[@]}";   do echo "$actual" | grep -qw "$p" || { echo "Missing proc $p";   exit 1; }; done
+
+        # イベント
+        actual=$($MYSQL -N -e "SHOW EVENTS FROM test_db;" | awk '{print $2}')
+        for e in "${events[@]}";  do echo "$actual" | grep -qw "$e" || { echo "Missing event $e";  exit 1; }; done
+
+        # トリガ
+        actual=$($MYSQL -N -e "SHOW TRIGGERS FROM test_db;" | awk '{print $1}')
+        for g in "${triggers[@]}";do echo "$actual" | grep -qw "$g" || { echo "Missing trigger $g";exit 1; }; done
+
+        # ビュー
+        actual=$($MYSQL -N -e "SHOW FULL TABLES WHERE Table_type='VIEW';" | awk '{print $1}')
+        for v in "${views[@]}";   do echo "$actual" | grep -qw "$v" || { echo "Missing view $v";   exit 1; }; done
+
+    - name: Run manage_partitions_and_compact_ids & final checks
       run: |
-        echo "Checking Event Scheduler status..."
-        mysql -uroot -proot_password -e "SHOW VARIABLES LIKE 'event_scheduler';"
-        event_scheduler_status=$(mysql -uroot -proot_password -e "SHOW VARIABLES LIKE 'event_scheduler';" | grep -w "ON")
-        if [ -z "$event_scheduler_status" ]; then
-          echo "Event scheduler is not enabled!" >&2
-          exit 1
-        fi
-
-        echo "Checking EVENT privilege..."
-        mysql -uroot -proot_password -e "SHOW GRANTS FOR CURRENT_USER;"
-        grants=$(mysql -uroot -proot_password -e "SHOW GRANTS FOR CURRENT_USER;" | grep -w "EVENT")
-        if [ -z "$grants" ]; then
-          echo "EVENT privilege is missing!" >&2
-          exit 1
-        fi
-
-    - name: Reapply Initial SQL
-      run: |
-        mysql -h 127.0.0.1 -P 3306 -uroot -proot_password test_db \
-              < parts/setup/db/soundowl_table_mysql.sql
-
-    - name: Verify tables
-      run: |
-        # soundowl_table_mysql.sqlからCREATE TABLE文のテーブル名を抽出
-        expected_tables=($(grep -oP '^CREATE TABLE `\K[^`]+(?=`)' parts/setup/db/soundowl_table_mysql.sql))
-        actual_tables=$(mysql -uroot -proot_password -D test_db -N -e "SHOW TABLES;")
-        echo "Expected Tables: ${expected_tables[*]}"
-        echo "Actual Tables: $actual_tables"
-        for tbl in "${expected_tables[@]}"; do
-          echo "$actual_tables" | grep -wq "$tbl"
-          if [ $? -ne 0 ]; then
-            echo "Table $tbl is missing!" >&2
-            exit 1
-          fi
-        done
-        echo "All expected tables exist: ${expected_tables[*]}"
-
-    - name: Verify procedures
-      run: |
-        # soundowl_table_mysql.sqlからCREATE PROCEDURE文のプロシージャ名を抽出（バッククォート有無両対応）
-        expected_procs=($(grep -oP '^CREATE PROCEDURE (?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
-        actual_procs=$(mysql -uroot -proot_password -D test_db -N -e "SHOW PROCEDURE STATUS WHERE Db = 'test_db';" | awk '{print $2}')
-        echo "Expected Procedures: ${expected_procs[*]}"
-        echo "Actual Procedures: $actual_procs"
-        for proc in "${expected_procs[@]}"; do
-          echo "$actual_procs" | grep -wq "$proc"
-          if [ $? -ne 0 ]; then
-            echo "Procedure $proc is missing!" >&2
-            exit 1
-          fi
-        done
-        echo "All expected procedures exist: ${expected_procs[*]}"
-
-    - name: Verify events
-      run: |
-        # soundowl_table_mysql.sqlからCREATE EVENT文のイベント名を抽出（IF NOT EXISTS・バッククォート有無両対応）
-        expected_events=($(grep -oP '^CREATE EVENT (?:IF NOT EXISTS )?(?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
-        actual_events=$(mysql -uroot -proot_password -D test_db -N -e "SHOW EVENTS;" | awk 'NR>1{print $2}')
-        echo "Expected Events: ${expected_events[*]}"
-        echo "Actual Events: $actual_events"
-        for evt in "${expected_events[@]}"; do
-          echo "$actual_events" | grep -wq "$evt"
-          if [ $? -ne 0 ]; then
-            echo "Event $evt is missing!" >&2
-            exit 1
-          fi
-        done
-        echo "All expected events exist: ${expected_events[*]}"
-
-    - name: Verify triggers
-      run: |
-        # soundowl_table_mysql.sqlからCREATE TRIGGER文のトリガー名を抽出（バッククォート有無両対応）
-        expected_triggers=($(grep -oP '^CREATE TRIGGER (?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
-        actual_triggers=$(mysql -uroot -proot_password -D test_db -N -e "SHOW TRIGGERS;" | awk '{print $1}')
-        for trg in "${expected_triggers[@]}"; do
-          echo "$actual_triggers" | grep -wq "$trg"
-          if [ $? -ne 0 ]; then
-            echo "Trigger $trg is missing!" >&2
-            exit 1
-          fi
-        done
-        echo "All expected triggers exist: ${expected_triggers[*]}"
-
-    - name: Verify views
-      run: |
-        # soundowl_table_mysql.sqlからCREATE VIEW文のビュー名を抽出（バッククォート有無両対応）
-        expected_views=($(grep -oP '^CREATE VIEW (?:`)?\K\w+' parts/setup/db/soundowl_table_mysql.sql))
-        actual_views=$(mysql -uroot -proot_password -D test_db -N -e "SHOW FULL TABLES WHERE Table_type = 'VIEW';" | awk '{print $1}')
-        for vw in "${expected_views[@]}"; do
-          echo "$actual_views" | grep -wq "$vw"
-          if [ $? -ne 0 ]; then
-            echo "View $vw is missing!" >&2
-            exit 1
-          fi
-        done
-        echo "All expected views exist: ${expected_views[*]}"
-
-    - name: Run manage_partitions_and_compact_ids procedure
-      run: |
-        mysql -uroot -proot_password -D test_db -e "CALL manage_partitions_and_compact_ids();"
-
-    - name: Verify partitions
-      run: |
-        mysql -uroot -proot_password -D test_db -e "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'test_db' AND TABLE_NAME = 'sound_play_history';"
-
-    - name: Verify ID compaction
-      run: |
-        mysql -uroot -proot_password -D test_db -e "SELECT * FROM sound_play_history ORDER BY id;"
+        $MYSQL -D test_db -e "CALL manage_partitions_and_compact_ids();"
+        $MYSQL -D test_db -e "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA='test_db' AND TABLE_NAME='sound_play_history';"
+        $MYSQL -D test_db -e "SELECT * FROM sound_play_history ORDER BY id;"
