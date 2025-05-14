@@ -88,7 +88,11 @@ export default {
     };
   },
   mounted() {
-    this.initializeCanvas();
+    if(audio.audioEffectManager.audioContext != null){
+      this.initializeCanvas();
+    } else {
+      audio.eventSupport.addEventListener('initalize', this.initializeCanvas);
+    }
     this.updateLyrics();
     audio.eventSupport.addEventListener('audio_info_loaded', this.updateLyrics);
     audio.eventSupport.addEventListener('audio_info_loaded', this.pushArt);
@@ -100,6 +104,7 @@ export default {
     }
     audio.eventSupport.removeEventListener('audio_info_loaded', this.updateLyrics);
     audio.eventSupport.removeEventListener('audio_info_loaded', this.pushArt);
+    audio.eventSupport.removeEventListener('initalize', this.initializeCanvas);
   },
   methods: {
     initializeCanvas() {
