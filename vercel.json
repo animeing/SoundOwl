@@ -2,11 +2,7 @@
   "functions": {
     "api/**/*.php": {
       "runtime": "vercel-php@0.7.3",
-      "excludeFiles": [
-        "node_modules/**",
-        "frontend/**",
-        "**/*.wasm", "**/*.woff*", "**/*.ttf", "**/*.eot"
-      ]
+      "excludeFiles": "{node_modules/**,frontend/**,**/*.wasm,**/*.woff*,**/*.ttf,**/*.eot}"
     }
   },
   "routes": [
