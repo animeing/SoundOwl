@@ -1,5 +1,4 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }],
   "functions": {
     "api/**/*.php": {
       "runtime": "vercel-php@0.7.3",
@@ -7,6 +6,7 @@
     }
   },
   "routes": [
+    { "src": "/(.*)", "dest": "/" },
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/sound_create/sound.php", "dest": "sound_create/sound.php" },
     { "src": "/\\.(htaccess|htpasswd|ini)$", "status": 404 },
