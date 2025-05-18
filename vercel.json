@@ -8,7 +8,7 @@
       "runtime": "vercel-php@0.7.3",
       "excludeFiles": "{parts/**}"
     },
-    "src": "/index.php": {
+    "/index.php": {
       "runtime": "vercel-php@0.7.3",
       "excludeFiles": "{parts/**}"
     }
