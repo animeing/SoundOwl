@@ -5,10 +5,10 @@
       "excludeFiles": "{node_modules/**,frontend/**,**/*.wasm,**/*.woff*,**/*.ttf,**/*.eot,parts/**}"
     }
   },
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/sound_create/sound.php", "dest": "sound_create/sound.php" }
+    { "src": "/sound_create/sound.php", "dest": "sound_create/sound.php" },
     { "src": "/\\.(htaccess|htpasswd|ini)$", "status": 404 },
     { "src": "/(.*)\\.(ico|png|jpe?g|gif|svg|css|js|woff2?)$", 
       "headers": { "cache-control": "public,max-age=604800,immutable" } 
