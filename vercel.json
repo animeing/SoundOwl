@@ -1,9 +1,16 @@
 {
   "functions": {
-    "api/**/*.php": { "runtime": "vercel-php@0.7.3" }
+    "api/**/*.php": {
+      "runtime": "vercel-php@0.7.3",
+      "excludeFiles": [
+        "node_modules/**",
+        "frontend/**",
+        "**/*.wasm", "**/*.woff*", "**/*.ttf", "**/*.eot"
+      ]
+    }
   },
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/(.*)", "dest": "/frontend/dist/$1" }
+    { "src": "/(.*)",     "dest": "/frontend/dist/$1" }
   ]
 }
