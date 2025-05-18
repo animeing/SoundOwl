@@ -30,8 +30,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/index.php",
-      "excludeFiles": "{parts/**}"
+      "dest": "/index.php"
     }
   ]
 }
