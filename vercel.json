@@ -3,6 +3,14 @@
     "api/**/*.php": {
       "runtime": "vercel-php@0.7.3",
       "excludeFiles": "{node_modules/**,frontend/**,**/*.wasm,**/*.woff*,**/*.ttf,**/*.eot}"
+    },
+    "sound_create/**": {
+      "runtime": "vercel-php@0.7.3",
+      "excludeFiles": "{parts/**}"
+    },
+    "src": "/index.php": {
+      "runtime": "vercel-php@0.7.3",
+      "excludeFiles": "{parts/**}"
     }
   },
 
@@ -20,6 +28,11 @@
       }, 
       "continue": true
     },
-    { "src": "/(.*)", "dest": "/index.php" }
+    {
+      "src": "/(.*)",
+      "dest": "/index.php"
+      "runtime": "vercel-php@0.7.3",
+      "excludeFiles": "{parts/**}"
+    }
   ]
 }
