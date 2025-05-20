@@ -79,10 +79,16 @@ class AudioPlayer{
 
     this.audioEffectManager.initialize();
 
+    // 全体の音を整えるために、loudnessNormalizeを最初に接続
     this.audioEffectManager.addEffect('loudnessNormalize', this.loudnessNormalize);
+    //元の音を解析するためにloundnessNormalizeの後に接続
     this.audioEffectManager.addEffect('soundSculpt', this.exAudioEffect);
+    // 後半の処理で音を消しきるためにイコライザの前にvolumeを接続
     this.audioEffectManager.addEffect('volume', this.volumeComponent);
+    // イコライザを掛けた結果に対してインパルス応答を掛けるためにイコライザを先に接続
     this.audioEffectManager.addEffect('equalizer', this.equalizer);
+
+    // 3D音響効果を掛けるために、イコライザの後に接続
     this.audioEffectManager.addEffect('impulseEffect', this.inpulseResponseEffect);
 
     this.audioEffectManager.apply();

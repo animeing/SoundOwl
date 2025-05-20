@@ -696,31 +696,35 @@ BaseFrameWork.LimitedList = class extends EventTarget{
 };
 
 export class WakeLockManager {
-  constructor() {
-    this.wakeLock = null;
-    this.active = false;
+  #queue = [];
+  #locked = false;
+
+  /** ロック取得 */
+  requestWakeLock() {
+    if (this.#locked) {
+      return new Promise(resolve => this.#queue.push(resolve));
+    }
+    this.#locked = true;
+    return Promise.resolve();
   }
 
-  async requestWakeLock() {
-    if ('wakeLock' in navigator && !this.active) {
-      try {
-        this.wakeLock = await navigator.wakeLock.request('screen');
-        this.wakeLock.addEventListener('release', () => {
-          this.active = false;
-        });
-        this.active = true;
-      } catch (e) {
-        console.error(`Failed to acquire wake lock: ${e.name}, ${e.message}`);
-        this.active = false;
-      }
+  /** ロック解放 */
+  releaseWakeLock() {
+    if (this.#queue.length) {
+      // 次の待機者を起こす
+      this.#queue.shift()();
+    } else {
+      this.#locked = false;
     }
   }
 
-  async releaseWakeLock() {
-    if (this.wakeLock !== null && this.active) {
-      await this.wakeLock.release();
-      this.wakeLock = null;
-      this.active = false;
+  /** 便利メソッド：排他区間を包む */
+  async runExclusive(fn) {
+    await this.requestWakeLock();
+    try {
+      return await fn();
+    } finally {
+      this.releaseWakeLock();
     }
   }
 }
