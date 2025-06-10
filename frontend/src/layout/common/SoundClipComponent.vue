@@ -1,67 +1,74 @@
 <template>
-  <v-card
-    color="grey-darken-3"
+  
+  <ContextMenu
+    :items="menuData"
+    @select="item => item.action()"
+    style="display:block;"
   >
-    <v-row :class="['sound-clip-container', { 'small-height': isSmallHeight }]" align="center" justify="start">
-      <v-col cols="auto" class="album">
-        <v-img
-          :src="createImageSrc(soundClip.albumKey)"
-          :aspect-ratio="1"
-          :width="albumWidth"
-          :height="albumHeight"
-          class="album-image"
-          lazy-src="img/placeholder-image.webp"
-        >
-          <template #placeholder>
-            <v-skeleton-loader type="image" class="fill-height"></v-skeleton-loader>
-          </template>
-        </v-img>
-      </v-col>
+    <v-card
+      color="grey-darken-3"
+    >
+      <v-row :class="['sound-clip-container', { 'small-height': isSmallHeight }]" align="center" justify="start">
+        <v-col cols="auto" class="album">
+          <v-img
+            :src="createImageSrc(soundClip.albumKey)"
+            :aspect-ratio="1"
+            :width="albumWidth"
+            :height="albumHeight"
+            class="album-image"
+            lazy-src="img/placeholder-image.webp"
+          >
+            <template #placeholder>
+              <v-skeleton-loader type="image" class="fill-height"></v-skeleton-loader>
+            </template>
+          </v-img>
+        </v-col>
 
-      <v-col class="layout-box">
-        <v-tooltip bottom>
-          <template #activator="{ props }">
-            <div
-              v-bind="props"
-              class="audio-title"
-              :title="soundClip.title"
-            >
-              {{ soundClip.title }}
-            </div>
-          </template>
-          <span>{{ soundClip.title }}</span>
-        </v-tooltip>
+        <v-col class="layout-box">
+          <v-tooltip bottom>
+            <template #activator="{ props }">
+              <div
+                v-bind="props"
+                class="audio-title"
+                :title="soundClip.title"
+              >
+                {{ soundClip.title }}
+              </div>
+            </template>
+            <span>{{ soundClip.title }}</span>
+          </v-tooltip>
 
-        <v-tooltip bottom>
-          <template #activator="{ props }">
-            <router-link
-              v-bind="props"
-              :to="{ name: 'artist', query: { ArtistHash: soundClip.artistKey } }"
-              class="audio-information"
-              @click.stop
-            >
-              {{ soundClip.artist }}
-            </router-link>
-          </template>
-          <span>{{ soundClip.artist }}</span>
-        </v-tooltip>
+          <v-tooltip bottom>
+            <template #activator="{ props }">
+              <router-link
+                v-bind="props"
+                :to="{ name: 'artist', query: { ArtistHash: soundClip.artistKey } }"
+                class="audio-information"
+                @click.stop
+              >
+                {{ soundClip.artist }}
+              </router-link>
+            </template>
+            <span>{{ soundClip.artist }}</span>
+          </v-tooltip>
 
-        <v-tooltip bottom v-if="hasAlbumData">
-          <template #activator="{ props }">
-            <router-link
-              v-bind="props"
-              :to="{ name: 'album', query: { AlbumHash: soundClip.albumKey } }"
-              class="audio-information audio-description"
-              @click.stop
-            >
-              {{ soundClip.album }}
-            </router-link>
-          </template>
-          <span>{{ soundClip.album }}</span>
-        </v-tooltip>
-      </v-col>
-    </v-row>
-  </v-card>
+          <v-tooltip bottom v-if="hasAlbumData">
+            <template #activator="{ props }">
+              <router-link
+                v-bind="props"
+                :to="{ name: 'album', query: { AlbumHash: soundClip.albumKey } }"
+                class="audio-information audio-description"
+                @click.stop
+              >
+                {{ soundClip.album }}
+              </router-link>
+            </template>
+            <span>{{ soundClip.album }}</span>
+          </v-tooltip>
+        </v-col>
+      </v-row>
+    </v-card>
+  </ContextMenu>
 </template>
 
 
@@ -69,6 +76,8 @@
 import { defineComponent, computed } from 'vue';
 import { AudioClip } from '../../audio/type/AudioClip';
 import { BASE } from '../../utilization/path';
+import audio from '../../audio/AudioPlayer';
+import ContextMenu from '../common/ContextMenu.vue';
 
 const isMobile = () =>
   typeof window !== 'undefined' &&
@@ -76,6 +85,9 @@ const isMobile = () =>
 
 export default defineComponent({
   name: 'SoundClipComponent',
+  components:{
+    ContextMenu,
+  },
   props: {
     soundClip: {
       type: Object,
@@ -94,6 +106,15 @@ export default defineComponent({
   data() {
     return {
       hasAlbumData: true,
+      menuData: [
+        {
+          label: 'Add to PlayList',
+          children: [
+            { label: 'Play Next', action: ()=> this.addPlayList(this.soundClip, 0) },
+            { label: 'Add to Last', action: () => this.addPlayList(this.soundClip, audio.playList.length) },
+          ],
+        },
+      ],
     };
   },
   computed: {
@@ -108,6 +129,18 @@ export default defineComponent({
   methods: {
     createImageSrc(albumKey) {
       return `${BASE.HOME}img/album_art.php?media_hash=${albumKey}`;
+    },
+    addPlayList(item, point = 0) {
+      if (audio.currentAudioClip === undefined && point === 0) {
+        audio.playList.insertAudioClip(item, 0);
+        return;
+      }
+      if (point === 0) {
+        audio.playList.appendAudioClipNext(item);
+        return;
+      } else {
+        audio.playList.insertAudioClip(item, point);
+      }
     },
   },
 });
