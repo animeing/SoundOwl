@@ -1912,9 +1912,6 @@ class OptionObject extends HTMLOptionElement{
 
 BaseFrameWork.defineCustomElement('sw-option', OptionObject, {extends:'option'});
 
-/**
- * @deprecated
- */
 export class MessageWindow extends HTMLElement{
   _messageElement = document.createElement('p');
   constructor(){
@@ -1932,8 +1929,12 @@ export class MessageWindow extends HTMLElement{
     return this._messageElement.innerText;
   }
 
-  open(){
+  open(viewTime = 0){
+    this.classList.remove('height-hide');
     fixed.appendChild(this);
+    if(viewTime > 0){
+      this.close(viewTime);
+    }
   }
 
   /**
@@ -1959,9 +1960,6 @@ export class MessageWindow extends HTMLElement{
 
 customElements.define('sw-message-box', MessageWindow);
 
-/**
- * @deprecated
- */
 export class MessageButtonWindow extends MessageWindow {
   _buttonNameList = new BaseFrameWork.List;
   constructor(){
@@ -2019,9 +2017,6 @@ export class MessageButtonWindow extends MessageWindow {
 
 customElements.define('sw-message-button', MessageButtonWindow);
 
-/**
- * @deprecated
- */
 export class InputMessageButtonWindow extends MessageButtonWindow {
   constructor(){
     super();
