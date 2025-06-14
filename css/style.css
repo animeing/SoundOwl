@@ -443,8 +443,9 @@ sw-save-message > * {
 }
 
 sw-save-message > div > input[type="text"] {
-  background: rgb(var(--v-theme-surface));
-  color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
+  background: rgb(var(--v-theme-background));
+  color: rgba(var(--v-theme-on-background), var(--v-high-emphasis-opacity));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.38);
   font-size: 1em;
   vertical-align: top;
   height: 25px;
