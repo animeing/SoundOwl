@@ -401,11 +401,15 @@ sw-v-progress > div {
   text-shadow: var(--subcolor) 0 1px 1px 0;
 }
 
-#context-menu,
+#context-menu {
+  background: var(--subcolor);
+}
+
 sw-message-box,
 sw-message-button,
 sw-save-message {
-  background: var(--subcolor);
+  background: rgb(var(--v-theme-surface));
+  color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
 }
 
 sw-message-box,
@@ -439,7 +443,9 @@ sw-save-message > * {
 }
 
 sw-save-message > div > input[type="text"] {
-  background: var(--playerfcbgcolor);
+  background: rgb(var(--v-theme-background));
+  color: rgba(var(--v-theme-on-background), var(--v-high-emphasis-opacity));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.38);
   font-size: 1em;
   vertical-align: top;
   height: 25px;
@@ -481,9 +487,9 @@ sw-save-message > div > input[type="text"] {
 sw-message-box > div > input[type="button"],
 sw-message-button > div > input[type="button"],
 sw-save-message > div > input[type="button"] {
-  background: rgba(0, 0, 0, 0);
+  background: rgba(var(--v-theme-surface), 0);
   border-radius: 1.5rem;
-  border: 1px solid #8e8e8e;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.38);
   width: 10em;
   padding: 0 20px;
   margin: 0 5px;
@@ -492,7 +498,7 @@ sw-save-message > div > input[type="button"] {
 sw-message-box > div > input[type="button"]:hover,
 sw-message-button > div > input[type="button"]:hover,
 sw-save-message > div > input[type="button"]:hover {
-  background: rgba(131, 131, 131, 0.932);
+  background: rgba(var(--v-theme-on-surface), 0.08);
 }
 
 #footer {
