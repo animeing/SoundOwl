@@ -51,8 +51,7 @@ export default {
       itemRefs: reactive({}),
       menuData: [
         { label: 'Clear playlist', action: () => audio.playList.clearPlaylist() },
-        { label: 'Save playlist', action: this.savePlaylistData },
-        { label: 'Save order', action: this.savePlaylistOrder }
+        { label: 'Save playlist', action: this.savePlaylistData }
       ],
       albumWidth: window.matchMedia('(max-width: 600px)').matches ? 54 : 108,
       albumHeight: window.matchMedia('(max-width: 600px)').matches ? 57.5 : 115,
@@ -70,7 +69,6 @@ export default {
   },
   mounted() {
     this.scrollToCurrentPlaying();
-    this.attachDragMove();
   },
   beforeDestroy() {
     audio.eventSupport.removeEventListener('audioSet', this.playChange);
@@ -82,19 +80,6 @@ export default {
     },
     soundContextMenuSelection(select, item) {
       select.action(item);
-    },
-    attachDragMove() {
-      this.$nextTick(() => {
-        for (const clip of this.soundClips) {
-          const el = this.itemRefs[clip.soundHash];
-          if (el && el.enableDragMove) {
-            el.setAttribute('d-group', 'current-playlist');
-            el.enableDragMove();
-            el.removeEventListener('dragend', this.onDragEnd);
-            el.addEventListener('dragend', this.onDragEnd);
-          }
-        }
-      });
     },
     savePlaylistData() {
       let messageWindow = document.createElement('sw-save-message');
@@ -138,38 +123,6 @@ export default {
       });
       messageWindow.open();
     },
-    savePlaylistOrder() {
-      let messageWindow = document.createElement('sw-save-message');
-      messageWindow.value = 'Save current order?\nPlease enter the playlist name.';
-      messageWindow.addItem('OK',()=>{
-        messageWindow.close();
-        let playlistName = messageWindow.inputText.value;
-        let action = new class extends BaseFrameWork.Network.RequestServerBase {
-          constructor() {
-            super(null, BASE.API+'update_playlist_order.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
-          }
-        };
-        action.formDataMap.append('playlist_name', playlistName);
-        for (const soundClip of this.soundClips) {
-          action.formDataMap.append('sounds[]', soundClip.soundHash);
-        }
-        action.httpRequestor.addEventListener('success', event=>{
-          let message = document.createElement('sw-message-button');
-          message.addItem('OK', ()=>{ message.close(); });
-          message.value = event.detail.response.detail;
-          if(event.detail.response.status == 'success'){ message.close(6000); }
-        });
-        action.httpRequestor.addEventListener('error', ()=>{
-          let message = document.createElement('sw-message-button');
-          message.addItem('OK', ()=>{ message.close(); });
-          message.value = `Action error ${action.httpRequestor.status}`;
-          message.open();
-        });
-        action.execute();
-      });
-      messageWindow.addItem('CANCEL',()=>{ messageWindow.close(); });
-      messageWindow.open();
-    },
     click(soundClip) {
       if (!soundClip) return; // soundClip が未定義の場合は何もしない
       if (audio.currentAudioClip?.equals(soundClip)) {
@@ -190,7 +143,6 @@ export default {
     },
     playlistUpdate() {
       this.soundClips = [...audio.playList];
-      this.attachDragMove();
       this.scrollToCurrentPlaying();
     },
     playChange() {
@@ -198,27 +150,8 @@ export default {
       this.scrollToCurrentPlaying();
     },
     setItemRef(el, item) {
-      if (el) {
-        this.itemRefs[item.soundHash] = el;
-        el.dataset.soundHash = item.soundHash;
-        el.setAttribute('d-group', 'current-playlist');
-        el.enableDragMove();
-        el.removeEventListener('dragend', this.onDragEnd);
-        el.addEventListener('dragend', this.onDragEnd);
-      } else {
-        const oldEl = this.itemRefs[item.soundHash];
-        if(oldEl){
-          oldEl.removeEventListener('dragend', this.onDragEnd);
-        }
-        delete this.itemRefs[item.soundHash];
-      }
-    },
-    onDragEnd() {
-      const container = this.$el.querySelector('#current-audio-list');
-      const orderedHashes = Array.from(container.querySelectorAll('[drag-item]')).map(el => el.dataset.soundHash);
-      const newList = orderedHashes.map(hash => this.soundClips.find(c => c.soundHash === hash)).filter(Boolean);
-      this.soundClips = newList;
-      audio.playList.updatePlaylist(newList);
+      if (el) this.itemRefs[item.soundHash] = el;
+      else delete this.itemRefs[item.soundHash];
     },
     scrollToCurrentPlaying() {
       if (!this.isView) return; // プレイリストが閉じている場合は何もしない
