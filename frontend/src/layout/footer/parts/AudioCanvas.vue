@@ -1,162 +1,240 @@
 <template>
+  <ContextMenu
+    :items="menuItems"
+    @select="(item) => item.action()"
+    style="height: 100%;width: 100%;"
+  >
+    <transition-group
+      name="album-art"
+      tag="div"
+      class="album-art-container"
+    >
+      <img
+        v-for="art in arts"
+        :key="art.id"
+        :src="art.url"
+        class="album-art-img"
+      />
+    </transition-group>
+
     <canvas
-        v-if="isVisibleAnalyser"
-        class="analyser-view"
-        :width="width"
-        :height="height"
-        @click.right.prevent="contextCanvasMenu()" />
+      ref="canvas"
+      v-if="isVisibleAnalyser"
+      class="analyser-view"
+      style="height: 100%;display: block;"
+      :width="width"
+      :height="height"></canvas>
 
     <div
-        v-else
-        class="lyrics-view"
-        @click.right.prevent="contextCanvasMenu()">
-        {{ lyrics }}
+      v-if="isLyricsVisible"
+      class="lyrics-view"
+    >
+      <pre>{{ lyrics }}</pre>
     </div>
+  </ContextMenu>
 </template>
 <script>
+import { onBeforeUnmount } from 'vue';
 import audio from '../../../audio/AudioPlayer';
-import { BaseFrameWork, ContextMenu } from '../../../base';
+import { AudioPlayStateEnum } from '../../../audio/enum/AudioPlayStateEnum';
+import { BaseFrameWork } from '../../../base';
+import ContextMenu from '../../common/ContextMenu.vue';
+import { BASE } from '../../../utilization/path';
 
 export default {
-  name:'AudioCanvas',
-  props:{
-    'isView':{
-      type:Boolean
+  name: 'AudioCanvas',
+  components: { ContextMenu },
+  props: {
+    isView: {
+      type: Boolean
     }
   },
-  emits: {'toggleView': null},
+  emits: { 'toggleView': null },
   data() {
     return {
-      width:window.innerWidth - 56,
-      height:window.innerHeight - 45,
-      isVisibleAnalyser:true,
-      lyrics:''
+      width: window.innerWidth,
+      height: window.innerHeight - 45,
+      isVisibleAnalyser: true,
+      isLyricsVisible: false,
+      lyrics: '',
+      arts: [],
+      seq: 0,
+      menuItems: [
+        { label: 'Lyrics',
+          action: () => {
+            this.isVisibleAnalyser = false;
+            this.isLyricsVisible = true;
+            this.$emit('toggleView');
+            this.resetCanvas();
+          }
+        },
+        { label: 'Visualizer',
+          action: () => {
+            this.isVisibleAnalyser = true;
+            this.isLyricsVisible = false;
+            this.$emit('toggleView');
+            this.resetCanvas();
+          }
+        },
+        { label: 'Album Art',
+          action: () => {
+            this.isVisibleAnalyser = false;
+            this.isLyricsVisible = false;
+            this.$emit('toggleView');
+            this.resetCanvas();
+          }
+        },
+      ]
     };
   },
-  watch:{
-    isView(){
-      this.resize();
-    },
-    isVisibleAnalyser(){
-      this.$nextTick(()=>{
-        if(this.isVisibleAnalyser) {
-          this.ctx = this.$el.getContext('2d');
-          this.animationId = requestAnimationFrame(this.run);
-          for (const box of this.canvasObjects) {
-            box.fcontext(this.ctx);
-          }
-        } else {
-          cancelAnimationFrame(this.animationId);
-          this.$el.scroll({top: 0});
-        }
-      });
-    }
-  },
-  created(){
-    window.addEventListener('resize', ()=>{
-      this.resize();
-    });
-    audio.eventSupport.addEventListener('audio_info_loaded', ()=>{
-      this.lyrics = '';
-      if( audio.data.lyrics == undefined) {
-        return;
-      }
-      this.lyrics = audio.data.lyrics;
-    });
-  },
   mounted() {
-    this.ctx = this.$el.getContext('2d');
-    let color = BaseFrameWork.getCSSProperty(this.$el, '--box-color');
-    this.animationId = requestAnimationFrame(this.run);
-    this.canvasObjects = new BaseFrameWork.List();
-    audio.eventSupport.addEventListener('initalize',()=>{
+    if(audio.audioEffectManager.audioContext != null){
+      this.initializeCanvas();
+    } else {
+      audio.eventSupport.addEventListener('initalize', this.initializeCanvas);
+    }
+    this.updateLyrics();
+    audio.eventSupport.addEventListener('audio_info_loaded', this.updateLyrics);
+    audio.eventSupport.addEventListener('audio_info_loaded', this.pushArt);
+    this.pushArt();
+  },
+  beforeUnmount() {
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+    }
+    audio.eventSupport.removeEventListener('audio_info_loaded', this.updateLyrics);
+    audio.eventSupport.removeEventListener('audio_info_loaded', this.pushArt);
+    audio.eventSupport.removeEventListener('initalize', this.initializeCanvas);
+  },
+  methods: {
+    initializeCanvas() {
+      const canvas = this.$refs.canvas;
+      if (canvas && canvas.getContext) {
+        this.ctx = canvas.getContext('2d');
+        this.animationId = requestAnimationFrame(this.run);
+        this.setupVisualizer();
+      } else {
+        console.error('Canvas element not found or getContext is not a function');
+      }
+    },
+    pushArt(){
+      if(audio.currentAudioClip == null) return; // 現在の曲が無い場合は何もしない
+      const url = `${BASE.HOME}img/album_art.php?media_hash=${audio.currentAudioClip.albumKey}`;
+      if(this.seq[this.seq.length-1] == url) return; // 連続で同じアートを追加しない
+      this.arts.push({id:++this.seq,url});
+      // 600ms 後に旧アートを削除して1枚だけ残す
+      setTimeout(()=>{ if(this.arts.length>1) this.arts.shift(); }, 250);
+    },
+    resetCanvas() {
+      if (this.isVisibleAnalyser) {
+        this.$nextTick(() => {
+          const canvas = this.$refs.canvas;
+          if (canvas) {
+            this.initializeCanvas();
+          } else {
+            console.warn('Canvas element not found during resetCanvas after DOM update');
+          }
+        });
+      } else {
+        if (this.animationId) {
+          cancelAnimationFrame(this.animationId);
+          this.animationId = null;
+        }
+      }
+    },
+    setupVisualizer() {
+      const color = BaseFrameWork.getCSSProperty(this.$refs.canvas, '--box-color');
+      this.canvasObjects = new BaseFrameWork.List();
       this.analyser = audio.audioEffectManager.audioContext.createAnalyser();
       this.analyser.fftSize = 1<<7+1;
-      audio.audioEffectManager.source.connect(this.analyser);
-      let filter = audio.audioEffectManager.audioContext.createBiquadFilter();
-      filter.type = 'allpass';
-      audio.audioEffectManager.source.connect(filter);
-          
-      let leng = this.analyser.frequencyBinCount;
-      this.spectrums = new Uint8Array(leng);
       this.analyser.smoothingTimeConstant = .5;
-      this.analyser.getByteFrequencyData(this.spectrums);
-      for(let createCount = 0, len = this.spectrums.length; createCount < len; createCount++){
-        let box = new BaseFrameWork.Draw.Figure.BoxCanvasObject2D;
+      audio.audioEffectManager.source.connect(this.analyser);
+      const createCount = this.analyser.frequencyBinCount;
+      this.spectrums = new Uint8Array(createCount);
+      for (let createIndex = 0; createIndex < createCount; createIndex++) {
+        const box = new BaseFrameWork.Draw.Figure.BoxCanvasObject2D();
         box.color.setRgb(color);
-        box.update = async ()=>{
-          if(this.spectrums != null){
-            box.transform.position.x = (createCount+1)*(this.$el.width / (len+4));
+        box.update = () => {
+          if (this.spectrums) {
+            box.transform.position.x = (createIndex + 1) * (this.width / (createCount + 4));
             box.transform.position.y = 0;
-            box.transform.scale.x = (this.$el.width / len) >> 1;
-            box.transform.scale.y = (this.spectrums[createCount] / 0xff ) * (this.$el.height >> 1);
+            box.transform.scale.x = (this.width / createCount) >> 1;
+            box.transform.scale.y = (this.spectrums[createIndex] / 0xff) * (this.height >> 1);
           }
         };
         box.fcontext(this.ctx);
-        let scale = new BaseFrameWork.Draw.Point2D;
-        scale.x = this.$el.width;
-        scale.y = this.$el.height;
-        box.canvasScale = scale;
         this.canvasObjects.add(box);
       }
-    });
-  },
-  methods: {
-    contextCanvasMenu() {
-      ContextMenu.contextMenu.destoryChildren();
-      let lyricsView = BaseFrameWork.createCustomElement('sw-libutton');
-      if(this.isVisibleAnalyser) {
-        lyricsView.menuItem.value = 'Lyrics';
-      } else {
-        lyricsView.menuItem.value = 'Visualizer';
+    },
+    run() {
+      if (this.ctx) {
+        this.clear();
+        this.renderVisualizer();
+        this.animationId = requestAnimationFrame(this.run);
       }
-      lyricsView.menuItem.onclick=()=>{
-        this.isVisibleAnalyser = !this.isVisibleAnalyser;
-        this.$emit('toggleView');
-      };
-      ContextMenu.contextMenu.appendChild(lyricsView);
-    },
-    run(){
-      this.clear();
-      this.reset();
-      this.earlyRender();
-      this.render();
-      this.lateRender();
-      this.animationId = requestAnimationFrame(this.run);
-    },
-    resize() {
-      this.width = window.innerWidth - 56;
-      this.height = window.innerHeight - 45;
     },
     clear() {
-      this.ctx.clearRect(
-        0,
-        0,
-        this.$el.width,
-        this.$el.height
-      );
-    },
-    reset() {
-      for (const canvasObject of this.canvasObjects) {
-        canvasObject.renderObjectBase();
+      if (this.ctx) {
+        this.ctx.clearRect(0, 0, this.width, this.height);
       }
     },
-    earlyRender() {
-
-    },
-    render() {
-      if(this.analyser != null){
-        let leng = this.analyser.frequencyBinCount;
-        this.spectrums = new Uint8Array(leng);
+    renderVisualizer() {
+      if (this.analyser) {
         this.analyser.getByteFrequencyData(this.spectrums);
-      }
-      for (const canvasObject of this.canvasObjects) {
-        canvasObject.update();
+        for (const box of this.canvasObjects) {
+          box.update();
+          box.renderObjectBase();
+        }
       }
     },
-    lateRender() {
-
+    updateLyrics() {
+      this.lyrics = audio.data.lyrics || 'No lyrics available';
     }
   }
 };
 </script>
+<style scoped>
+canvas {
+  --box-color: #aaa;
+}
+.lyrics-view {
+  white-space: pre-wrap;
+  padding: 10px;
+  font-size: 1.2em;
+  line-height: 1.5;
+  color: var(--box-color);
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  overflow-y: auto;
+  height: 100%;
+  display: block; /* Ensure the lyrics-view is visible */
+}
+.album-art-container{
+  position:absolute; inset:0;
+  overflow:hidden; perspective:1000px;
+}
+.album-art-img{
+  position:absolute; top:50%; left:50%;
+  width:60vmin; height:60vmin; object-fit:cover;
+  transform:translate(-50%,-50%);
+}
+
+/* === トランジション === */
+.album-art-enter-from{
+  transform:translate(-50%,-50%) translateZ(-500px) scale(.3);
+  opacity:0;
+}
+.album-art-enter-to,
+.album-art-leave-from{
+  transform:translate(-50%,-50%) translateZ(0) scale(1);
+  opacity:1;
+}
+.album-art-leave-to{
+  transform:translate(-50%,-50%) translateZ(-500px) scale(.3);
+  opacity:0;
+}
+.album-art-enter-active,
+.album-art-leave-active{
+  transition:transform .6s ease, opacity .6s ease;
+}
+</style>

@@ -20,7 +20,6 @@ import { SoundOwlProperty } from '../../websocket';
 import { SoundSearchAction, UpdateSoundInfomationAction } from '../../page';
 import LoadingListComponent from '../common/LoadingListComponent.vue';
 import SoundClipComponent from '../common/SoundClipComponent.vue';
-import searchBox from '../../main';
 
 export default {
   name: 'SearchVue',
@@ -56,8 +55,7 @@ export default {
         this.isLoad = true;
         let soundSearch = new SoundSearchAction();
 
-        searchBox.value = this.$route.query.SearchWord;
-        soundSearch.formDataMap.append('SearchWord', searchBox.value);
+        soundSearch.formDataMap.append('SearchWord', this.$route.query.SearchWord);
         let listNo = 0;
         soundSearch.httpRequestor.addEventListener('success', event=>{
           for (const response of event.detail.response) {

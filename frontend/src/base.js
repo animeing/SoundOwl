@@ -119,45 +119,124 @@ BaseFrameWork.waitForValue=(checkValue, targetValue, timeout)=> {
   });
 };
 
-
+/**
+ * 排他制御をシンプルに実装するユーティリティクラス。  
+ * 同時に 1 つだけ実行したい処理を「名前付きロック」として登録し、
+ * `action()` で安全に呼び出せます。
+ *
+ * ### 使い方
+ * ```js
+ * const locker = new BaseFrameWork.LockAction();
+ *
+ * // 重い非同期処理を登録
+ * locker.addLockEventListener(
+ *   'heavyTask',
+ *   async () => {
+ *     //本処理
+ *   },
+ *   () => console.warn('timeout!'), // タイムアウト時
+ *   2000                            // 2 秒以内にロック取得できなければ eject
+ * );
+ *
+ * // 実行。並列に呼んでも同時には走らない
+ * await locker.action('heavyTask');
+ * ```
+ */
 BaseFrameWork.LockAction = class {
+  /**
+   * @constructor
+   * 初期化。`isLocked` は現在ロック中かどうかを示します。
+   */
   constructor() {
+    /** @type {boolean} ロック状態 */
     this.isLocked = false;
+
     /**
-     * @type {Object.<string,{function:Function, ejectFunction:Function, timeout:Number}>}
+     * ロック名ごとのハンドラ格納テーブル。
+     * @type {Object.<string, {function: Function, ejectFunction: Function, timeout: number}>}
      */
-    this.actionArray = [];
-  }
-
-  addLockEventListener(name, func, ejectFunc=()=>{}, timeout = 1e3) {
-    this.actionArray[name] = {'function':func, 'ejectFunction':ejectFunc, 'timeout':timeout};
-  }
-
-  action(name) {
-    let action = this.actionArray[name];
-    if(action == null){
-      return;
-    }
-    this.acquire(action.function, action.ejectFunction, action.timeout);
+    this.actionArray = {};
   }
 
   /**
-   * @private
-   * @param {Function} func 
+   * 処理をロック付きで登録します。
+   *
+   * @param {string}   name          一意なロック名
+   * @param {Function} func          ロック取得後に実行する非同期／同期関数
+   * @param {Function} [ejectFunc]   タイムアウト時に呼ばれる関数（既定：空関数）
+   * @param {number}   [timeout=1000] ロック取得を待つ上限ミリ秒
+   * @returns {void}
    */
-  async acquire(func, ejectFunc=()=>{},timeout = 1e3) {
-    await BaseFrameWork.waitForValue(()=>!this.isLocked, true, timeout).then(async ()=>{
-      this.isLocked = true;
-      try{
-        await func();
-      } finally {
-        this.isLocked = false;
-      }
-    }).catch(
-      ejectFunc
-    );
+  addLockEventListener(name, func, ejectFunc = () => {}, timeout = 1e3) {
+    this.actionArray[name] = {
+      function: func,
+      ejectFunction: ejectFunc,
+      timeout
+    };
+  }
+
+  /**
+   * 登録済みロック処理を実行します。
+   *
+   * @param {string} name 登録時のロック名
+   * @returns {Promise<void>} 実行完了を待つ Promise
+   */
+  async action(name) {
+    const action = this.actionArray[name];
+    if (!action) return;
+    await this.acquire(action.function, action.ejectFunction, action.timeout);
+  }
+
+  /**
+   * 内部用ロック取得関数。`@private` 扱い。
+   *
+   * @private
+   * @param {Function} func        ロック取得後に実行する処理
+   * @param {Function} [ejectFunc] タイムアウト時に呼ばれる処理
+   * @param {number}   [timeout]   待機上限ミリ秒
+   * @returns {Promise<void>}
+   */
+  async acquire(func, ejectFunc = () => {}, timeout = 1e3) {
+    await BaseFrameWork
+      .waitForValue(() => !this.isLocked, true, timeout)
+      .then(async () => {
+        this.isLocked = true;
+        try {
+          await func();
+        } finally {
+          this.isLocked = false;
+        }
+      })
+      .catch(ejectFunc);
   }
 };
+
+/**
+ * requestAnimationFrameを利用したアニメーション制御用のユーティリティクラス。
+ * アニメーションの開始・停止を簡単に行うことができます。
+ */
+BaseFrameWork.AnimationFrame = class {
+  _animationFrameId = null;
+  /**
+   * 
+   * @param {function} func 
+   */
+  startAnimation(func) {
+    const loop = () => {
+      func();
+      this._animationFrameId = requestAnimationFrame(loop);
+    }
+    this.stopAnimation();
+    this._animationFrameId = requestAnimationFrame(loop);
+  }
+  stopAnimation() {
+    if(this._animationFrameId == null) {
+      return;
+    }
+    cancelAnimationFrame(this._animationFrameId);
+    this._animationFrameId = null;
+  }
+}
 
 class MousePosition{
   _element = null;
@@ -617,31 +696,35 @@ BaseFrameWork.LimitedList = class extends EventTarget{
 };
 
 export class WakeLockManager {
-  constructor() {
-    this.wakeLock = null;
-    this.active = false;
+  #queue = [];
+  #locked = false;
+
+  /** ロック取得 */
+  requestWakeLock() {
+    if (this.#locked) {
+      return new Promise(resolve => this.#queue.push(resolve));
+    }
+    this.#locked = true;
+    return Promise.resolve();
   }
 
-  async requestWakeLock() {
-    if ('wakeLock' in navigator && !this.active) {
-      try {
-        this.wakeLock = await navigator.wakeLock.request('screen');
-        this.wakeLock.addEventListener('release', () => {
-          this.active = false;
-        });
-        this.active = true;
-      } catch (e) {
-        console.error(`Failed to acquire wake lock: ${e.name}, ${e.message}`);
-        this.active = false;
-      }
+  /** ロック解放 */
+  releaseWakeLock() {
+    if (this.#queue.length) {
+      // 次の待機者を起こす
+      this.#queue.shift()();
+    } else {
+      this.#locked = false;
     }
   }
 
-  async releaseWakeLock() {
-    if (this.wakeLock !== null && this.active) {
-      await this.wakeLock.release();
-      this.wakeLock = null;
-      this.active = false;
+  /** 便利メソッド：排他区間を包む */
+  async runExclusive(fn) {
+    await this.requestWakeLock();
+    try {
+      return await fn();
+    } finally {
+      this.releaseWakeLock();
     }
   }
 }
@@ -1846,8 +1929,12 @@ export class MessageWindow extends HTMLElement{
     return this._messageElement.innerText;
   }
 
-  open(){
+  open(viewTime = 0){
+    this.classList.remove('height-hide');
     fixed.appendChild(this);
+    if(viewTime > 0){
+      this.close(viewTime);
+    }
   }
 
   /**
@@ -2984,11 +3071,6 @@ export const ContextMenu = {
     }
   }
 };
-
-window.addEventListener('contextmenu', (e)=>{
-  ContextMenu.visible(e);
-  e.stopPropagation();
-});
 
 
 addBottomEvent(window);

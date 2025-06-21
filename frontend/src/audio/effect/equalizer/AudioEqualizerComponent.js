@@ -19,7 +19,7 @@ export class AudioEqualizerComponent extends AudioComponent {
     super._setUse(isUse);
     if(isUse) {
       for (const filter of this.filters) {
-        filter.gain = 0;
+        filter.gain.value = 0;
       }
     } else {
       for (const currentGain of this._currentGains) {

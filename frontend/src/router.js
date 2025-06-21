@@ -112,6 +112,14 @@ const router = createRouter({
       }
     },
     {
+      path: '/setting/soundSculptDebug',
+      name: 'soundSculptDebug',
+      component: SettingVue,
+      meta:{
+        title:'Sound Sculpt Debug'
+      }
+    },
+    {
       path: '/setup',
       name: 'setup',
       component: SetUpVue,

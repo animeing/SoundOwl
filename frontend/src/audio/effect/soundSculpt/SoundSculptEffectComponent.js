@@ -1,3 +1,4 @@
+import { BaseFrameWork } from '../../../base';
 import { AudioComponent } from '../AudioComponent';
 import { AudioEqualizerComponent } from '../equalizer/AudioEqualizerComponent';
 
@@ -19,12 +20,8 @@ export class SoundSculptEffectComponent extends AudioComponent {
     this.previousFrequencyEffects = {};
 
     this.voiceMetrics = { 'sum': 0, 'count': 0, 'avg': 0, 'previousAvg': 0, 'normalizedAvg': 0, 'minHz': 300, 'maxHz': 3400 };
+    this.animationFrame = new BaseFrameWork.AnimationFrame();
 
-    /**
-     * @type {number}
-     */
-    this.animationFrameId = null;
-    
     /**
      * 前回のゲイン値を保存するオブジェクト
      */
@@ -82,8 +79,8 @@ export class SoundSculptEffectComponent extends AudioComponent {
     }
     if (this.isUse) {
       this.startEffectLoop();
-    } else if (this.animationFrameId != null) {
-      cancelAnimationFrame(this.animationFrameId);
+    } else {
+      this.animationFrame.stopAnimation();
       this.resetDefaultGains();
     }
   }
@@ -93,8 +90,8 @@ export class SoundSculptEffectComponent extends AudioComponent {
     this.initializeNodes();
     if (this.isUse) {
       this.startEffectLoop();
-    } else if (this.animationFrameId != null) {
-      cancelAnimationFrame(this.animationFrameId);
+    } else {
+      this.animationFrame.stopAnimation();
       this.resetDefaultGains();
     }
   }
@@ -112,7 +109,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
   startEffectLoop() {
     const loop = () => {
       if (!this.isUse) {
-        cancelAnimationFrame(this.animationFrameId);
+        this.animationFrame.stopAnimation();
         this.resetDefaultGains();
         return;
       }
@@ -159,12 +156,8 @@ export class SoundSculptEffectComponent extends AudioComponent {
         this.audioEqualizer.filters[element.hz].gain.value = updatedGains[hzKey] + baseGain;
       });
 
-      // ログ出力
-      // this.logGains(updatedGains);
-
-      this.animationFrameId = requestAnimationFrame(loop);
     };
-    loop();
+    this.animationFrame.startAnimation(loop);
   }
   
 
@@ -300,11 +293,14 @@ export class SoundSculptEffectComponent extends AudioComponent {
       if (!this.previousFrequencyEffects[key]) {
         frequencyBands[key].smoothing = frequencyBands[key].normalizedAvg;
       } else {
-        let alpha = 0.05;
-        frequencyBands[key].smoothing = (1 - alpha) * this.previousFrequencyEffects[key].smoothing + alpha * frequencyBands[key].normalizedAvg;
+        const SMOOTHING_ALPHA = 0.05;
+        frequencyBands[key].smoothing = (1 - SMOOTHING_ALPHA) * this.previousFrequencyEffects[key].smoothing + SMOOTHING_ALPHA * frequencyBands[key].normalizedAvg;
       }
+      if(this.previousFrequencyEffects[key] == undefined) {
+        this.previousFrequencyEffects[key] = JSON.parse(JSON.stringify(frequencyBands[key]));
+      }
+      this.previousFrequencyEffects[key].smoothing = frequencyBands[key].smoothing;
     }
-    this.previousFrequencyEffects = JSON.parse(JSON.stringify(frequencyBands));
   }
 
   /**
@@ -319,7 +315,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
       return;
     }
     let baseGain = 0;
-    let firstKey = +Object.keys(updatedGains)[0];
+    let firstKey = Object.keys(updatedGains)[0];
     let maxDifference = 2.0;
     for (const key in updatedGains) {
       if (Object.hasOwnProperty.call(updatedGains, key)) {
@@ -456,7 +452,13 @@ export class SoundSculptEffectComponent extends AudioComponent {
   }
 
   resetDefaultGains() {
+    if (this.audioEqualizer == null || this.audioEqualizer.gains == null) {
+      return;
+    }
     this.audioEqualizer.gains.forEach(element => {
+      if (this.audioEqualizer.filters[element.hz] == undefined || this.audioEqualizer.filters[element.hz].gain == undefined) {
+        return;
+      }
       this.audioEqualizer.filters[element.hz].gain.value = element.gain;
     });
   }

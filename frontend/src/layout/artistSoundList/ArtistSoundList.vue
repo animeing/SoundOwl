@@ -38,8 +38,8 @@ export default {
     };
   },
   watch: {
-    $route(to, from) {
-      if(to.query.AlbumHash != from.query.AlbumHash){
+    '$route.query.ArtistHash'(newVal, oldVal) {
+      if(newVal != oldVal){
         this.soundClips.splice(0);
         this.isLoad = false;
       }

@@ -1,10 +1,7 @@
 <template>
     <div>
       <SettingTab />
-      <div
-        class="context">
-        <component :is="component" />
-      </div>
+      <component :is="component" />
     </div>
 </template>
 <script>
@@ -13,6 +10,7 @@ import SettingServerComponent from './contents/SettingServerComponent.vue';
 import SettingEqualizerComponent from './contents/SettingEqualizerComponent.vue';
 import SettingEffectComponent from './contents/SettingEffectComponent.vue';
 import SettingTab from './parts/SettingTab.vue';
+import SoundSculptDebug from './contents/SoundSculptDebug.vue';
 
 export default {
   name:'SettingVue',
@@ -21,6 +19,7 @@ export default {
     SettingEqualizerComponent,
     SettingEffectComponent,
     SettingServerComponent,
+    SoundSculptDebug,
   },
   data(){
     return {
@@ -49,6 +48,9 @@ export default {
           break;
         case 'effect':
           this.component = markRaw(SettingEffectComponent);
+          break;
+        case 'soundSculptDebug':
+          this.component = markRaw(SoundSculptDebug);
           break;
         default:
           this.component = markRaw(SettingServerComponent);

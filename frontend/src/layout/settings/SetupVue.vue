@@ -1,6 +1,6 @@
 <template>
     <div>
-        <SettingFormComponent />
+        <SettingFormComponent ref="formRef" />
         <input
             type="button"
             class="button"
@@ -60,11 +60,10 @@ export default {
           messageButtonWindow.open();
           return;
         });
-    
-        for(const element of Array.prototype.slice.call(document.getElementsByTagName('sw-input-param'))){
-          updateSetting.formDataMap.set(element.name, element.value);
+        const formData = this.$refs.formRef.getFormData();
+        for(const [key, value] of Object.entries(formData)) {
+          updateSetting.formDataMap.set(key, value);
         }
-                
         let messageButtonWindow = new MessageButtonWindow();
         messageButtonWindow.value = 'Setting start.';
         messageButtonWindow.addItem('Close', ()=>{
