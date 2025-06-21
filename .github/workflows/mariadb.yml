@@ -1,5 +1,8 @@
 name: MariaDB Initial SQL Test
 
+permissions:
+  contents: read
+
 on:
   push:
   pull_request:
@@ -11,6 +14,9 @@ jobs:
     services:
       mariadb:
         image: mariadb:10.5
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: test_db
         ports:
           - 3306:3306
         options: >-
@@ -18,56 +24,54 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
-        env:
-          MYSQL_ROOT_PASSWORD: root_password
-          MYSQL_DATABASE: test_db
+
+    env:
+      MYSQL:   mysql   -h 127.0.0.1 -P 3306 -uroot -proot_password
+      MYSQLADM: mysqladmin -h 127.0.0.1 -P 3306 -uroot -proot_password
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-    - name: Wait for MariaDB to be ready
+    - name: Wait until MariaDB responds
       run: |
-        retries=30
-        while [ $retries -gt 0 ]; do
-          if docker exec $(docker ps -q -f name=mariadb) mysqladmin ping -uroot -proot_password --silent; then
-            echo "MariaDB is up and running!"
-            break
-          fi
-          echo "Waiting for MariaDB to be ready..."
-          sleep 10
-          retries=$((retries - 1))
+        for i in {1..60}; do
+          $MYSQLADM ping --silent && { echo "MariaDB ready"; exit 0; }
+          sleep 5
         done
-        if [ $retries -eq 0 ]; then
-          echo "MariaDB did not become ready in time."
-          docker logs $(docker ps -q -f name=mariadb)
-          exit 1
-        fi
+        echo "MariaDB not ready" && exit 1
 
     - name: Apply initial SQL
-      run: |
-        docker exec -i $(docker ps -q -f name=mariadb) mysql -uroot -proot_password test_db < parts/setup/db/soundowl_table_mysql.sql
+      run: $MYSQL test_db < parts/setup/db/soundowl_table_mysql.sql
 
-    - name: Verify tables
+    - name: Enable event scheduler & grant privilege
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW TABLES;"
+        $MYSQL    -e "SET GLOBAL event_scheduler = ON;"
+        $MYSQL    -e "GRANT EVENT ON *.* TO 'root'@'%'; FLUSH PRIVILEGES;"
 
-    - name: Verify procedures
+    # ───────── オブジェクト検証 ─────────
+    - name: Verify objects
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW PROCEDURE STATUS WHERE Db = 'test_db';"
+        extract() { grep -oP "$1" parts/setup/db/soundowl_table_mysql.sql; }
 
-    - name: Verify events
-      run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SHOW EVENTS;"
+        tables=$(   extract '^CREATE TABLE `\K[^`]+(?=`)' )
+        procs=$(    extract '^CREATE PROCEDURE (?:`)?\K\w+' )
+        events=$(   extract '^CREATE EVENT (?:IF NOT EXISTS )?(?:`)?\K\w+' )
+        triggers=$( extract '^CREATE TRIGGER (?:`)?\K\w+' )
+        views=$(    extract '^CREATE VIEW (?:`)?\K\w+' )
 
-    - name: Run manage_partitions_and_compact_ids procedure
-      run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "CALL manage_partitions_and_compact_ids();"
+        check () {   # $1=SQL、$2=種類、$3=期待リスト
+          act=$($MYSQL -N -e "$1")
+          for n in $3; do echo "$act" | grep -qw "$n" || { echo "$2 $n is missing"; exit 1; }; done
+        }
 
-    - name: Verify partitions
-      run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'test_db' AND TABLE_NAME = 'sound_play_history';"
+        check "SHOW TABLES FROM test_db;"                               table   "$tables"
+        check "SHOW PROCEDURE STATUS WHERE Db='test_db';"              proc    "$procs"
+        check "SHOW EVENTS FROM test_db;"                              event   "$events"
+        check "SHOW TRIGGERS FROM test_db;"                            trigger "$triggers"
+        check "SHOW FULL TABLES FROM test_db WHERE Table_type='VIEW';"  view    "$views"
 
-    - name: Verify ID compaction
+    - name: Run manage_partitions_and_compact_ids & final checks
       run: |
-        docker exec $(docker ps -q -f name=mariadb) mysql -uroot -proot_password -D test_db -e "SELECT * FROM sound_play_history ORDER BY id;"
+        $MYSQL -D test_db -e "CALL manage_partitions_and_compact_ids();"
+        $MYSQL -D test_db -e "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA='test_db' AND TABLE_NAME='sound_play_history';"
+        $MYSQL -D test_db -e "SELECT COUNT(*) AS rows_after_compaction FROM sound_play_history;"
