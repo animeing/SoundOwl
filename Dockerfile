@@ -1,5 +1,5 @@
-# 安定版のDebianをベースにしたPHPとApacheの最新イメージを使用
-FROM php:8.1-apache-buster
+# PHP 8.1 on a maintained Debian distribution
+FROM php:8.1-apache
 
 # リポジトリのキーを更新
 RUN apt-get update --allow-releaseinfo-change \
