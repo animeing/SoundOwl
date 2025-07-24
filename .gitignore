@@ -1,4 +1,6 @@
 /vendor/
 /api/lock/
 /frontend/node_modules
-/js/
+/js
+/node_modules
+/package-lock.json
