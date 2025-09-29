@@ -14,6 +14,7 @@
     "@ffmpeg/ffmpeg": "^0.12.7",
     "@ffmpeg/util": "^0.12.1",
     "axios": "^1.6.2",
+    "dotenv": "^17.2.2",
     "encoding-japanese": "^2.2.0",
     "ffmpeg-wasm": "^1.0.1",
     "jschardet": "^3.1.4",
