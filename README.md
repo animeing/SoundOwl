@@ -75,6 +75,9 @@ chmod 755 make.sh
 ![image](https://github.com/animeing/SoundOwl/assets/24301121/318e6bfa-c9ef-456a-86ea-f7f6796d55a4)
  - 設定を変更せずに "sound regist" ボタンを実行
 
+## Node.js フロントエンド移行方針
+フロントをPHPの`index.php`からNode.js(Express)へ段階的に移行します。詳細は`FRONTEND_NODE_PLAN.md`を参照してください。
+
 ## Function
 
 ### Equalizer

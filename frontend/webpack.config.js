@@ -1,5 +1,6 @@
 const path = require('path');
 const { DefinePlugin } = require('webpack');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const { VueLoaderPlugin } = require('vue-loader');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -54,7 +55,8 @@ module.exports = {
     new DefinePlugin({
       __VUE_OPTIONS_API__: true,
       __VUE_PROD_DEVTOOLS__: false,
-      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false
+      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
+      'process.env.API_BASE_URL': JSON.stringify(process.env.API_BASE_URL || '')
     }),
     new VueLoaderPlugin(),
     new CircularDependencyPlugin({
