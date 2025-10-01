@@ -8,8 +8,6 @@
           "css/**",
           "js/**",
           "img/**",
-          "parts/**",
-          "vendor/**",
           "manifest.json",
           "favicon.ico",
           "favicon.svg",
@@ -17,7 +15,8 @@
           "favicon_32x32.png",
           "favicon_64x64.png",
           "favicon_128x128.png",
-          "favicon_256x256.png"
+          "favicon_256x256.png",
+          "parts/**"
         ]
       }
     }
