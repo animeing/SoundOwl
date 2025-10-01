@@ -1,9 +1,21 @@
-
 import { BASE } from './utilization/path';
 
-export const SoundOwlProperty = {};
-SoundOwlProperty.WebSocket = {};
-SoundOwlProperty.WebSocket.EventTarget = new EventTarget();
+const globalScope = typeof window !== 'undefined' ? window : globalThis;
+const existingProperty = globalScope.SoundOwlProperty || {};
+globalScope.SoundOwlProperty = existingProperty;
+
+export const SoundOwlProperty = existingProperty;
+SoundOwlProperty.WebSocket = SoundOwlProperty.WebSocket || {};
+SoundOwlProperty.WebSocket.EventTarget = SoundOwlProperty.WebSocket.EventTarget || new EventTarget();
+if (typeof SoundOwlProperty.WebSocket.status !== 'boolean') {
+  SoundOwlProperty.WebSocket.status = false;
+}
+if (typeof SoundOwlProperty.WebSocket.retryCount !== 'number') {
+  SoundOwlProperty.WebSocket.retryCount = 0;
+}
+if (typeof SoundOwlProperty.WebSocket.retryInterval !== 'number') {
+  SoundOwlProperty.WebSocket.retryInterval = 1000;
+}
 /**
  * @type {WebSocket}
  */
@@ -26,12 +38,13 @@ SoundOwlProperty.WebSocket.MessageType = class {
     });
   }
 };
-SoundOwlProperty.SoundRegist = {};
-SoundOwlProperty.SoundRegist.registStatus = false;
-SoundOwlProperty.SoundRegist.RegistDataCount = {};
-SoundOwlProperty.SoundRegist.RegistDataCount.sound = 0;
-SoundOwlProperty.SoundRegist.RegistDataCount.artist = 0;
-SoundOwlProperty.SoundRegist.RegistDataCount.album = 0;
+SoundOwlProperty.SoundRegist = SoundOwlProperty.SoundRegist || {};
+SoundOwlProperty.SoundRegist.registStatus = SoundOwlProperty.SoundRegist.registStatus || false;
+SoundOwlProperty.SoundRegist.RegistDataCount = SoundOwlProperty.SoundRegist.RegistDataCount || {};
+SoundOwlProperty.SoundRegist.RegistDataCount.sound = SoundOwlProperty.SoundRegist.RegistDataCount.sound || 0;
+SoundOwlProperty.SoundRegist.RegistDataCount.artist = SoundOwlProperty.SoundRegist.RegistDataCount.artist || 0;
+SoundOwlProperty.SoundRegist.RegistDataCount.album = SoundOwlProperty.SoundRegist.RegistDataCount.album || 0;
+SoundOwlProperty.SoundRegist.RegistDataCount.analysisSound = SoundOwlProperty.SoundRegist.RegistDataCount.analysisSound || 0;
 
 (()=>{
   const maxRetryLimit = 10; // Maximum number of retries allowed

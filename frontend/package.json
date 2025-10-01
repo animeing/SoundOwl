@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "eslint-fix": "npx eslint --fix \"src/**/*.{js,vue}\"",
-    "build": "npx webpack --config webpack.config.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "eslint-fix": "npx eslint --fix \"src/**/*.{js,vue}\""
   },
   "author": "",
   "license": "MIT",
@@ -26,17 +28,10 @@
   },
   "devDependencies": {
     "@mdi/font": "^7.4.47",
+    "@vitejs/plugin-vue": "^4.5.2",
     "@vue/compiler-sfc": "^3.3.8",
-    "circular-dependency-plugin": "^5.2.2",
-    "copy-webpack-plugin": "^13.0.0",
-    "css-loader": "^7.1.1",
     "eslint": "^9.4.0",
     "eslint-plugin-vue": "^10.0.0",
-    "eslint-webpack-plugin": "^5.0.0",
-    "style-loader": "^4.0.0",
-    "vue-loader": "^17.3.1",
-    "webpack": "^5.89.0",
-    "webpack-bundle-analyzer": "^4.10.1",
-    "webpack-cli": "^6.0.1"
+    "vite": "^4.5.2"
   }
 }

@@ -16,7 +16,8 @@
           "favicon_64x64.png",
           "favicon_128x128.png",
           "favicon_256x256.png",
-          "parts/**"
+          "parts/**",
+          "frontend/dist/**"
         ]
       }
     }
