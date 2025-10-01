@@ -1,8 +1,11 @@
+const currentUrl = window.location.href.split('#')[0];
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || `${currentUrl}api/`;
+
 export const BASE = {
-  DOMAIN:'',
-  SAVE_PATH:window.location.href.split('#')[0],
-  HOME:window.location.href.split('#')[0],
-  VUE_HOME:window.location.href.split('#')[0]+'#/',
-  API:process.env.API_BASE_URL || window.location.href.split('#')[0]+'api/',
-  WEBSOCKET:window.location.hostname
+  DOMAIN: '',
+  SAVE_PATH: currentUrl,
+  HOME: currentUrl,
+  VUE_HOME: `${currentUrl}#/`,
+  API: apiBaseUrl,
+  WEBSOCKET: window.location.hostname
 };
