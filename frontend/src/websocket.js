@@ -106,7 +106,11 @@ SoundOwlProperty.SoundRegist.RegistDataCount.analysisSound = SoundOwlProperty.So
       }, SoundOwlProperty.WebSocket.retryInterval); // Already validated above
     };
   };
-  webSocketAction();
+  try{
+    webSocketAction();
+  } catch(e){
+    console.error('WebSocket initialization error:', e);
+  }
 })();
 
 
