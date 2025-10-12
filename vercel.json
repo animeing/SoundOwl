@@ -1,4 +1,7 @@
 {
+  "installCommand": "npm install && npm --prefix frontend install",
+  "buildCommand": "npm --prefix frontend run build",
+  "outputDirectory": "js",
   "builds": [
     {
       "src": "server.js",
