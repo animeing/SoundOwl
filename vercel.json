@@ -4,14 +4,22 @@
   "builds": [
     {
       "src": "server.js",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "server/**",
+          "css/**",
+          "img/**",
+          "js/**",
+          "parts/setting.ini",
+          "manifest.json",
+          "favicon.ico",
+          "favicon.svg",
+          "favicon_*.png"
+        ]
+      }
     }
   ],
-  "functions": {
-    "server.js": {
-      "includeFiles": "{server/**,css/**,img/**,js/**,parts/setting.ini,manifest.json,favicon.ico,favicon.svg,favicon_*.png}"
-    }
-  },
   "routes": [
     {
       "src": "/(.*)",
