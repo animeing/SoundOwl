@@ -1,6 +1,6 @@
 {
   "installCommand": "if [ -f server.js ]; then npm install && npm --prefix frontend install; elif [ -f ../server.js ]; then npm --prefix .. install && npm install; else npm install; fi",
-  "buildCommand": "if [ -d frontend ]; then npm --prefix frontend run build; elif [ -f package.json ]; then npm run build; elif [ -f ../frontend/package.json ]; then npm --prefix ../frontend run build; else echo 'No frontend build script found'; fi",
+  "buildCommand": "if [ -d frontend ]; then npm --prefix frontend run build; elif [ -f package.json ]; then npm run build; elif [ -f ../frontend/package.json ]; then npm --prefix ../frontend run build; else echo 'No frontend build script found'; fi; if [ ! -f server.js ] && [ -d ../js ]; then rm -rf ./js && cp -a ../js ./js; fi",
   "outputDirectory": "js",
   "builds": [
     {
