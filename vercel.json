@@ -1,6 +1,6 @@
 {
-  "installCommand": "bash vercel/install.sh || bash ../vercel/install.sh",
-  "buildCommand": "bash vercel/build.sh || bash ../vercel/build.sh",
+  "installCommand": "npm install",
+  "buildCommand": "npm --prefix frontend run build",
   "outputDirectory": "js",
   "builds": [
     {
