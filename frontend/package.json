@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "eslint-fix": "npx eslint --fix \"src/**/*.{js,vue}\"",
-    "build": "npx webpack --config webpack.config.js"
+    "build": "node ../vercel/run-frontend-build.mjs",
+    "build:webpack": "npx webpack --config webpack.config.js"
   },
   "author": "",
   "license": "MIT",
