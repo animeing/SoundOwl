@@ -9,17 +9,7 @@
   ],
   "functions": {
     "server.js": {
-      "includeFiles": [
-        "server/**",
-        "css/**",
-        "img/**",
-        "js/**",
-        "parts/setting.ini",
-        "manifest.json",
-        "favicon.ico",
-        "favicon.svg",
-        "favicon_*.png"
-      ]
+      "includeFiles": "{server/**,css/**,img/**,js/**,parts/setting.ini,manifest.json,favicon.ico,favicon.svg,favicon_*.png}"
     }
   },
   "routes": [
