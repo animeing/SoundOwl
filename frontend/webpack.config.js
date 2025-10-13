@@ -8,6 +8,16 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = {
   cache: false,
   mode: 'development',
+  ignoreWarnings: [
+    {
+      module: /@ffmpeg\/ffmpeg\/dist\/esm\/worker\.js/,
+      message: /Critical dependency: the request of a dependency is an expression/
+    },
+    {
+      module: /@ffmpeg\/ffmpeg\/dist\/esm\/classes\.js/,
+      message: /Critical dependency: the request of a dependency is an expression/
+    }
+  ],
   resolve: {
     alias: {
       'vue$': 'vue/dist/vue.esm-bundler.js' // 'vue.esm-bundler.js' for Vue 3

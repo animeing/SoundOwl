@@ -1,6 +1,7 @@
 {
   "installCommand": "bash vercel/install.sh || bash ../vercel/install.sh",
   "buildCommand": "bash vercel/build.sh || bash ../vercel/build.sh",
+  "outputDirectory": "js",
   "builds": [
     {
       "src": "server.js",
