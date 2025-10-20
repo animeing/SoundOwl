@@ -34,14 +34,21 @@ final class FileUtil implements IMimeType{
         if(strpos($dir,'RECYCLE.BIN') !== false) {
             return array();
         }
-        $files = glob(rtrim($dir, '/') .  '/*', GLOB_BRACE);
+        $files = scandir($dir);
+        if ($files === false) {
+            return;
+        }
         $list = array();
-        foreach ($files as $file) {
-            if (is_file($file)) {
-                $list[] = $file;
+        foreach ($files as $fileName) {
+            if ($fileName === '.' || $fileName === '..') {
+                continue;
             }
-            if (is_dir($file)) {
-                $list = array_merge($list, FileUtil::getFileList($file));
+            $filePath = rtrim($dir, '/') . '/' . $fileName;
+            if (is_file($filePath)) {
+                $list[] = $filePath;
+            }
+            if (is_dir($filePath)) {
+                $list = array_merge($list, FileUtil::getFileList($filePath));
             }
         }
         return $list;
@@ -84,13 +91,20 @@ final class FileUtil implements IMimeType{
                 return array();
             }
         }
-        $files = glob(rtrim($dir, '/') .  '/*', GLOB_BRACE);
-        foreach ($files as $file) {
-            if (is_file($file)) {
-                $action($file);
+        $files = scandir($dir);
+        if ($files === false) {
+            return;
+        }
+        foreach ($files as $fileName) {
+            if ($fileName === '.' || $fileName === '..') {
+                continue;
             }
-            if (is_dir($file)) {
-                FileUtil::fileListAction($file, $action, $exclusionPaths);
+            $filePath = rtrim($dir, '/') . '/' . $fileName;
+            if (is_file($filePath)) {
+                $action($filePath);
+            }
+            if (is_dir($filePath)) {
+                FileUtil::fileListAction($filePath, $action, $exclusionPaths);
             }
         }
     }
