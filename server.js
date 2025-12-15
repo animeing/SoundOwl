@@ -24,6 +24,7 @@ const retryInterval = parseInt(settings.websocket_retry_interval || 10000, 10);
 if (fs.existsSync(distDir)) {
   app.use(express.static(distDir, { index: false }));
 }
+app.use(express.static(rootDir, { index: false }));
 
 // serve fontisto.ttf similar to img/fontisto.php
 app.get('/img/fontisto.php', (req, res) => {
