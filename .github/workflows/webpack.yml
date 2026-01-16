@@ -37,7 +37,7 @@ jobs:
         cd frontend
         npx webpack --config webpack.config.js
 
-    - name: upload js folder
+    - name: upload js folder ${{ matrix.node-version }}
       uses: actions/upload-artifact@v4
       with:
         path: frontend
