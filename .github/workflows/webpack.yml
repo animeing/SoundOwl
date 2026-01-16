@@ -2,8 +2,10 @@ name: NodeJS with Webpack
 
 on:
   push:
+    paths: ["frontend"]
     branches: [ "main" ]
   pull_request:
+    paths: ["frontend"]
     branches: [ "main" ]
 
 permissions:
@@ -34,3 +36,8 @@ jobs:
       run :  |
         cd frontend
         npx webpack --config webpack.config.js
+
+    - name: upload js folder
+      uses: actions/upload-artifact@v4
+      with:
+        path: frontend/dist
