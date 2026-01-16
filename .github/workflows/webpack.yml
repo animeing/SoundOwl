@@ -40,4 +40,5 @@ jobs:
     - name: upload js folder
       uses: actions/upload-artifact@v4
       with:
-        path: frontend/dist
+        path: frontend
+        retention-days: 3
