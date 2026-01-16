@@ -2,10 +2,10 @@ name: NodeJS with Webpack
 
 on:
   push:
-    paths: ["frontend"]
+    paths: ["frontend/**"]
     branches: [ "main" ]
   pull_request:
-    paths: ["frontend"]
+    paths: ["frontend/**"]
     branches: [ "main" ]
 
 permissions:
