@@ -5,7 +5,7 @@
 
       <v-card-text>
         <div class="d-flex" style="flex-wrap: wrap;align-content: space-around;">
-          <v-card class="mb-4" outlined style="background: inherit;">
+          <v-card class="mb-4" variant="outlined" style="background: inherit;">
             <v-card-title>Equalizer Setting (L ch)</v-card-title>
             <v-card-text>
               <div class="equalizer-setting-container">
@@ -26,7 +26,7 @@
               </div>
             </v-card-text>
           </v-card>
-          <v-card class="mb-4" outlined style="background: inherit;">
+          <v-card class="mb-4" variant="outlined" style="background: inherit;">
             <v-card-title>Equalizer Setting (R ch)</v-card-title>
 
             <v-card-text>

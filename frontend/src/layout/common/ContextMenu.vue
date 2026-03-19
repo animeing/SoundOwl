@@ -10,7 +10,6 @@
     <v-menu
       ref="menuRef"
       v-model="menuVisible"
-      offset-y
       eager
       content-class="custom-context-menu"
       :style="{
@@ -26,7 +25,7 @@
           <template v-if="item.children">
             <v-menu
               open-on-hover
-              offset-x
+              location="end"
               eager
               v-if="menuVisible"
               :style="{
@@ -84,7 +83,6 @@
 
   function closeMenu() {
     menuVisible.value = false
-    console.log('closeMenu')
   }
 
   function openMenu(event) {

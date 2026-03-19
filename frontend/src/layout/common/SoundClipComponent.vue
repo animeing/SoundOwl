@@ -25,7 +25,7 @@
         </v-col>
 
         <v-col class="layout-box">
-          <v-tooltip bottom>
+          <v-tooltip location="bottom">
             <template #activator="{ props }">
               <div
                 v-bind="props"
@@ -38,7 +38,7 @@
             <span>{{ soundClip.title }}</span>
           </v-tooltip>
 
-          <v-tooltip bottom>
+          <v-tooltip location="bottom">
             <template #activator="{ props }">
               <router-link
                 v-bind="props"
@@ -52,7 +52,7 @@
             <span>{{ soundClip.artist }}</span>
           </v-tooltip>
 
-          <v-tooltip bottom v-if="hasAlbumData">
+          <v-tooltip v-if="hasAlbumData" location="bottom">
             <template #activator="{ props }">
               <router-link
                 v-bind="props"

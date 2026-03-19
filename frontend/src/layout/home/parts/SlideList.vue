@@ -17,7 +17,7 @@
       >
         <v-slide-group-item>
           <div class="slide-item">
-            <v-tooltip bottom>
+            <v-tooltip location="bottom">
               <template #activator="{ props }">
                 <div v-bind="props">
                   <v-card

@@ -1,6 +1,6 @@
 <template>
   <v-container class="py-4" fluid>
-        <v-card outlined style="background: inherit;">
+        <v-card variant="outlined" style="background: inherit;">
           <v-card-title>Effect Settings</v-card-title>
           <v-divider></v-divider>
           <v-expansion-panels multiple style="background: inherit;">
@@ -13,7 +13,7 @@
                     v-model="isUseSoundSculpt"
                     inset
                     hide-details
-                    @change="toggleEffect"
+                    @update:modelValue="toggleEffect"
                   ></v-switch>
                 </div>
               </v-expansion-panel-title>
@@ -31,7 +31,7 @@
                     v-model="isUseLoudnessNormalization"
                     inset
                     hide-details
-                    @change="toggleLoudnessNormalization"
+                    @update:modelValue="toggleLoudnessNormalization"
                   ></v-switch>
                 </div>
               </v-expansion-panel-title>
@@ -155,12 +155,14 @@ export default {
             : 'OFF';
         });
     },
-    toggleEffect() {
-      audio.exAudioEffect.isUse = !audio.exAudioEffect.isUse;
+    toggleEffect(value) {
+      this.isUseSoundSculpt = value;
+      audio.exAudioEffect.isUse = value;
       audioParamSave();
     },
-    toggleLoudnessNormalization() {
-      audio.loudnessNormalize.isUse = !audio.loudnessNormalize.isUse;
+    toggleLoudnessNormalization(value) {
+      this.isUseLoudnessNormalization = value;
+      audio.loudnessNormalize.isUse = value;
       audioParamSave();
     },
     changeReverbEffect() {

@@ -1,19 +1,17 @@
 <template>
   <v-container
-    style="background-color: black; color: white; padding: 16px; border-radius: 8px;"
     fluid
-    justify="center"
-    class="align-center"
+    class="align-center footer-shell"
     ref="parentContainer"
   >
     <v-row>
       <v-col cols="4" style="display: flex; align-items: center" class="footer-media">
         <!-- 左側の情報（タイトル、アーティスト、アルバム） -->
-        <v-row fill-height style="min-width: calc(100% + 24px);">
+        <v-row class="media-meta-row">
           <v-col style="flex-grow: 0; padding: 2px;">
             <v-img
               :src="createImageSrc(currentPlaySoundClip.albumKey)"
-              aspect-raito="1"
+              aspect-ratio="1"
               width="70"
               height="66"
               class="album-image"
@@ -26,7 +24,7 @@
           </v-col>
           <v-col width="100" style="overflow: hidden;">
             <v-row>
-              <v-tooltip bottom>
+              <v-tooltip location="bottom">
                 <template #activator="{ props }">
                   <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.title">
                     <PingPongMarquee>
@@ -38,7 +36,7 @@
               </v-tooltip>
             </v-row>
             <v-row>
-              <v-tooltip bottom>
+              <v-tooltip location="bottom">
                 <template #activator="{ props }">
                   <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.artist">
                     <router-link
@@ -55,7 +53,7 @@
               </v-tooltip>
             </v-row>
             <v-row>
-              <v-tooltip bottom>
+              <v-tooltip location="bottom">
                 <template #activator="{ props }">
                   <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.album">
                     <router-link
@@ -95,7 +93,7 @@
             <v-btn icon @click="toggleAudioList">
               <v-icon>mdi-playlist-music</v-icon>
             </v-btn>
-            <v-menu v-model="volumeMenu" offset-y :close-on-content-click="false">
+            <v-menu v-model="volumeMenu" location="top" :close-on-content-click="false">
               <template #activator="{ props }">
                 <v-btn icon v-bind="props">
                   <v-icon>mdi-volume-high</v-icon>
@@ -234,7 +232,7 @@ export default {
 
     const overlayHeightStyle = computed(()=>{
       return {
-        bottom: `${{containerHeight}}px`,
+        bottom: `${containerHeight.value}px`,
         'max-height': `calc(100vh - ${containerHeight.value}px )`
       }
     });
@@ -254,7 +252,8 @@ export default {
     watch(
       () => this.isFullScreenOverlay,
       (newVal) => {
-        document.html().setAttribute('style', `overflow:${newVal ? 'hidden' : ''};`);
+        document.documentElement.style.overflow = newVal ? 'hidden' : '';
+        document.body.style.overflow = newVal ? 'hidden' : '';
       }
     );
     audioParamLoad();
@@ -420,7 +419,6 @@ export default {
       });
     },
     toggleAudioList() {
-      console.log(this.isAudioListVisible);
       this.isAudioListVisible = !this.isAudioListVisible;
       // 開いた直後だけ現在再生中へスクロール
       if (this.isAudioListVisible) {
@@ -454,6 +452,18 @@ export default {
   margin-bottom: 0;
 }
 
+.footer-shell {
+  background-color: black;
+  color: white;
+  padding: 16px;
+  border-radius: 8px 8px 0 0;
+}
+
+.media-meta-row {
+  min-width: 0;
+  width: 100%;
+}
+
 .sub {
   font-size: 0.8rem;
 }
@@ -462,8 +472,9 @@ export default {
   position: fixed;
   right: 0;
   z-index: 50;
-  width: 564px;
-  height: 100vw;
+  width: min(564px, 100vw);
+  max-width: 100vw;
+  height: min(100vw, 100vh);
 }
 
 /* 全画面オーバーレイのスタイル */

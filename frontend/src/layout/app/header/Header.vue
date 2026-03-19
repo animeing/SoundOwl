@@ -1,54 +1,58 @@
 <template>
   <v-app-bar
-    app
     :elevation="2"
     color="grey-darken-4"
-    dense 
-    density="compact">
-    <v-toolbar-title >
+    density="compact"
+    class="px-2"
+  >
+    <v-toolbar-title class="title-wrap">
       <router-link
-        :to="{name:'home'}"
+        :to="{ name: 'home' }"
         title="Home"
-        style="color: rgba(var(--v-theme-on-background), var(--v-high-emphasis-opacity));">
+        class="title-link"
+      >
         SoundOwl
       </router-link>
     </v-toolbar-title>
-    <v-spacer></v-spacer>
+
+    <v-spacer v-if="!isSmall" />
+
     <v-btn
       v-if="isSmall && !showSearch"
       variant="outlined"
       density="compact"
       rounded
-      @click="toggleSearch"
       class="search-btn"
+      @click="toggleSearch"
     >
       <v-icon>mdi-magnify</v-icon>
     </v-btn>
 
     <v-text-field
       v-if="!isSmall || showSearch"
+      ref="searchField"
       v-model="q"
       placeholder="Search..."
-      flat
       rounded
       hide-details
       prepend-inner-icon="mdi-magnify"
       variant="outlined"
       density="compact"
-      @keydown.enter="submit"
-      @blur="handleBlur"
-      ref="searchField"
       class="transition-width search-input"
       :append-inner-icon="isSmall ? 'mdi-close' : ''"
+      @keydown.enter="submit"
+      @blur="handleBlur"
       @click:append-inner="closeSearch"
-    ></v-text-field>
-    <Menu></Menu>
+    />
+
+    <Menu />
   </v-app-bar>
 </template>
+
 <script>
+import { nextTick } from 'vue';
+import { useDisplay } from 'vuetify';
 import Menu from './menu/Menu.vue';
-import { ref, watch, nextTick, computed } from 'vue'
-import { useDisplay } from 'vuetify'
 
 export default {
   name: 'Header',
@@ -58,24 +62,26 @@ export default {
   data() {
     return {
       q: '',
-      showSearch: false,
-      isSmall:false
+      showSearch: false
     };
   },
-  created(){
-    const {xs, sm} = useDisplay();
-    this.isSmall = computed(() => xs.value || sm.value);
+  setup() {
+    const display = useDisplay();
+
+    return {
+      isSmall: display.smAndDown
+    };
   },
   methods: {
     submit() {
       this.$router.push({ name: 'search', query: { SearchWord: this.q } });
     },
-    toggleSearch()  {
+    toggleSearch() {
       this.showSearch = !this.showSearch;
       if (this.showSearch) {
         nextTick(() => {
-          this.$refs.searchField.focus();
-        })
+          this.$refs.searchField?.focus();
+        });
       }
     },
     closeSearch() {
@@ -85,41 +91,47 @@ export default {
     },
     handleBlur() {
       if (this.isSmall) {
-        setTimeout(() => {
+        window.setTimeout(() => {
           this.showSearch = false;
         }, 100);
       }
     }
-
-  },
-}
+  }
+};
 </script>
 
 <style scoped>
-  .transition-width {
-    transition: width 0.3s ease;
-  }
+.transition-width {
+  transition: width 0.3s ease;
+}
 
+.search-input {
+  width: min(320px, 100%);
+  max-width: 100%;
+}
+
+.title-wrap {
+  overflow: hidden;
+  min-width: 0;
+}
+
+.title-link {
+  color: rgba(var(--v-theme-on-background), var(--v-high-emphasis-opacity));
+  text-decoration: none;
+}
+
+.search-btn {
+  width: 40px;
+  min-height: 40px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media screen and (max-width: 768px) {
   .search-input {
-    width: 250px;
+    margin-inline: 8px;
   }
-
-  .v-toolbar-title{
-    overflow-x: hidden;
-  }
-  .search-btn {
-    width: 40px;
-    min-height: 40px; 
-    padding: 0 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  @media screen and (max-width: 768px) {
-    .v-spacer {
-      display: none;
-      visibility: hidden;
-
-    }
-  }
+}
 </style>

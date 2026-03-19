@@ -8,13 +8,13 @@
             :items="presetNames"
             @update:modelValue="changedPreset"
             label="Preset"
-            outlined
-            dense
+            variant="outlined"
+            density="comfortable"
             hide-details
             class="equalizer-preset-select"></v-select>
         </v-card-actions>
         <v-card-text>
-          <v-card class="mb-4" outlined style="background: inherit;">
+          <v-card class="mb-4" variant="outlined" style="background: inherit;">
             <v-card-title>Setting</v-card-title>
             <v-card-text>
                 <div class="equalizer-setting-container">
