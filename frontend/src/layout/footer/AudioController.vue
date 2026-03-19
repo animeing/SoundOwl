@@ -1,95 +1,96 @@
 <template>
   <v-container
     fluid
-    class="align-center footer-shell"
+    class="footer-shell"
     ref="parentContainer"
   >
-    <v-row>
-      <v-col cols="4" style="display: flex; align-items: center" class="footer-media">
-        <!-- 左側の情報（タイトル、アーティスト、アルバム） -->
-        <v-row class="media-meta-row">
-          <v-col style="flex-grow: 0; padding: 2px;">
-            <v-img
-              :src="createImageSrc(currentPlaySoundClip.albumKey)"
-              aspect-ratio="1"
-              width="70"
-              height="66"
-              class="album-image"
-              lazy-src="img/placeholder-image.webp"
-              >
-              <template #placeholder>
-                <v-skeleton-loader type="image" class="fill-height"></v-skeleton-loader>
-              </template>
-            </v-img>
-          </v-col>
-          <v-col width="100" style="overflow: hidden;">
-            <v-row>
-              <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.title">
-                    <PingPongMarquee>
-                      <span>{{ currentPlaySoundClip.title }}</span>
-                    </PingPongMarquee>
-                  </div>
-                </template>
-                {{ currentPlaySoundClip.title }}
-              </v-tooltip>
-            </v-row>
-            <v-row>
-              <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.artist">
-                    <router-link
-                      v-bind="props"
-                      :to="{ name: 'artist', query: { ArtistHash: currentPlaySoundClip.artistKey } }"
-                    >
-                      <MarqueeText style="max-width: 100%;">
-                        <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.artist }}</span>
-                      </MarqueeText>
-                    </router-link>
-                  </div>
-                </template>
-                {{ currentPlaySoundClip.artist }}
-              </v-tooltip>
-            </v-row>
-            <v-row>
-              <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.album">
-                    <router-link
-                      v-bind="props"
-                      :to="{ name: 'album', query: { AlbumHash: currentPlaySoundClip.albumKey } }"
-                    >
-                      <MarqueeText style="max-width: 100%;">
-                        <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.album }}</span>
-                      </MarqueeText>
-                    </router-link>
-                  </div>
-                </template>
-                {{ currentPlaySoundClip.album }}
-              </v-tooltip>
-            </v-row>
-          </v-col>
-        </v-row>
-      </v-col>
+    <div class="deploy-marker" aria-hidden="true" v-html="deployMarkerComment"></div>
+
+    <div class="footer-layout">
+      <div class="footer-meta">
+        <v-img
+          :src="createImageSrc(currentPlaySoundClip.albumKey)"
+          aspect-ratio="1"
+          width="70"
+          height="66"
+          class="album-image"
+          lazy-src="img/placeholder-image.webp"
+        >
+          <template #placeholder>
+            <v-skeleton-loader type="image" class="fill-height"></v-skeleton-loader>
+          </template>
+        </v-img>
+
+        <div class="footer-meta-text">
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.title">
+                <PingPongMarquee>
+                  <span>{{ currentPlaySoundClip.title }}</span>
+                </PingPongMarquee>
+              </div>
+            </template>
+            {{ currentPlaySoundClip.title }}
+          </v-tooltip>
+
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.artist">
+                <router-link
+                  v-bind="props"
+                  :to="{ name: 'artist', query: { ArtistHash: currentPlaySoundClip.artistKey } }"
+                  class="meta-link"
+                >
+                  <MarqueeText style="max-width: 100%;">
+                    <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.artist }}</span>
+                  </MarqueeText>
+                </router-link>
+              </div>
+            </template>
+            {{ currentPlaySoundClip.artist }}
+          </v-tooltip>
+
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.album">
+                <router-link
+                  v-bind="props"
+                  :to="{ name: 'album', query: { AlbumHash: currentPlaySoundClip.albumKey } }"
+                  class="meta-link"
+                >
+                  <MarqueeText style="max-width: 100%;">
+                    <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.album }}</span>
+                  </MarqueeText>
+                </router-link>
+              </div>
+            </template>
+            {{ currentPlaySoundClip.album }}
+          </v-tooltip>
+        </div>
+      </div>
+
       <v-divider vertical class="space"></v-divider>
-      <v-col cols="8" class="footer-media">
-        <v-row>
-          <v-col class="d-flex justify-center pa-0">
+
+      <div class="footer-main">
+        <div class="footer-controls-row">
+          <div class="controls-spacer"></div>
+
+          <div class="primary-controls">
             <v-btn icon @click="beforeIconClick" data-hint="Previous">
               <v-icon>mdi-skip-previous</v-icon>
             </v-btn>
             <v-btn icon v-if="!isPlaying" @click="playPauseIconClick" data-hint="Play">
               <v-icon>mdi-play</v-icon>
             </v-btn>
-            <v-btn icon v-if="isPlaying" @click="playPauseIconClick" data-hint="Pause">
+            <v-btn icon v-else @click="playPauseIconClick" data-hint="Pause">
               <v-icon>mdi-pause</v-icon>
             </v-btn>
             <v-btn icon @click="nextIconClick" data-hint="Next">
               <v-icon>mdi-skip-next</v-icon>
             </v-btn>
-          </v-col>
-          <v-col class="d-flex justify-end pa-0">
+          </div>
+
+          <div class="secondary-controls">
             <v-btn icon @click="toggleAudioList">
               <v-icon>mdi-playlist-music</v-icon>
             </v-btn>
@@ -113,34 +114,29 @@
                 </v-card-text>
               </v-card>
             </v-menu>
-            <!-- 全画面オーバーレイを表示するボタン -->
             <v-btn icon @click="toggleFullScreenOverlay">
               <v-icon>
                 {{ isFullScreenOverlay ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}
               </v-icon>
             </v-btn>
-          </v-col>
-        </v-row>
-        <v-row :height="35">
-          <v-col class="pr-5 py-0">
-            <sw-audio-progress
-              class="progress-times"
-              :data-hint="playTimeString"
-              :slider-value="playTime"
-              :max="durationTime"
-              min="0"
-              @changingValue="changeingPlayPoint"
-              @changed="changedPlayPoint"
-              @mousemove="hint"
-            />
-          </v-col>
-          <!-- 再生時間表示 -->
-          <v-col class="d-flex justify-end pa-0" cols="1">
-            <span style="color: back">{{ progressText() }}</span>
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
+          </div>
+        </div>
+
+        <div class="footer-progress-row">
+          <sw-audio-progress
+            class="progress-times footer-progress"
+            :data-hint="playTimeString"
+            :slider-value="playTime"
+            :max="durationTime"
+            min="0"
+            @changingValue="changeingPlayPoint"
+            @changed="changedPlayPoint"
+            @mousemove="hint"
+          />
+          <span class="progress-label">{{ progressText() }}</span>
+        </div>
+      </div>
+    </div>
   </v-container>
 
   <teleport to="body">
@@ -154,15 +150,14 @@
       />
     </keep-alive>
   </teleport>
-  <!-- 全画面オーバーレイ -->
+
   <teleport to="body">
     <div v-if="isFullScreenOverlay" class="fullscreen-overlay" :style="overlayHeightStyle">
       <div class="overlay-content">
-        <AudioCanvas @toggleView="toggleView" ></AudioCanvas>
+        <AudioCanvas @toggleView="toggleView"></AudioCanvas>
       </div>
     </div>
   </teleport>
-
 </template>
 
 <script>
@@ -183,7 +178,7 @@ export default {
   name: 'MusicControlBarWithProgress',
   data() {
     return {
-      currentPlaySoundClip: audio.currentAudioClip != null ? audio.currentAudioClip : new AudioClip,
+      currentPlaySoundClip: audio.currentAudioClip != null ? audio.currentAudioClip : new AudioClip(),
       durationTime: 0,
       playTime: 0,
       isAudioList: false,
@@ -195,9 +190,9 @@ export default {
       isVisibleAnalyser: true,
       isPlaying: true,
       isAudioListVisible: false,
-      // 全画面オーバーレイ状態管理
       isFullScreenOverlay: false,
-    }
+      deployMarkerComment: '<!-- TEMP_DEPLOY_MARKER: audio-controller-layout-fix-2026-03-19 REMOVE_BEFORE_MERGING_TO_MAIN -->'
+    };
   },
   setup() {
     const parentContainer = ref(null);
@@ -224,17 +219,17 @@ export default {
     const currentPlayListStyle = computed(() => {
       return {
         background: 'rgb(var(--v-theme-surface))',
-        bottom: containerHeight.value + 'px',
+        bottom: `${containerHeight.value}px`,
         'z-index': 2000,
         'max-height': `calc(100vh - ${containerHeight.value}px - 48px)`
       };
     });
 
-    const overlayHeightStyle = computed(()=>{
+    const overlayHeightStyle = computed(() => {
       return {
         bottom: `${containerHeight.value}px`,
-        'max-height': `calc(100vh - ${containerHeight.value}px )`
-      }
+        'max-height': `calc(100vh - ${containerHeight.value}px)`
+      };
     });
     return {
       overlayHeightStyle,
@@ -312,7 +307,7 @@ export default {
     },
     progressText() {
       let currentText = timeToText(this.playTime);
-      return currentText['min'] + ':' + currentText['sec'];
+      return currentText.min + ':' + currentText.sec;
     },
     togglePlayListView() {
       this.isAudioList = !this.isAudioList;
@@ -364,15 +359,14 @@ export default {
     },
     repeatName() {
       switch (audio.playList.loopMode) {
-        case AudioLoopModeEnum.NON_LOOP: {
+        case AudioLoopModeEnum.NON_LOOP:
           return 'No loop';
-        }
-        case AudioLoopModeEnum.TRACK_LOOP: {
+        case AudioLoopModeEnum.TRACK_LOOP:
           return 'Track loop';
-        }
-        case AudioLoopModeEnum.AUDIO_LOOP: {
+        case AudioLoopModeEnum.AUDIO_LOOP:
           return 'Audio loop';
-        }
+        default:
+          return '';
       }
     },
     changedPlayPoint(event) {
@@ -415,33 +409,63 @@ export default {
       let textTime = timeToText(positionTime);
 
       this.$nextTick(() => {
-        this.playTimeString = textTime['min'] + ':' + textTime['sec'];
+        this.playTimeString = textTime.min + ':' + textTime.sec;
       });
     },
     toggleAudioList() {
       this.isAudioListVisible = !this.isAudioListVisible;
-      // 開いた直後だけ現在再生中へスクロール
       if (this.isAudioListVisible) {
         this.$nextTick(() => {
           this.$refs.currentAudioList?.scrollToCurrentPlaying?.();
         });
       }
     },
-    // 全画面オーバーレイの開閉
     toggleFullScreenOverlay() {
       this.isFullScreenOverlay = !this.isFullScreenOverlay;
-      document.body.style.overflow = this.isFullScreenOverlay?'hidden':'';
+      document.body.style.overflow = this.isFullScreenOverlay ? 'hidden' : '';
     }
   }
-}
+};
 </script>
 
 <style scoped>
+.footer-shell {
+  background-color: black;
+  color: white;
+  padding: 12px 16px 10px;
+  border-radius: 8px 8px 0 0;
+}
+
+.deploy-marker {
+  display: none;
+}
+
+.footer-layout {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.footer-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 1 clamp(240px, 34vw, 620px);
+  min-width: 0;
+}
+
+.footer-meta-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
 
 .album-image {
   border-radius: 8px;
-  max-width: 100%;
-  max-height: 100%;
+  flex-shrink: 0;
 }
 
 .audio-title {
@@ -449,23 +473,67 @@ export default {
   font-weight: bold;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 0;
-}
-
-.footer-shell {
-  background-color: black;
-  color: white;
-  padding: 16px;
-  border-radius: 8px 8px 0 0;
-}
-
-.media-meta-row {
+  white-space: nowrap;
   min-width: 0;
-  width: 100%;
+}
+
+.meta-link {
+  color: inherit;
+  text-decoration: none;
+  display: block;
 }
 
 .sub {
   font-size: 0.8rem;
+}
+
+.space {
+  align-self: stretch;
+}
+
+.footer-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.footer-controls-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.controls-spacer {
+  min-width: 0;
+}
+
+.primary-controls,
+.secondary-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.footer-progress {
+  flex: 1;
+  min-width: 0;
+}
+
+.progress-label {
+  min-width: 56px;
+  text-align: right;
+  color: inherit;
+  font-variant-numeric: tabular-nums;
 }
 
 .audio-list-overlay {
@@ -477,7 +545,6 @@ export default {
   height: min(100vw, 100vh);
 }
 
-/* 全画面オーバーレイのスタイル */
 .fullscreen-overlay {
   position: fixed;
   top: 0;
@@ -488,20 +555,61 @@ export default {
   z-index: 1999;
   color: white;
 }
+
 .overlay-content {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
 }
+
+@media screen and (max-width: 960px) {
+  .footer-layout {
+    align-items: stretch;
+  }
+
+  .footer-meta {
+    flex-basis: 280px;
+  }
+}
+
 @media screen and (max-width: 768px) {
-  .footer-media {
-    min-width: 100%;
+  .footer-shell {
+    padding: 10px 12px 8px;
+    border-radius: 0;
+  }
+
+  .footer-layout {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .footer-meta {
+    flex-basis: auto;
     width: 100%;
   }
+
   .space {
-    visibility: hidden;
     display: none;
+  }
+
+  .footer-controls-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .controls-spacer {
+    display: none;
+  }
+
+  .primary-controls,
+  .secondary-controls {
+    justify-content: center;
+  }
+
+  .footer-progress-row {
+    gap: 10px;
   }
 }
 </style>
