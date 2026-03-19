@@ -1,19 +1,23 @@
 <template>
   <v-app>
-    <Header></Header>
-    <v-main id="base" class="layout-base" :style="{ marginTop: '5px', paddingBottom: `${controllerHeight}px` }">
-      <!-- AudioControllerの高さを考慮してpadding-bottomを動的に設定 -->
-      <router-view></router-view>
+    <Header />
+    <v-main
+      id="base"
+      class="layout-base app-main"
+      :style="mainStyle"
+    >
+      <router-view />
     </v-main>
     <div id="controller" class="audio-play-controller analyser" ref="controller">
-      <AudioController></AudioController>
+      <AudioController />
     </div>
   </v-app>
 </template>
+
 <script>
 import AudioController from '../footer/AudioController.vue';
 import Header from './header/Header.vue';
-import colorThema from '../../thema';
+import { colorThema } from '../../thema';
 
 export default {
   name: 'App',
@@ -23,18 +27,24 @@ export default {
   },
   data() {
     return {
-      style: {
-        '--background-color': '#eee'
-      },
-      controllerHeight: 0 // AudioControllerの高さを保持
+      controllerHeight: 0
     };
   },
+  computed: {
+    mainStyle() {
+      return {
+        '--background-color': colorThema.background,
+        paddingBottom: `${this.controllerHeight}px`
+      };
+    }
+  },
   mounted() {
-    this.style['--background-color'] = colorThema.backgrouund;
-    this.updateControllerHeight();
+    this.$nextTick(() => {
+      this.updateControllerHeight();
+    });
     window.addEventListener('resize', this.updateControllerHeight);
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('resize', this.updateControllerHeight);
   },
   methods: {
@@ -47,6 +57,9 @@ export default {
   }
 };
 </script>
-<style lang="scss">
 
+<style scoped>
+.app-main {
+  margin-top: 5px;
+}
 </style>

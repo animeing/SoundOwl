@@ -3,52 +3,57 @@
     app
     :elevation="2"
     color="grey-darken-4"
-    dense 
-    density="compact">
-    <v-toolbar-title >
+    density="compact"
+    class="header-bar"
+  >
+    <v-toolbar-title class="header-title">
       <router-link
-        :to="{name:'home'}"
+        :to="{ name: 'home' }"
         title="Home"
-        style="color: rgba(var(--v-theme-on-background), var(--v-high-emphasis-opacity));">
+        class="title-link"
+      >
         SoundOwl
       </router-link>
     </v-toolbar-title>
-    <v-spacer></v-spacer>
-    <v-btn
-      v-if="isSmall && !showSearch"
-      variant="outlined"
-      density="compact"
-      rounded
-      @click="toggleSearch"
-      class="search-btn"
-    >
-      <v-icon>mdi-magnify</v-icon>
-    </v-btn>
 
-    <v-text-field
-      v-if="!isSmall || showSearch"
-      v-model="q"
-      placeholder="Search..."
-      flat
-      rounded
-      hide-details
-      prepend-inner-icon="mdi-magnify"
-      variant="outlined"
-      density="compact"
-      @keydown.enter="submit"
-      @blur="handleBlur"
-      ref="searchField"
-      class="transition-width search-input"
-      :append-inner-icon="isSmall ? 'mdi-close' : ''"
-      @click:append-inner="closeSearch"
-    ></v-text-field>
-    <Menu></Menu>
+    <div class="header-actions" :class="{ 'search-open': showSearch }">
+      <v-btn
+        v-if="isSmall && !showSearch"
+        variant="outlined"
+        density="comfortable"
+        rounded
+        @click="toggleSearch"
+        class="search-btn"
+      >
+        <v-icon>mdi-magnify</v-icon>
+      </v-btn>
+
+      <v-text-field
+        v-if="!isSmall || showSearch"
+        v-model="q"
+        placeholder="Search..."
+        flat
+        rounded
+        hide-details
+        prepend-inner-icon="mdi-magnify"
+        variant="outlined"
+        density="compact"
+        @keydown.enter="submit"
+        @blur="handleBlur"
+        ref="searchField"
+        class="transition-width search-input"
+        :append-inner-icon="isSmall ? 'mdi-close' : ''"
+        @click:append-inner="closeSearch"
+      />
+
+      <Menu />
+    </div>
   </v-app-bar>
 </template>
+
 <script>
+import { nextTick } from 'vue';
 import Menu from './menu/Menu.vue';
-import { ref, watch, nextTick, computed } from 'vue'
-import { useDisplay } from 'vuetify'
 
 export default {
   name: 'Header',
@@ -59,23 +64,36 @@ export default {
     return {
       q: '',
       showSearch: false,
-      isSmall:false
+      width: typeof window !== 'undefined' ? window.innerWidth : 1280
     };
   },
-  created(){
-    const {xs, sm} = useDisplay();
-    this.isSmall = computed(() => xs.value || sm.value);
+  computed: {
+    isSmall() {
+      return this.width < 960;
+    }
+  },
+  mounted() {
+    window.addEventListener('resize', this.handleResize);
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.handleResize);
   },
   methods: {
+    handleResize() {
+      this.width = window.innerWidth;
+      if (!this.isSmall) {
+        this.showSearch = false;
+      }
+    },
     submit() {
       this.$router.push({ name: 'search', query: { SearchWord: this.q } });
     },
-    toggleSearch()  {
+    toggleSearch() {
       this.showSearch = !this.showSearch;
       if (this.showSearch) {
         nextTick(() => {
-          this.$refs.searchField.focus();
-        })
+          this.$refs.searchField?.focus();
+        });
       }
     },
     closeSearch() {
@@ -90,36 +108,66 @@ export default {
         }, 100);
       }
     }
-
-  },
-}
+  }
+};
 </script>
 
 <style scoped>
-  .transition-width {
-    transition: width 0.3s ease;
+.header-bar {
+  padding-inline: 8px;
+}
+
+.header-title {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.title-link {
+  color: rgba(var(--v-theme-on-background), var(--v-high-emphasis-opacity));
+  text-decoration: none;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.transition-width {
+  transition: width 0.3s ease;
+}
+
+.search-input {
+  width: min(250px, 42vw);
+  min-width: 0;
+}
+
+.search-btn {
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media screen and (max-width: 959px) {
+  .header-bar {
+    padding-inline: 4px;
+  }
+
+  .header-actions {
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  .header-actions.search-open {
+    width: 100%;
   }
 
   .search-input {
-    width: 250px;
+    width: min(100%, 320px);
   }
-
-  .v-toolbar-title{
-    overflow-x: hidden;
-  }
-  .search-btn {
-    width: 40px;
-    min-height: 40px; 
-    padding: 0 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  @media screen and (max-width: 768px) {
-    .v-spacer {
-      display: none;
-      visibility: hidden;
-
-    }
-  }
+}
 </style>

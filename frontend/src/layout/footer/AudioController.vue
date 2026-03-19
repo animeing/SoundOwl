@@ -1,19 +1,17 @@
 <template>
   <v-container
-    style="background-color: black; color: white; padding: 16px; border-radius: 8px;"
     fluid
-    justify="center"
-    class="align-center"
+    class="audio-controller-shell align-center"
     ref="parentContainer"
   >
-    <v-row>
-      <v-col cols="4" style="display: flex; align-items: center" class="footer-media">
+    <v-row class="audio-controller-row" align="center" no-gutters>
+      <v-col cols="12" md="4" class="footer-media footer-media-info d-flex align-center">
         <!-- 左側の情報（タイトル、アーティスト、アルバム） -->
-        <v-row fill-height style="min-width: calc(100% + 24px);">
+        <v-row class="audio-meta-row" align="center" no-gutters>
           <v-col style="flex-grow: 0; padding: 2px;">
             <v-img
               :src="createImageSrc(currentPlaySoundClip.albumKey)"
-              aspect-raito="1"
+              aspect-ratio="1"
               width="70"
               height="66"
               class="album-image"
@@ -24,7 +22,7 @@
               </template>
             </v-img>
           </v-col>
-          <v-col width="100" style="overflow: hidden;">
+          <v-col class="audio-meta-text">
             <v-row>
               <v-tooltip bottom>
                 <template #activator="{ props }">
@@ -74,10 +72,10 @@
           </v-col>
         </v-row>
       </v-col>
-      <v-divider vertical class="space"></v-divider>
-      <v-col cols="8" class="footer-media">
-        <v-row>
-          <v-col class="d-flex justify-center pa-0">
+      <v-divider vertical class="space desktop-divider"></v-divider>
+      <v-col cols="12" md="8" class="footer-media footer-media-controls">
+        <v-row class="controls-row" align="center">
+          <v-col cols="12" sm="7" class="d-flex justify-center justify-sm-start pa-0 control-buttons">
             <v-btn icon @click="beforeIconClick" data-hint="Previous">
               <v-icon>mdi-skip-previous</v-icon>
             </v-btn>
@@ -91,7 +89,7 @@
               <v-icon>mdi-skip-next</v-icon>
             </v-btn>
           </v-col>
-          <v-col class="d-flex justify-end pa-0">
+          <v-col cols="12" sm="5" class="d-flex justify-center justify-sm-end pa-0 utility-buttons">
             <v-btn icon @click="toggleAudioList">
               <v-icon>mdi-playlist-music</v-icon>
             </v-btn>
@@ -123,8 +121,8 @@
             </v-btn>
           </v-col>
         </v-row>
-        <v-row :height="35">
-          <v-col class="pr-5 py-0">
+        <v-row class="progress-row" align="center">
+          <v-col cols="12" sm="10" class="pr-sm-5 py-0">
             <sw-audio-progress
               class="progress-times"
               :data-hint="playTimeString"
@@ -137,7 +135,7 @@
             />
           </v-col>
           <!-- 再生時間表示 -->
-          <v-col class="d-flex justify-end pa-0" cols="1">
+          <v-col cols="12" sm="2" class="d-flex justify-center justify-sm-end pa-0 progress-text">
             <span style="color: back">{{ progressText() }}</span>
           </v-col>
         </v-row>
@@ -234,8 +232,8 @@ export default {
 
     const overlayHeightStyle = computed(()=>{
       return {
-        bottom: `${{containerHeight}}px`,
-        'max-height': `calc(100vh - ${containerHeight.value}px )`
+        bottom: `${containerHeight.value}px`,
+        maxHeight: `calc(100vh - ${containerHeight.value}px)`
       }
     });
     return {
@@ -254,7 +252,7 @@ export default {
     watch(
       () => this.isFullScreenOverlay,
       (newVal) => {
-        document.html().setAttribute('style', `overflow:${newVal ? 'hidden' : ''};`);
+        document.documentElement.style.overflow = newVal ? 'hidden' : '';
       }
     );
     audioParamLoad();
@@ -420,7 +418,6 @@ export default {
       });
     },
     toggleAudioList() {
-      console.log(this.isAudioListVisible);
       this.isAudioListVisible = !this.isAudioListVisible;
       // 開いた直後だけ現在再生中へスクロール
       if (this.isAudioListVisible) {
@@ -439,6 +436,40 @@ export default {
 </script>
 
 <style scoped>
+.audio-controller-shell {
+  background-color: #000;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 8px 8px 0 0;
+}
+
+.audio-controller-row {
+  row-gap: 8px;
+}
+
+.audio-meta-row {
+  width: 100%;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.audio-meta-text {
+  overflow: hidden;
+  min-width: 0;
+}
+
+.control-buttons,
+.utility-buttons {
+  gap: 4px;
+}
+
+.progress-row {
+  margin-top: 4px;
+}
+
+.progress-text {
+  white-space: nowrap;
+}
 
 .album-image {
   border-radius: 8px;
@@ -462,8 +493,9 @@ export default {
   position: fixed;
   right: 0;
   z-index: 50;
-  width: 564px;
-  height: 100vw;
+  width: min(564px, 100vw);
+  height: auto;
+  max-height: 100vh;
 }
 
 /* 全画面オーバーレイのスタイル */
@@ -483,14 +515,48 @@ export default {
   justify-content: center;
   height: 100%;
 }
-@media screen and (max-width: 768px) {
-  .footer-media {
-    min-width: 100%;
+@media screen and (max-width: 959px) {
+  .audio-controller-shell {
+    padding: 12px;
+  }
+
+  .footer-media-info,
+  .footer-media-controls {
     width: 100%;
   }
+
+  .audio-meta-row {
+    align-items: center;
+  }
+
+  .desktop-divider,
   .space {
-    visibility: hidden;
     display: none;
+  }
+
+  .controls-row,
+  .progress-row {
+    row-gap: 8px;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .audio-controller-shell {
+    padding: 10px 8px;
+  }
+
+  .audio-meta-row {
+    gap: 6px;
+  }
+
+  .control-buttons,
+  .utility-buttons {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .progress-text {
+    justify-content: center;
   }
 }
 </style>
