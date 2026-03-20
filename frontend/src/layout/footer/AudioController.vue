@@ -6,7 +6,7 @@
     class="align-center"
     ref="parentContainer"
   >
-    <v-row columns="12" density="default">
+    <v-row columns="12" no-gutters>
       <v-col cols="4" style="display: flex; align-items: center" class="footer-media">
         <!-- 左側の情報（タイトル、アーティスト、アルバム） -->
         <v-row>
