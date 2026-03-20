@@ -1,146 +1,132 @@
 <template>
   <v-container
     fluid
-    class="audio-controller-shell align-center"
+    class="audio-controller-shell"
     ref="parentContainer"
   >
-    <v-row class="audio-controller-row" align="center" no-gutters>
-      <v-col cols="12" md="4" class="footer-media footer-media-info d-flex align-center">
-        <!-- 左側の情報（タイトル、アーティスト、アルバム） -->
-        <v-row class="audio-meta-row" align="center" no-gutters>
-          <v-col style="flex-grow: 0; padding: 2px;">
-            <v-img
-              :src="createImageSrc(currentPlaySoundClip.albumKey)"
-              aspect-ratio="1"
-              width="70"
-              height="66"
-              class="album-image"
-              lazy-src="img/placeholder-image.webp"
+    <div class="audio-controller-main">
+      <div class="audio-info-panel">
+        <v-img
+          :src="createImageSrc(currentPlaySoundClip.albumKey)"
+          aspect-ratio="1"
+          width="64"
+          height="64"
+          class="album-image"
+          lazy-src="img/placeholder-image.webp"
+        >
+          <template #placeholder>
+            <v-skeleton-loader type="image" class="fill-height" />
+          </template>
+        </v-img>
+
+        <div class="audio-meta-text">
+          <v-tooltip location="top">
+            <template #activator="{ props }">
+              <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.title">
+                <PingPongMarquee>
+                  <span>{{ currentPlaySoundClip.title }}</span>
+                </PingPongMarquee>
+              </div>
+            </template>
+            {{ currentPlaySoundClip.title }}
+          </v-tooltip>
+
+          <v-tooltip location="top">
+            <template #activator="{ props }">
+              <router-link
+                v-bind="props"
+                :to="{ name: 'artist', query: { ArtistHash: currentPlaySoundClip.artistKey } }"
+                class="audio-sub-link"
               >
-              <template #placeholder>
-                <v-skeleton-loader type="image" class="fill-height"></v-skeleton-loader>
-              </template>
-            </v-img>
-          </v-col>
-          <v-col class="audio-meta-text">
-            <v-row>
-              <v-tooltip bottom>
-                <template #activator="{ props }">
-                  <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.title">
-                    <PingPongMarquee>
-                      <span>{{ currentPlaySoundClip.title }}</span>
-                    </PingPongMarquee>
-                  </div>
-                </template>
-                {{ currentPlaySoundClip.title }}
-              </v-tooltip>
-            </v-row>
-            <v-row>
-              <v-tooltip bottom>
-                <template #activator="{ props }">
-                  <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.artist">
-                    <router-link
-                      v-bind="props"
-                      :to="{ name: 'artist', query: { ArtistHash: currentPlaySoundClip.artistKey } }"
-                    >
-                      <MarqueeText style="max-width: 100%;">
-                        <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.artist }}</span>
-                      </MarqueeText>
-                    </router-link>
-                  </div>
-                </template>
-                {{ currentPlaySoundClip.artist }}
-              </v-tooltip>
-            </v-row>
-            <v-row>
-              <v-tooltip bottom>
-                <template #activator="{ props }">
-                  <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.album">
-                    <router-link
-                      v-bind="props"
-                      :to="{ name: 'album', query: { AlbumHash: currentPlaySoundClip.albumKey } }"
-                    >
-                      <MarqueeText style="max-width: 100%;">
-                        <span class="text-medium-emphasis sub">{{ currentPlaySoundClip.album }}</span>
-                      </MarqueeText>
-                    </router-link>
-                  </div>
-                </template>
-                {{ currentPlaySoundClip.album }}
-              </v-tooltip>
-            </v-row>
-          </v-col>
-        </v-row>
-      </v-col>
-      <v-divider vertical class="space desktop-divider"></v-divider>
-      <v-col cols="12" md="8" class="footer-media footer-media-controls">
-        <v-row class="controls-row" align="center">
-          <v-col cols="12" sm="7" class="d-flex justify-center justify-sm-start pa-0 control-buttons">
-            <v-btn icon @click="beforeIconClick" data-hint="Previous">
-              <v-icon>mdi-skip-previous</v-icon>
-            </v-btn>
-            <v-btn icon v-if="!isPlaying" @click="playPauseIconClick" data-hint="Play">
-              <v-icon>mdi-play</v-icon>
-            </v-btn>
-            <v-btn icon v-if="isPlaying" @click="playPauseIconClick" data-hint="Pause">
-              <v-icon>mdi-pause</v-icon>
-            </v-btn>
-            <v-btn icon @click="nextIconClick" data-hint="Next">
-              <v-icon>mdi-skip-next</v-icon>
-            </v-btn>
-          </v-col>
-          <v-col cols="12" sm="5" class="d-flex justify-center justify-sm-end pa-0 utility-buttons">
-            <v-btn icon @click="toggleAudioList">
-              <v-icon>mdi-playlist-music</v-icon>
-            </v-btn>
-            <v-menu v-model="volumeMenu" offset-y :close-on-content-click="false">
-              <template #activator="{ props }">
-                <v-btn icon v-bind="props">
-                  <v-icon>mdi-volume-high</v-icon>
-                </v-btn>
-              </template>
-              <v-card>
-                <v-card-text>
-                  <v-slider
-                    direction="vertical"
-                    height="150"
-                    v-model="volume"
-                    :max="1"
-                    :min="0"
-                    :step="0.01"
-                    @update:model-value="onVolumeChanged"
-                  />
-                </v-card-text>
-              </v-card>
-            </v-menu>
-            <!-- 全画面オーバーレイを表示するボタン -->
-            <v-btn icon @click="toggleFullScreenOverlay">
-              <v-icon>
-                {{ isFullScreenOverlay ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}
-              </v-icon>
-            </v-btn>
-          </v-col>
-        </v-row>
-        <v-row class="progress-row" align="center">
-          <v-col cols="12" sm="10" class="pr-sm-5 py-0">
-            <sw-audio-progress
-              class="progress-times"
-              :data-hint="playTimeString"
-              :slider-value="playTime"
-              :max="durationTime"
-              min="0"
-              @changingValue="changeingPlayPoint"
-              @changed="changedPlayPoint"
-              @mousemove="hint"
-            />
-          </v-col>
-          <!-- 再生時間表示 -->
-          <v-col cols="12" sm="2" class="d-flex justify-center justify-sm-end pa-0 progress-text">
-            <span style="color: back">{{ progressText() }}</span>
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
+                <MarqueeText style="max-width: 100%;">
+                  <span class="sub">{{ currentPlaySoundClip.artist }}</span>
+                </MarqueeText>
+              </router-link>
+            </template>
+            {{ currentPlaySoundClip.artist }}
+          </v-tooltip>
+
+          <v-tooltip location="top">
+            <template #activator="{ props }">
+              <router-link
+                v-bind="props"
+                :to="{ name: 'album', query: { AlbumHash: currentPlaySoundClip.albumKey } }"
+                class="audio-sub-link"
+              >
+                <MarqueeText style="max-width: 100%;">
+                  <span class="sub">{{ currentPlaySoundClip.album }}</span>
+                </MarqueeText>
+              </router-link>
+            </template>
+            {{ currentPlaySoundClip.album }}
+          </v-tooltip>
+        </div>
+      </div>
+
+      <div class="audio-center-panel">
+        <div class="control-buttons">
+          <v-btn icon size="small" @click="beforeIconClick" data-hint="Previous">
+            <v-icon>mdi-skip-previous</v-icon>
+          </v-btn>
+          <v-btn icon size="small" @click="playPauseIconClick" :data-hint="isPlaying ? 'Pause' : 'Play'">
+            <v-icon>{{ isPlaying ? 'mdi-pause' : 'mdi-play' }}</v-icon>
+          </v-btn>
+          <v-btn icon size="small" @click="nextIconClick" data-hint="Next">
+            <v-icon>mdi-skip-next</v-icon>
+          </v-btn>
+        </div>
+
+        <div class="progress-panel">
+          <sw-audio-progress
+            class="progress-times"
+            :data-hint="playTimeString"
+            :slider-value="playTime"
+            :max="durationTime"
+            min="0"
+            @changingValue="changeingPlayPoint"
+            @changed="changedPlayPoint"
+            @mousemove="hint"
+          />
+        </div>
+      </div>
+
+      <div class="audio-side-panel">
+        <div class="utility-buttons">
+          <v-btn icon size="small" @click="toggleAudioList">
+            <v-icon>mdi-playlist-music</v-icon>
+          </v-btn>
+          <v-menu v-model="volumeMenu" offset-y :close-on-content-click="false">
+            <template #activator="{ props }">
+              <v-btn icon size="small" v-bind="props">
+                <v-icon>mdi-volume-high</v-icon>
+              </v-btn>
+            </template>
+            <v-card>
+              <v-card-text>
+                <v-slider
+                  direction="vertical"
+                  height="150"
+                  v-model="volume"
+                  :max="1"
+                  :min="0"
+                  :step="0.01"
+                  @update:model-value="onVolumeChanged"
+                />
+              </v-card-text>
+            </v-card>
+          </v-menu>
+          <v-btn icon size="small" @click="toggleFullScreenOverlay">
+            <v-icon>
+              {{ isFullScreenOverlay ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}
+            </v-icon>
+          </v-btn>
+        </div>
+
+        <div class="progress-time-text">
+          {{ progressText() }}
+        </div>
+      </div>
+    </div>
   </v-container>
 
   <teleport to="body">
@@ -154,15 +140,14 @@
       />
     </keep-alive>
   </teleport>
-  <!-- 全画面オーバーレイ -->
+
   <teleport to="body">
     <div v-if="isFullScreenOverlay" class="fullscreen-overlay" :style="overlayHeightStyle">
       <div class="overlay-content">
-        <AudioCanvas @toggleView="toggleView" ></AudioCanvas>
+        <AudioCanvas @toggleView="toggleView" />
       </div>
     </div>
   </teleport>
-
 </template>
 
 <script>
@@ -439,54 +424,95 @@ export default {
 .audio-controller-shell {
   background-color: #000;
   color: #fff;
-  padding: 12px 16px;
+  padding: 10px 16px 8px;
   border-radius: 8px 8px 0 0;
 }
 
-.audio-controller-row {
-  row-gap: 8px;
+.audio-controller-main {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
 }
 
-.audio-meta-row {
-  width: 100%;
-  flex-wrap: nowrap;
-  gap: 8px;
-}
-
-.audio-meta-text {
-  overflow: hidden;
+.audio-info-panel {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
   min-width: 0;
 }
 
-.control-buttons,
-.utility-buttons {
-  gap: 4px;
-}
-
-.progress-row {
-  margin-top: 4px;
-}
-
-.progress-text {
-  white-space: nowrap;
+.audio-meta-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .album-image {
-  border-radius: 8px;
+  border-radius: 6px;
   max-width: 100%;
   max-height: 100%;
 }
 
 .audio-title {
-  font-size: 0.9rem;
-  font-weight: bold;
+  font-size: 0.92rem;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.audio-sub-link {
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  display: block;
+  overflow: hidden;
 }
 
 .sub {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+}
+
+.audio-center-panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.control-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.progress-panel {
+  width: 100%;
+}
+
+.audio-side-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  min-width: 132px;
+}
+
+.utility-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-time-text {
+  min-width: 52px;
+  text-align: right;
+  font-size: 0.82rem;
+  color: #fff;
 }
 
 .audio-list-overlay {
@@ -498,7 +524,6 @@ export default {
   max-height: 100vh;
 }
 
-/* 全画面オーバーレイのスタイル */
 .fullscreen-overlay {
   position: fixed;
   top: 0;
@@ -509,54 +534,60 @@ export default {
   z-index: 1999;
   color: white;
 }
+
 .overlay-content {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
 }
+
 @media screen and (max-width: 959px) {
-  .audio-controller-shell {
-    padding: 12px;
+  .audio-controller-main {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
   }
 
-  .footer-media-info,
-  .footer-media-controls {
-    width: 100%;
-  }
-
-  .audio-meta-row {
+  .audio-center-panel,
+  .audio-side-panel {
     align-items: center;
   }
 
-  .desktop-divider,
-  .space {
-    display: none;
+  .audio-side-panel {
+    min-width: 0;
   }
 
-  .controls-row,
-  .progress-row {
-    row-gap: 8px;
+  .progress-panel {
+    order: 2;
+  }
+
+  .progress-time-text {
+    text-align: center;
   }
 }
 
 @media screen and (max-width: 600px) {
   .audio-controller-shell {
-    padding: 10px 8px;
+    padding: 8px 10px 6px;
   }
 
-  .audio-meta-row {
-    gap: 6px;
+  .audio-info-panel {
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .audio-title {
+    font-size: 0.85rem;
+  }
+
+  .sub,
+  .progress-time-text {
+    font-size: 0.75rem;
   }
 
   .control-buttons,
   .utility-buttons {
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .progress-text {
-    justify-content: center;
+    gap: 6px;
   }
 }
 </style>

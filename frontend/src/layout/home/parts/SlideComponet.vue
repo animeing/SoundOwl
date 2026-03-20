@@ -62,26 +62,20 @@ export default {
 .slide-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .slide-title {
   margin: 0;
-  padding-inline: 4px;
-  font-size: 1.9rem;
-  font-weight: 700;
+  padding-inline: 2px;
+  font-size: 1.1rem;
+  font-weight: 600;
   line-height: 1.2;
-}
-
-@media screen and (max-width: 959px) {
-  .slide-title {
-    font-size: 1.6rem;
-  }
 }
 
 @media screen and (max-width: 600px) {
   .slide-title {
-    font-size: 1.3rem;
+    font-size: 1rem;
   }
 }
 </style>
