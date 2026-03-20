@@ -1,20 +1,23 @@
 <template>
-    <div>
-        <SlideComponet
-            :slide-title="'New Sounds 100'"
-            :data-request="newSoundRequest"
-            :context-menu="soundContext"
-            :item-click="newSoundClipClick" />
-        <SlideComponet
-            :slide-title="'Sound Top 100'"
-            :data-request="soundCountRequest"
-            :context-menu="soundContext"
-            :item-click="soundClipClick" />
-        <SlideComponet
-            :slide-title="'Album Top 100'"
-            :data-request="albumCountRequest"
-            :item-click="albumClipClick" />
-    </div>
+  <div class="home-page">
+    <SlideComponet
+      :slide-title="'New Sounds 100'"
+      :data-request="newSoundRequest"
+      :context-menu="soundContext"
+      :item-click="newSoundClipClick"
+    />
+    <SlideComponet
+      :slide-title="'Sound Top 100'"
+      :data-request="soundCountRequest"
+      :context-menu="soundContext"
+      :item-click="soundClipClick"
+    />
+    <SlideComponet
+      :slide-title="'Album Top 100'"
+      :data-request="albumCountRequest"
+      :item-click="albumClipClick"
+    />
+  </div>
 </template>
 <script>
 import { BaseFrameWork, ContextMenu } from '../../base';
@@ -172,3 +175,11 @@ export default {
   },
 };
 </script>
+<style scoped>
+.home-page {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding-bottom: 24px;
+}
+</style>

@@ -5,46 +5,47 @@
       v-model="model"
       show-arrows
       color="grey-darken-4"
-      center-active
       class="slide-group"
     >
       <ContextMenu
-        v-for="item in data"
-        :key="item.id"
-        :value="item.id"
+        v-for="(item, index) in data"
+        :key="item.soundHash || item.albumKey || item.id || index"
+        :value="item.soundHash || item.albumKey || item.id || index"
         :items="menuData"
         @select="select => contextMenuSelection(select, item)"
       >
         <v-slide-group-item>
           <div class="slide-item">
-            <v-tooltip bottom>
+            <v-tooltip location="bottom">
               <template #activator="{ props }">
                 <div v-bind="props">
                   <v-card
-                    :style="{ width: cardWidth + 'px', height: cardHeight + 'px' }"
-                    class="d-flex flex-column"
+                    :style="cardStyle"
+                    class="slide-card"
                     color="grey-lighten-1"
+                    rounded="lg"
                     @click="click(item)"
                   >
                     <v-img
                       loading="lazy"
                       aspect-ratio="1"
+                      cover
                       :src="createImageSrc(item.albumKey)"
                       :style="{ height: cardImgHeight + 'px' }"
                     >
                       <template #placeholder>
                         <div class="d-flex align-center justify-center fill-height">
-                          <v-progress-circular color="grey-lighten-4" indeterminate></v-progress-circular>
+                          <v-progress-circular color="grey-lighten-4" indeterminate />
                         </div>
                       </template>
                     </v-img>
-                    <v-card-actions class="d-flex justify-center">
+                    <v-card-text class="slide-card-text">
                       <HoverPingPongMarquee>
-                        <p :data-hint="item.title" class="text-center">
+                        <p :data-hint="item.title" class="slide-card-title text-center">
                           {{ item.title }}
                         </p>
                       </HoverPingPongMarquee>
-                    </v-card-actions>
+                    </v-card-text>
                   </v-card>
                 </div>
               </template>
@@ -97,30 +98,39 @@ export default {
           ],
         },
       ],
-      // 初期値。calculateDimensions で再計算される
       cardWidth: 250,
       cardHeight: 300,
       cardImgHeight: 225,
       resizeObserver: null,
     };
   },
+  computed: {
+    cardStyle() {
+      return {
+        width: `${this.cardWidth}px`,
+        minWidth: `${this.cardWidth}px`,
+        height: `${this.cardHeight}px`
+      };
+    }
+  },
   created() {
     this.data = this.dataRequest();
   },
   mounted() {
-    // nextTick で DOM 完全描画後に計算開始
     this.$nextTick(() => {
-      const slideGroupEl = this.$refs.slideGroup.$el;
-      const containerEl = slideGroupEl.querySelector('.v-slide-group__container');
-      if (containerEl && window.ResizeObserver) {
+      const slideGroupEl = this.$refs.slideGroup?.$el || this.$refs.slideGroup;
+      const contentEl = slideGroupEl?.querySelector('.v-slide-group__content');
+      if (contentEl && window.ResizeObserver) {
         this.resizeObserver = new ResizeObserver(() => {
           this.calculateDimensions();
         });
-        this.resizeObserver.observe(containerEl);
+        this.resizeObserver.observe(contentEl);
       }
-      // 初回計算
       this.calculateDimensions();
     });
+  },
+  updated() {
+    this.calculateDimensions();
   },
   beforeUnmount() {
     if (this.resizeObserver) {
@@ -155,29 +165,90 @@ export default {
         audio.playList.insertAudioClip(item, point);
       }
     },
-    // 実際のカード表示領域（.v-slide-group__container）の幅を使って計算
     calculateDimensions() {
-      let availableWidth = window.innerWidth;
-      if (this.$refs.slideGroup) {
-        const slideGroupEl = this.$refs.slideGroup.$el;
-        const containerEl = slideGroupEl.querySelector('.v-slide-group__container');
-        if (containerEl) {
-          availableWidth = containerEl.getBoundingClientRect().width;
-        }
+      let availableWidth = window.innerWidth - 48;
+      const slideGroupEl = this.$refs.slideGroup?.$el || this.$refs.slideGroup;
+      const contentEl = slideGroupEl?.querySelector('.v-slide-group__content');
+      if (contentEl) {
+        availableWidth = contentEl.getBoundingClientRect().width;
       }
-      // 表示件数の設定。ここでは PC 表示で 6 個としているが、必要に応じて変更してください。
+
       let itemsPerView = 6;
-      if (availableWidth < 425) {
+      if (availableWidth < 600) {
         itemsPerView = 2;
-      } else if (availableWidth < 768) {
+      } else if (availableWidth < 960) {
         itemsPerView = 3;
+      } else if (availableWidth < 1400) {
+        itemsPerView = 4;
       }
-      // Math.floor を使わず、浮動小数点のまま設定する
-      this.cardWidth = availableWidth / itemsPerView;
-      this.cardHeight = this.cardWidth * 1.2;
-      this.cardImgHeight = this.cardWidth * 0.9;
+
+      const gap = 16;
+      this.cardWidth = Math.max(160, (availableWidth - gap * Math.max(itemsPerView - 1, 0)) / itemsPerView);
+      this.cardHeight = this.cardWidth + 92;
+      this.cardImgHeight = this.cardWidth;
     },
   },
 };
 </script>
 
+<style scoped>
+.my-slide-group-wrapper {
+  width: 100%;
+}
+
+:deep(.slide-group .v-slide-group__container) {
+  padding-block: 4px;
+}
+
+:deep(.slide-group .v-slide-group__content) {
+  gap: 16px;
+  align-items: stretch;
+}
+
+.slide-item {
+  display: flex;
+  height: 100%;
+}
+
+.slide-card {
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.slide-card-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 76px;
+  padding: 12px;
+}
+
+.slide-card-title {
+  width: 100%;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: rgba(var(--v-theme-on-surface), 1);
+}
+
+@media screen and (max-width: 959px) {
+  :deep(.slide-group .v-slide-group__content) {
+    gap: 12px;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .slide-card-text {
+    min-height: 64px;
+    padding: 10px;
+  }
+
+  .slide-card-title {
+    font-size: 0.92rem;
+  }
+}
+</style>

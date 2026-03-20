@@ -70,7 +70,7 @@ export default {
   mounted() {
     this.scrollToCurrentPlaying();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     audio.eventSupport.removeEventListener('audioSet', this.playChange);
     audio.playList.removeEventListener('change', this.playlistUpdate);
   },
