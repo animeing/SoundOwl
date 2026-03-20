@@ -63,68 +63,64 @@
         </div>
       </div>
 
-      <div class="audio-center-panel">
-        <div class="control-buttons">
-          <v-btn icon size="small" @click="beforeIconClick" data-hint="Previous">
-            <v-icon>mdi-skip-previous</v-icon>
-          </v-btn>
-          <v-btn icon size="small" @click="playPauseIconClick" :data-hint="isPlaying ? 'Pause' : 'Play'">
-            <v-icon>{{ isPlaying ? 'mdi-pause' : 'mdi-play' }}</v-icon>
-          </v-btn>
-          <v-btn icon size="small" @click="nextIconClick" data-hint="Next">
-            <v-icon>mdi-skip-next</v-icon>
-          </v-btn>
-        </div>
-
-        <div class="progress-panel">
-          <sw-audio-progress
-            class="progress-times"
-            :data-hint="playTimeString"
-            :slider-value="playTime"
-            :max="durationTime"
-            min="0"
-            @changingValue="changeingPlayPoint"
-            @changed="changedPlayPoint"
-            @mousemove="hint"
-          />
-        </div>
+      <div class="control-buttons">
+        <v-btn icon size="small" @click="beforeIconClick" data-hint="Previous">
+          <v-icon>mdi-skip-previous</v-icon>
+        </v-btn>
+        <v-btn icon size="small" @click="playPauseIconClick" :data-hint="isPlaying ? 'Pause' : 'Play'">
+          <v-icon>{{ isPlaying ? 'mdi-pause' : 'mdi-play' }}</v-icon>
+        </v-btn>
+        <v-btn icon size="small" @click="nextIconClick" data-hint="Next">
+          <v-icon>mdi-skip-next</v-icon>
+        </v-btn>
       </div>
 
-      <div class="audio-side-panel">
-        <div class="utility-buttons">
-          <v-btn icon size="small" @click="toggleAudioList">
-            <v-icon>mdi-playlist-music</v-icon>
-          </v-btn>
-          <v-menu v-model="volumeMenu" offset-y :close-on-content-click="false">
-            <template #activator="{ props }">
-              <v-btn icon size="small" v-bind="props">
-                <v-icon>mdi-volume-high</v-icon>
-              </v-btn>
-            </template>
-            <v-card>
-              <v-card-text>
-                <v-slider
-                  direction="vertical"
-                  height="150"
-                  v-model="volume"
-                  :max="1"
-                  :min="0"
-                  :step="0.01"
-                  @update:model-value="onVolumeChanged"
-                />
-              </v-card-text>
-            </v-card>
-          </v-menu>
-          <v-btn icon size="small" @click="toggleFullScreenOverlay">
-            <v-icon>
-              {{ isFullScreenOverlay ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}
-            </v-icon>
-          </v-btn>
-        </div>
+      <div class="progress-panel">
+        <sw-audio-progress
+          class="progress-times"
+          :data-hint="playTimeString"
+          :slider-value="playTime"
+          :max="durationTime"
+          min="0"
+          @changingValue="changeingPlayPoint"
+          @changed="changedPlayPoint"
+          @mousemove="hint"
+        />
+      </div>
 
-        <div class="progress-time-text">
-          {{ progressText() }}
-        </div>
+      <div class="utility-buttons">
+        <v-btn icon size="small" @click="toggleAudioList">
+          <v-icon>mdi-playlist-music</v-icon>
+        </v-btn>
+        <v-menu v-model="volumeMenu" offset-y :close-on-content-click="false">
+          <template #activator="{ props }">
+            <v-btn icon size="small" v-bind="props">
+              <v-icon>mdi-volume-high</v-icon>
+            </v-btn>
+          </template>
+          <v-card>
+            <v-card-text>
+              <v-slider
+                direction="vertical"
+                height="150"
+                v-model="volume"
+                :max="1"
+                :min="0"
+                :step="0.01"
+                @update:model-value="onVolumeChanged"
+              />
+            </v-card-text>
+          </v-card>
+        </v-menu>
+        <v-btn icon size="small" @click="toggleFullScreenOverlay">
+          <v-icon>
+            {{ isFullScreenOverlay ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}
+          </v-icon>
+        </v-btn>
+      </div>
+
+      <div class="progress-time-text">
+        {{ progressText() }}
       </div>
     </div>
   </v-container>
@@ -424,40 +420,47 @@ export default {
 .audio-controller-shell {
   background-color: #000;
   color: #fff;
-  padding: 10px 16px 8px;
+  padding: 6px 12px 8px;
   border-radius: 8px 8px 0 0;
 }
 
 .audio-controller-main {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) auto;
-  gap: 16px;
+  grid-template-columns: minmax(250px, 390px) minmax(320px, 1fr) auto auto;
+  grid-template-areas:
+    "info controls utility utility"
+    "info progress progress time";
+  column-gap: 12px;
+  row-gap: 8px;
   align-items: center;
 }
 
 .audio-info-panel {
+  grid-area: info;
   display: grid;
   grid-template-columns: 64px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
   min-width: 0;
+  padding-right: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .audio-meta-text {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .album-image {
-  border-radius: 6px;
+  border-radius: 4px;
   max-width: 100%;
   max-height: 100%;
 }
 
 .audio-title {
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -475,41 +478,31 @@ export default {
   font-size: 0.78rem;
 }
 
-.audio-center-panel {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
-}
-
 .control-buttons {
+  grid-area: controls;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .progress-panel {
-  width: 100%;
-}
-
-.audio-side-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
-  min-width: 132px;
+  grid-area: progress;
+  min-width: 0;
 }
 
 .utility-buttons {
+  grid-area: utility;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 
 .progress-time-text {
-  min-width: 52px;
+  grid-area: time;
+  justify-self: end;
+  min-width: 56px;
   text-align: right;
   font-size: 0.82rem;
   color: #fff;
@@ -542,38 +535,43 @@ export default {
   height: 100%;
 }
 
-@media screen and (max-width: 959px) {
+@media screen and (max-width: 800px) {
   .audio-controller-main {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "info utility"
+      "controls controls"
+      "progress time";
+    row-gap: 10px;
   }
 
-  .audio-center-panel,
-  .audio-side-panel {
-    align-items: center;
+  .audio-info-panel {
+    border-right: 0;
+    padding-right: 0;
   }
 
-  .audio-side-panel {
-    min-width: 0;
-  }
-
-  .progress-panel {
-    order: 2;
-  }
-
-  .progress-time-text {
-    text-align: center;
+  .control-buttons {
+    justify-content: flex-start;
+    padding-left: 64px;
   }
 }
 
 @media screen and (max-width: 600px) {
   .audio-controller-shell {
-    padding: 8px 10px 6px;
+    padding: 4px 8px 6px;
+  }
+
+  .audio-controller-main {
+    column-gap: 10px;
   }
 
   .audio-info-panel {
-    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-columns: 64px minmax(0, 1fr);
     gap: 8px;
+  }
+
+  .audio-meta-text {
+    gap: 0;
   }
 
   .audio-title {
@@ -585,7 +583,11 @@ export default {
     font-size: 0.75rem;
   }
 
-  .control-buttons,
+  .control-buttons {
+    gap: 10px;
+    padding-left: 72px;
+  }
+
   .utility-buttons {
     gap: 6px;
   }
