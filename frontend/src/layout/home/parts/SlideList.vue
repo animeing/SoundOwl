@@ -217,6 +217,11 @@ export default {
   padding-bottom: 4px;
 }
 
+:deep(.context-menu-wrapper) {
+  flex: 0 0 auto;
+}
+
+
 .slide-item {
   display: block;
 }
