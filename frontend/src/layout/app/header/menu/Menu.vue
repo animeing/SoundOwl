@@ -1,15 +1,15 @@
 <template>
   <v-menu
     :open-on-hover="isDesktop"
-    :close-on-content-click="false"
-    :max-width="200"
+    :close-on-content-click="true"
+    :max-width="220"
     transition="scale-transition"
   >
     <template #activator="{ props }">
       <v-btn
         v-bind="props"
-        width="5%"
         variant="elevated"
+        class="menu-button"
       >
         Menu
       </v-btn>
@@ -30,22 +30,46 @@
 
 <script>
 export default {
+  name: 'HeaderMenu',
   data() {
     return {
+      width: typeof window !== 'undefined' ? window.innerWidth : 1280,
       menuItems: [
-        { title: 'Artist List',  route: { name: 'artist_list' },  icon: 'mdi-account-music' },
-        { title: 'Album List',   route: { name: 'album_list' },   icon: 'mdi-album' },
-        { title: 'Play List',    route: { name: 'playlists'   },  icon: 'mdi-playlist-music' },
-        { title: 'History List', route: { name: 'history_list'},  icon: 'mdi-history' },
-        { title: 'Setting',      route: { name: 'setting'     },  icon: 'mdi-cog' }
+        { title: 'Artist List', route: { name: 'artist_list' }, icon: 'mdi-account-music' },
+        { title: 'Album List', route: { name: 'album_list' }, icon: 'mdi-album' },
+        { title: 'Play List', route: { name: 'playlists' }, icon: 'mdi-playlist-music' },
+        { title: 'History List', route: { name: 'history_list' }, icon: 'mdi-history' },
+        { title: 'Setting', route: { name: 'setting' }, icon: 'mdi-cog' }
       ]
-    }
+    };
   },
   computed: {
-    // md 未満＝スマホ扱い。PC(マウス)だけ hover を有効化
     isDesktop() {
-      return this.$vuetify.display.mdAndUp
+      return this.width >= 960;
+    }
+  },
+  mounted() {
+    window.addEventListener('resize', this.handleResize);
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.handleResize);
+  },
+  methods: {
+    handleResize() {
+      this.width = window.innerWidth;
     }
   }
-}
+};
 </script>
+
+<style scoped>
+.menu-button {
+  min-width: 88px;
+}
+
+@media screen and (max-width: 959px) {
+  .menu-button {
+    min-width: 72px;
+  }
+}
+</style>

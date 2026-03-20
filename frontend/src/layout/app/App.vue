@@ -1,19 +1,23 @@
 <template>
   <v-app>
-    <Header></Header>
-    <v-main id="base" class="layout-base" :style="{ marginTop: '5px', paddingBottom: `${controllerHeight}px` }">
-      <!-- AudioControllerの高さを考慮してpadding-bottomを動的に設定 -->
-      <router-view></router-view>
+    <Header />
+    <v-main
+      id="base"
+      class="layout-base app-main"
+      :style="mainStyle"
+    >
+      <router-view />
     </v-main>
     <div id="controller" class="audio-play-controller analyser" ref="controller">
-      <AudioController></AudioController>
+      <AudioController />
     </div>
   </v-app>
 </template>
+
 <script>
 import AudioController from '../footer/AudioController.vue';
 import Header from './header/Header.vue';
-import colorThema from '../../thema';
+import { colorThema } from '../../thema';
 
 export default {
   name: 'App',
@@ -23,30 +27,67 @@ export default {
   },
   data() {
     return {
-      style: {
-        '--background-color': '#eee'
-      },
-      controllerHeight: 0 // AudioControllerの高さを保持
+      controllerHeight: 0,
+      headerHeight: 0,
+      resizeObserver: null
     };
   },
-  mounted() {
-    this.style['--background-color'] = colorThema.backgrouund;
-    this.updateControllerHeight();
-    window.addEventListener('resize', this.updateControllerHeight);
+  computed: {
+    mainStyle() {
+      return {
+        '--background-color': colorThema.background,
+        '--app-header-height': `${this.headerHeight}px`,
+        '--app-controller-height': `${this.controllerHeight}px`
+      };
+    }
   },
-  beforeDestroy() {
-    window.removeEventListener('resize', this.updateControllerHeight);
+  mounted() {
+    this.$nextTick(() => {
+      this.updateLayoutHeights();
+      this.observeLayout();
+    });
+    window.addEventListener('resize', this.updateLayoutHeights);
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.updateLayoutHeights);
+    this.resizeObserver?.disconnect();
   },
   methods: {
-    updateControllerHeight() {
+    observeLayout() {
+      if (!window.ResizeObserver) {
+        return;
+      }
+      const header = document.querySelector('.v-app-bar');
       const controller = this.$refs.controller;
+      this.resizeObserver = new ResizeObserver(() => {
+        this.updateLayoutHeights();
+      });
+      if (header) {
+        this.resizeObserver.observe(header);
+      }
+      if (controller) {
+        this.resizeObserver.observe(controller);
+      }
+    },
+    updateLayoutHeights() {
+      const controller = this.$refs.controller;
+      const header = document.querySelector('.v-app-bar');
       if (controller) {
         this.controllerHeight = controller.offsetHeight;
+      }
+      if (header) {
+        this.headerHeight = header.offsetHeight;
       }
     }
   }
 };
 </script>
-<style lang="scss">
 
+<style scoped>
+.app-main {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding-top: max(var(--v-layout-top, 0px), var(--app-header-height, 0px));
+  padding-bottom: var(--app-controller-height, 0px);
+}
 </style>

@@ -1,61 +1,62 @@
 <template>
-  <div class="my-slide-group-wrapper">
-    <v-slide-group
-      ref="slideGroup"
-      v-model="model"
-      show-arrows
-      color="grey-darken-4"
-      center-active
-      class="slide-group"
-    >
-      <ContextMenu
-        v-for="item in data"
-        :key="item.id"
-        :value="item.id"
-        :items="menuData"
-        @select="select => contextMenuSelection(select, item)"
-      >
-        <v-slide-group-item>
+  <div class="slide-list-shell">
+    <v-btn icon variant="text" class="slide-arrow" @click="scrollTrack(-1)">
+      <v-icon>mdi-chevron-left</v-icon>
+    </v-btn>
+
+    <div ref="viewport" class="slide-viewport">
+      <div class="slide-track" :style="trackStyle">
+        <ContextMenu
+          v-for="(item, index) in data"
+          :key="item.soundHash || item.albumKey || item.id || index"
+          :items="menuData"
+          @select="select => contextMenuSelection(select, item)"
+        >
           <div class="slide-item">
-            <v-tooltip bottom>
+            <v-tooltip location="bottom">
               <template #activator="{ props }">
-                <div v-bind="props">
-                  <v-card
-                    :style="{ width: cardWidth + 'px', height: cardHeight + 'px' }"
-                    class="d-flex flex-column"
-                    color="grey-lighten-1"
-                    @click="click(item)"
+                <v-card
+                  v-bind="props"
+                  :style="cardStyle"
+                  class="slide-card"
+                  color="grey-lighten-1"
+                  rounded="sm"
+                  @click="click(item)"
+                >
+                  <v-img
+                    loading="lazy"
+                    aspect-ratio="1"
+                    cover
+                    :src="createImageSrc(item.albumKey)"
+                    :style="{ height: `${cardWidth}px` }"
                   >
-                    <v-img
-                      loading="lazy"
-                      aspect-ratio="1"
-                      :src="createImageSrc(item.albumKey)"
-                      :style="{ height: cardImgHeight + 'px' }"
-                    >
-                      <template #placeholder>
-                        <div class="d-flex align-center justify-center fill-height">
-                          <v-progress-circular color="grey-lighten-4" indeterminate></v-progress-circular>
-                        </div>
-                      </template>
-                    </v-img>
-                    <v-card-actions class="d-flex justify-center">
-                      <HoverPingPongMarquee>
-                        <p :data-hint="item.title" class="text-center">
-                          {{ item.title }}
-                        </p>
-                      </HoverPingPongMarquee>
-                    </v-card-actions>
-                  </v-card>
-                </div>
+                    <template #placeholder>
+                      <div class="d-flex align-center justify-center fill-height">
+                        <v-progress-circular color="grey-lighten-4" indeterminate />
+                      </div>
+                    </template>
+                  </v-img>
+                  <div class="slide-card-text">
+                    <HoverPingPongMarquee>
+                      <p :data-hint="item.title" class="slide-card-title">
+                        {{ item.title }}
+                      </p>
+                    </HoverPingPongMarquee>
+                  </div>
+                </v-card>
               </template>
               <p>Title: {{ item.title }}</p>
               <p>Artist: {{ item.artist }}</p>
               <p>Album: {{ item.album }}</p>
             </v-tooltip>
           </div>
-        </v-slide-group-item>
-      </ContextMenu>
-    </v-slide-group>
+        </ContextMenu>
+      </div>
+    </div>
+
+    <v-btn icon variant="text" class="slide-arrow" @click="scrollTrack(1)">
+      <v-icon>mdi-chevron-right</v-icon>
+    </v-btn>
   </div>
 </template>
 
@@ -87,7 +88,6 @@ export default {
   data() {
     return {
       data: [],
-      model: null,
       menuData: [
         {
           label: 'Add to PlayList',
@@ -97,35 +97,44 @@ export default {
           ],
         },
       ],
-      // 初期値。calculateDimensions で再計算される
-      cardWidth: 250,
-      cardHeight: 300,
-      cardImgHeight: 225,
+      cardWidth: 220,
+      gap: 12,
       resizeObserver: null,
     };
+  },
+  computed: {
+    cardStyle() {
+      return {
+        width: `${this.cardWidth}px`,
+        minWidth: `${this.cardWidth}px`
+      };
+    },
+    trackStyle() {
+      return {
+        gap: `${this.gap}px`
+      };
+    }
   },
   created() {
     this.data = this.dataRequest();
   },
   mounted() {
-    // nextTick で DOM 完全描画後に計算開始
     this.$nextTick(() => {
-      const slideGroupEl = this.$refs.slideGroup.$el;
-      const containerEl = slideGroupEl.querySelector('.v-slide-group__container');
-      if (containerEl && window.ResizeObserver) {
+      const viewport = this.$refs.viewport;
+      if (viewport && window.ResizeObserver) {
         this.resizeObserver = new ResizeObserver(() => {
           this.calculateDimensions();
         });
-        this.resizeObserver.observe(containerEl);
+        this.resizeObserver.observe(viewport);
       }
-      // 初回計算
       this.calculateDimensions();
     });
   },
+  updated() {
+    this.calculateDimensions();
+  },
   beforeUnmount() {
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-    }
+    this.resizeObserver?.disconnect();
   },
   methods: {
     contextMenuSelection(select, item) {
@@ -136,12 +145,10 @@ export default {
       }
     },
     createImageSrc(albumKey) {
-      return `${BASE.HOME}img/album_art.php?media_hash=` + albumKey;
+      return `${BASE.HOME}img/album_art.php?media_hash=${albumKey}`;
     },
     click(item) {
-      if (this.onClick) {
-        this.onClick(item);
-      }
+      this.onClick?.(item);
     },
     addPlayList(item, point = 0) {
       if (audio.currentAudioClip === undefined && point === 0) {
@@ -151,33 +158,102 @@ export default {
       if (point === 0) {
         audio.playList.appendAudioClipNext(item);
         return;
-      } else {
-        audio.playList.insertAudioClip(item, point);
       }
+      audio.playList.insertAudioClip(item, point);
     },
-    // 実際のカード表示領域（.v-slide-group__container）の幅を使って計算
     calculateDimensions() {
-      let availableWidth = window.innerWidth;
-      if (this.$refs.slideGroup) {
-        const slideGroupEl = this.$refs.slideGroup.$el;
-        const containerEl = slideGroupEl.querySelector('.v-slide-group__container');
-        if (containerEl) {
-          availableWidth = containerEl.getBoundingClientRect().width;
-        }
+      const viewport = this.$refs.viewport;
+      if (!viewport) {
+        return;
       }
-      // 表示件数の設定。ここでは PC 表示で 6 個としているが、必要に応じて変更してください。
-      let itemsPerView = 6;
-      if (availableWidth < 425) {
+      const width = viewport.clientWidth;
+      let itemsPerView = 5;
+      if (width < 600) {
         itemsPerView = 2;
-      } else if (availableWidth < 768) {
+      } else if (width < 960) {
         itemsPerView = 3;
+      } else if (width < 1280) {
+        itemsPerView = 4;
       }
-      // Math.floor を使わず、浮動小数点のまま設定する
-      this.cardWidth = availableWidth / itemsPerView;
-      this.cardHeight = this.cardWidth * 1.2;
-      this.cardImgHeight = this.cardWidth * 0.9;
+      const totalGap = this.gap * Math.max(itemsPerView - 1, 0);
+      this.cardWidth = Math.max(150, (width - totalGap) / itemsPerView);
     },
+    scrollTrack(direction) {
+      const viewport = this.$refs.viewport;
+      if (!viewport) {
+        return;
+      }
+      viewport.scrollBy({
+        left: direction * (this.cardWidth + this.gap) * 2,
+        behavior: 'smooth'
+      });
+    }
   },
 };
 </script>
 
+<style scoped>
+.slide-list-shell {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.slide-arrow {
+  color: rgba(var(--v-theme-on-surface), 0.8);
+}
+
+.slide-viewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.slide-track {
+  display: flex;
+  align-items: stretch;
+  width: max-content;
+  padding-bottom: 4px;
+}
+
+.slide-item {
+  display: block;
+}
+
+.slide-card {
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.slide-card-text {
+  min-height: 52px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-card-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: center;
+}
+
+@media screen and (max-width: 600px) {
+  .slide-list-shell {
+    gap: 4px;
+  }
+
+  .slide-card-text {
+    min-height: 48px;
+    padding: 6px 8px;
+  }
+
+  .slide-card-title {
+    font-size: 0.82rem;
+  }
+}
+</style>

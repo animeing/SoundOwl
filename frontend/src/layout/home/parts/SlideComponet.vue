@@ -1,11 +1,12 @@
 <template>
-    <div class="box">
-        <p class="px-4">{{ slideTitle }}</p>
-        <SlideList
-            :on-click="itemClick"
-            :context-menu="contextmenu"
-            :data-request="dataRequest" />
-    </div>
+  <section class="slide-section">
+    <h2 class="slide-title">{{ slideTitle }}</h2>
+    <SlideList
+      :on-click="itemClick"
+      :context-menu="contextmenu"
+      :data-request="dataRequest"
+    />
+  </section>
 </template>
 
 <script>
@@ -56,3 +57,25 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.slide-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slide-title {
+  margin: 0;
+  padding-inline: 2px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+@media screen and (max-width: 600px) {
+  .slide-title {
+    font-size: 1rem;
+  }
+}
+</style>
