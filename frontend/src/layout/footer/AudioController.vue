@@ -6,10 +6,10 @@
     class="align-center"
     ref="parentContainer"
   >
-    <v-row>
+    <v-row columns="12" density="default">
       <v-col cols="4" style="display: flex; align-items: center" class="footer-media">
         <!-- 左側の情報（タイトル、アーティスト、アルバム） -->
-        <v-row fill-height style="min-width: calc(100% + 24px);">
+        <v-row>
           <v-col style="flex-grow: 0; padding: 2px;">
             <v-img
               :src="createImageSrc(currentPlaySoundClip.albumKey)"
