@@ -27,31 +27,56 @@ export default {
   },
   data() {
     return {
-      controllerHeight: 0
+      controllerHeight: 0,
+      headerHeight: 0,
+      resizeObserver: null
     };
   },
   computed: {
     mainStyle() {
       return {
         '--background-color': colorThema.background,
-        paddingBottom: `${this.controllerHeight}px`
+        paddingTop: `${this.headerHeight + 8}px`,
+        paddingBottom: `${this.controllerHeight + 12}px`
       };
     }
   },
   mounted() {
     this.$nextTick(() => {
-      this.updateControllerHeight();
+      this.updateLayoutHeights();
+      this.observeLayout();
     });
-    window.addEventListener('resize', this.updateControllerHeight);
+    window.addEventListener('resize', this.updateLayoutHeights);
   },
   beforeUnmount() {
-    window.removeEventListener('resize', this.updateControllerHeight);
+    window.removeEventListener('resize', this.updateLayoutHeights);
+    this.resizeObserver?.disconnect();
   },
   methods: {
-    updateControllerHeight() {
+    observeLayout() {
+      if (!window.ResizeObserver) {
+        return;
+      }
+      const header = document.querySelector('.v-app-bar');
       const controller = this.$refs.controller;
+      this.resizeObserver = new ResizeObserver(() => {
+        this.updateLayoutHeights();
+      });
+      if (header) {
+        this.resizeObserver.observe(header);
+      }
+      if (controller) {
+        this.resizeObserver.observe(controller);
+      }
+    },
+    updateLayoutHeights() {
+      const controller = this.$refs.controller;
+      const header = document.querySelector('.v-app-bar');
       if (controller) {
         this.controllerHeight = controller.offsetHeight;
+      }
+      if (header) {
+        this.headerHeight = header.offsetHeight;
       }
     }
   }
@@ -60,6 +85,7 @@ export default {
 
 <style scoped>
 .app-main {
-  margin-top: 5px;
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 </style>
