@@ -6,11 +6,11 @@
     class="align-center"
     ref="parentContainer"
   >
-    <v-row>
+    <v-row columns="12">
       <v-col cols="4" style="display: flex; align-items: center" class="footer-media">
         <!-- 左側の情報（タイトル、アーティスト、アルバム） -->
-        <v-row fill-height style="min-width: calc(100% + 24px);">
-          <v-col style="flex-grow: 0; padding: 2px;">
+        <div class="d-flex align-center w-100 min-width-0">
+          <div class="me-2" style="flex: 0 0 auto; padding: 2px;">
             <v-img
               :src="createImageSrc(currentPlaySoundClip.albumKey)"
               aspect-raito="1"
@@ -23,9 +23,8 @@
                 <v-skeleton-loader type="image" class="fill-height"></v-skeleton-loader>
               </template>
             </v-img>
-          </v-col>
-          <v-col width="100" style="overflow: hidden;">
-            <v-row>
+          </div>
+          <div class="flex-grow-1 min-width-0" style="overflow: hidden;">
               <v-tooltip bottom>
                 <template #activator="{ props }">
                   <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.title">
@@ -36,8 +35,6 @@
                 </template>
                 {{ currentPlaySoundClip.title }}
               </v-tooltip>
-            </v-row>
-            <v-row>
               <v-tooltip bottom>
                 <template #activator="{ props }">
                   <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.artist">
@@ -53,8 +50,6 @@
                 </template>
                 {{ currentPlaySoundClip.artist }}
               </v-tooltip>
-            </v-row>
-            <v-row>
               <v-tooltip bottom>
                 <template #activator="{ props }">
                   <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.album">
@@ -70,11 +65,9 @@
                 </template>
                 {{ currentPlaySoundClip.album }}
               </v-tooltip>
-            </v-row>
-          </v-col>
-        </v-row>
+          </div>
+        </div>
       </v-col>
-      <v-divider vertical class="space"></v-divider>
       <v-col cols="8" class="footer-media">
         <v-row>
           <v-col class="d-flex justify-center pa-0">
@@ -123,7 +116,7 @@
             </v-btn>
           </v-col>
         </v-row>
-        <v-row :height="35">
+        <v-row>
           <v-col class="pr-5 py-0">
             <sw-audio-progress
               class="progress-times"
