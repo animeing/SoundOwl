@@ -2,11 +2,10 @@ name: NodeJS with Webpack
 
 on:
   push:
-    paths: ["frontend/**"]
-    branches: [ "main" ]
+    paths: ["frontend/**", ".github/workflows/webpack.yml"]
   pull_request:
-    paths: ["frontend/**"]
-    branches: [ "main" ]
+    paths: ["frontend/**", ".github/workflows/webpack.yml"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,20 +16,20 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [24.x, 26.x, 28.x]
+        node-version: [24.x, 26.x]
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
 
     - name: Install
       run: |
         cd frontend
-        npm install
+        npm ci
       
     - name : build
       run :  |
