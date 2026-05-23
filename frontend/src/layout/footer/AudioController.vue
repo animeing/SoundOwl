@@ -1,20 +1,19 @@
 <template>
   <v-container
-    style="background-color: black; color: white; padding: 16px; border-radius: 8px;"
+    style="background-color: black; color: white; border-radius: 8px;"
     fluid
-    justify="center"
-    class="align-center"
+    class="audio-controller-bar"
     ref="parentContainer"
   >
-    <v-row columns="12">
-      <v-col cols="4" style="display: flex; align-items: center" class="footer-media">
+    <div class="audio-controller-grid">
+      <section class="footer-media track-panel">
         <!-- 左側の情報（タイトル、アーティスト、アルバム） -->
-        <div class="d-flex align-center w-100 min-width-0">
-          <div class="me-2" style="flex: 0 0 auto; padding: 2px;">
+        <div class="track-info">
+          <div class="album-wrap">
             <v-img
               :src="createImageSrc(currentPlaySoundClip.albumKey)"
-              aspect-raito="1"
-              width="70"
+              aspect-ratio="1"
+              width="66"
               height="66"
               class="album-image"
               lazy-src="img/placeholder-image.webp"
@@ -24,7 +23,7 @@
               </template>
             </v-img>
           </div>
-          <div class="flex-grow-1 min-width-0" style="overflow: hidden;">
+          <div class="track-text">
               <v-tooltip bottom>
                 <template #activator="{ props }">
                   <div v-bind="props" class="audio-title" :title="currentPlaySoundClip.title">
@@ -67,30 +66,29 @@
               </v-tooltip>
           </div>
         </div>
-      </v-col>
-      <v-col cols="8" class="footer-media">
-        <v-row>
-          <v-col class="d-flex justify-center pa-0">
-            <v-btn icon @click="beforeIconClick" data-hint="Previous">
+      </section>
+      <section class="footer-media audio-actions">
+          <div class="control-group primary-controls">
+            <v-btn icon class="control-button" @click="beforeIconClick" data-hint="Previous">
               <v-icon>mdi-skip-previous</v-icon>
             </v-btn>
-            <v-btn icon v-if="!isPlaying" @click="playPauseIconClick" data-hint="Play">
+            <v-btn icon class="control-button" v-if="!isPlaying" @click="playPauseIconClick" data-hint="Play">
               <v-icon>mdi-play</v-icon>
             </v-btn>
-            <v-btn icon v-if="isPlaying" @click="playPauseIconClick" data-hint="Pause">
+            <v-btn icon class="control-button" v-if="isPlaying" @click="playPauseIconClick" data-hint="Pause">
               <v-icon>mdi-pause</v-icon>
             </v-btn>
-            <v-btn icon @click="nextIconClick" data-hint="Next">
+            <v-btn icon class="control-button" @click="nextIconClick" data-hint="Next">
               <v-icon>mdi-skip-next</v-icon>
             </v-btn>
-          </v-col>
-          <v-col class="d-flex justify-end pa-0">
-            <v-btn icon @click="toggleAudioList">
+          </div>
+          <div class="control-group secondary-controls">
+            <v-btn icon class="control-button" @click="toggleAudioList">
               <v-icon>mdi-playlist-music</v-icon>
             </v-btn>
             <v-menu v-model="volumeMenu" offset-y :close-on-content-click="false">
               <template #activator="{ props }">
-                <v-btn icon v-bind="props">
+                <v-btn icon class="control-button" v-bind="props">
                   <v-icon>mdi-volume-high</v-icon>
                 </v-btn>
               </template>
@@ -109,15 +107,14 @@
               </v-card>
             </v-menu>
             <!-- 全画面オーバーレイを表示するボタン -->
-            <v-btn icon @click="toggleFullScreenOverlay">
+            <v-btn icon class="control-button" @click="toggleFullScreenOverlay">
               <v-icon>
                 {{ isFullScreenOverlay ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}
               </v-icon>
             </v-btn>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col class="pr-5 py-0">
+          </div>
+      </section>
+      <section class="footer-media progress-row">
             <sw-audio-progress
               class="progress-times"
               :data-hint="playTimeString"
@@ -128,14 +125,10 @@
               @changed="changedPlayPoint"
               @mousemove="hint"
             />
-          </v-col>
           <!-- 再生時間表示 -->
-          <v-col class="d-flex justify-end pa-0" cols="1">
-            <span style="color: back">{{ progressText() }}</span>
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
+          <span class="progress-time-text">{{ progressText() }}</span>
+      </section>
+    </div>
   </v-container>
 
   <teleport to="body">
@@ -433,10 +426,49 @@ export default {
 
 <style scoped>
 
+.audio-controller-bar {
+  padding: 10px 12px 8px;
+}
+
+.audio-controller-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(280px, 2fr);
+  grid-template-areas:
+    "track actions"
+    "track progress";
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 8px;
+  min-width: 0;
+}
+
+.track-panel {
+  grid-area: track;
+  min-width: 0;
+}
+
+.track-info {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.album-wrap {
+  flex: 0 0 auto;
+  padding: 2px;
+  margin-right: 8px;
+}
+
 .album-image {
   border-radius: 8px;
   max-width: 100%;
   max-height: 100%;
+}
+
+.track-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .audio-title {
@@ -449,6 +481,53 @@ export default {
 
 .sub {
   font-size: 0.8rem;
+}
+
+.audio-actions {
+  grid-area: actions;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.primary-controls {
+  justify-content: center;
+}
+
+.secondary-controls {
+  justify-content: flex-end;
+}
+
+.control-button {
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.14);
+  color: white;
+}
+
+.progress-row {
+  grid-area: progress;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.progress-time-text {
+  color: white;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  min-width: 4ch;
+  text-align: right;
 }
 
 .audio-list-overlay {
@@ -477,13 +556,73 @@ export default {
   height: 100%;
 }
 @media screen and (max-width: 768px) {
-  .footer-media {
-    min-width: 100%;
-    width: 100%;
+  .audio-controller-bar {
+    padding: 8px 10px 6px;
   }
+
+  .audio-controller-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "track"
+      "actions"
+      "progress";
+    row-gap: 8px;
+  }
+
+  .audio-actions {
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .control-group {
+    gap: 4px;
+  }
+
+  .control-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .album-wrap :deep(.v-img) {
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  .audio-title {
+    font-size: 0.85rem;
+  }
+
+  .sub {
+    font-size: 0.76rem;
+  }
+
   .space {
     visibility: hidden;
     display: none;
+  }
+
+  .controller-actions {
+    margin-top: 8px;
+  }
+
+  .action-group,
+  .utility-group {
+    flex: 0 0 100%;
+    max-width: 100%;
+    justify-content: center !important;
+  }
+
+  .utility-group {
+    margin-top: 8px;
+  }
+
+  .progress-row {
+    margin-top: 8px;
+  }
+
+  .progress-time {
+    justify-content: flex-end !important;
+    font-size: 0.9rem;
   }
 }
 </style>
