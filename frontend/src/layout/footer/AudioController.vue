@@ -69,8 +69,8 @@
         </div>
       </v-col>
       <v-col cols="8" class="footer-media">
-        <v-row>
-          <v-col class="d-flex justify-center pa-0">
+        <v-row class="controller-actions" no-gutters>
+          <v-col cols="7" class="d-flex justify-center pa-0 action-group">
             <v-btn icon @click="beforeIconClick" data-hint="Previous">
               <v-icon>mdi-skip-previous</v-icon>
             </v-btn>
@@ -84,7 +84,7 @@
               <v-icon>mdi-skip-next</v-icon>
             </v-btn>
           </v-col>
-          <v-col class="d-flex justify-end pa-0">
+          <v-col cols="5" class="d-flex justify-end pa-0 utility-group">
             <v-btn icon @click="toggleAudioList">
               <v-icon>mdi-playlist-music</v-icon>
             </v-btn>
@@ -116,8 +116,8 @@
             </v-btn>
           </v-col>
         </v-row>
-        <v-row>
-          <v-col class="pr-5 py-0">
+        <v-row class="progress-row" no-gutters>
+          <v-col cols="10" class="pr-2 py-0">
             <sw-audio-progress
               class="progress-times"
               :data-hint="playTimeString"
@@ -130,7 +130,7 @@
             />
           </v-col>
           <!-- 再生時間表示 -->
-          <v-col class="d-flex justify-end pa-0" cols="1">
+          <v-col cols="2" class="d-flex justify-end align-center pa-0 progress-time">
             <span style="color: back">{{ progressText() }}</span>
           </v-col>
         </v-row>
@@ -451,6 +451,21 @@ export default {
   font-size: 0.8rem;
 }
 
+
+
+.controller-actions {
+  align-items: center;
+}
+
+.action-group :deep(.v-btn),
+.utility-group :deep(.v-btn) {
+  margin-inline: 2px;
+}
+
+.progress-time {
+  white-space: nowrap;
+}
+
 .audio-list-overlay {
   position: fixed;
   right: 0;
@@ -484,6 +499,30 @@ export default {
   .space {
     visibility: hidden;
     display: none;
+  }
+
+  .controller-actions {
+    margin-top: 8px;
+  }
+
+  .action-group,
+  .utility-group {
+    flex: 0 0 100%;
+    max-width: 100%;
+    justify-content: center !important;
+  }
+
+  .utility-group {
+    margin-top: 8px;
+  }
+
+  .progress-row {
+    margin-top: 8px;
+  }
+
+  .progress-time {
+    justify-content: flex-end !important;
+    font-size: 0.9rem;
   }
 }
 </style>
