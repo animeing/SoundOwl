@@ -1,7 +1,7 @@
-import { BaseFrameWork, setTitle, WakeLockManager } from '../base';
+import { WakeLockManager } from '../base';
 import { SoundInfomation } from '../page';
-import { AudioPlayStateEnum } from './enum/AudioPlayStateEnum';
 import { conversionToWav, ffmpegInitalize } from './conversionToWav';
+import { AudioPlayStateEnum } from './enum/AudioPlayStateEnum';
 import { Playlist } from './Playlist';
 import { AudioClip } from './type/AudioClip';
 import { LoudnessNormalizeComponent } from './effect/normalize/LoudnessNormalizeComponent';
@@ -11,6 +11,7 @@ import { AudioEffectManager } from './effect/AudioComponentManager';
 import { ImpulseResponseEffect } from './effect/effect3d/ImpulseResponseEffect';
 import { VolumeComponent } from './effect/volume/VolumeComponent';
 import { AudioPlayStateAction } from './AudioPlayStateAction';
+import { AudioPlaybackController } from './AudioPlaybackController';
 
 class AudioPlayer{
   constructor(){
@@ -72,6 +73,8 @@ class AudioPlayer{
       request.execute();
     });
 
+    this.playbackController = new AudioPlaybackController(this);
+
     this.audioPlayStateAction.lockEventTarget.action('setUpdate');
   }
 
@@ -116,7 +119,7 @@ class AudioPlayer{
 
   /**
    * @deprecated
-   * @use AudioPlayer.AudioPlayStateAction.currentPlayState
+   * @use AudioPlayer.audioPlayStateAction.currentPlayState
    */
   get currentPlayState(){
     return this.audioPlayStateAction.currentPlayState;
@@ -127,28 +130,25 @@ class AudioPlayer{
   }
 
   /**
-     * 
-     * @param {AudioClip} setAudioClip 
-     */
+   * @deprecated
+   * @use AudioPlayer.playbackController.setCurrentAudioClip
+   */
   setCurrentAudioClip(setAudioClip){
-    if(this.playList.currentAudioClip === setAudioClip || setAudioClip == undefined){
-      return;
-    }
-    this.playList.currentAudioClip = setAudioClip;
-    this.audioDeployment();
-    // this.audioUpdate(); //CHECK
+    this.playbackController.setCurrentAudioClip(setAudioClip);
   }
 
+  /**
+   * @deprecated
+   * @use AudioPlayer.playbackController.audioDeployment
+   */
   audioDeployment(){
-    this.eventSupport.dispatchEvent(new CustomEvent('audioSet'));
-    this.audio.src = this.playList.currentAudioClip.src;
-    this.exAudioEffect.reset();
+    this.playbackController.audioDeployment();
   }
 
 
   /**
    * @deprecated
-   * @use AudioPlayer.AudioPlayStateAction.isError
+   * @use AudioPlayer.audioPlayStateAction.isError
    */
   get isError(){
     return this.audioPlayStateAction.isError;
@@ -156,7 +156,7 @@ class AudioPlayer{
 
   /**
    * @deprecated
-   * @use AudioPlayer.AudioPlayStateAction.isLoading
+   * @use AudioPlayer.audioPlayStateAction.isLoading
    */
   get isLoading(){
     return this.audioPlayStateAction.isLoading;
@@ -164,70 +164,34 @@ class AudioPlayer{
   
   /**
    * @deprecated
-   * @use AudioPlayer.AudioPlayStateAction.isPlaying
+   * @use AudioPlayer.audioPlayStateAction.isPlaying
    */
   get isPlaying(){
     return this.audioPlayStateAction.isPlaying;
   }
 
   /**
-   * 指定されたオーディオクリップを再生します。引数が未指定の場合、現在選択されているオーディオクリップを再生します。
-   * 引数で指定されたオーディオクリップがプレイリストに存在しない場合、プレイリストの次の位置に追加してから再生します。
-   * 指定されたオーディオクリップが現在のオーディオクリップと異なる場合、そのクリップを現在のオーディオクリップとして設定してから再生します。
-   * 引数が未指定で現在のオーディオクリップも未定義の場合は、何もしません。
-   * この関数は、オーディオの準備が整い次第再生を開始し、タイトルの設定と再生イベントの発火を行います。
-   * @param {AudioClip} audioClip - 再生するオーディオクリップ。未指定の場合、現在のオーディオクリップが使用されます。
+   * @deprecated
+   * @use AudioPlayer.playbackController.play
    */
   play(audioClip = undefined){
-    if(this.audioEffectManager.audioContext == null) {
-      this.initalize();
-    }
-    if(audioClip == undefined && this.playList.currentAudioClip == undefined) {
-      return;
-    }
-    this.audioPlayStateAction.lockEventTarget.action('setStopUpdate');
-    if(audioClip != undefined && this.playList.findAudioClipPosition(audioClip) == -1) {
-      this.playList.appendAudioClipNext(audioClip);
-      this.playList.currentAudioClip = audioClip;
-      this.audioDeployment();
-    } else if( audioClip != undefined && (this.playList.currentAudioClip == undefined || !this.playList.currentAudioClip.equals(audioClip))) {
-      this.playList.currentAudioClip = audioClip;
-      this.audioDeployment();
-    } else if(audioClip != undefined && audioClip.equals(this.playList.currentAudioClip)) {
-      this.audioDeployment();
-    }
+    this.playbackController.play(audioClip);
+  }
 
-    BaseFrameWork.waitForValue(
-      ()=>{
-        if(this.loudnessNormalize.soundClip == null) {
-          return null;
-        }
-        return this.loudnessNormalize.soundClip.src;
-      },
-      this.playList.currentAudioClip.src,
-      2e5).
-      then(()=>{
-        setTitle(this.playList.currentAudioClip.title);
-        this.audio.play();
-        this.audioPlayStateAction.currentPlayState = AudioPlayStateEnum.PLAY;
-        this.eventSupport.dispatchEvent(new CustomEvent('play'));
-      }).finally(()=>{
-        this.audioPlayStateAction.lockEventTarget.action('setUpdate');
-      });
-  }
+  /**
+   * @deprecated
+   * @use AudioPlayer.playbackController.pause
+   */
   pause(){
-    this.audio.pause();
-    this.audioPlayStateAction.currentPlayState = AudioPlayStateEnum.PAUSE;
-    this.eventSupport.dispatchEvent(new CustomEvent('pause'));
+    this.playbackController.pause();
   }
+
+  /**
+   * @deprecated
+   * @use AudioPlayer.playbackController.stop
+   */
   stop(){
-    if(this.audio.src == null){
-      return;
-    }
-    this.audio.pause();
-    this.audio.currentTime = 0;
-    this.audioPlayStateAction.currentPlayState = AudioPlayStateEnum.STOP;
-    this.eventSupport.dispatchEvent(new CustomEvent('stop'));
+    this.playbackController.stop();
   }
 }
 
