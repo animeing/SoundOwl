@@ -13,7 +13,7 @@
                     v-model="isUseSoundSculpt"
                     color="primary"
                     hide-details
-                    @change="toggleEffect"
+                    @update:modelValue="toggleEffect"
                   ></v-switch>
                 </div>
               </v-expansion-panel-title>
@@ -31,7 +31,7 @@
                     v-model="isUseLoudnessNormalization"
                     color="primary"
                     hide-details
-                    @change="toggleLoudnessNormalization"
+                    @update:modelValue="toggleLoudnessNormalization"
                   ></v-switch>
                 </div>
               </v-expansion-panel-title>
@@ -94,12 +94,14 @@ import audio from '../../../audio/AudioPlayer';
 import { MessageWindow } from '../../../base';
 import { audioParamSave } from '../../../utilization/register';
 
+const toBoolean = value => value === true || value === 1 || value === '1' || value === 'true';
+
 export default {
   name: 'EffectSettings',
   data() {
     return {
-      isUseSoundSculpt: audio.exAudioEffect.isUse,
-      isUseLoudnessNormalization: audio.loudnessNormalize.isUse,
+      isUseSoundSculpt: toBoolean(audio.exAudioEffect.isUse),
+      isUseLoudnessNormalization: toBoolean(audio.loudnessNormalize.isUse),
       presetNames: [],
       selectPreset: 'OFF',
       selectDelete: '',
@@ -155,12 +157,16 @@ export default {
             : 'OFF';
         });
     },
-    toggleEffect() {
-      audio.exAudioEffect.isUse = !audio.exAudioEffect.isUse;
+    toggleEffect(value) {
+      const enabled = toBoolean(value);
+      this.isUseSoundSculpt = enabled;
+      audio.exAudioEffect.isUse = enabled;
       audioParamSave();
     },
-    toggleLoudnessNormalization() {
-      audio.loudnessNormalize.isUse = !audio.loudnessNormalize.isUse;
+    toggleLoudnessNormalization(value) {
+      const enabled = toBoolean(value);
+      this.isUseLoudnessNormalization = enabled;
+      audio.loudnessNormalize.isUse = enabled;
       audioParamSave();
     },
     changeReverbEffect() {

@@ -219,6 +219,10 @@ export default {
   margin-top: 16px;
 }
 
+.settings-field :deep(.v-field--variant-filled.v-field--active) {
+  --v-input-padding-top: 10px;
+}
+
 .settings-panels {
   margin-top: 48px;
 }
