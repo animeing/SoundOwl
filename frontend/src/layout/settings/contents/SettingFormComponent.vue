@@ -89,10 +89,10 @@
           </v-card-item>
           <div class="settings-card-body">
             <v-divider></v-divider>
-            <v-text-field class="settings-field" label="IP Address" v-model="ip" name="db_ip_address" variant="filled" density="comfortable" />
-            <v-text-field class="settings-field" label="DB Name" v-model="dbName" name="db_name" variant="filled" density="comfortable" />
-            <v-text-field class="settings-field" label="User" v-model="user" name="db_user" variant="filled" density="comfortable" />
-            <v-text-field class="settings-field" label="Password" v-model="pass" name="db_pass" type="password" variant="filled" density="comfortable" />
+            <v-text-field class="settings-field" label="IP Address" v-model="ip" name="db_ip_address" variant="filled" />
+            <v-text-field class="settings-field" label="DB Name" v-model="dbName" name="db_name" variant="filled" />
+            <v-text-field class="settings-field" label="User" v-model="user" name="db_user" variant="filled" />
+            <v-text-field class="settings-field" label="Password" v-model="pass" name="db_pass" type="password" variant="filled" />
           </div>
         </v-card>
       </v-col>
@@ -104,8 +104,8 @@
           </v-card-item>
           <div class="settings-card-body">
             <v-divider></v-divider>
-            <v-text-field class="settings-field" label="Sound Directory" v-model="sound" name="sound_directory" variant="filled" density="comfortable" />
-            <v-textarea class="settings-field" label="Exclusion Paths" v-model="exclusionPaths" name="exclusionPaths" rows="4" auto-grow variant="filled" density="comfortable" />
+            <v-text-field class="settings-field" label="Sound Directory" v-model="sound" name="sound_directory" variant="filled" />
+            <v-textarea class="settings-field" label="Exclusion Paths" v-model="exclusionPaths" name="exclusionPaths" rows="4" auto-grow variant="filled" />
           </div>
         </v-card>
       </v-col>
@@ -117,8 +117,8 @@
           </v-card-item>
           <div class="settings-card-body">
             <v-divider></v-divider>
-            <v-text-field class="settings-field" label="Retry Count Limit" v-model.number="websocketRetryCount" name="websocket_retry_count" type="number" min="0" max="100" variant="filled" density="comfortable" />
-            <v-text-field class="settings-field" label="Reconnection Interval (ms)" v-model.number="websocketRetryIntervalMs" name="websocket_retry_interval" type="number" min="0" max="999999" variant="filled" density="comfortable" />
+            <v-text-field class="settings-field" label="Retry Count Limit" v-model.number="websocketRetryCount" name="websocket_retry_count" type="number" min="0" max="100" variant="filled" />
+            <v-text-field class="settings-field" label="Reconnection Interval (ms)" v-model.number="websocketRetryIntervalMs" name="websocket_retry_interval" type="number" min="0" max="999999" variant="filled" />
           </div>
         </v-card>
       </v-col>

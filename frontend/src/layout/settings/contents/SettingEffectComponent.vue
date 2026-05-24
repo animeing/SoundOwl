@@ -12,7 +12,6 @@
                   <v-switch
                     v-model="isUseSoundSculpt"
                     color="primary"
-                    inset
                     hide-details
                     @change="toggleEffect"
                   ></v-switch>
@@ -31,7 +30,6 @@
                   <v-switch
                     v-model="isUseLoudnessNormalization"
                     color="primary"
-                    inset
                     hide-details
                     @change="toggleLoudnessNormalization"
                   ></v-switch>

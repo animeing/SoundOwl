@@ -30,12 +30,12 @@
       v-if="!isSmall || showSearch"
       v-model="q"
       placeholder="Search..."
-      flat
       rounded
       hide-details
       prepend-inner-icon="mdi-magnify"
       variant="outlined"
       density="compact"
+      base-color="rgba(var(--v-theme-on-surface), 0.7)"
       @keydown.enter="submit"
       @blur="handleBlur"
       ref="searchField"
@@ -106,6 +106,14 @@ export default {
   .search-input {
     width: min(40vw, 760px);
     max-width: 760px;
+  }
+
+  .search-input :deep(.v-field__outline) {
+    --v-field-border-opacity: 0.7;
+  }
+
+  .search-input :deep(.v-field) {
+    border: 1px solid rgba(var(--v-theme-on-surface), 0.55);
   }
 
   .v-toolbar-title{
