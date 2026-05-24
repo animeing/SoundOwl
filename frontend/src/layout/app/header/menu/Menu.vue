@@ -8,10 +8,10 @@
     <template #activator="{ props }">
       <v-btn
         v-bind="props"
-        width="5%"
         variant="elevated"
+        class="menu-button"
       >
-        Menu
+        MENU
       </v-btn>
     </template>
 
@@ -49,3 +49,17 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.menu-button {
+  letter-spacing: 0.08em;
+  min-width: 96px;
+}
+
+@media screen and (max-width: 600px) {
+  .menu-button {
+    min-width: 64px;
+    padding-inline: 10px;
+  }
+}
+</style>

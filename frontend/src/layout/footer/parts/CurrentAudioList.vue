@@ -165,12 +165,46 @@ export default {
 };
 </script>
 <style scoped>
+.audio-controller-playlist {
+  box-sizing: border-box;
+  width: min(564px, 100vw);
+  max-width: 100vw;
+}
+
+@media screen and (max-width: 600px) {
+  .audio-controller-playlist {
+    left: 0;
+    right: 0;
+    margin-inline: 0;
+    width: 100vw;
+    max-width: 100vw !important;
+  }
+}
+
 .audio-list-nowplaying {
-  background-color: var(--highlight-color, #ffeb3b);
+  background-color: var(--basecolor);
   transition: background-color 0.3s ease;
 }
 .highlighted {
   border: 2px solid var(--highlight-border-color, #ff9800);
   border-radius: 4px;
+}
+
+.play-list-title {
+  background: transparent;
+  color: var(--fontcolor);
+  font-size: 1.35rem;
+  line-height: 1.4;
+  padding: 2px 8px;
+}
+
+.menu-icon {
+  background: transparent;
+  color: var(--fontcolor);
+}
+
+.menu-icon-frame {
+  float: right;
+  padding: 4px 8px 0 0;
 }
 </style>

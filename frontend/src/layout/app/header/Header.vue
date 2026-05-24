@@ -9,6 +9,7 @@
       <router-link
         :to="{name:'home'}"
         title="Home"
+        class="brand-link"
         style="color: rgba(var(--v-theme-on-background), var(--v-high-emphasis-opacity));">
         SoundOwl
       </router-link>
@@ -42,7 +43,9 @@
       :append-inner-icon="isSmall ? 'mdi-close' : ''"
       @click:append-inner="closeSearch"
     ></v-text-field>
-    <Menu></Menu>
+    <div class="menu-slot">
+      <Menu></Menu>
+    </div>
   </v-app-bar>
 </template>
 <script>
@@ -96,16 +99,39 @@ export default {
 </script>
 
 <style scoped>
+  :deep(.v-toolbar__content) {
+    padding-inline: 16px 6px;
+  }
+
   .transition-width {
     transition: width 0.3s ease;
   }
 
   .search-input {
-    width: 250px;
+    width: min(40vw, 760px);
+    max-width: 760px;
+  }
+
+  .search-input :deep(.v-field) {
+    background: transparent;
+    border-radius: 22px;
+  }
+
+  .search-input :deep(.v-field__outline) {
+    --v-field-border-opacity: 0.72;
+    color: rgba(220, 220, 220, 0.86);
+  }
+
+  .brand-link {
+    font-size: 1.35rem;
+    letter-spacing: 0;
+    text-decoration: none;
   }
 
   .v-toolbar-title{
     overflow-x: hidden;
+    margin-inline-start: 0 !important;
+    flex: 0 0 auto;
   }
   .search-btn {
     width: 40px;
@@ -115,11 +141,35 @@ export default {
     align-items: center;
     justify-content: center;
   }
+
+  .menu-slot {
+    display: flex;
+    justify-content: flex-end;
+  }
+
   @media screen and (max-width: 768px) {
+    :deep(.v-toolbar__content) {
+      padding-inline: 14px 4px;
+    }
+
+    .search-input {
+      width: 100%;
+    }
+
     .v-spacer {
       display: none;
       visibility: hidden;
 
+    }
+
+    .search-btn {
+      margin-left: auto;
+      flex: 0 0 auto;
+    }
+
+    .menu-slot {
+      margin-left: 4px;
+      flex: 0 0 auto;
     }
   }
 </style>

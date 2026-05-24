@@ -1,7 +1,7 @@
 <template>
-  <v-container class="py-4" fluid>
+  <v-container class="effect-settings" fluid>
         <v-card outlined style="background: inherit;">
-          <v-card-title>Effect Settings</v-card-title>
+          <v-card-title class="section-title">Effect Settings</v-card-title>
           <v-divider></v-divider>
           <v-expansion-panels multiple style="background: inherit;">
             <!-- SoundSculpt -->
@@ -10,7 +10,9 @@
                 <div class="d-flex align-center justify-space-between w-100">
                   <span>SoundSculpt</span>
                   <v-switch
+                    class="effect-switch"
                     v-model="isUseSoundSculpt"
+                    color="primary"
                     inset
                     hide-details
                     @change="toggleEffect"
@@ -28,7 +30,9 @@
                 <div class="d-flex align-center justify-space-between w-100">
                   <span>Loudness Normalization</span>
                   <v-switch
+                    class="effect-switch"
                     v-model="isUseLoudnessNormalization"
+                    color="primary"
                     inset
                     hide-details
                     @change="toggleLoudnessNormalization"
@@ -172,3 +176,24 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.effect-settings {
+  padding: 18px 12px;
+}
+
+.section-title {
+  font-size: 1.35rem;
+  font-weight: 500;
+  padding: 14px 16px;
+}
+
+.effect-switch {
+  flex: 0 0 auto;
+}
+
+.effect-switch :deep(.v-selection-control) {
+  min-height: 36px;
+}
+
+</style>

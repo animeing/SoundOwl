@@ -220,7 +220,7 @@ export default {
 
     const overlayHeightStyle = computed(()=>{
       return {
-        bottom: `${{containerHeight}}px`,
+        bottom: `${containerHeight.value}px`,
         'max-height': `calc(100vh - ${containerHeight.value}px )`
       }
     });
@@ -485,8 +485,11 @@ export default {
 
 .audio-actions {
   grid-area: actions;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  justify-content: stretch;
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -500,11 +503,14 @@ export default {
 }
 
 .primary-controls {
+  grid-column: 2;
   justify-content: center;
 }
 
 .secondary-controls {
+  grid-column: 3;
   justify-content: flex-end;
+  justify-self: end;
 }
 
 .control-button {
@@ -534,8 +540,9 @@ export default {
   position: fixed;
   right: 0;
   z-index: 50;
-  width: 564px;
-  height: 100vw;
+  width: min(564px, 100vw);
+  max-width: 100vw;
+  height: auto;
 }
 
 /* 全画面オーバーレイのスタイル */
@@ -555,6 +562,13 @@ export default {
   justify-content: center;
   height: 100%;
 }
+
+@media screen and (min-width: 769px) {
+  .track-panel {
+    z-index: 1;
+  }
+}
+
 @media screen and (max-width: 768px) {
   .audio-controller-bar {
     padding: 8px 10px 6px;
@@ -570,8 +584,17 @@ export default {
   }
 
   .audio-actions {
+    display: flex;
+    grid-column: auto;
+    grid-row: auto;
     justify-content: center;
     gap: 4px;
+  }
+
+  .primary-controls,
+  .secondary-controls {
+    grid-column: auto;
+    justify-self: auto;
   }
 
   .control-group {
