@@ -52,10 +52,16 @@ export default {
 </script>
 
 <style scoped>
+.settings-tabs :deep(.v-tab) {
+  min-width: auto;
+  padding-inline: 16px;
+}
+
 @media screen and (max-width: 600px) {
   .settings-tabs :deep(.v-tab) {
     max-width: 84px;
     min-width: auto;
+    padding-inline: 12px;
   }
 
   .settings-tabs :deep(.v-btn__content) {
