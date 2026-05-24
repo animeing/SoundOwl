@@ -1,9 +1,10 @@
 <template>
-    <v-tabs v-model="tab" class="settings-tabs">
+    <v-tabs v-model="tab" class="mt-2 settings-tabs">
       <v-tab
         v-for="(item, index) in menuItems"
         :key="index"
         :to="item.route"
+        class="font-weight-medium text-uppercase"
       >
         {{ item.title }}
       </v-tab>
@@ -51,27 +52,10 @@ export default {
 </script>
 
 <style scoped>
-.settings-tabs {
-  margin-top: 8px;
-}
-
-.settings-tabs :deep(.v-tab) {
-  font-family: "Lucida Grande", "Lucida Sans Unicode", "Hiragino Kaku Gothic Pro", "Meiryo", Helvetica, Arial, Verdana, sans-serif;
-  font-size: 0.88rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  min-width: 102px;
-  padding-inline: 14px;
-  text-transform: uppercase;
-}
-
 @media screen and (max-width: 600px) {
   .settings-tabs :deep(.v-tab) {
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
     max-width: 84px;
     min-width: auto;
-    padding-inline: 10px;
   }
 
   .settings-tabs :deep(.v-btn__content) {

@@ -540,9 +540,6 @@ export default {
   position: fixed;
   right: 0;
   z-index: 50;
-  width: min(564px, 100vw);
-  max-width: 100vw;
-  height: auto;
 }
 
 /* 全画面オーバーレイのスタイル */

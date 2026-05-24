@@ -1,11 +1,11 @@
 <template>
-  <v-container class="settings-form" fluid>
-    <v-card class="box status-card" style="background: inherit;">
-      <v-card-title class="section-title">Current Status</v-card-title>
+  <v-container class="pa-4" fluid>
+    <v-card class="box mb-12" style="background: inherit;">
+      <v-card-title class="text-h6 font-weight-medium">Current Status</v-card-title>
         <v-divider></v-divider>
         <div>
           <v-card style="background: inherit;">
-            <v-card-title class="regist-title">
+            <v-card-title class="d-flex align-center ga-2 px-4 py-2">
               <v-chip color="red" v-if="registStatus">Action</v-chip>
               <v-chip color="green" v-else>Finished</v-chip>
               <span>Regist Status</span>
@@ -39,22 +39,22 @@
           <v-card style="background: inherit;">
             <div class="d-flex" style="flex-wrap: wrap;align-content: space-around;">
               <v-card class="count-card" style="flex-shrink: 1; flex-grow: 1; background: inherit;">
-                <v-card-title class="metric-title">Analysis/Sound Count</v-card-title>
-                <v-card-text>
+                <v-card-title class="text-h6 font-weight-medium">Analysis/Sound Count</v-card-title>
+                <v-card-text class="pt-0 px-4 pb-4">
                   <v-divider></v-divider>
                   <span>{{ analysisSoundCount }}</span>/<span>{{ registSoundCount }}</span>
                 </v-card-text>
               </v-card>
               <v-card class="count-card" style="flex-shrink: 1; flex-grow: 1;background: inherit;">
-                <v-card-title class="metric-title">Album Count</v-card-title>
-                <v-card-text>
+                <v-card-title class="text-h6 font-weight-medium">Album Count</v-card-title>
+                <v-card-text class="pt-0 px-4 pb-4">
                   <v-divider></v-divider>
                   {{ albumCount }}
                 </v-card-text>
               </v-card>
               <v-card class="count-card" style="flex-shrink: 1; flex-grow: 1;background: inherit;">
-                <v-card-title class="metric-title">Artist Count</v-card-title>
-                <v-card-text>
+                <v-card-title class="text-h6 font-weight-medium">Artist Count</v-card-title>
+                <v-card-text class="pt-0 px-4 pb-4">
                   <v-divider></v-divider>
                   {{ artistCount }}
                 </v-card-text>
@@ -68,7 +68,7 @@
       <!-- DB -------------------------------------------------------->
       <v-col cols="12" md="3">
         <v-card class="box h-100" style="background: inherit;">
-          <v-card-title class="section-title">DB</v-card-title>
+          <v-card-title class="text-h6 font-weight-medium">DB</v-card-title>
           <v-card-text>
             <v-divider></v-divider>
             <v-text-field class="mt-4" label="IP Address" v-model="ip" name="db_ip_address" />
@@ -81,7 +81,7 @@
       <!-- Sound ----------------------------------------------------->
       <v-col cols="12" md="5">
         <v-card class="box h-100" style="background: inherit;">
-          <v-card-title class="section-title">Sound</v-card-title>
+          <v-card-title class="text-h6 font-weight-medium">Sound</v-card-title>
           <v-card-text>
             <v-divider></v-divider>
             <v-text-field class="mt-4" label="Sound Directory" v-model="sound" name="sound_directory" />
@@ -92,7 +92,7 @@
       <!-- WebSocket ------------------------------------------------->
       <v-col cols="12" md="4">
         <v-card class="box h-100" style="background: inherit;">
-          <v-card-title class="section-title">WebSocket</v-card-title>
+          <v-card-title class="text-h6 font-weight-medium">WebSocket</v-card-title>
           <v-card-text>
             <v-divider></v-divider>
             <v-text-field class="mt-4" label="Retry Count Limit" v-model.number="websocketRetryCount" name="websocket_retry_count" type="number" min="0" max="100" />
@@ -175,38 +175,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.settings-form {
-  padding: 18px 14px 20px;
-}
-
-.status-card {
-  margin-bottom: 48px;
-}
-
-.section-title {
-  font-size: 1.35rem;
-  font-weight: 500;
-  line-height: 1.35;
-  padding: 14px 16px;
-}
-
-.regist-title {
-  align-items: center;
-  display: flex;
-  gap: 10px;
-  padding: 10px 16px 8px;
-}
-
-.metric-title {
-  font-size: 1.3rem;
-  font-weight: 500;
-  padding: 10px 16px 6px;
-}
-
-.count-card :deep(.v-card-text) {
-  padding: 0 16px 16px;
-}
-
-</style>

@@ -1,7 +1,7 @@
 <template>
-  <v-container class="effect-settings" fluid>
+  <v-container class="pa-4" fluid>
         <v-card outlined style="background: inherit;">
-          <v-card-title class="section-title">Effect Settings</v-card-title>
+          <v-card-title class="text-h6 font-weight-medium">Effect Settings</v-card-title>
           <v-divider></v-divider>
           <v-expansion-panels multiple style="background: inherit;">
             <!-- SoundSculpt -->
@@ -174,16 +174,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.effect-settings {
-  padding: 18px 12px;
-}
-
-.section-title {
-  font-size: 1.35rem;
-  font-weight: 500;
-  padding: 14px 16px;
-}
-
-</style>

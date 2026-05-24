@@ -9,7 +9,7 @@
       <router-link
         :to="{name:'home'}"
         title="Home"
-        class="brand-link"
+        class="text-h6 text-decoration-none"
         style="color: rgba(var(--v-theme-on-background), var(--v-high-emphasis-opacity));">
         SoundOwl
       </router-link>
@@ -39,7 +39,7 @@
       @keydown.enter="submit"
       @blur="handleBlur"
       ref="searchField"
-      class="transition-width search-input"
+      class="search-input"
       :append-inner-icon="isSmall ? 'mdi-close' : ''"
       @click:append-inner="closeSearch"
     ></v-text-field>
@@ -103,29 +103,9 @@ export default {
     padding-inline: 16px 6px;
   }
 
-  .transition-width {
-    transition: width 0.3s ease;
-  }
-
   .search-input {
     width: min(40vw, 760px);
     max-width: 760px;
-  }
-
-  .search-input :deep(.v-field) {
-    background: transparent;
-    border-radius: 22px;
-  }
-
-  .search-input :deep(.v-field__outline) {
-    --v-field-border-opacity: 0.72;
-    color: rgba(220, 220, 220, 0.86);
-  }
-
-  .brand-link {
-    font-size: 1.35rem;
-    letter-spacing: 0;
-    text-decoration: none;
   }
 
   .v-toolbar-title{
@@ -134,12 +114,7 @@ export default {
     flex: 0 0 auto;
   }
   .search-btn {
-    width: 40px;
-    min-height: 40px; 
-    padding: 0 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    flex: 0 0 auto;
   }
 
   .menu-slot {
@@ -164,7 +139,6 @@ export default {
 
     .search-btn {
       margin-left: auto;
-      flex: 0 0 auto;
     }
 
     .menu-slot {
