@@ -6,8 +6,8 @@
         <div>
           <v-card style="background: inherit;">
             <v-card-title class="regist-title">
-              <v-chip class="status-chip" color="red" v-if="registStatus">Action</v-chip>
-              <v-chip class="status-chip" color="green" v-else>Finished</v-chip>
+              <v-chip color="red" v-if="registStatus">Action</v-chip>
+              <v-chip color="green" v-else>Finished</v-chip>
               <span>Regist Status</span>
             </v-card-title>
             <v-card-text>
@@ -16,18 +16,18 @@
                   <v-expansion-panel-title>Detail</v-expansion-panel-title>
                   <v-expansion-panel-text>
                     <p>Regist Step1: 
-                      <v-chip class="status-chip" color="red" v-if="registStatusStep1">
+                      <v-chip color="red" v-if="registStatusStep1">
                         Action
                       </v-chip>
-                      <v-chip class="status-chip" color="green" v-else>
+                      <v-chip color="green" v-else>
                         Finished
                       </v-chip>
                     </p>
                     <p>Regist Step2: 
-                      <v-chip class="status-chip" color="red" v-if="registStatusStep2">
+                      <v-chip color="red" v-if="registStatusStep2">
                         Action
                       </v-chip>
-                      <v-chip class="status-chip" color="green" v-else>
+                      <v-chip color="green" v-else>
                         Finished
                       </v-chip>
                     </p>
@@ -64,37 +64,43 @@
         </div>
     </v-card>
     
-    <div class="settings-grid">
+    <v-row class="mt-12">
       <!-- DB -------------------------------------------------------->
-      <v-card class="box settings-card" style="background: inherit;">
-        <v-card-title class="section-title">DB</v-card-title>
-        <v-card-text>
-          <v-divider></v-divider>
-          <v-text-field class="settings-field" label="IP Address" v-model="ip" name="db_ip_address" />
-          <v-text-field class="settings-field" label="DB Name" v-model="dbName" name="db_name" />
-          <v-text-field class="settings-field" label="User" v-model="user" name="db_user" />
-          <v-text-field class="settings-field" label="Password" v-model="pass" name="db_pass" type="password" />
-        </v-card-text>
-      </v-card>
+      <v-col cols="12" md="3">
+        <v-card class="box h-100" style="background: inherit;">
+          <v-card-title class="section-title">DB</v-card-title>
+          <v-card-text>
+            <v-divider></v-divider>
+            <v-text-field class="mt-4" label="IP Address" v-model="ip" name="db_ip_address" />
+            <v-text-field class="mt-4" label="DB Name" v-model="dbName" name="db_name" />
+            <v-text-field class="mt-4" label="User" v-model="user" name="db_user" />
+            <v-text-field class="mt-4" label="Password" v-model="pass" name="db_pass" type="password" />
+          </v-card-text>
+        </v-card>
+      </v-col>
       <!-- Sound ----------------------------------------------------->
-      <v-card class="box settings-card" style="background: inherit;">
-        <v-card-title class="section-title">Sound</v-card-title>
-        <v-card-text>
-          <v-divider></v-divider>
-          <v-text-field class="settings-field" label="Sound Directory" v-model="sound" name="sound_directory" />
-          <v-textarea class="settings-field" label="Exclusion Paths" v-model="exclusionPaths" name="exclusionPaths" rows="4" auto-grow />
-        </v-card-text>
-      </v-card>
+      <v-col cols="12" md="5">
+        <v-card class="box h-100" style="background: inherit;">
+          <v-card-title class="section-title">Sound</v-card-title>
+          <v-card-text>
+            <v-divider></v-divider>
+            <v-text-field class="mt-4" label="Sound Directory" v-model="sound" name="sound_directory" />
+            <v-textarea class="mt-4" label="Exclusion Paths" v-model="exclusionPaths" name="exclusionPaths" rows="4" auto-grow />
+          </v-card-text>
+        </v-card>
+      </v-col>
       <!-- WebSocket ------------------------------------------------->
-      <v-card class="box settings-card" style="background: inherit;">
-        <v-card-title class="section-title">WebSocket</v-card-title>
-        <v-card-text>
-          <v-divider></v-divider>
-          <v-text-field class="settings-field" label="Retry Count Limit" v-model.number="websocketRetryCount" name="websocket_retry_count" type="number" min="0" max="100" />
-          <v-text-field class="settings-field" label="Reconnection Interval (ms)" v-model.number="websocketRetryIntervalMs" name="websocket_retry_interval" type="number" min="0" max="999999" />
-        </v-card-text>
-      </v-card>
-    </div>
+      <v-col cols="12" md="4">
+        <v-card class="box h-100" style="background: inherit;">
+          <v-card-title class="section-title">WebSocket</v-card-title>
+          <v-card-text>
+            <v-divider></v-divider>
+            <v-text-field class="mt-4" label="Retry Count Limit" v-model.number="websocketRetryCount" name="websocket_retry_count" type="number" min="0" max="100" />
+            <v-text-field class="mt-4" label="Reconnection Interval (ms)" v-model.number="websocketRetryIntervalMs" name="websocket_retry_interval" type="number" min="0" max="999999" />
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 <script>
@@ -193,12 +199,6 @@ export default {
   padding: 10px 16px 8px;
 }
 
-.status-chip {
-  min-width: 82px;
-  justify-content: center;
-  padding-inline: 14px;
-}
-
 .metric-title {
   font-size: 1.3rem;
   font-weight: 500;
@@ -209,43 +209,4 @@ export default {
   padding: 0 16px 16px;
 }
 
-.settings-grid {
-  display: grid;
-  grid-template-columns: minmax(300px, 0.9fr) minmax(360px, 1.2fr) minmax(300px, 1fr);
-  gap: 0;
-}
-
-.settings-card {
-  min-width: 0;
-}
-
-.settings-card :deep(.v-card-text) {
-  padding: 0 16px 24px;
-}
-
-.settings-field {
-  margin-top: 16px;
-}
-
-.settings-field :deep(.v-field) {
-  background: rgba(255, 255, 255, 0.035);
-  padding-inline: 16px;
-}
-
-.settings-field :deep(.v-label) {
-  font-family: "Lucida Grande", "Lucida Sans Unicode", "Hiragino Kaku Gothic Pro", "Meiryo", Helvetica, Arial, Verdana, sans-serif;
-  font-size: 0.8rem;
-}
-
-.settings-field :deep(.v-field__input) {
-  min-height: 56px;
-  padding-top: 20px;
-  padding-bottom: 8px;
-}
-
-@media screen and (max-width: 1024px) {
-  .settings-grid {
-    grid-template-columns: 1fr;
-  }
-}
 </style>
