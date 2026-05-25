@@ -11,6 +11,7 @@
                   <span>SoundSculpt</span>
                   <v-switch
                     v-model="isUseSoundSculpt"
+                    class="ms-4 flex-shrink-0"
                     color="primary"
                     hide-details
                     @update:modelValue="toggleEffect"
@@ -29,6 +30,7 @@
                   <span>Loudness Normalization</span>
                   <v-switch
                     v-model="isUseLoudnessNormalization"
+                    class="ms-4 flex-shrink-0"
                     color="primary"
                     hide-details
                     @update:modelValue="toggleLoudnessNormalization"
