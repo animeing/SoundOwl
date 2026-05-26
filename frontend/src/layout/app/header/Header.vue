@@ -9,6 +9,7 @@
       <router-link
         :to="{name:'home'}"
         title="Home"
+        class="text-h6 text-decoration-none"
         style="color: rgba(var(--v-theme-on-background), var(--v-high-emphasis-opacity));">
         SoundOwl
       </router-link>
@@ -29,20 +30,22 @@
       v-if="!isSmall || showSearch"
       v-model="q"
       placeholder="Search..."
-      flat
       rounded
       hide-details
       prepend-inner-icon="mdi-magnify"
       variant="outlined"
       density="compact"
+      base-color="rgba(var(--v-theme-on-surface), 0.7)"
       @keydown.enter="submit"
       @blur="handleBlur"
       ref="searchField"
-      class="transition-width search-input"
+      class="search-input"
       :append-inner-icon="isSmall ? 'mdi-close' : ''"
       @click:append-inner="closeSearch"
     ></v-text-field>
-    <Menu></Menu>
+    <div class="menu-slot">
+      <Menu></Menu>
+    </div>
   </v-app-bar>
 </template>
 <script>
@@ -96,30 +99,59 @@ export default {
 </script>
 
 <style scoped>
-  .transition-width {
-    transition: width 0.3s ease;
+  :deep(.v-toolbar__content) {
+    padding-inline: 16px 6px;
   }
 
   .search-input {
-    width: 250px;
+    width: min(40vw, 760px);
+    max-width: 760px;
+  }
+
+  .search-input :deep(.v-field__outline) {
+    --v-field-border-opacity: 0.7;
+  }
+
+  .search-input :deep(.v-field) {
+    border: 1px solid rgba(var(--v-theme-on-surface), 0.55);
   }
 
   .v-toolbar-title{
     overflow-x: hidden;
+    margin-inline-start: 0 !important;
+    flex: 0 0 auto;
   }
   .search-btn {
-    width: 40px;
-    min-height: 40px; 
-    padding: 0 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    flex: 0 0 auto;
   }
+
+  .menu-slot {
+    display: flex;
+    justify-content: flex-end;
+  }
+
   @media screen and (max-width: 768px) {
+    :deep(.v-toolbar__content) {
+      padding-inline: 14px 4px;
+    }
+
+    .search-input {
+      width: 100%;
+    }
+
     .v-spacer {
       display: none;
       visibility: hidden;
 
+    }
+
+    .search-btn {
+      margin-left: auto;
+    }
+
+    .menu-slot {
+      margin-left: 4px;
+      flex: 0 0 auto;
     }
   }
 </style>

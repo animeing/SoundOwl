@@ -2,3 +2,4 @@
 /api/lock/
 /frontend/node_modules
 /js/
+/test-results/

@@ -1,22 +1,26 @@
 <template>
-  <v-container class="py-4" fluid>
-    <v-card class="box" style="background: inherit;">
-      <v-card-title>Current Status</v-card-title>
+  <v-container class="settings-form" fluid>
+    <v-card class="box mb-12" style="background: inherit;">
+      <v-card-item>
+        <v-card-title class="text-h6 font-weight-medium">Current Status</v-card-title>
+      </v-card-item>
         <v-divider></v-divider>
         <div>
           <v-card style="background: inherit;">
-            <v-card-title>
-              <v-chip  color="red" v-if="registStatus">Action</v-chip>
-              <v-chip color="green" v-else>Finished</v-chip>
-              Regist Status
-            </v-card-title>
-            <v-card-text>
+            <v-card-item>
+              <div class="d-flex align-center ga-2">
+                <v-chip color="red" v-if="registStatus">Action</v-chip>
+                <v-chip color="green" v-else>Finished</v-chip>
+                <span class="text-h6">Regist Status</span>
+              </div>
+            </v-card-item>
+            <div class="settings-card-body">
               <v-expansion-panels>
                 <v-expansion-panel>
                   <v-expansion-panel-title>Detail</v-expansion-panel-title>
                   <v-expansion-panel-text>
                     <p>Regist Step1: 
-                      <v-chip  color="red" v-if="registStatusStep1">
+                      <v-chip color="red" v-if="registStatusStep1">
                         Action
                       </v-chip>
                       <v-chip color="green" v-else>
@@ -24,7 +28,7 @@
                       </v-chip>
                     </p>
                     <p>Regist Step2: 
-                      <v-chip  color="red" v-if="registStatusStep2">
+                      <v-chip color="red" v-if="registStatusStep2">
                         Action
                       </v-chip>
                       <v-chip color="green" v-else>
@@ -34,67 +38,91 @@
                   </v-expansion-panel-text>
                 </v-expansion-panel>
               </v-expansion-panels>
-            </v-card-text>
+            </div>
           </v-card>
           <v-card style="background: inherit;">
-            <div class="d-flex" style="flex-wrap: wrap;align-content: space-around;">
-              <v-card style="flex-shrink: 1; flex-grow: 1; background: inherit;">
-                <v-card-title>Analysis/Sound Count</v-card-title>
-                <v-card-text>
+            <v-row no-gutters>
+              <v-col cols="12" sm="4">
+              <v-card class="count-card h-100" style="background: inherit;">
+                <v-card-item>
+                  <v-card-title class="text-h6 font-weight-medium">Analysis/Sound Count</v-card-title>
+                </v-card-item>
+                <div class="settings-card-body">
                   <v-divider></v-divider>
                   <span>{{ analysisSoundCount }}</span>/<span>{{ registSoundCount }}</span>
-                </v-card-text>
+                </div>
               </v-card>
-              <v-card style="flex-shrink: 1; flex-grow: 1;background: inherit;">
-                <v-card-title>Album Count</v-card-title>
-                <v-card-text>
+              </v-col>
+              <v-col cols="12" sm="4">
+              <v-card class="count-card h-100" style="background: inherit;">
+                <v-card-item>
+                  <v-card-title class="text-h6 font-weight-medium">Album Count</v-card-title>
+                </v-card-item>
+                <div class="settings-card-body">
                   <v-divider></v-divider>
                   {{ albumCount }}
-                </v-card-text>
+                </div>
               </v-card>
-              <v-card style="flex-shrink: 1; flex-grow: 1;background: inherit;">
-                <v-card-title>Artist Count</v-card-title>
-                <v-card-text>
+              </v-col>
+              <v-col cols="12" sm="4">
+              <v-card class="count-card h-100" style="background: inherit;">
+                <v-card-item>
+                  <v-card-title class="text-h6 font-weight-medium">Artist Count</v-card-title>
+                </v-card-item>
+                <div class="settings-card-body">
                   <v-divider></v-divider>
                   {{ artistCount }}
-                </v-card-text>
+                </div>
               </v-card>
-            </div>
+              </v-col>
+            </v-row>
           </v-card>
         </div>
     </v-card>
     
-    <div class="d-flex" style="flex-wrap: wrap;align-content: space-around;">
+    <v-row class="settings-panels">
       <!-- DB -------------------------------------------------------->
-      <v-card class="box" style="min-width: 300px;flex-shrink: 1; flex-grow: 1; background: inherit;">
-        <v-card-title>DB</v-card-title>
-        <v-card-text>
-          <v-divider></v-divider>
-          <v-text-field  label="IP Address" v-model="ip"  name="db_ip_address" />
-          <v-text-field  label="DB Name" v-model="dbName" name="db_name" />
-          <v-text-field  label="User" v-model="user" name="db_user" />
-          <v-text-field  label="Password" v-model="pass" name="db_pass" type="password" />
-        </v-card-text>
-      </v-card>
+      <v-col cols="12" md="3">
+        <v-card class="box h-100" style="background: inherit;">
+          <v-card-item>
+            <v-card-title class="text-h6 font-weight-medium">DB</v-card-title>
+          </v-card-item>
+          <div class="settings-card-body">
+            <v-divider></v-divider>
+            <v-text-field class="settings-field" label="IP Address" v-model="ip" name="db_ip_address" variant="filled" />
+            <v-text-field class="settings-field" label="DB Name" v-model="dbName" name="db_name" variant="filled" />
+            <v-text-field class="settings-field" label="User" v-model="user" name="db_user" variant="filled" />
+            <v-text-field class="settings-field" label="Password" v-model="pass" name="db_pass" type="password" variant="filled" />
+          </div>
+        </v-card>
+      </v-col>
       <!-- Sound ----------------------------------------------------->
-      <v-card class="box" style="min-width: 300px;flex-shrink: 1; flex-grow: 1; background: inherit;">
-        <v-card-title>Sound</v-card-title>
-        <v-card-text>
-          <v-divider></v-divider>
-          <v-text-field label="Sound Directory" v-model="sound" name="sound_directory" />
-          <v-textarea label="Exclusion Paths" v-model="exclusionPaths" name="exclusionPaths" rows="4" auto-grow />
-        </v-card-text>
-      </v-card>
+      <v-col cols="12" md="5">
+        <v-card class="box h-100" style="background: inherit;">
+          <v-card-item>
+            <v-card-title class="text-h6 font-weight-medium">Sound</v-card-title>
+          </v-card-item>
+          <div class="settings-card-body">
+            <v-divider></v-divider>
+            <v-text-field class="settings-field" label="Sound Directory" v-model="sound" name="sound_directory" variant="filled" />
+            <v-textarea class="settings-field" label="Exclusion Paths" v-model="exclusionPaths" name="exclusionPaths" rows="4" auto-grow variant="filled" />
+          </div>
+        </v-card>
+      </v-col>
       <!-- WebSocket ------------------------------------------------->
-      <v-card class="box" style="min-width: 300px;flex-shrink: 1; flex-grow: 1; background: inherit;">
-        <v-card-title>WebSocket</v-card-title>
-        <v-card-text>
-          <v-divider></v-divider>
-          <v-text-field label="Retry Count Limit" v-model.number="websocketRetryCount" name="websocket_retry_count" type="number" min="0" max="100" />
-          <v-text-field label="Reconnection Interval (ms)" v-model.number="websocketRetryIntervalMs" name="websocket_retry_interval" type="number" min="0" max="999999" />
-        </v-card-text>
-      </v-card>
-    </div>
+      <v-col cols="12" md="4">
+        <v-card class="box h-100" style="background: inherit;">
+          <v-card-item>
+            <v-card-title class="text-h6 font-weight-medium">WebSocket</v-card-title>
+          </v-card-item>
+          <div class="settings-card-body">
+            <v-divider></v-divider>
+            <v-text-field class="settings-field" label="Retry Count Limit" v-model.number="websocketRetryCount" name="websocket_retry_count" type="number" min="0" max="100" variant="filled" />
+            <v-text-field class="settings-field" label="Reconnection Interval (ms)" v-model.number="websocketRetryIntervalMs" name="websocket_retry_interval" type="number" min="0" max="999999" variant="filled" />
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 <script>
@@ -169,3 +197,37 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.settings-form {
+  padding: 16px;
+}
+
+.settings-form :deep(.v-card-item) {
+  padding: 12px 16px;
+}
+
+.settings-form :deep(.v-card-title) {
+  padding: 0;
+}
+
+.settings-card-body {
+  padding: 0 16px 16px;
+}
+
+.settings-field {
+  margin-top: 16px;
+}
+
+.settings-field :deep(.v-field--variant-filled.v-field--active .v-field__input) {
+  padding-top: 24px;
+}
+
+.settings-panels {
+  margin-top: 48px;
+}
+
+.count-card {
+  height: 100%;
+}
+</style>

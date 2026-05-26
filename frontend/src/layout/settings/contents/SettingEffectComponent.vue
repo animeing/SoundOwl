@@ -1,7 +1,7 @@
 <template>
-  <v-container class="py-4" fluid>
+  <v-container class="pa-4" fluid>
         <v-card outlined style="background: inherit;">
-          <v-card-title>Effect Settings</v-card-title>
+          <v-card-title class="text-h6 font-weight-medium">Effect Settings</v-card-title>
           <v-divider></v-divider>
           <v-expansion-panels multiple style="background: inherit;">
             <!-- SoundSculpt -->
@@ -11,9 +11,10 @@
                   <span>SoundSculpt</span>
                   <v-switch
                     v-model="isUseSoundSculpt"
-                    inset
+                    class="ms-4 flex-shrink-0"
+                    color="primary"
                     hide-details
-                    @change="toggleEffect"
+                    @update:modelValue="toggleEffect"
                   ></v-switch>
                 </div>
               </v-expansion-panel-title>
@@ -29,9 +30,10 @@
                   <span>Loudness Normalization</span>
                   <v-switch
                     v-model="isUseLoudnessNormalization"
-                    inset
+                    class="ms-4 flex-shrink-0"
+                    color="primary"
                     hide-details
-                    @change="toggleLoudnessNormalization"
+                    @update:modelValue="toggleLoudnessNormalization"
                   ></v-switch>
                 </div>
               </v-expansion-panel-title>
@@ -94,12 +96,14 @@ import audio from '../../../audio/AudioPlayer';
 import { MessageWindow } from '../../../base';
 import { audioParamSave } from '../../../utilization/register';
 
+const toBoolean = value => value === true || value === 1 || value === '1' || value === 'true';
+
 export default {
   name: 'EffectSettings',
   data() {
     return {
-      isUseSoundSculpt: audio.exAudioEffect.isUse,
-      isUseLoudnessNormalization: audio.loudnessNormalize.isUse,
+      isUseSoundSculpt: toBoolean(audio.exAudioEffect.isUse),
+      isUseLoudnessNormalization: toBoolean(audio.loudnessNormalize.isUse),
       presetNames: [],
       selectPreset: 'OFF',
       selectDelete: '',
@@ -155,12 +159,16 @@ export default {
             : 'OFF';
         });
     },
-    toggleEffect() {
-      audio.exAudioEffect.isUse = !audio.exAudioEffect.isUse;
+    toggleEffect(value) {
+      const enabled = toBoolean(value);
+      this.isUseSoundSculpt = enabled;
+      audio.exAudioEffect.isUse = enabled;
       audioParamSave();
     },
-    toggleLoudnessNormalization() {
-      audio.loudnessNormalize.isUse = !audio.loudnessNormalize.isUse;
+    toggleLoudnessNormalization(value) {
+      const enabled = toBoolean(value);
+      this.isUseLoudnessNormalization = enabled;
+      audio.loudnessNormalize.isUse = enabled;
       audioParamSave();
     },
     changeReverbEffect() {

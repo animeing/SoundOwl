@@ -13,8 +13,13 @@ const thema = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark'
  */
 export const colorThema = {
   background: thema === 'dark' ? '#3F3F3F' : '#EEE',
+  surface: thema === 'dark' ? '#3F3F3F' : '#FFFFFF',
+  'surface-bright': thema === 'dark' ? '#616161' : '#FFFFFF',
+  'surface-variant': thema === 'dark' ? '#9E9E9E' : '#424242',
   'on-background': thema === 'dark' ? '#c7c7c7' : '#000000',
   'on-surface': thema === 'dark' ? '#c7c7c7' : '#000000',
+  'on-surface-bright': thema === 'dark' ? '#FFFFFF' : '#000000',
+  'on-surface-variant': thema === 'dark' ? '#000000' : '#EEEEEE',
 };
 
 const vuetify = createVuetify({

@@ -154,60 +154,6 @@ button {
   cursor: pointer;
 }
 
-select {
-  padding: 10px;
-  width: 100%;
-  box-sizing: border-box;
-  border: 2px solid var(--subfontcolor);
-  border-radius: 5px;
-  appearance: none;
-}
-
-select:hover {
-}
-
-select:focus {
-  outline: none;
-}
-
-select::-ms-expand {
-  display: none;
-}
-
-@-moz-document url-prefix() {
-  select {
-    padding-right: 20px;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><path d="M1,1 L6,6 L11,1" stroke="#000" fill="transparent"/></svg>');
-    background-repeat: no-repeat;
-    background-position: 95% center;
-  }
-}
-
-input[type="checkbox"] {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--basecolor);
-  border-radius: 4px;
-  cursor: pointer;
-  vertical-align: middle;
-  position: relative;
-}
-
-input[type="checkbox"]:checked {
-}
-
-input[type="checkbox"]:checked::after {
-  content: "✓";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 16px;
-}
-
 .unvisible {
   display: none !important;
   visibility: hidden !important;
