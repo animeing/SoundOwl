@@ -1,0 +1,811 @@
+openapi: 3.1.0
+info:
+  title: SoundOwl Backend API
+  version: 0.1.0
+  description: Contract extracted from the current PHP backend. Some endpoints return mojibake messages because the existing PHP files contain those literals.
+servers:
+  - url: /
+tags:
+  - name: Status
+  - name: Settings
+  - name: Sounds
+  - name: Artists
+  - name: Albums
+  - name: History
+  - name: Playlists
+  - name: Pulse
+  - name: Media
+  - name: Setup
+  - name: WebSocket
+paths:
+  /api/site_status.php:
+    get:
+      tags: [Status]
+      summary: Get registration status and table counts.
+      responses:
+        "200":
+          description: Current site status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteStatus"
+    post:
+      tags: [Status]
+      summary: Get registration status and table counts.
+      description: The current frontend calls this endpoint with POST; the PHP script does not branch by method.
+      responses:
+        "200":
+          description: Current site status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteStatus"
+  /api/lock_status.php:
+    get:
+      tags: [Status]
+      summary: Get registration lock status.
+      responses:
+        "200":
+          description: Current lock status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LockStatus"
+    post:
+      tags: [Status]
+      summary: Get registration lock status.
+      description: The current frontend calls this endpoint with POST; the PHP script does not branch by method.
+      responses:
+        "200":
+          description: Current lock status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LockStatus"
+  /api/get_setting.php:
+    get:
+      tags: [Settings]
+      summary: Return parsed setting.ini values.
+      responses:
+        "200":
+          description: INI key/value object.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /api/update_setting.php:
+    post:
+      tags: [Settings]
+      summary: Write posted form fields into setting.ini.
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Existing PHP emits no JSON body.
+  /api/setup_database_table.php:
+    post:
+      tags: [Setup]
+      summary: Create the configured database and tables.
+      responses:
+        "200":
+          description: Setup result.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/SuccessStatus"
+                  - $ref: "#/components/schemas/ErrorNoStatus"
+  /api/sound_search.php:
+    post:
+      tags: [Sounds]
+      summary: Search sounds by word.
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                SearchWord:
+                  type: string
+      responses:
+        "200":
+          description: Matching sounds, or an empty array when SearchWord is missing.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SoundWithAlbum"
+  /api/sound_data.php:
+    get:
+      tags: [Sounds]
+      summary: Get one sound by compressed hash.
+      parameters:
+        - $ref: "#/components/parameters/SoundHash"
+      responses:
+        "200":
+          description: Sound detail with mime, or empty object when missing/not found.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/SoundDetail"
+                  - type: object
+                    maxProperties: 0
+  /api/sound_addtime_list.php:
+    get:
+      tags: [Sounds]
+      summary: List sounds by added time descending.
+      responses:
+        "200":
+          description: Sound list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SoundWithAlbum"
+    post:
+      tags: [Sounds]
+      summary: List sounds by added time descending.
+      description: The current frontend calls this endpoint with POST; the PHP script does not branch by method.
+      responses:
+        "200":
+          description: Sound list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SoundWithAlbum"
+  /api/play_count_list.php:
+    get:
+      tags: [Sounds]
+      summary: List sounds by play count descending.
+      responses:
+        "200":
+          description: Sound list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SoundWithAlbum"
+  /api/sound_regist.php:
+    get:
+      tags: [Sounds]
+      summary: Register or refresh sound metadata and enqueue loudness jobs.
+      parameters:
+        - name: soundhash
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional compressed sound hash. When omitted, scans SOUND_DIRECTORY.
+      responses:
+        "200":
+          description: Registered sound count.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [count]
+              properties:
+                count:
+                  type: integer
+    post:
+      tags: [Sounds]
+      summary: Register all new sound metadata and enqueue loudness jobs.
+      description: The current frontend can call this endpoint with POST. PHP reads only the optional GET soundhash, so POST performs the full scan path.
+      responses:
+        "200":
+          description: Registered sound count.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [count]
+                properties:
+                  count:
+                    type: integer
+  /api/action/sound_played.php:
+    get:
+      tags: [Sounds]
+      summary: Increment play count and insert play history for a sound.
+      parameters:
+        - $ref: "#/components/parameters/SoundHash"
+      responses:
+        "200":
+          description: Empty object when SoundHash is missing; otherwise existing PHP emits no JSON body.
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/artist_list.php:
+    post:
+      tags: [Artists]
+      summary: List artists in range.
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/RangeForm"
+      responses:
+        "200":
+          description: Artist list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ArtistListItem"
+  /api/artist_sounds.php:
+    post:
+      tags: [Artists]
+      summary: List sounds for an artist.
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                ArtistHash:
+                  type: string
+      responses:
+        "200":
+          description: Sound list, or empty array when ArtistHash is missing.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SoundWithAlbum"
+  /api/album_list.php:
+    post:
+      tags: [Albums]
+      summary: List albums in range.
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/RangeForm"
+      responses:
+        "200":
+          description: Album list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AlbumListItem"
+  /api/album_sounds.php:
+    get:
+      tags: [Albums]
+      summary: List sounds for an album.
+      parameters:
+        - name: AlbumHash
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sound list, or empty array when AlbumHash is missing.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SoundWithAlbum"
+  /api/album_count_list.php:
+    get:
+      tags: [Albums]
+      summary: List albums ordered by play count.
+      responses:
+        "200":
+          description: Album title/key list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [title, albumKey]
+                  properties:
+                    title:
+                      type: string
+                    albumKey:
+                      type: string
+  /api/history_range_list.php:
+    post:
+      tags: [History]
+      summary: List play history in a JSON body range.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RangeBody"
+      responses:
+        "200":
+          description: History list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistoryItem"
+  /api/playlist_action.php:
+    post:
+      tags: [Playlists]
+      summary: Create, list, read, or delete playlists depending on method.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/PlaylistCreateRequest"
+                - $ref: "#/components/schemas/PlaylistNamesRequest"
+                - $ref: "#/components/schemas/PlaylistSoundsRequest"
+                - $ref: "#/components/schemas/PlaylistDeleteRequest"
+      responses:
+        "200":
+          description: Response depends on method.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/SuccessDetailStatus"
+                  - $ref: "#/components/schemas/ErrorDetailStatus"
+                  - type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  - type: array
+                    items:
+                      $ref: "#/components/schemas/PlaylistSound"
+        "400":
+          description: Missing method or method-specific required field.
+  /api/audio_pulse_data_list.php:
+    get:
+      tags: [Pulse]
+      summary: List uploaded impulse response files.
+      responses:
+        "200":
+          description: Basenames of wav/mp3 pulse files.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /api/audio_pulse_data_upload.php:
+    post:
+      tags: [Pulse]
+      summary: Upload an impulse response file.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [impulseResponse]
+              properties:
+                impulseResponse:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Upload result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageStatus"
+  /api/audio_pulse_data_delete.php:
+    post:
+      tags: [Pulse]
+      summary: Delete an uploaded impulse response file.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                preset:
+                  type: string
+      responses:
+        "200":
+          description: Delete result. Existing PHP prints the target path before JSON on the file-exists path.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageStatus"
+  /img/album_art.php:
+    get:
+      tags: [Media]
+      summary: Return album art by compressed album hash, or blank image fallback.
+      parameters:
+        - name: media_hash
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Album image bytes.
+          headers:
+            X-Cache-Load:
+              schema:
+                type: string
+                enum: ["True", "False"]
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+  /img/playlist_art.php:
+    get:
+      tags: [Media]
+      summary: Return generated playlist art, or blank image fallback.
+      parameters:
+        - name: playlist
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Playlist PNG bytes.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+  /img/fontisto.php:
+    get:
+      tags: [Media]
+      summary: Return bundled Fontisto TTF font.
+      responses:
+        "200":
+          description: Font bytes.
+          content:
+            font/ttf:
+              schema:
+                type: string
+                format: binary
+  /sound_create/sound.php:
+    get:
+      tags: [Media]
+      summary: Stream a sound file by compressed sound hash.
+      parameters:
+        - name: media_hash
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Range
+          in: header
+          required: false
+          schema:
+            type: string
+            example: bytes=0-1023
+      responses:
+        "200":
+          description: Full audio stream, or partial handling with status 200 when range starts at 0.
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+            ETag:
+              schema:
+                type: string
+            Content-Range:
+              schema:
+                type: string
+          content:
+            audio/*:
+              schema:
+                type: string
+                format: binary
+        "206":
+          description: Partial audio stream when Range starts after byte 0.
+          content:
+            audio/*:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Sound hash not found.
+  /api/sw/server.php:
+    get:
+      tags: [WebSocket]
+      summary: WebSocket server contract.
+      description: Ratchet WebSocket server runs separately on port 8080. On open and every 5 seconds it sends an envelope with time and context. Client messages are broadcast as context.message.
+      x-websocket-url: ws://{host}:8080
+      responses:
+        "101":
+          description: WebSocket upgrade.
+components:
+  parameters:
+    SoundHash:
+      name: SoundHash
+      in: query
+      required: false
+      schema:
+        type: string
+  schemas:
+    RangeForm:
+      type: object
+      properties:
+        start:
+          type: integer
+        end:
+          type: integer
+    RangeBody:
+      type: object
+      required: [start, end]
+      properties:
+        start:
+          type: integer
+        end:
+          type: integer
+    LockStatus:
+      type: object
+      required: [regist_status, regist_status_step1, regist_status_step2]
+      properties:
+        regist_status:
+          type: boolean
+        regist_status_step1:
+          type: boolean
+        regist_status_step2:
+          type: boolean
+    SiteStatus:
+      allOf:
+        - $ref: "#/components/schemas/LockStatus"
+        - type: object
+          required: [regist_data_count]
+          properties:
+            regist_data_count:
+              type: object
+              required: [sound, artist, album]
+              properties:
+                sound:
+                  type: integer
+                artist:
+                  type: integer
+                album:
+                  type: integer
+    SuccessStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          const: success
+    ErrorNoStatus:
+      type: object
+      required: [status, errorNo]
+      properties:
+        status:
+          type: string
+          const: error
+        errorNo:
+          type: integer
+    MessageStatus:
+      type: object
+      required: [status, message]
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+        message:
+          type: string
+    SuccessDetailStatus:
+      type: object
+      required: [status, detail]
+      properties:
+        status:
+          type: string
+          const: success
+        detail:
+          type: string
+    ErrorDetailStatus:
+      type: object
+      required: [status, detail]
+      properties:
+        status:
+          type: string
+          const: error
+        detail:
+          type: string
+    SoundVisible:
+      type: object
+      properties:
+        sound_hash:
+          type: string
+        album_hash:
+          type:
+            - string
+            - "null"
+        artist_id:
+          type:
+            - string
+            - "null"
+    SoundWithAlbum:
+      allOf:
+        - $ref: "#/components/schemas/SoundVisible"
+        - type: object
+          required: [album]
+          properties:
+            album:
+              type: object
+              required: [album_hash, album_title]
+              properties:
+                album_hash:
+                  type:
+                    - string
+                    - "null"
+                album_title:
+                  type:
+                    - string
+                    - "null"
+    SoundDetail:
+      allOf:
+        - $ref: "#/components/schemas/SoundVisible"
+        - type: object
+          properties:
+            mime:
+              type: string
+    ArtistListItem:
+      type: object
+      required: [artist_id, artist_name, album]
+      properties:
+        artist_id:
+          type: string
+        artist_name:
+          type: string
+        album:
+          type: object
+          required: [album_key, title]
+          properties:
+            album_key:
+              type: string
+            title:
+              type: string
+    AlbumListItem:
+      type: object
+      required: [album_key, title, artist]
+      properties:
+        album_key:
+          type: string
+        title:
+          type: string
+        artist:
+          type: object
+          required: [artist_id, artist_name]
+          properties:
+            artist_id:
+              type:
+                - integer
+                - string
+            artist_name:
+              type: string
+    HistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        sound_hash:
+          type: string
+        play_date:
+          type: string
+        title:
+          type:
+            - string
+            - "null"
+        genre:
+          type:
+            - string
+            - "null"
+        lyrics:
+          type:
+            - string
+            - "null"
+        album_hash:
+          type:
+            - string
+            - "null"
+        album_title:
+          type:
+            - string
+            - "null"
+        artist_id:
+          type:
+            - string
+            - "null"
+        artist_name:
+          type:
+            - string
+            - "null"
+        track_no:
+          type:
+            - string
+            - integer
+            - "null"
+        play_count:
+          type:
+            - integer
+            - "null"
+        loudness_target:
+          type:
+            - number
+            - string
+            - "null"
+    PlaylistCreateRequest:
+      type: object
+      required: [method, playlist_name, sounds]
+      properties:
+        method:
+          type: string
+          const: create
+        playlist_name:
+          type: string
+        sounds:
+          type: array
+          items:
+            type: string
+    PlaylistNamesRequest:
+      type: object
+      required: [method]
+      properties:
+        method:
+          type: string
+          const: names
+    PlaylistSoundsRequest:
+      type: object
+      required: [method, name]
+      properties:
+        method:
+          type: string
+          const: sounds
+        name:
+          type: string
+    PlaylistDeleteRequest:
+      type: object
+      required: [method, name]
+      properties:
+        method:
+          type: string
+          const: delete
+        name:
+          type: string
+    PlaylistSound:
+      type: object
+      additionalProperties: true
+      properties:
+        play_list:
+          type: string
+        sound_point:
+          type: integer
+        sound_hash:
+          type: string
+        album_hash:
+          type:
+            - string
+            - "null"
