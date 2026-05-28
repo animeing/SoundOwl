@@ -22,6 +22,9 @@ on:
       - "Dockerfile"
       - "docker-compose.yml"
 
+permissions:
+  contents: read
+
 jobs:
   contract:
     runs-on: ubuntu-latest
