@@ -1,0 +1,11 @@
+﻿{
+  "db_ip_address": "localhost",
+  "db_name": "sound",
+  "db_user": "sound",
+  "db_pass": "sound",
+  "redis_ip_address": "localhost",
+  "sound_directory": "",
+  "exclusionPaths": "RECYCLE.BIN|JRiver Conversion Cache",
+  "websocket_retry_count": "7",
+  "websocket_retry_interval": "1234"
+}
