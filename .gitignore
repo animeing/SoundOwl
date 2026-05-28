@@ -1,5 +1,8 @@
 /vendor/
 /api/lock/
 /frontend/node_modules
+/backend-node/node_modules
+/backend-node/coverage/
+/backend-node/node_modules/
 /js/
 /test-results/
