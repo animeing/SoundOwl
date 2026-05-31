@@ -12,6 +12,7 @@
     "node": ">=26 <27"
   },
   "dependencies": {
+    "express": "^4.21.2",
     "music-metadata": "^11.12.3",
     "mysql2": "^3.11.5",
     "redis": "^4.7.0",

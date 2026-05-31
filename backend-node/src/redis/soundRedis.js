@@ -61,7 +61,7 @@ class SoundRedis {
    * @returns {Promise<unknown>} Redis SETEX結果。
    */
   async cacheAlbum(key, value, ttlSeconds = 3600) {
-    const payload = JSON.stringify(value);
+    const payload = JSON.stringify(serializeAlbumCache(value));
     if (this.client.setEx) {
       return this.client.setEx(key, ttlSeconds, payload);
     }
@@ -76,7 +76,7 @@ class SoundRedis {
    */
   async getCachedAlbum(key) {
     const payload = await this.client.get(key);
-    return payload ? JSON.parse(payload) : null;
+    return payload ? deserializeAlbumCache(JSON.parse(payload)) : null;
   }
 
   /**
@@ -108,6 +108,49 @@ class SoundRedis {
 }
 
 /**
+ * JSON化でBufferが壊れないよう、Redis保存用のalbum DTOへ変換する。
+ *
+ * @param {Object} value album cache DTO。
+ * @returns {Object} RedisへJSON保存できるalbum cache DTO。
+ */
+function serializeAlbumCache(value) {
+  if (!value || !Buffer.isBuffer(value.album_art)) {
+    return value;
+  }
+  return {
+    ...value,
+    album_art: {
+      __soundowl_type: 'Buffer',
+      encoding: 'base64',
+      data: value.album_art.toString('base64'),
+    },
+  };
+}
+
+/**
+ * Redisから取得したalbum DTOのalbum_artをBufferへ戻す。
+ * 既存キャッシュに残り得るNode標準の`{ type: 'Buffer', data: [...] }`形式も扱う。
+ *
+ * @param {Object|null} value Redisから復元したalbum cache DTO。
+ * @returns {Object|null} album_artがBufferへ復元されたalbum cache DTO。
+ */
+function deserializeAlbumCache(value) {
+  if (!value?.album_art) {
+    return value;
+  }
+  if (Buffer.isBuffer(value.album_art)) {
+    return value;
+  }
+  if (value.album_art.__soundowl_type === 'Buffer' && value.album_art.encoding === 'base64') {
+    return { ...value, album_art: Buffer.from(value.album_art.data, 'base64') };
+  }
+  if (value.album_art.type === 'Buffer' && Array.isArray(value.album_art.data)) {
+    return { ...value, album_art: Buffer.from(value.album_art.data) };
+  }
+  return value;
+}
+
+/**
  * 実Redis clientを作成してSoundRedisで包む。
  *
  * @param {Object} config node-redisの`createClient`へ渡す設定。
@@ -124,4 +167,6 @@ async function createRedisClient(config) {
 module.exports = {
   SoundRedis,
   createRedisClient,
+  deserializeAlbumCache,
+  serializeAlbumCache,
 };

@@ -45,3 +45,32 @@ test('SoundRedis stores album cache and configures current PHP image-cache Redis
     ['maxmemory-policy', 'volatile-ttl'],
   ]);
 });
+
+test('SoundRedis preserves album art as Buffer through JSON cache storage', async () => {
+  const store = new Map();
+  const redis = new SoundRedis({
+    setEx: async (key, ttl, value) => store.set(key, { ttl, value }),
+    get: async (key) => store.get(key)?.value,
+  });
+  const image = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+
+  await redis.cacheAlbum('album-art', { title: 'Art', album_art: image, art_mime: 'image/png' });
+  const cached = await redis.getCachedAlbum('album-art');
+
+  assert.equal(Buffer.isBuffer(cached.album_art), true);
+  assert.deepEqual(cached.album_art, image);
+  assert.equal(cached.art_mime, 'image/png');
+});
+
+test('SoundRedis restores legacy JSON-stringified Buffer album art cache', async () => {
+  const image = Buffer.from([0xff, 0xd8, 0xff]);
+  const redis = new SoundRedis({
+    get: async () => JSON.stringify({ album_art: image, art_mime: 'image/jpeg' }),
+  });
+
+  const cached = await redis.getCachedAlbum('legacy-art');
+
+  assert.equal(Buffer.isBuffer(cached.album_art), true);
+  assert.deepEqual(cached.album_art, image);
+  assert.equal(cached.art_mime, 'image/jpeg');
+});

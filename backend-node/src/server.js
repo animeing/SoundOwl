@@ -2,7 +2,7 @@ const path = require('node:path');
 const { loadConfig } = require('./config');
 const { createMysqlPool } = require('./db/mysql');
 const { createSchema } = require('./db/schema');
-const { SoundRepository } = require('./db/soundRepository');
+const { SoundOwlRepository } = require('./db/soundRepository');
 const { createRedisClient } = require('./redis/soundRedis');
 const { analyzeLoudness } = require('./audio/ffmpeg');
 const { readMetadata } = require('./audio/metadata');
@@ -39,7 +39,7 @@ async function buildServer(env = process.env) {
 async function buildRuntime(env = process.env) {
   const config = loadConfig(env);
   const db = await createMysqlPool(config.db);
-  const repository = new SoundRepository(db);
+  const repository = new SoundOwlRepository(db);
   const redis = await createRedisClient(config.redis);
   const settingsStore = createSettingsStore(config.settingsPath);
   const lockService = new LockService();
@@ -62,12 +62,12 @@ async function buildRuntime(env = process.env) {
     mediaService,
     pulseStore: new PulseStore(path.resolve(__dirname, '../../audio_pulse')),
     lockService,
-    fontPath: path.resolve(__dirname, '../../vendor/kenangundogan/fontisto/fonts/fontisto/fontisto.ttf'),
+    fontPath: path.resolve(__dirname, '../assets/fontisto.ttf'),
     placeholderImagePath: config.placeholderImagePath,
     equalizerPresetPath: path.resolve(__dirname, '../../api/sound_equalizer_preset.json'),
     soundDirectoryOverride: config.soundDirectory,
   });
-  const httpServer = createHttpServer(handlers);
+  const httpServer = createHttpServer(handlers, { cors: config.cors });
   const websocket = config.websocket.enabled ? createStatusWebSocket({
     port: config.websocket.port,
     host: config.websocket.host,

@@ -1,65 +1,141 @@
-const http = require('node:http');
+﻿const http = require('node:http');
 const fs = require('node:fs');
 const { URL } = require('node:url');
+const express = require('express');
+
+const ROUTES = {
+  '/api/site_status.php': 'siteStatus',
+  '/api/lock_status.php': 'lockStatus',
+  '/api/get_setting.php': 'getSetting',
+  '/api/update_setting.php': 'updateSetting',
+  '/api/setup_database_table.php': 'setupDatabaseTable',
+  '/api/sound_addtime_list.php': 'soundAddtimeList',
+  '/api/play_count_list.php': 'playCountList',
+  '/api/sound_data.php': 'soundData',
+  '/api/sound_search.php': 'soundSearch',
+  '/api/sound_regist.php': 'soundRegist',
+  '/api/action/sound_played.php': 'soundPlayed',
+  '/api/artist_list.php': 'artistList',
+  '/api/artist_sounds.php': 'artistSounds',
+  '/api/album_list.php': 'albumList',
+  '/api/album_sounds.php': 'albumSounds',
+  '/api/album_count_list.php': 'albumCountList',
+  '/api/history_range_list.php': 'historyRangeList',
+  '/api/playlist_action.php': 'playlistAction',
+  '/api/audio_pulse_data_list.php': 'audioPulseDataList',
+  '/api/audio_pulse_data_upload.php': 'audioPulseDataUpload',
+  '/api/audio_pulse_data_delete.php': 'audioPulseDataDelete',
+  '/api/sound_equalizer_preset.json': 'soundEqualizerPreset',
+  '/api//sound_equalizer_preset.json': 'soundEqualizerPreset',
+  '/img/album_art.php': 'albumArt',
+  '/img/playlist_art.php': 'playlistArt',
+  '/img/fontisto.php': 'fontisto',
+  '/fonts/fontisto.ttf': 'fontisto',
+  '/img/placeholder-image.webp': 'placeholderImage',
+  '/sound_create/sound.php': 'soundStream',
+};
 
 /**
- * Node標準httpでAPI serverを作成する。
+ * Express applicationを内包したNode HTTP serverを作成する。
  *
- * @param {Object.<string, Function>} handlers `createApiHandlers`の戻り値。
- * @returns {import('node:http').Server} HTTP server。
+ * @param {Object.<string, Function>} handlers `createApiHandlers`が返すAPI handler群。
+ * @param {{cors?:{allowOrigins?:string[]},bodyLimit?:string}} [options={}] HTTP adapter設定。
+ * @returns {import('node:http').Server} `listen`/`close`できるHTTP server。
  */
-function createHttpServer(handlers) {
-  return http.createServer(async (req, res) => {
-    try {
-      const request = await toApiRequest(req);
-      const response = await routeRequest(handlers, request);
-      await writeResponse(res, response);
-    } catch (error) {
-      await writeResponse(res, {
-        status: 500,
-        headers: { 'content-type': 'application/json' },
-        body: { status: 'error', message: error.message },
-      });
-    }
-  });
+function createHttpServer(handlers, options = {}) {
+  return http.createServer(createHttpApp(handlers, options));
 }
 
 /**
- * IncomingMessageをhandler向けrequest DTOへ変換する。
+ * PHP互換APIを受けるExpress applicationを構築する。
+ * handler層のDTO契約は維持し、HTTP受信、body受信、error pathだけをExpressへ委譲する。
  *
+ * @param {Object.<string, Function>} handlers `createApiHandlers`が返すAPI handler群。
+ * @param {{cors?:{allowOrigins?:string[]},bodyLimit?:string}} [options={}] HTTP adapter設定。
+ * @returns {import('express').Express} Node HTTP serverへ渡せるExpress application。
+ */
+function createHttpApp(handlers, options = {}) {
+  const app = express();
+  app.use(express.raw({ type: () => true, limit: options.bodyLimit || '100mb' }));
+  app.use(async (req, res) => {
+    try {
+      if (req.method === 'OPTIONS') {
+        await writeResponse(res, {
+          status: 204,
+          headers: corsHeaders(req, options.cors),
+          body: null,
+        });
+        return;
+      }
+      const request = await toApiRequest(req);
+      const handlerName = ROUTES[request.path];
+      const response = handlerName && handlers[handlerName]
+        ? await handlers[handlerName](request)
+        : { status: 404, headers: { 'content-type': 'text/plain' }, body: 'not found' };
+      await writeResponse(res, withCors(response, req, options.cors));
+    } catch (error) {
+      await writeResponse(res, errorResponse(error, req, options.cors));
+    }
+  });
+  app.use(async (error, req, res, _next) => {
+    await writeResponse(res, errorResponse(error, req, options.cors));
+  });
+  return app;
+}
+
+/**
+ * Express/handler例外をAPI互換のJSON error responseへ変換する。
+ *
+ * @param {Error} error 発生した例外。
  * @param {import('node:http').IncomingMessage} req HTTP request。
- * @returns {Promise<{method:string,path:string,query:Object,headers:Object,form:Object,body:Object}>} API request DTO。
+ * @param {{allowOrigins?:string[]}} cors CORS設定。
+ * @returns {{status:number,headers:Object,body:Object}} error response DTO。
+ */
+function errorResponse(error, req, cors) {
+  return {
+    status: error.status || 500,
+    headers: { 'content-type': 'application/json', ...corsHeaders(req, cors) },
+    body: { status: 'error', message: error.message },
+  };
+}
+
+/**
+ * Express/NodeのHTTP requestをhandler層が扱うrequest DTOへ変換する。
+ *
+ * @param {import('node:http').IncomingMessage & {body?:Buffer|string}} req HTTP request。
+ * @returns {Promise<{method:string,path:string,query:Object,headers:Object,form:Object,file:Object|null,body:Object}>} API request DTO。
  */
 async function toApiRequest(req) {
   const url = new URL(req.url, 'http://localhost');
   const rawBody = await readBody(req);
   const contentType = req.headers['content-type'] || '';
+  const multipart = contentType.includes('multipart/form-data') ? parseMultipart(rawBody, contentType) : {};
   return {
     method: req.method,
     path: url.pathname,
     query: Object.fromEntries(url.searchParams.entries()),
     headers: req.headers,
-    form: contentType.includes('application/x-www-form-urlencoded') ? parseForm(rawBody) : {},
-    file: contentType.includes('multipart/form-data') ? parseMultipart(rawBody, contentType).impulseResponse : null,
+    form: contentType.includes('application/x-www-form-urlencoded') ? parseForm(rawBody) : multipart.fields || {},
+    file: multipart.impulseResponse || null,
     body: contentType.includes('application/json') && rawBody ? JSON.parse(rawBody) : {},
   };
 }
 
 /**
- * 最小限のmultipart/form-data parser。
- *
- * 現行APIで必要な`impulseResponse`単一fileだけを抽出する。API adapter用の薄い実装であり、
- * 本格的な大容量uploadではストリーミングparserへの差し替えを想定する。
+ * PHP互換APIで必要な最小限のmultipart/form-dataを解析する。
+ * 通常fieldは`fields`へ、ファイルfieldはfield名をkeyにしたfile DTOへ格納する。
+ * 現状のファイルアップロード用途は`impulseResponse`単一fileを想定している。
  *
  * @param {string} rawBody request body。
  * @param {string} contentType Content-Type header。
- * @returns {Object.<string,{filename:string,mime:string,buffer:Buffer}>} field名をkeyにしたfile object。
+ * @returns {Object.<string,{filename:string,mime:string,buffer:Buffer}> & {fields?:Object}} multipart解析結果。
  */
 function parseMultipart(rawBody, contentType) {
   const boundary = contentType.match(/boundary=([^;]+)/)?.[1];
   if (!boundary) {
     return {};
   }
+  const fields = {};
   const files = {};
   const parts = rawBody.split(`--${boundary}`);
   for (const part of parts) {
@@ -69,63 +145,65 @@ function parseMultipart(rawBody, contentType) {
     }
     const name = rawHeaders.match(/name="([^"]+)"/)?.[1];
     const filename = rawHeaders.match(/filename="([^"]+)"/)?.[1];
-    if (!name || !filename) {
+    if (!name) {
+      continue;
+    }
+    const content = bodyParts.join('\r\n\r\n').replace(/\r?\n--$/, '').replace(/\r?\n$/, '');
+    if (!filename) {
+      appendFormValue(fields, name, content);
       continue;
     }
     const mime = rawHeaders.match(/Content-Type:\s*([^\r\n]+)/i)?.[1] || 'application/octet-stream';
-    const content = bodyParts.join('\r\n\r\n').replace(/\r?\n--$/, '').replace(/\r?\n$/, '');
     files[name] = { filename, mime, buffer: Buffer.from(content, 'binary') };
   }
-  return files;
+  return Object.keys(fields).length > 0 ? { ...files, fields } : files;
 }
 
 /**
- * requestを該当handlerへ振り分ける。
+ * API response DTOへCORS headerを付与する。
  *
- * @param {Object.<string, Function>} handlers API handlers。
- * @param {Object} request API request DTO。
- * @returns {Promise<Object>} API response DTO。
+ * @param {{status:number,headers:Object,body:unknown}} response API response DTO。
+ * @param {import('node:http').IncomingMessage} req HTTP request。
+ * @param {{allowOrigins?:string[]}} [cors={}] CORS設定。
+ * @returns {{status:number,headers:Object,body:unknown}} CORS headerを含むAPI response DTO。
  */
-async function routeRequest(handlers, request) {
-  const routes = {
-    '/api/site_status.php': 'siteStatus',
-    '/api/lock_status.php': 'lockStatus',
-    '/api/get_setting.php': 'getSetting',
-    '/api/update_setting.php': 'updateSetting',
-    '/api/setup_database_table.php': 'setupDatabaseTable',
-    '/api/sound_addtime_list.php': 'soundAddtimeList',
-    '/api/play_count_list.php': 'playCountList',
-    '/api/sound_data.php': 'soundData',
-    '/api/sound_search.php': 'soundSearch',
-    '/api/sound_regist.php': 'soundRegist',
-    '/api/action/sound_played.php': 'soundPlayed',
-    '/api/artist_list.php': 'artistList',
-    '/api/artist_sounds.php': 'artistSounds',
-    '/api/album_list.php': 'albumList',
-    '/api/album_sounds.php': 'albumSounds',
-    '/api/album_count_list.php': 'albumCountList',
-    '/api/history_range_list.php': 'historyRangeList',
-    '/api/playlist_action.php': 'playlistAction',
-    '/api/audio_pulse_data_list.php': 'audioPulseDataList',
-    '/api/audio_pulse_data_upload.php': 'audioPulseDataUpload',
-    '/api/audio_pulse_data_delete.php': 'audioPulseDataDelete',
-    '/api/sound_equalizer_preset.json': 'soundEqualizerPreset',
-    '/api//sound_equalizer_preset.json': 'soundEqualizerPreset',
-    '/img/album_art.php': 'albumArt',
-    '/img/playlist_art.php': 'playlistArt',
-    '/img/fontisto.php': 'fontisto',
-    '/img/placeholder-image.webp': 'placeholderImage',
-    '/sound_create/sound.php': 'soundStream',
+function withCors(response, req, cors = {}) {
+  return {
+    ...response,
+    headers: {
+      ...response.headers,
+      ...corsHeaders(req, cors),
+    },
   };
-  const handlerName = routes[request.path];
-  if (!handlerName || !handlers[handlerName]) {
-    return { status: 404, headers: { 'content-type': 'text/plain' }, body: 'not found' };
-  }
-  return handlers[handlerName](request);
 }
 
 /**
- * response DTOをHTTP responseへ書き込む。
+ * FrontServerからBackendServerへアクセスするためのCORS headerを作成する。
+ *
+ * @param {import('node:http').IncomingMessage} req HTTP request。
+ * @param {{allowOrigins?:string[]}} [cors={}] 許可Origin設定。`*`の場合はrequest Originを反映する。
+ * @returns {Object.<string,string>} 許可できる場合はCORS headers、許可できない場合は空object。
+ */
+function corsHeaders(req, cors = {}) {
+  const origin = req.headers.origin || '';
+  const allowOrigins = cors.allowOrigins || ['*'];
+  const allowsAny = allowOrigins.includes('*');
+  const allowedOrigin = allowsAny ? (origin || '*') : allowOrigins.find((item) => item === origin);
+  if (!allowedOrigin) {
+    return {};
+  }
+  return {
+    'access-control-allow-origin': allowedOrigin,
+    'access-control-allow-methods': 'GET,POST,OPTIONS',
+    'access-control-allow-headers': req.headers['access-control-request-headers'] || 'content-type,range',
+    'access-control-expose-headers': 'content-length,content-range,accept-ranges,x-cache-load',
+    vary: 'Origin',
+  };
+}
+
+/**
+ * API response DTOをHTTP responseへ書き込む。
+ * Buffer/string/object/nullと、音声stream用の`streamPath` DTOを扱う。
  *
  * @param {import('node:http').ServerResponse} res HTTP response。
  * @param {{status:number,headers:Object,body:unknown}} response API response DTO。
@@ -150,10 +228,11 @@ async function writeResponse(res, response) {
 
 /**
  * ファイルをHTTP responseへstreamする。
+ * Range指定がある場合は指定byte範囲のみを送信する。
  *
  * @param {import('node:http').ServerResponse} res HTTP response。
- * @param {string} filePath stream対象ファイル。
- * @param {{start:number,end:number}|undefined} range byte range。
+ * @param {string} filePath stream対象のファイルパス。
+ * @param {{start:number,end:number}|undefined} range byte range。未指定の場合は全体を送信する。
  * @returns {Promise<void>} stream完了時にresolveする。
  */
 function streamFileResponse(res, filePath, range) {
@@ -196,12 +275,21 @@ function streamFileResponse(res, filePath, range) {
 }
 
 /**
- * request bodyを文字列として読む。
+ * request bodyを文字列として読み込む。
+ * Express raw middlewareで設定されたBuffer bodyと、素のIncomingMessage streamの両方を扱う。
  *
- * @param {import('node:http').IncomingMessage} req HTTP request。
- * @returns {Promise<string>} body文字列。
+ * @param {import('node:http').IncomingMessage & {body?:Buffer|string}} req HTTP request。
+ * @returns {Promise<string>} request body文字列。
  */
 function readBody(req) {
+  if (Buffer.isBuffer(req.body)) {
+    const contentType = req.headers['content-type'] || '';
+    const encoding = contentType.includes('multipart/form-data') ? 'binary' : 'utf8';
+    return Promise.resolve(req.body.toString(encoding));
+  }
+  if (typeof req.body === 'string') {
+    return Promise.resolve(req.body);
+  }
   return new Promise((resolve, reject) => {
     let data = '';
     req.setEncoding('utf8');
@@ -214,32 +302,51 @@ function readBody(req) {
 }
 
 /**
- * URL encoded formをobjectへ変換する。
+ * application/x-www-form-urlencoded bodyをform objectへ変換する。
+ * 同一keyや`name[]`形式はPHPの`$_POST`に近い配列へ変換する。
  *
  * @param {string} rawBody request body。
- * @returns {Object} form object。同名keyは配列化する。
+ * @returns {Object} form object。
  */
 function parseForm(rawBody) {
   const form = {};
   const params = new URLSearchParams(rawBody);
   for (const [key, value] of params.entries()) {
-    const cleanKey = key.endsWith('[]') ? key.slice(0, -2) : key;
-    if (Object.hasOwn(form, cleanKey)) {
-      form[cleanKey] = Array.isArray(form[cleanKey]) ? [...form[cleanKey], value] : [form[cleanKey], value];
-    } else {
-      form[cleanKey] = key.endsWith('[]') ? [value] : value;
-    }
+    appendFormValue(form, key, value);
   }
   return form;
 }
 
+/**
+ * PHPの`$_POST`に近い形でform値を追加する。
+ * 同一keyや`sounds[]`のような配列keyは配列として保持する。
+ *
+ * @param {Object} form 更新対象のform DTO。
+ * @param {string} key 入力field名。
+ * @param {string} value 入力field値。
+ * @returns {void}
+ */
+function appendFormValue(form, key, value) {
+  const cleanKey = key.endsWith('[]') ? key.slice(0, -2) : key;
+  if (Object.hasOwn(form, cleanKey)) {
+    form[cleanKey] = Array.isArray(form[cleanKey]) ? [...form[cleanKey], value] : [form[cleanKey], value];
+  } else {
+    form[cleanKey] = key.endsWith('[]') ? [value] : value;
+  }
+}
+
 module.exports = {
+  createHttpApp,
   createHttpServer,
+  appendFormValue,
+  corsHeaders,
+  errorResponse,
   parseForm,
   parseMultipart,
   readBody,
-  routeRequest,
+  ROUTES,
   toApiRequest,
   writeResponse,
+  withCors,
   streamFileResponse,
 };

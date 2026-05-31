@@ -37,6 +37,9 @@ function loadConfig(env = process.env) {
     blankImagePath: env.BLANK_IMAGE_PATH || path.resolve(__dirname, '../assets/blank-image.png'),
     placeholderImagePath: env.PLACEHOLDER_IMAGE_PATH || path.resolve(__dirname, '../assets/placeholder-image.webp'),
     settingsPath: env.SETTINGS_PATH || path.resolve(__dirname, '../config/settings.json'),
+    cors: {
+      allowOrigins: String(env.CORS_ALLOW_ORIGINS || '*').split(',').map((origin) => origin.trim()).filter(Boolean),
+    },
     websocket: {
       enabled: env.WEBSOCKET_ENABLED !== 'false',
       host: env.WEBSOCKET_HOST || env.HOST || '0.0.0.0',
