@@ -6,3 +6,6 @@
 /backend-node/node_modules/
 /js/
 /test-results/
+/fonts/fontisto.ttf
+/backend-node/assets/fontisto.ttf
+/frontend/src/assets/fonts/fontisto.ttf
