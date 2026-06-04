@@ -201,7 +201,7 @@ export default {
       this.user = settings.db_user;
       this.pass = settings.db_pass;
       this.sound = settings.sound_directory;
-      this.exclusionPaths = String(settings.exclusionPaths || '').replaceAll('|','\n');
+      this.exclusionPaths = this.toExclusionText(settings.exclusionPaths);
       this.websocketRetryCount = settings.websocket_retry_count;
       this.websocketRetryIntervalMs = settings.websocket_retry_interval;
     },
@@ -215,10 +215,22 @@ export default {
         db_user: this.user,
         db_pass: this.pass,
         sound_directory: this.sound,
-        exclusionPaths: BaseFrameWork.removeEmptyLines(this.exclusionPaths).replace(/\n/g, '|'),
+        exclusionPaths: this.toExclusionArray(this.exclusionPaths),
         websocket_retry_count: this.websocketRetryCount,
         websocket_retry_interval: this.websocketRetryIntervalMs
       };
+    },
+    toExclusionText(value) {
+      if (Array.isArray(value)) {
+        return value.join('\n');
+      }
+      return String(value || '').replaceAll('|','\n');
+    },
+    toExclusionArray(value) {
+      return BaseFrameWork.removeEmptyLines(value)
+        .split(/\r?\n/)
+        .map((item) => item.trim())
+        .filter(Boolean);
     },
     updateCurrentStatus(){
 

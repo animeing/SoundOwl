@@ -39,6 +39,8 @@ import { AudioClip } from '../../../audio/type/AudioClip';
 import audio from '../../../audio/AudioPlayer';
 import SoundClipComponent from '../../common/SoundClipComponent.vue';
 import ContextMenu from '../../common/ContextMenu.vue';
+import { BaseFrameWork } from '../../../base';
+import { BASE } from '../../../utilization/path';
 
 export default {
   name: 'CurrentAudioList',

@@ -79,7 +79,11 @@ export default {
       const formData = this.$refs.formRef.getFormData();
       const updateSetting = new UpdateSetting();
       for(const [key, value] of Object.entries(formData)) {
-        updateSetting.formDataMap.set(key, value);
+        if (Array.isArray(value)) {
+          value.forEach((item) => updateSetting.formDataMap.append(`${key}[]`, item));
+        } else {
+          updateSetting.formDataMap.set(key, value);
+        }
       }
       updateSetting.httpRequestor.addEventListener('success', () => {
         const message = new MessageWindow();
