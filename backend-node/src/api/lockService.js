@@ -49,6 +49,6 @@ class LockService {
   }
 }
 
-module.exports = {
+export {
   LockService,
 };

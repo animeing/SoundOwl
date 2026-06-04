@@ -1,5 +1,5 @@
-const fs = require('node:fs/promises');
-const path = require('node:path');
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 const MIME_BY_EXTENSION = {
   '.png': 'image/png',
@@ -83,11 +83,19 @@ class MediaService {
     if (!sound) {
       return { status: 404, headers: {}, path: null };
     }
-    const stat = await fs.stat(sound.data_link);
+    let stat;
+    try {
+      stat = await fs.stat(sound.data_link);
+    } catch (error) {
+      if (error.code === 'ENOENT' || error.code === 'ENOTDIR') {
+        return { status: 404, headers: {}, path: null };
+      }
+      throw error;
+    }
     const range = parseRange(rangeHeader, stat.size);
     const mime = mimeFromPath(sound.data_link);
     return {
-      status: range.start === 0 ? 200 : 206,
+      status: rangeHeader ? 206 : 200,
       headers: {
         'Accept-Ranges': 'bytes',
         ETag: `"${soundHash}"`,
@@ -146,7 +154,7 @@ function mimeFromPath(filePath) {
   return MIME_BY_EXTENSION[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
 }
 
-module.exports = {
+export {
   MediaService,
   mimeFromPath,
   parseRange,

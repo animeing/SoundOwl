@@ -1,7 +1,7 @@
-﻿const http = require('node:http');
-const fs = require('node:fs');
-const { URL } = require('node:url');
-const express = require('express');
+import http from 'node:http';
+import fs from 'node:fs';
+import { URL } from 'node:url';
+import express from 'express';
 
 const ROUTES = {
   '/api/site_status.php': 'siteStatus',
@@ -143,14 +143,14 @@ function parseMultipart(rawBody, contentType) {
     if (!rawHeaders || bodyParts.length === 0) {
       continue;
     }
-    const name = rawHeaders.match(/name="([^"]+)"/)?.[1];
-    const filename = rawHeaders.match(/filename="([^"]+)"/)?.[1];
+    const name = decodeMultipartText(rawHeaders.match(/name="([^"]+)"/)?.[1] || '');
+    const filename = decodeMultipartText(rawHeaders.match(/filename="([^"]+)"/)?.[1] || '');
     if (!name) {
       continue;
     }
     const content = bodyParts.join('\r\n\r\n').replace(/\r?\n--$/, '').replace(/\r?\n$/, '');
     if (!filename) {
-      appendFormValue(fields, name, content);
+      appendFormValue(fields, name, decodeMultipartText(content));
       continue;
     }
     const mime = rawHeaders.match(/Content-Type:\s*([^\r\n]+)/i)?.[1] || 'application/octet-stream';
@@ -310,13 +310,43 @@ function readBody(req) {
  */
 function parseForm(rawBody) {
   const form = {};
-  const params = new URLSearchParams(rawBody);
-  for (const [key, value] of params.entries()) {
-    appendFormValue(form, key, value);
+  const body = String(rawBody);
+  if (body.length === 0) {
+    return form;
+  }
+  const pairs = body.split('&');
+  let index = 0;
+  while (index < pairs.length) {
+    const pair = pairs[index];
+    const separatorIndex = pair.indexOf('=');
+    if (separatorIndex === -1) {
+      appendFormValue(form, decodeFormComponent(pair), '');
+    } else {
+      const key = pair.slice(0, separatorIndex);
+      const value = pair.slice(separatorIndex + 1);
+      appendFormValue(form, decodeFormComponent(key), decodeFormComponent(value));
+    }
+    index += 1;
   }
   return form;
 }
 
+function decodeFormComponent(value) {
+  return decodeURIComponent(value.replace(/\+/g, ' '));
+}
+
+/**
+ * multipart/form-dataをbinary文字列として読んだ値をUTF-8文字列へ戻す。
+ *
+ * FormDataの通常field名、filename、field値はブラウザからUTF-8で届くため、
+ * binary文字列のまま扱うと日本語が文字化けする。
+ *
+ * @param {string} value multipartから切り出したbinary文字列。
+ * @returns {string} UTF-8として復元した文字列。
+ */
+function decodeMultipartText(value) {
+  return Buffer.from(String(value), 'binary').toString('utf8');
+}
 /**
  * PHPの`$_POST`に近い形でform値を追加する。
  * 同一keyや`sounds[]`のような配列keyは配列として保持する。
@@ -327,7 +357,10 @@ function parseForm(rawBody) {
  * @returns {void}
  */
 function appendFormValue(form, key, value) {
-  const cleanKey = key.endsWith('[]') ? key.slice(0, -2) : key;
+  let cleanKey = key;
+  if (key.endsWith('[]')) {
+    cleanKey = key.slice(0, -2);
+  }
   if (Object.hasOwn(form, cleanKey)) {
     form[cleanKey] = Array.isArray(form[cleanKey]) ? [...form[cleanKey], value] : [form[cleanKey], value];
   } else {
@@ -335,11 +368,12 @@ function appendFormValue(form, key, value) {
   }
 }
 
-module.exports = {
+export {
   createHttpApp,
   createHttpServer,
   appendFormValue,
   corsHeaders,
+  decodeMultipartText,
   errorResponse,
   parseForm,
   parseMultipart,

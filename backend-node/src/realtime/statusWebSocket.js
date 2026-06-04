@@ -1,4 +1,4 @@
-const { WebSocketServer } = require('ws');
+import { WebSocketServer } from 'ws';
 
 /**
  * @typedef {Object} StatusWebSocketOptions
@@ -84,4 +84,4 @@ function createStatusWebSocket(options) {
   };
 }
 
-module.exports = { createStatusWebSocket };
+export { createStatusWebSocket };

@@ -53,4 +53,4 @@ class AudioWorker {
   }
 }
 
-module.exports = { AudioWorker };
+export { AudioWorker };

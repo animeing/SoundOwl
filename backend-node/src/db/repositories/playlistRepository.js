@@ -1,4 +1,4 @@
-const { mapHashFields, queryRows } = require('./common');
+import { mapHashFields, queryRows } from './common.js';
 
 /**
  * playlistとplaylist_dataを扱うDAO。
@@ -67,4 +67,4 @@ class PlaylistRepository {
   }
 }
 
-module.exports = { PlaylistRepository };
+export { PlaylistRepository };

@@ -1,4 +1,4 @@
-const { compressNullableHash, queryRows } = require('./common');
+import { compressNullableHash, queryRows } from './common.js';
 
 /**
  * albumテーブルと、album基準の一覧表示を扱うDAO。
@@ -100,4 +100,4 @@ class AlbumRepository {
   }
 }
 
-module.exports = { AlbumRepository };
+export { AlbumRepository };

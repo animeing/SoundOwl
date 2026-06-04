@@ -1,4 +1,4 @@
-const crypto = require('node:crypto');
+import crypto from 'node:crypto';
 
 const COMPRESS_TABLE = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@,.<>[]:;!$()';
 
@@ -83,7 +83,7 @@ function fromCustomBase(value) {
   return result;
 }
 
-module.exports = {
+export {
   COMPRESS_TABLE,
   compressHash,
   decompressHash,

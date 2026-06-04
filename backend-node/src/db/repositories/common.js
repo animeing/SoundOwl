@@ -1,4 +1,4 @@
-const { compressHash } = require('../../utils/hash');
+import { compressHash } from '../../utils/hash.js';
 
 /**
  * mysql2の戻り値差を吸収して、常にrows配列を返す。
@@ -21,6 +21,9 @@ async function queryRows(db, sql, params = []) {
  */
 function mapSoundRecord(row) {
   const record = mapHashFields(row);
+  if (typeof record.lyrics === 'string') {
+    record.lyrics = normalizeLineBreaks(record.lyrics);
+  }
   record.album = {
     album_hash: record.album_hash,
     album_title: record.album_title,
@@ -41,6 +44,7 @@ function mapHashFields(row) {
     play_date: normalizeDateTime(row.play_date),
     sound_hash: compressNullableHash(row.sound_hash),
     album_hash: compressNullableHash(row.album_hash),
+    artist_id: compressNullableHash(row.artist_id),
   };
 }
 
@@ -97,7 +101,17 @@ function formatDateTime(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
-module.exports = {
+
+/**
+ * API返却前に複数行テキストの改行コードをLFへ統一する。
+ *
+ * @param {string} value 改行コードを含み得る文字列。
+ * @returns {string} CRLF/CRをLFに統一した文字列。
+ */
+function normalizeLineBreaks(value) {
+  return value.replace(/\r\n?/g, '\n');
+}
+export {
   compressNullableHash,
   formatDateTime,
   mapHashFields,

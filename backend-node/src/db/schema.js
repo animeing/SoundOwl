@@ -1,4 +1,4 @@
-const fs = require('node:fs/promises');
+import fs from 'node:fs/promises';
 
 /**
  * MariaDB dump SQLを実行単位に分割する。
@@ -48,7 +48,7 @@ function splitMariaDbSql(sql) {
  */
 async function createSchema(db, { schemaPath, databaseName = 'sound' }) {
   const sql = await fs.readFile(schemaPath, 'utf8');
-  await db.query(`CREATE DATABASE IF NOT EXISTS \`${databaseName}\``);
+  await db.query(`CREATE DATABASE IF NOT EXISTS \`${databaseName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci`);
   await db.query(`USE \`${databaseName}\``);
   for (const statement of splitMariaDbSql(sql)) {
     await db.query(statement);
@@ -82,7 +82,7 @@ function isExecutableStatement(statement) {
   return !statement.startsWith('--');
 }
 
-module.exports = {
+export {
   createSchema,
   splitMariaDbSql,
 };

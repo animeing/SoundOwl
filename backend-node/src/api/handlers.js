@@ -1,6 +1,6 @@
-const fs = require('node:fs/promises');
-const path = require('node:path');
-const { decompressHash } = require('../utils/hash');
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { decompressHash } from '../utils/hash.js';
 
 /**
  * @typedef {Object} ApiResponse
@@ -91,7 +91,7 @@ function createApiHandlers(deps) {
           return json(await registrar.refreshByHash(decompressHash(decodeURIComponent(query.soundhash))));
         }
         const settings = await settingsStore.read();
-        const exclusions = String(settings.exclusionPaths || '').split('|').filter(Boolean);
+        const exclusions = normalizeExclusionPaths(settings.exclusionPaths);
         return json(await registrar.registerDirectory(soundDirectoryOverride || settings.sound_directory, exclusions));
       } finally {
         release();
@@ -269,6 +269,22 @@ function hasRange(form) {
 }
 
 /**
+ * 設定値の除外パスを登録処理用の配列へ正規化する。
+ *
+ * JSON化後の配列形式を正としつつ、旧設定の`|`区切り文字列も読み込み互換として扱う。
+ *
+ * @param {string|string[]|null|undefined} value 設定ファイルまたはFormData由来の除外パス。
+ * @returns {string[]} 空行を取り除いた除外パス配列。
+ */
+function normalizeExclusionPaths(value) {
+  const paths = Array.isArray(value) ? value : String(value || '').split(/[|\r\n]+/);
+  return paths
+    .filter((item) => item !== null && item !== undefined)
+    .map((item) => String(item).trim())
+    .filter(Boolean);
+}
+
+/**
  * JSON response DTOを作成する。
  *
  * @param {unknown} body JSON body。
@@ -300,14 +316,19 @@ function text(body, status = 200) {
  * @returns {ApiResponse} response DTO。
  */
 function binary(body, mime, status = 200, headers = {}) {
-  return { status, headers: { 'content-type': mime, ...headers }, body };
+  const responseHeaders = { 'content-type': mime, ...headers };
+  if (Buffer.isBuffer(body) || typeof body === 'string') {
+    responseHeaders['content-length'] = Buffer.byteLength(body);
+  }
+  return { status, headers: responseHeaders, body };
 }
 
-module.exports = {
+export {
   binary,
   createApiHandlers,
   hasRange,
   json,
+  normalizeExclusionPaths,
   statusPayload,
   text,
 };

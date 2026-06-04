@@ -1,4 +1,4 @@
-const { compressNullableHash, queryRows } = require('./common');
+import { compressNullableHash, queryRows } from './common.js';
 
 /**
  * artistテーブルと、artist基準の一覧表示を扱うDAO。
@@ -65,4 +65,4 @@ class ArtistRepository {
   }
 }
 
-module.exports = { ArtistRepository };
+export { ArtistRepository };

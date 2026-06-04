@@ -1,19 +1,27 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 /**
  * @typedef {Object} BackendConfig
- * @property {{host:string,database:string,user:string,password:string,retry:{attempts:number,delayMs:number}}} db MariaDB接続設定。
- * @property {{socket:{host:string,port:number}}} redis node-redis用接続設定。
- * @property {string} soundDirectory 音楽ファイルを走査するディレクトリ。PHPの`SOUND_DIRECTORY`相当。
- * @property {string} blankImagePath アートが無い場合に返すblank PNGのパス。
- * @property {string} settingsPath JSON設定ファイルパス。
- * @property {{enabled:boolean,host:string,port:number,intervalMs:number}} websocket WebSocket status broadcaster設定。
- * @property {{enabled:boolean,timeoutSeconds:number,idleDelayMs:number,errorDelayMs:number}} worker Redis音量解析worker loop設定。
+ * @property {{host:string,database:string,user:string,password:string,retry:{attempts:number,delayMs:number}}} db MariaDB 接続設定。
+ * @property {{socket:{host:string,port:number}}} redis node-redis 接続設定。
+ * @property {string} soundDirectory 音楽ファイルを走査するディレクトリ。PHP の `SOUND_DIRECTORY` 相当。
+ * @property {string} blankImagePath アートが無い場合に返す blank PNG のパス。
+ * @property {string} placeholderImagePath フロントから直接取得する placeholder WebP のパス。
+ * @property {string} settingsPath JSON 設定ファイルのパス。
+ * @property {{allowOrigins:string[]}} cors CORS で許可する Origin の一覧。`*` の場合は全 Origin を許可する。
+ * @property {{enabled:boolean,host:string,port:number,intervalMs:number}} websocket WebSocket status broadcaster 設定。
+ * @property {{enabled:boolean,timeoutSeconds:number,idleDelayMs:number,errorDelayMs:number}} worker Redis 音量解析 worker loop 設定。
  */
 
 /**
- * 環境変数からNode backendの実行設定を作成する。
+ * 環境変数から Node backend の実行設定を作成する。
  *
  * @param {NodeJS.ProcessEnv|Object.<string, string|undefined>} [env=process.env] 読み込み元の環境変数。
- * @returns {BackendConfig} DB、Redis、音楽ディレクトリ、ロック、blank画像の設定。
+ * @returns {BackendConfig} DB、Redis、音楽ディレクトリ、ロック、画像、WebSocket、worker の設定。
  */
 function loadConfig(env = process.env) {
   return {
@@ -55,5 +63,4 @@ function loadConfig(env = process.env) {
   };
 }
 
-module.exports = { loadConfig };
-const path = require('node:path');
+export { loadConfig };

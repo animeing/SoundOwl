@@ -1,7 +1,7 @@
-const fs = require('node:fs/promises');
-const path = require('node:path');
-const crypto = require('node:crypto');
-const { sha1 } = require('../utils/hash');
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { sha1 } from '../utils/hash.js';
 
 const SOUND_EXTENSIONS = /\.(mp3|m4a|wav|ogg|flac|ape)$/i;
 
@@ -276,7 +276,7 @@ function formatDateTime(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
-module.exports = {
+export {
   SOUND_EXTENSIONS,
   SoundRegistrar,
   formatDateTime,

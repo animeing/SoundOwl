@@ -1,4 +1,4 @@
-const { mapHashFields, queryRows } = require('./common');
+import { mapHashFields, queryRows } from './common.js';
 
 /**
  * 再生履歴viewを扱うDAO。
@@ -24,4 +24,4 @@ class HistoryRepository {
   }
 }
 
-module.exports = { HistoryRepository };
+export { HistoryRepository };

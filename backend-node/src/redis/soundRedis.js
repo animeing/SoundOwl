@@ -1,3 +1,5 @@
+import { createClient } from 'redis';
+
 /**
  * Redisに対するDAO相当クラス。
  *
@@ -157,14 +159,13 @@ function deserializeAlbumCache(value) {
  * @returns {Promise<SoundRedis>} 接続済みRedis DAO。
  */
 async function createRedisClient(config) {
-  const { createClient } = require('redis');
   const client = createClient(config);
   const soundRedis = new SoundRedis(client);
   await soundRedis.connect();
   return soundRedis;
 }
 
-module.exports = {
+export {
   SoundRedis,
   createRedisClient,
   deserializeAlbumCache,

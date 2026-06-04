@@ -1,4 +1,4 @@
-const { formatDateTime, mapSoundRecord, mimeFromPath, queryRows } = require('./common');
+import { formatDateTime, mapSoundRecord, mimeFromPath, queryRows } from './common.js';
 
 /**
  * sound_linkを中心に、音源の検索・詳細・登録更新・再生回数・音量解析値を扱うDAO。
@@ -196,4 +196,4 @@ function mapSoundRows(rows) {
   return rows.map((row) => mapSoundRecord(row));
 }
 
-module.exports = { SoundCatalogRepository };
+export { SoundCatalogRepository };

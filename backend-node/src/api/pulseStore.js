@@ -1,5 +1,5 @@
-const fs = require('node:fs/promises');
-const path = require('node:path');
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 const PULSE_EXTENSIONS = /\.(wav|mp3)$/i;
 const PULSE_MIME = /^(audio\/wav|audio\/wave|audio\/x-wav|audio\/mpeg)$/i;
@@ -71,7 +71,7 @@ function isSupportedPulse(filename, mime) {
   return PULSE_EXTENSIONS.test(filename || '') && PULSE_MIME.test(mime || '');
 }
 
-module.exports = {
+export {
   PULSE_EXTENSIONS,
   PULSE_MIME,
   PulseStore,

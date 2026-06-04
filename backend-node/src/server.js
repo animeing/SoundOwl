@@ -1,37 +1,32 @@
-const path = require('node:path');
-const { loadConfig } = require('./config');
-const { createMysqlPool } = require('./db/mysql');
-const { createSchema } = require('./db/schema');
-const { SoundOwlRepository } = require('./db/soundRepository');
-const { createRedisClient } = require('./redis/soundRedis');
-const { analyzeLoudness } = require('./audio/ffmpeg');
-const { readMetadata } = require('./audio/metadata');
-const { SoundRegistrar } = require('./services/soundRegistrar');
-const { AudioWorker } = require('./services/audioWorker');
-const { MediaService } = require('./media/mediaService');
-const { createSettingsStore } = require('./api/settingsStore');
-const { PulseStore } = require('./api/pulseStore');
-const { LockService } = require('./api/lockService');
-const { createApiHandlers } = require('./api/handlers');
-const { createHttpServer } = require('./api/httpServer');
-const { createStatusWebSocket } = require('./realtime/statusWebSocket');
-const { createWorkerLoop } = require('./runtime/workerLoop');
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { loadConfig } from './config.js';
+import { createMysqlPool } from './db/mysql.js';
+import { createSchema } from './db/schema.js';
+import { SoundOwlRepository } from './db/soundRepository.js';
+import { createRedisClient } from './redis/soundRedis.js';
+import { analyzeLoudness } from './audio/ffmpeg.js';
+import { readMetadata } from './audio/metadata.js';
+import { SoundRegistrar } from './services/soundRegistrar.js';
+import { AudioWorker } from './services/audioWorker.js';
+import { MediaService } from './media/mediaService.js';
+import { createSettingsStore } from './api/settingsStore.js';
+import { PulseStore } from './api/pulseStore.js';
+import { LockService } from './api/lockService.js';
+import { createApiHandlers } from './api/handlers.js';
+import { createHttpServer } from './api/httpServer.js';
+import { createStatusWebSocket } from './realtime/statusWebSocket.js';
+import { createWorkerLoop } from './runtime/workerLoop.js';
 
-/**
- * production用依存を組み立ててHTTP serverを作る。
- *
- * @param {NodeJS.ProcessEnv} [env=process.env] 環境変数。
- * @returns {Promise<import('node:http').Server>} HTTP server。
- */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 async function buildServer(env = process.env) {
   return (await buildRuntime(env)).httpServer;
 }
-
 /**
- * HTTP API、WebSocket status broadcaster、Redis worker loopを同じNode runtimeへ組み立てる。
- *
- * PHPではWebSocketとworkerを常駐scriptとして分けていたが、Nodeでは同一process内の非同期処理として
- * 管理できるため、このruntimeをbackendの起動単位にする。
+ * HTTP API、WebSocket status broadcaster、Redis worker loop を同じ Node runtime に組み立てる。
+ * PHP では常駐 script を分けていた処理も、Node.js 側では同一 process 内の非同期処理として管理する。
  *
  * @param {NodeJS.ProcessEnv} [env=process.env] 環境変数。
  * @returns {Promise<{config:Object,httpServer:import('node:http').Server,websocket:Object|null,workerLoop:Object|null,start:(options?:{port?:number,host?:string})=>Promise<void>,stop:()=>Promise<void>}>} backend runtime。
@@ -119,7 +114,7 @@ async function buildRuntime(env = process.env) {
   };
 }
 
-if (require.main === module) {
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
   buildRuntime().then((runtime) => {
     const port = Number(process.env.PORT || 3000);
     const host = process.env.HOST || '0.0.0.0';
@@ -138,4 +133,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { buildRuntime, buildServer };
+export { buildRuntime, buildServer };

@@ -3,26 +3,26 @@
  *
  * API adapter実装時はこのファイルからDB/Redis/登録/worker/media機能をimportする。
  */
-const { loadConfig } = require('./config');
-const { createMysqlPool } = require('./db/mysql');
-const { createSchema } = require('./db/schema');
-const { SoundRepository } = require('./db/soundRepository');
-const { createRedisClient, SoundRedis } = require('./redis/soundRedis');
-const { analyzeLoudness, probeMetadata } = require('./audio/ffmpeg');
-const { normalizeMetadata, readMetadata } = require('./audio/metadata');
-const { SoundRegistrar } = require('./services/soundRegistrar');
-const { AudioWorker } = require('./services/audioWorker');
-const { MediaService } = require('./media/mediaService');
-const { createApiHandlers } = require('./api/handlers');
-const { createHttpServer } = require('./api/httpServer');
-const { LockService } = require('./api/lockService');
-const { PulseStore } = require('./api/pulseStore');
-const { createStatusWebSocket } = require('./realtime/statusWebSocket');
-const { createWorkerLoop } = require('./runtime/workerLoop');
-const { buildRuntime, buildServer } = require('./server');
-const hash = require('./utils/hash');
+import { loadConfig } from './config.js';
+import { createMysqlPool } from './db/mysql.js';
+import { createSchema } from './db/schema.js';
+import { SoundRepository } from './db/soundRepository.js';
+import { createRedisClient, SoundRedis } from './redis/soundRedis.js';
+import { analyzeLoudness, probeMetadata } from './audio/ffmpeg.js';
+import { normalizeMetadata, readMetadata } from './audio/metadata.js';
+import { SoundRegistrar } from './services/soundRegistrar.js';
+import { AudioWorker } from './services/audioWorker.js';
+import { MediaService } from './media/mediaService.js';
+import { createApiHandlers } from './api/handlers.js';
+import { createHttpServer } from './api/httpServer.js';
+import { LockService } from './api/lockService.js';
+import { PulseStore } from './api/pulseStore.js';
+import { createStatusWebSocket } from './realtime/statusWebSocket.js';
+import { createWorkerLoop } from './runtime/workerLoop.js';
+import { buildRuntime, buildServer } from './server.js';
+import * as hash from './utils/hash.js';
 
-module.exports = {
+export {
   AudioWorker,
   MediaService,
   SoundRedis,

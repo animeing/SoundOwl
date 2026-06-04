@@ -1,4 +1,4 @@
-const { execFile } = require('node:child_process');
+import { execFile } from 'node:child_process';
 
 /**
  * @typedef {Object} LoudnessAnalysis
@@ -60,7 +60,7 @@ function probeMetadata(filePath, { execFileImpl = execFile } = {}) {
   });
 }
 
-module.exports = {
+export {
   analyzeLoudness,
   probeMetadata,
 };

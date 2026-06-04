@@ -1,4 +1,4 @@
-const { queryRows } = require('./common');
+import { queryRows } from './common.js';
 
 /**
  * site_status/WebSocket向けの件数取得を扱うDAO。
@@ -58,4 +58,4 @@ function countFromRows(rows) {
   return Number(rows[0]?.count || rows[0]?.COUNTER || 0);
 }
 
-module.exports = { MetricsRepository, countFromRows };
+export { MetricsRepository, countFromRows };

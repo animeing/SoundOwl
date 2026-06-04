@@ -71,4 +71,4 @@ function createWorkerLoop(options) {
   };
 }
 
-module.exports = { createWorkerLoop };
+export { createWorkerLoop };

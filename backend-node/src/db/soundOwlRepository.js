@@ -1,9 +1,9 @@
-﻿const { SoundCatalogRepository } = require('./repositories/soundCatalogRepository');
-const { ArtistRepository } = require('./repositories/artistRepository');
-const { AlbumRepository } = require('./repositories/albumRepository');
-const { PlaylistRepository } = require('./repositories/playlistRepository');
-const { HistoryRepository } = require('./repositories/historyRepository');
-const { MetricsRepository } = require('./repositories/metricsRepository');
+import { SoundCatalogRepository } from './repositories/soundCatalogRepository.js';
+import { ArtistRepository } from './repositories/artistRepository.js';
+import { AlbumRepository } from './repositories/albumRepository.js';
+import { PlaylistRepository } from './repositories/playlistRepository.js';
+import { HistoryRepository } from './repositories/historyRepository.js';
+import { MetricsRepository } from './repositories/metricsRepository.js';
 
 /**
  * SoundOwl backend が利用するDB操作をまとめるfacade。
@@ -259,4 +259,4 @@ class SoundOwlRepository {
   countAnalysisSounds(...args) { return this.metrics.countAnalysisSounds(...args); }
 }
 
-module.exports = { SoundOwlRepository };
+export { SoundOwlRepository };
