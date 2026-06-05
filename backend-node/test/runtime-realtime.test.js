@@ -1,7 +1,7 @@
-const assert = require('node:assert/strict');
-const { EventEmitter } = require('node:events');
-const { createStatusWebSocket } = require('../src/realtime/statusWebSocket');
-const { createWorkerLoop } = require('../src/runtime/workerLoop');
+import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
+import { createStatusWebSocket } from '../src/realtime/statusWebSocket.js';
+import { createWorkerLoop } from '../src/runtime/workerLoop.js';
 
 test('createStatusWebSocket sends initial status, broadcasts client messages, runs timer, and stops', async () => {
   const intervals = [];

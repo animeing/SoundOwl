@@ -1,9 +1,9 @@
-const assert = require('node:assert/strict');
-const fs = require('node:fs/promises');
-const os = require('node:os');
-const path = require('node:path');
-const { createApiHandlers, hasRange, json, text, binary, statusPayload } = require('../src/api/handlers');
-const { compressHash } = require('../src/utils/hash');
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { createApiHandlers, hasRange, json, normalizeExclusionPaths, text, binary, statusPayload } from '../src/api/handlers.js';
+import { compressHash } from '../src/utils/hash.js';
 
 test('response helpers and range predicate return explicit response DTOs', () => {
   assert.equal(hasRange({ start: '0', end: '2' }), true);
@@ -12,9 +12,15 @@ test('response helpers and range predicate return explicit response DTOs', () =>
   assert.deepEqual(text(''), { status: 200, headers: { 'content-type': 'text/plain' }, body: '' });
   assert.deepEqual(binary(Buffer.from('a'), 'image/png', 201, { x: 'y' }), {
     status: 201,
-    headers: { 'content-type': 'image/png', x: 'y' },
+    headers: { 'content-type': 'image/png', x: 'y', 'content-length': 1 },
     body: Buffer.from('a'),
   });
+});
+
+test('normalizeExclusionPaths accepts JSON array, legacy separators, and Japanese paths', () => {
+  assert.deepEqual(normalizeExclusionPaths(['除外パスA', ' 除外パスB ', '', null]), ['除外パスA', '除外パスB']);
+  assert.deepEqual(normalizeExclusionPaths('除外パスA|除外パスB\r\nignored-dir-a'), ['除外パスA', '除外パスB', 'ignored-dir-a']);
+  assert.deepEqual(normalizeExclusionPaths(null), []);
 });
 
 test('statusPayload includes counts only when requested', async () => {
@@ -51,7 +57,7 @@ test('handlers cover status settings setup sound list detail search play and reg
   const h01 = '8e002bf5f50db0553d82bc67e9225ef2b7ab1611';
   const repository = fullRepositoryMock();
   const settingsStore = {
-    read: vi.fn(async () => ({ sound_directory: '/music', exclusionPaths: 'skip|RECYCLE.BIN' })),
+    read: vi.fn(async () => ({ sound_directory: '/fixture/library', exclusionPaths: ['skip', '除外パスC', 'ignored-dir-a'] })),
     write: vi.fn(async () => {}),
   };
   const schemaService = { create: vi.fn(async () => {}) };
@@ -77,7 +83,7 @@ test('handlers cover status settings setup sound list detail search play and reg
 
   assert.equal((await handlers.siteStatus()).body.regist_data_count.sound, 8);
   assert.equal((await handlers.lockStatus()).body.regist_status, false);
-  assert.deepEqual((await handlers.getSetting()).body, { sound_directory: '/music', exclusionPaths: 'skip|RECYCLE.BIN' });
+  assert.deepEqual((await handlers.getSetting()).body, { sound_directory: '/fixture/library', exclusionPaths: ['skip', '除外パスC', 'ignored-dir-a'] });
   assert.equal((await handlers.updateSetting({ form: { a: 'b' } })).body, '');
   assert.equal(settingsStore.write.mock.calls[0][0].a, 'b');
   assert.deepEqual((await handlers.setupDatabaseTable()).body, { status: 'success' });
@@ -93,14 +99,14 @@ test('handlers cover status settings setup sound list detail search play and reg
   assert.equal((await handlers.soundPlayed({ query: { SoundHash: compressHash(h01) } })).body, '');
   assert.deepEqual((await handlers.soundRegist({ query: { soundhash: compressHash(h01) } })).body, { count: 8 });
   assert.deepEqual((await handlers.soundRegist({ query: {} })).body, { count: 8 });
-  assert.equal(registrar.registerDirectory.mock.calls[0][0], '/music');
-  assert.deepEqual(registrar.registerDirectory.mock.calls[0][1], ['skip', 'RECYCLE.BIN']);
+  assert.equal(registrar.registerDirectory.mock.calls[0][0], '/fixture/library');
+  assert.deepEqual(registrar.registerDirectory.mock.calls[0][1], ['skip', '除外パスC', 'ignored-dir-a']);
 });
 
 test('soundRegist still works when no runtime lock state service is injected', async () => {
   const handlers = createApiHandlers({
     repository: fullRepositoryMock(),
-    settingsStore: { read: vi.fn(async () => ({ sound_directory: '/music', exclusionPaths: '' })), write: vi.fn() },
+    settingsStore: { read: vi.fn(async () => ({ sound_directory: '/fixture/library', exclusionPaths: '' })), write: vi.fn() },
     schemaService: { create: vi.fn() },
     registrar: { refreshByHash: vi.fn(), registerDirectory: vi.fn(async () => ({ count: 1 })) },
     mediaService: mediaMock(),
@@ -116,8 +122,9 @@ test('soundRegist still works when no runtime lock state service is injected', a
 
 test('handlers cover artist album history playlist pulse media and binary paths', async () => {
   const h01 = '8e002bf5f50db0553d82bc67e9225ef2b7ab1611';
+  const repository = fullRepositoryMock();
   const handlers = createApiHandlers({
-    repository: fullRepositoryMock(),
+    repository,
     settingsStore: { read: vi.fn(), write: vi.fn() },
     schemaService: { create: vi.fn() },
     registrar: { refreshByHash: vi.fn(), registerDirectory: vi.fn() },
@@ -143,11 +150,12 @@ test('handlers cover artist album history playlist pulse media and binary paths'
   assert.equal((await handlers.playlistAction({ form: {} })).status, 400);
   assert.deepEqual((await handlers.playlistAction({ form: { method: 'names' } })).body, ['names']);
   assert.equal((await handlers.playlistAction({ form: { method: 'sounds' } })).status, 400);
-  assert.deepEqual((await handlers.playlistAction({ form: { method: 'sounds', name: 'p' } })).body, ['playlistSound']);
+  assert.deepEqual((await handlers.playlistAction({ form: { method: 'sounds', name: 'プレイリストA' } })).body, ['playlistSound']);
   assert.equal((await handlers.playlistAction({ form: { method: 'create', playlist_name: 'p' } })).status, 400);
-  assert.deepEqual((await handlers.playlistAction({ form: { method: 'create', playlist_name: 'p', sounds: [compressHash(h01)] } })).body, { status: 'success', detail: 'playlist created.' });
+  assert.deepEqual((await handlers.playlistAction({ form: { method: 'create', playlist_name: 'プレイリストA', sounds: [compressHash(h01)] } })).body, { status: 'success', detail: 'playlist created.' });
+  assert.deepEqual(repository.createPlaylist.mock.calls[0], ['プレイリストA', [h01]]);
   assert.equal((await handlers.playlistAction({ form: { method: 'delete' } })).status, 400);
-  assert.equal((await handlers.playlistAction({ form: { method: 'delete', name: 'p' } })).body, '');
+  assert.equal((await handlers.playlistAction({ form: { method: 'delete', name: 'プレイリストA' } })).body, '');
 
   assert.deepEqual((await handlers.audioPulseDataList()).body, ['pulse.wav']);
   assert.equal((await handlers.audioPulseDataUpload({})).body.status, 'error');
@@ -157,12 +165,24 @@ test('handlers cover artist album history playlist pulse media and binary paths'
   assert.equal((await handlers.audioPulseDataDelete({ form: { preset: 'a.wav' } })).body.status, 'success');
 
   assert.deepEqual((await handlers.soundEqualizerPreset()).body, { Flat: [{ hz: 1000, gain: 0 }] });
-  assert.equal((await handlers.albumArt({ query: {} })).headers['content-type'], 'image/png');
-  assert.equal((await handlers.albumArt({ query: { media_hash: compressHash(h01) } })).headers['X-Cache-Load'], 'True');
-  assert.equal((await handlers.playlistArt({ query: { playlist: 'p' } })).headers['content-type'], 'image/png');
+  const blankAlbumArt = await handlers.albumArt({ query: {} });
+  assert.equal(blankAlbumArt.headers['content-type'], 'image/png');
+  assert.equal(blankAlbumArt.headers['content-length'], blankAlbumArt.body.length);
+  assert.equal(blankAlbumArt.body.length, 3);
+  const cachedAlbumArt = await handlers.albumArt({ query: { media_hash: compressHash(h01) } });
+  assert.equal(cachedAlbumArt.headers['X-Cache-Load'], 'True');
+  assert.equal(cachedAlbumArt.headers['content-length'], cachedAlbumArt.body.length);
+  assert.equal(cachedAlbumArt.body.length, 3);
+  const playlistArt = await handlers.playlistArt({ query: { playlist: 'p' } });
+  assert.equal(playlistArt.headers['content-type'], 'image/png');
+  assert.equal(playlistArt.headers['content-length'], playlistArt.body.length);
+  assert.equal(playlistArt.body.length, 3);
   assert.equal((await handlers.fontisto()).body.toString(), 'fontdata');
-  assert.equal((await handlers.placeholderImage()).headers['content-type'], 'image/webp');
-  assert.equal((await handlers.placeholderImage()).body.toString(), 'webpdata');
+  const placeholderImage = await handlers.placeholderImage();
+  assert.equal(placeholderImage.headers['content-type'], 'image/webp');
+  assert.equal(placeholderImage.headers['content-length'], placeholderImage.body.length);
+  assert.equal(placeholderImage.body.length, 8);
+  assert.equal(placeholderImage.body.toString(), 'webpdata');
   assert.equal((await handlers.soundStream({ query: {}, headers: {} })).status, 404);
   await assert.rejects(handlers.soundStream({ query: { media_hash: 'not-a-real-sound' }, headers: {} }), /Invalid media_hash/);
   assert.equal((await handlers.soundStream({ query: { media_hash: compressHash(h01) }, headers: { range: 'bytes=1-1' } })).status, 206);
@@ -210,7 +230,7 @@ function mediaMock() {
   return {
     getAlbumArt: vi.fn(async (hash) => ({ status: 200, mime: 'image/png', body: Buffer.from('png'), cacheLoad: Boolean(hash) })),
     getPlaylistArt: vi.fn(async () => ({ status: 200, mime: 'image/png', body: Buffer.from('png') })),
-    prepareSoundStream: vi.fn(async () => ({ status: 206, headers: { 'content-type': 'audio/wav' }, path: '/music/a.wav', range: { start: 1, end: 1 } })),
+    prepareSoundStream: vi.fn(async () => ({ status: 206, headers: { 'content-type': 'audio/wav' }, path: '/fixture/library/a.wav', range: { start: 1, end: 1 } })),
   };
 }
 

@@ -1,5 +1,6 @@
-const assert = require('node:assert/strict');
-const { compressHash, decompressHash, sha1 } = require('../src/utils/hash');
+import assert from 'node:assert/strict';
+import { compressHash, decompressHash, sha1 } from '../src/utils/hash.js';
+import { mapSoundRecord } from '../src/db/repositories/common.js';
 
 test('compressHash and decompressHash preserve PHP-compatible hashes including zero chunks', () => {
   const raw = '0000000010000000100000001000000010000001';
@@ -9,5 +10,16 @@ test('compressHash and decompressHash preserve PHP-compatible hashes including z
 });
 
 test('sha1 hashes the exact data link used by sound registration', () => {
-  assert.equal(sha1('/music/contract-fixture/track-03.wav'), '8ee9a84fa1a11e5dcf6598db5f013c492e3c0dd6');
+  assert.equal(sha1('/fixture/library/contract-fixture/track-03.wav'), '05197a7477a3a520fe9d4aaa0e75655ee7a20b58');
+});
+
+test('mapSoundRecord normalizes lyrics line breaks for existing DB rows', () => {
+  const mapped = mapSoundRecord({
+    sound_hash: '0123456789012345678901234567890123456789',
+    album_hash: null,
+    artist_id: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    lyrics: 'line1\rline2\r\nline3',
+  });
+  assert.equal(mapped.lyrics, 'line1\nline2\nline3');
+  assert.equal(mapped.artist_id, compressHash('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'));
 });

@@ -1,9 +1,9 @@
-const assert = require('node:assert/strict');
-const fs = require('node:fs/promises');
-const os = require('node:os');
-const path = require('node:path');
-const { SoundRegistrar, hasSameArtwork, isSameAlbum, listSoundFiles } = require('../src/services/soundRegistrar');
-const { sha1 } = require('../src/utils/hash');
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { SoundRegistrar, hasSameArtwork, isSameAlbum, listSoundFiles } from '../src/services/soundRegistrar.js';
+import { sha1 } from '../src/utils/hash.js';
 
 test('listSoundFiles includes supported audio files and respects exclusion patterns', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'soundowl-register-'));
@@ -38,15 +38,15 @@ test('SoundRegistrar registers tagged sound, creates artist/album, and enqueues 
     clock: () => new Date('2026-05-28T12:34:56'),
   });
 
-  const result = await registrar.registerFile('/music/contract-fixture/tagged.wav');
-  const soundHash = sha1('/music/contract-fixture/tagged.wav');
+  const result = await registrar.registerFile('/fixture/library/contract-fixture/tagged.wav');
+  const soundHash = sha1('/fixture/library/contract-fixture/tagged.wav');
 
   assert.equal(result.action, 'inserted');
   assert.equal(repo.sounds.get(soundHash).title, 'Tagged Song');
   assert.equal(repo.sounds.get(soundHash).album_title, 'Fixture Album');
   assert.equal(repo.artists.size, 1);
   assert.equal(repo.albums.size, 1);
-  assert.deepEqual(jobs, [{ file_path: '/music/contract-fixture/tagged.wav', hash: soundHash }]);
+  assert.deepEqual(jobs, [{ file_path: '/fixture/library/contract-fixture/tagged.wav', hash: soundHash }]);
 });
 
 test('SoundRegistrar registers untagged sound using basename and refreshes by hash without losing play count', async () => {
@@ -68,8 +68,8 @@ test('SoundRegistrar registers untagged sound using basename and refreshes by ha
     clock: () => new Date('2026-05-28T12:34:56'),
   });
 
-  await registrar.registerFile('/music/plain.wav');
-  const soundHash = sha1('/music/plain.wav');
+  await registrar.registerFile('/fixture/library/plain.wav');
+  const soundHash = sha1('/fixture/library/plain.wav');
   repo.sounds.get(soundHash).play_count = 99;
   const refreshed = await registrar.refreshByHash(soundHash);
 
@@ -100,16 +100,16 @@ test('SoundRegistrar refreshes PHP-seeded sounds with the existing hash instead 
   });
   repo.sounds.set('php-fixture-hash', {
     sound_hash: 'php-fixture-hash',
-    data_link: '/music/plain.wav',
+    data_link: '/fixture/library/plain.wav',
     play_count: 5,
   });
 
   const refreshed = await registrar.refreshByHash('php-fixture-hash');
 
   assert.deepEqual(refreshed, { count: 1 });
-  assert.equal(repo.sounds.has(sha1('/music/plain.wav')), false);
+  assert.equal(repo.sounds.has(sha1('/fixture/library/plain.wav')), false);
   assert.equal(repo.sounds.get('php-fixture-hash').play_count, 5);
-  assert.deepEqual(jobs, [{ file_path: '/music/plain.wav', hash: 'php-fixture-hash' }]);
+  assert.deepEqual(jobs, [{ file_path: '/fixture/library/plain.wav', hash: 'php-fixture-hash' }]);
 });
 
 test('SoundRegistrar ignores unsupported extensions and handles missing refresh hash', async () => {
@@ -120,7 +120,7 @@ test('SoundRegistrar ignores unsupported extensions and handles missing refresh 
     metadataReader: async () => assert.fail('unsupported files must not read metadata'),
   });
 
-  assert.equal(await registrar.registerFile('/music/readme.txt'), null);
+  assert.equal(await registrar.registerFile('/fixture/library/readme.txt'), null);
   assert.deepEqual(await registrar.refreshByHash('missing'), { count: 0 });
 });
 

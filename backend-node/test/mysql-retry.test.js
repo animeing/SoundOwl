@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { waitForMysql } = require('../src/db/mysql');
+import assert from 'node:assert/strict';
+import { waitForMysql } from '../src/db/mysql.js';
 
 test('waitForMysql retries failed connections until a pool connection is available', async () => {
   let attempts = 0;

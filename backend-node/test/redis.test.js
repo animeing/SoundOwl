@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { SoundRedis } = require('../src/redis/soundRedis');
+import assert from 'node:assert/strict';
+import { SoundRedis } from '../src/redis/soundRedis.js';
 
 test('SoundRedis enqueues and pops audio processing jobs using node-redis style API', async () => {
   const queue = [];
@@ -13,8 +13,8 @@ test('SoundRedis enqueues and pops audio processing jobs using node-redis style 
   };
   const redis = new SoundRedis(client);
 
-  await redis.enqueueAudioProcessing({ file_path: '/music/a.wav', hash: 'h' });
-  assert.deepEqual(await redis.popAudioProcessing(), { file_path: '/music/a.wav', hash: 'h' });
+  await redis.enqueueAudioProcessing({ file_path: '/fixture/library/a.wav', hash: 'h' });
+  assert.deepEqual(await redis.popAudioProcessing(), { file_path: '/fixture/library/a.wav', hash: 'h' });
 });
 
 test('SoundRedis returns null when queue pop times out', async () => {

@@ -1,8 +1,8 @@
-const assert = require('node:assert/strict');
-const fs = require('node:fs/promises');
-const os = require('node:os');
-const path = require('node:path');
-const { createSchema, splitMariaDbSql } = require('../src/db/schema');
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { createSchema, splitMariaDbSql } from '../src/db/schema.js';
 
 test('splitMariaDbSql handles semicolon statements and custom delimiter blocks', () => {
   const statements = splitMariaDbSql(`
@@ -32,7 +32,7 @@ test('createSchema creates database, uses it, and executes parsed statements in 
   await createSchema(db, { schemaPath, databaseName: 'sound' });
 
   assert.deepEqual(calls, [
-    'CREATE DATABASE IF NOT EXISTS `sound`',
+    'CREATE DATABASE IF NOT EXISTS `sound` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci',
     'USE `sound`',
     'CREATE TABLE t (id int)',
   ]);

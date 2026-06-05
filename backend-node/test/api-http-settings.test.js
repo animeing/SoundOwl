@@ -1,21 +1,35 @@
-const assert = require('node:assert/strict');
-const { EventEmitter } = require('node:events');
-const fs = require('node:fs/promises');
-const os = require('node:os');
-const path = require('node:path');
-const { Writable } = require('node:stream');
-const { createSettingsStore, normalizeSettings, stripBom } = require('../src/api/settingsStore');
-const { PulseStore, isSupportedPulse } = require('../src/api/pulseStore');
-const { LockService } = require('../src/api/lockService');
-const { createHttpServer, corsHeaders, errorResponse, parseForm, parseMultipart, readBody, streamFileResponse, toApiRequest, writeResponse, withCors } = require('../src/api/httpServer');
+import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { Writable } from 'node:stream';
+import { createSettingsStore, normalizeSettings, normalizeStringArray, repairLatin1Mojibake, stripBom } from '../src/api/settingsStore.js';
+import { PulseStore, isSupportedPulse } from '../src/api/pulseStore.js';
+import { LockService } from '../src/api/lockService.js';
+import { createHttpServer, corsHeaders, decodeMultipartText, errorResponse, parseForm, parseMultipart, readBody, streamFileResponse, toApiRequest, writeResponse, withCors } from '../src/api/httpServer.js';
 
-test('settingsStore reads and writes JSON settings as API-compatible string values', async () => {
-  assert.deepEqual(normalizeSettings({ a: 'b', num: 7, empty: null }), { a: 'b', num: '7', empty: '' });
+test('settingsStore reads and writes JSON settings while preserving Japanese arrays', async () => {
+  const mojibakeSample = Buffer.from('文字化け復元A', 'utf8').toString('latin1');
+  assert.deepEqual(normalizeSettings({ a: 'b', num: 7, empty: null, exclusionPaths: ['除外パスA', '除外パスB'] }), {
+    a: 'b',
+    num: '7',
+    empty: '',
+    exclusionPaths: ['除外パスA', '除外パスB'],
+  });
+  assert.deepEqual(normalizeSettings({ customList: ['a', 'b', null, ''] }), { customList: ['a', 'b'] });
+  assert.equal(repairLatin1Mojibake(mojibakeSample), '文字化け復元A');
+  assert.equal(repairLatin1Mojibake('日本語'), '日本語');
+  assert.equal(repairLatin1Mojibake('ÿ'), 'ÿ');
+  assert.deepEqual(normalizeStringArray(`ignored-dir-a|${mojibakeSample}`), ['ignored-dir-a', '文字化け復元A']);
+  assert.deepEqual(normalizeStringArray(null), []);
   assert.deepEqual(normalizeSettings(null), {});
   const file = await tempPath('setting.json');
   const store = createSettingsStore(file);
-  await store.write({ db_name: 'sound', websocket_retry_count: 7 });
-  assert.deepEqual(await store.read(), { db_name: 'sound', websocket_retry_count: '7' });
+  await store.write({ db_name: 'sound', websocket_retry_count: 7, exclusionPaths: ['除外パスC', '除外パスB'] });
+  assert.deepEqual(await store.read(), { db_name: 'sound', websocket_retry_count: '7', exclusionPaths: ['除外パスC', '除外パスB'] });
+  await fs.writeFile(file, JSON.stringify({ exclusionPaths: [mojibakeSample] }));
+  assert.deepEqual(await store.read(), { exclusionPaths: ['文字化け復元A'] });
   await fs.writeFile(file, `\uFEFF${JSON.stringify({ db_name: 'sound-bom' })}`);
   assert.deepEqual(await store.read(), { db_name: 'sound-bom' });
   assert.equal(stripBom('\uFEFF{"ok":true}'), '{"ok":true}');
@@ -52,7 +66,10 @@ test('LockService reports in-memory registration and worker states', async () =>
 });
 
 test('http helpers parse forms, multipart bodies, route requests, and write response types', async () => {
-  assert.deepEqual(parseForm('a=1&a=2&sounds[]=x&sounds[]=y'), { a: ['1', '2'], sounds: ['x', 'y'] });
+  assert.deepEqual(parseForm('a=1&a=2&sounds[]=x&sounds[]=y&SearchWord=%E6%A4%9C%E7%B4%A2%E8%AA%9EA'), { a: ['1', '2'], sounds: ['x', 'y'], SearchWord: '検索語A' });
+  assert.deepEqual(parseForm(''), {});
+  assert.deepEqual(parseForm('flag&encoded=a%2Bb+c'), { flag: '', encoded: 'a+b c' });
+  assert.equal(decodeMultipartText(Buffer.from('テスト音源.wav', 'utf8').toString('binary')), 'テスト音源.wav');
   assert.deepEqual(parseMultipart('body', 'multipart/form-data'), {});
   const noFileMultipart = [
     '--abc',
@@ -86,7 +103,7 @@ test('http helpers parse forms, multipart bodies, route requests, and write resp
     '',
     's2',
     '--abc',
-    'Content-Disposition: form-data; name="impulseResponse"; filename="a.wav"',
+    `Content-Disposition: form-data; name="impulseResponse"; filename="${Buffer.from('テスト音源.wav', 'utf8').toString('binary')}"`,
     '',
     'data',
     '--abc--',
@@ -94,6 +111,7 @@ test('http helpers parse forms, multipart bodies, route requests, and write resp
   ].join('\r\n');
   const parsedMultipart = parseMultipart(multipart, 'multipart/form-data; boundary=abc');
   assert.deepEqual(parsedMultipart.fields, { method: 'create', sounds: ['s1', 's2'] });
+  assert.equal(parsedMultipart.impulseResponse.filename, 'テスト音源.wav');
   assert.equal(parsedMultipart.impulseResponse.mime, 'application/octet-stream');
 
   const handlers = {
@@ -128,6 +146,9 @@ test('http helpers parse forms, multipart bodies, route requests, and write resp
   const streamRes = fakeWritableResponse();
   await writeResponse(streamRes, { status: 206, headers: {}, body: { streamPath: streamFile, range: { start: 1, end: 3 } } });
   assert.equal(streamRes.body.toString(), 'bcd');
+  const fullStreamRes = fakeWritableResponse();
+  await streamFileResponse(fullStreamRes, streamFile);
+  assert.equal(fullStreamRes.body.toString(), 'abcdef');
 
   const errorRes = fakeWritableResponse();
   await assert.rejects(streamFileResponse(errorRes, path.join(path.dirname(streamFile), 'missing.txt')), /File not found/);
@@ -140,7 +161,7 @@ test('http helpers parse forms, multipart bodies, route requests, and write resp
 
 test('toApiRequest reads json urlencoded multipart and readBody error branches', async () => {
   assert.deepEqual((await toApiRequest(fakeRequest('/x?a=1', 'GET', '', ''))).query, { a: '1' });
-  assert.deepEqual((await toApiRequest(fakeRequest('/x', 'POST', 'a=1', 'application/x-www-form-urlencoded'))).form, { a: '1' });
+  assert.deepEqual((await toApiRequest(fakeRequest('/x', 'POST', 'a=1&SearchWord=%E6%A4%9C%E7%B4%A2%E8%AA%9EB', 'application/x-www-form-urlencoded'))).form, { a: '1', SearchWord: '検索語B' });
   assert.deepEqual((await toApiRequest(fakeRequest('/x', 'POST', '{"a":1}', 'application/json'))).body, { a: 1 });
   assert.equal(await readBody({ body: 'raw-text', headers: {} }), 'raw-text');
   assert.equal(await readBody({ body: Buffer.from('raw-buffer'), headers: {} }), 'raw-buffer');
