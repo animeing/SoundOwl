@@ -63,9 +63,13 @@ export const connectWebSocket = () =>{
 
   SoundOwlProperty.WebSocket.Socket.onmessage = function(event) {
     let websocketData = JSON.parse(event.data);
-    SoundOwlProperty.WebSocket.retryCount = websocketData.context.websocket.retry_count;
-    let retryInterval = websocketData.context.websocket.retry_interval;
-    if (typeof retryInterval !== 'number' || retryInterval < 100 || retryInterval > 5000) {
+    const serverRetryCount = Number(websocketData.context.websocket.retry_count);
+    SoundOwlProperty.WebSocket.retryCount = Number.isInteger(serverRetryCount) && serverRetryCount >= 0
+      ? Math.min(serverRetryCount, maxRetryLimit)
+      : 7;
+    const serverRetryInterval = Number(websocketData.context.websocket.retry_interval);
+    let retryInterval = Number.isFinite(serverRetryInterval) ? Math.floor(serverRetryInterval) : NaN;
+    if (retryInterval < 100 || retryInterval > 5000) {
       console.warn('Invalid retryInterval received. Falling back to default value of 1000ms.');
       retryInterval = 1000;
     }
