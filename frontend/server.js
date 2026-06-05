@@ -92,6 +92,30 @@ function createApp() {
     }
   });
 
+  app.use(['/img', '/sound_create'], async (req, res, next) => {
+    try {
+      const config = await readConfig();
+      const target = new URL(req.originalUrl, config.backendServer);
+      const headers = {};
+      for (const name of ['range', 'accept', 'user-agent']) {
+        if (req.headers[name]) {
+          headers[name] = req.headers[name];
+        }
+      }
+      const response = await fetch(target, { method: req.method, headers });
+      res.status(response.status);
+      for (const name of ['content-type', 'content-length', 'content-range', 'accept-ranges', 'x-cache-load']) {
+        const value = response.headers.get(name);
+        if (value) {
+          res.setHeader(name, value);
+        }
+      }
+      res.send(Buffer.from(await response.arrayBuffer()));
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.use(express.static(projectRoot, {
     extensions: ['html'],
     index: 'index.html',
