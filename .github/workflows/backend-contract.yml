@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "api/**"
+      - "backend-node/**"
       - "parts/**"
       - "sound_create/**"
       - "img/**"
@@ -14,6 +15,7 @@ on:
   pull_request:
     paths:
       - "api/**"
+      - "backend-node/**"
       - "parts/**"
       - "sound_create/**"
       - "img/**"
@@ -47,24 +49,26 @@ jobs:
 
       - name: Create fixture files and settings
         run: |
-          mkdir -p test_scripts/fixtures/music/contract-fixture api/lock parts
+          mkdir -p test_scripts/fixtures/music/contract-fixture api/lock parts backend-node/config
           node test_scripts/fixtures/create_fixture_audio.js test_scripts/fixtures/music/contract-fixture
-          cat > parts/setting.ini <<'INI'
-          db_ip_address='soundowl-db'
-          db_name='sound'
-          db_user='root'
-          db_pass='sound'
-          redis_ip_address='soundowl-redis'
-          sound_directory='/music/contract-fixture'
-          exclusionPaths='RECYCLE.BIN|JRiver Conversion Cache'
-          websocket_retry_count=7
-          websocket_retry_interval=1234
-          INI
+          cat > backend-node/config/settings.json <<'JSON'
+          {
+            "db_ip_address": "soundowl-db",
+            "db_name": "sound",
+            "db_user": "root",
+            "db_pass": "sound",
+            "redis_ip_address": "soundowl-redis",
+            "sound_directory": "/music/contract-fixture",
+            "exclusionPaths": "RECYCLE.BIN|JRiver Conversion Cache",
+            "websocket_retry_count": "7",
+            "websocket_retry_interval": "1234"
+          }
+          JSON
 
-      - name: Start PHP backend stack
+      - name: Start Node backend stack
         env:
           MUSIC_DIR: ${{ github.workspace }}/test_scripts/fixtures/music
-        run: docker compose up -d db redis web websocket
+        run: docker compose up -d db redis backend
 
       - name: Wait for database
         run: |
@@ -83,21 +87,18 @@ jobs:
       - name: Wait for HTTP and WebSocket
         run: |
           for i in {1..60}; do
-            if curl -fsS http://127.0.0.1/api/get_setting.php > /dev/null; then
+            if curl -fsS http://127.0.0.1:3000/api/get_setting.php > /dev/null; then
               exit 0
             fi
             sleep 2
           done
-          docker compose logs web websocket
+          docker compose logs backend
           exit 1
-
-      - name: Run backend worker contract tests
-        run: docker compose exec -T -e SOUNDOWL_CONTRACT_MODE=fixture web node --test test_scripts/backend_worker_contract.test.js
 
       - name: Run backend contract tests
         env:
           SOUNDOWL_CONTRACT_MODE: fixture
-          SOUNDOWL_BASE_URL: http://127.0.0.1
+          SOUNDOWL_BASE_URL: http://127.0.0.1:3000
           SOUNDOWL_WS_URL: ws://127.0.0.1:8080/
         run: node --test test_scripts/backend_contract.test.js
 
