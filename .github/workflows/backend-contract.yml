@@ -73,7 +73,7 @@ jobs:
       - name: Wait for database
         run: |
           for i in {1..60}; do
-            if docker compose exec -T db mariadb-admin ping -uroot -psound --silent; then
+            if docker compose exec -T db mariadb-admin ping -h127.0.0.1 -uroot -psound --silent; then
               exit 0
             fi
             sleep 2
@@ -82,7 +82,7 @@ jobs:
           exit 1
 
       - name: Seed contract fixture data
-        run: docker compose exec -T db mariadb -uroot -psound sound < test_scripts/fixtures/backend_contract_seed.sql
+        run: docker compose exec -T db mariadb -h127.0.0.1 -uroot -psound sound < test_scripts/fixtures/backend_contract_seed.sql
 
       - name: Wait for HTTP and WebSocket
         run: |
