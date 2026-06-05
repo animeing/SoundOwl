@@ -16,7 +16,7 @@ const FIXTURE = {
     db_pass: 'sound',
     redis_ip_address: 'soundowl-redis',
     sound_directory: '/music/contract-fixture',
-    exclusionPaths: 'RECYCLE.BIN|JRiver Conversion Cache',
+    exclusionPaths: ['RECYCLE.BIN', 'JRiver Conversion Cache'],
     websocket_retry_count: '7',
     websocket_retry_interval: '1234',
   },
@@ -626,7 +626,7 @@ test('get_setting returns required runtime configuration keys', async () => {
   assert.ok(json.redis_ip_address.length > 0);
   if (IS_FIXTURE) {
     for (const [key, value] of Object.entries(FIXTURE.settings)) {
-      assert.equal(json[key], value, `setting ${key} should match CI fixture`);
+      assert.deepEqual(json[key], value, `setting ${key} should match CI fixture`);
     }
   }
 });
@@ -751,7 +751,7 @@ test('sound stream supports byte-range boundary requests for a discovered sound'
 
   const firstByte = await fetch(path, { headers: { Range: 'bytes=0-0' } });
   const firstBuffer = Buffer.from(await firstByte.arrayBuffer());
-  assert.equal(firstByte.status, 200);
+  assert.equal(firstByte.status, 206);
   assert.match(firstByte.headers.get('content-type') || '', /^audio\//);
   assert.equal(firstByte.headers.get('accept-ranges'), 'bytes');
   assert.equal(firstByte.headers.get('content-length'), '1');
@@ -874,7 +874,7 @@ test('update_setting rewrites setting.ini with posted values', async () => {
   const setting = await fetchJson('/api/get_setting.php');
   assert.equal(setting.json.websocket_retry_count, '9');
   assert.equal(setting.json.websocket_retry_interval, '4321');
-  assert.equal(setting.json.exclusionPaths, 'NONE');
+  assert.deepEqual(setting.json.exclusionPaths, ['NONE']);
 });
 
 function waitForOpen(socket) {
