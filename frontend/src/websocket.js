@@ -37,6 +37,9 @@ SoundOwlProperty.SoundRegist.RegistDataCount.artist = 0;
 SoundOwlProperty.SoundRegist.RegistDataCount.album = 0;
 
 const maxRetryLimit = 10;
+const defaultRetryInterval = 1000;
+const minRetryInterval = 100;
+const maxRetryInterval = 5000;
 let retryCount = 0;
 let reconnectTimer = null;
 
@@ -68,10 +71,9 @@ export const connectWebSocket = () =>{
       ? Math.min(serverRetryCount, maxRetryLimit)
       : 7;
     const serverRetryInterval = Number(websocketData.context.websocket.retry_interval);
-    let retryInterval = Number.isFinite(serverRetryInterval) ? Math.floor(serverRetryInterval) : NaN;
-    if (retryInterval < 100 || retryInterval > 5000) {
+    const retryInterval = safeRetryInterval(serverRetryInterval);
+    if (retryInterval !== Math.floor(serverRetryInterval)) {
       console.warn('Invalid retryInterval received. Falling back to default value of 1000ms.');
-      retryInterval = 1000;
     }
     SoundOwlProperty.WebSocket.retryInterval = retryInterval;
     SoundOwlProperty.SoundRegist.RegistDataCount.sound = websocketData.context.regist_data_count.sound;
@@ -90,6 +92,7 @@ export const connectWebSocket = () =>{
       SoundOwlProperty.WebSocket.status = false;
       SoundOwlProperty.WebSocket.EventTarget.dispatchEvent(new Event('change'));
     }
+    const retryInterval = safeRetryInterval(SoundOwlProperty.WebSocket.retryInterval);
     reconnectTimer = setTimeout(()=>{
       retryCount++;
       if(retryCount >= SoundOwlProperty.WebSocket.retryCount || retryCount >= maxRetryLimit){
@@ -102,8 +105,20 @@ export const connectWebSocket = () =>{
         return;
       }
       connectWebSocket();
-    }, SoundOwlProperty.WebSocket.retryInterval);
+    }, retryInterval);
   };
+};
+
+const safeRetryInterval = (value) => {
+  const interval = Number(value);
+  if (!Number.isFinite(interval)) {
+    return defaultRetryInterval;
+  }
+  const rounded = Math.floor(interval);
+  if (rounded < minRetryInterval || rounded > maxRetryInterval) {
+    return defaultRetryInterval;
+  }
+  return rounded;
 };
 
 export const reconnectWebSocket = () => {
