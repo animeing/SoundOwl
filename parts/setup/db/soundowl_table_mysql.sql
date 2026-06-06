@@ -129,7 +129,10 @@ CREATE TABLE `sound_play_history` (
   `play_date` datetime NOT NULL,
   PRIMARY KEY (`id`, `play_date`),
   KEY `sound_hash` (`sound_hash`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+PARTITION BY RANGE (TO_DAYS(`play_date`)) (
+  PARTITION p_initial VALUES LESS THAN (TO_DAYS('2023-01-01')) ENGINE = InnoDB
+);
 
 --
 -- Procedure `manage_partitions_and_compact_ids`
