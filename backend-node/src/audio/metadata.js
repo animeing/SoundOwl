@@ -237,6 +237,40 @@ function repairStringCandidates(value, depth = 0) {
   return candidates;
 }
 
+function repairHighBitStrippedCp932Candidates(value) {
+  let candidates = [''];
+  let changed = false;
+
+  for (let index = 0; index < value.length;) {
+    const first = value.charCodeAt(index);
+    const second = index + 1 < value.length ? value.charCodeAt(index + 1) : null;
+
+    if (isHighBitStrippedLeadByte(first) && second !== null && second < 0x80) {
+      const lead = restoreHighBitStrippedLeadByte(first);
+      const trailOptions = [second];
+
+      if (second + 0x80 <= 0xff) {
+        trailOptions.push(second + 0x80);
+      }
+
+      const decodedOptions = [...new Set(trailOptions)]
+        .map((trail) => iconv.decode(Buffer.from([lead, trail]), 'cp932'));
+
+      candidates = candidates
+        .flatMap((prefix) => decodedOptions.map((decoded) => prefix + decoded))
+        .slice(0, 2048);
+
+      changed = true;
+      index += 2;
+      continue;
+    }
+
+    candidates = candidates.map((prefix) => prefix + value[index]);
+    index += 1;
+  }
+
+  return changed ? candidates : [];
+}
 /**
  * CP932 の上位 bit が欠落したように見える文字列を復元します。
  * @param {string} value 復元候補の文字列。
