@@ -244,32 +244,31 @@ function repairStringCandidates(value) {
  * @returns {string} UTF-8 として復元できた場合は decode 後の文字列。該当しない場合は入力値。
  */
 function repairHighBitStrippedUtf8(value) {
-  const bytes = [];
+  let repaired = '';
   let changed = false;
   for (let index = 0; index < value.length;) {
     const first = value.charCodeAt(index);
     const second = index + 1 < value.length ? value.charCodeAt(index + 1) : null;
     const third = index + 2 < value.length ? value.charCodeAt(index + 2) : null;
     if (first >= 0x60 && first <= 0x6f && second !== null && third !== null && second <= 0x3f && third <= 0x3f) {
-      bytes.push(first + 0x80, second + 0x80, third + 0x80);
+      repaired += Buffer.from([first + 0x80, second + 0x80, third + 0x80]).toString('utf8');
       index += 3;
       changed = true;
       continue;
     }
-    if (first >= 0x40 && first <= 0x5f && second !== null && second <= 0x3f) {
-      bytes.push(first + 0x80, second + 0x80);
+    if (first >= 0x40 && first <= 0x5f && second !== null && second <= 0x3f && second !== 0x20) {
+      repaired += Buffer.from([first + 0x80, second + 0x80]).toString('utf8');
       index += 2;
       changed = true;
       continue;
     }
-    bytes.push(first);
+    repaired += value[index];
     index += 1;
   }
   if (!changed) {
     return value;
   }
-  const repaired = Buffer.from(bytes).toString('utf8');
-  return repaired.includes('\uFFFD') ? value : repaired;
+  return repaired;
 }
 
 /**

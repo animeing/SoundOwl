@@ -66,7 +66,7 @@ test('LockService reports in-memory registration and worker states', async () =>
 });
 
 test('http helpers parse forms, multipart bodies, route requests, and write response types', async () => {
-  assert.deepEqual(parseForm('a=1&a=2&sounds[]=x&sounds[]=y&SearchWord=%E6%A4%9C%E7%B4%A2%E8%AA%9EA'), { a: ['1', '2'], sounds: ['x', 'y'], SearchWord: '讀懃ｴ｢隱暸' });
+  assert.deepEqual(parseForm('a=1&a=2&sounds[]=x&sounds[]=y&SearchWord=%E6%A4%9C%E7%B4%A2%E8%AA%9EA'), { a: ['1', '2'], sounds: ['x', 'y'], SearchWord: '???A' });
   assert.deepEqual(parseForm(''), {});
   assert.deepEqual(parseForm('flag&encoded=a%2Bb+c'), { flag: '', encoded: 'a+b c' });
   assert.equal(decodeMultipartText(Buffer.from('繝・せ繝磯浹貅・wav', 'utf8').toString('binary')), '繝・せ繝磯浹貅・wav');
@@ -161,7 +161,7 @@ test('http helpers parse forms, multipart bodies, route requests, and write resp
 
 test('toApiRequest reads json urlencoded multipart and readBody error branches', async () => {
   assert.deepEqual((await toApiRequest(fakeRequest('/x?a=1', 'GET', '', ''))).query, { a: '1' });
-  assert.deepEqual((await toApiRequest(fakeRequest('/x', 'POST', 'a=1&SearchWord=%E6%A4%9C%E7%B4%A2%E8%AA%9EB', 'application/x-www-form-urlencoded'))).form, { a: '1', SearchWord: '讀懃ｴ｢隱曖' });
+  assert.deepEqual((await toApiRequest(fakeRequest('/x', 'POST', 'a=1&SearchWord=%E6%A4%9C%E7%B4%A2%E8%AA%9EB', 'application/x-www-form-urlencoded'))).form, { a: '1', SearchWord: '???B' });
   assert.deepEqual((await toApiRequest(fakeRequest('/x', 'POST', '{"a":1}', 'application/json'))).body, { a: 1 });
   assert.equal(await readBody({ body: 'raw-text', headers: {} }), 'raw-text');
   assert.equal(await readBody({ body: Buffer.from('raw-buffer'), headers: {} }), 'raw-buffer');
