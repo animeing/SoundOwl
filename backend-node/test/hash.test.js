@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import { compressHash, decompressHash, sha1 } from '../src/utils/hash.js';
 import { mapSoundRecord } from '../src/db/repositories/common.js';
 

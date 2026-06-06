@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import { SoundRedis } from '../src/redis/soundRedis.js';
 
 test('SoundRedis enqueues and pops audio processing jobs using node-redis style API', async () => {
