@@ -4,6 +4,42 @@ DELETE FROM playlist_data;
 DELETE FROM sound_link;
 DELETE FROM album;
 DELETE FROM artist;
+SET @target_partition_year = YEAR(CURDATE()) + 1;
+SET @target_partition_name = CONCAT('p_contract_', @target_partition_year);
+SET @target_partition_boundary = CONCAT(@target_partition_year, '-01-01');
+
+SET @sound_play_history_partitions = (
+  SELECT COUNT(*)
+  FROM INFORMATION_SCHEMA.PARTITIONS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'sound_play_history'
+    AND PARTITION_NAME IS NOT NULL
+);
+
+SET @sound_play_history_target_partition_exists = (
+  SELECT COUNT(*)
+  FROM INFORMATION_SCHEMA.PARTITIONS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'sound_play_history'
+    AND PARTITION_NAME = @target_partition_name
+);
+
+SET @sound_play_history_partition_sql = IF(
+  @sound_play_history_partitions > 0
+    AND @sound_play_history_target_partition_exists = 0,
+  CONCAT(
+    'ALTER TABLE sound_play_history ADD PARTITION (',
+    'PARTITION ', @target_partition_name,
+    ' VALUES LESS THAN (TO_DAYS(''',
+    @target_partition_boundary,
+    ''')))'
+  ),
+  'SELECT 1'
+);
+
+PREPARE sound_play_history_partition_stmt FROM @sound_play_history_partition_sql;
+EXECUTE sound_play_history_partition_stmt;
+DEALLOCATE PREPARE sound_play_history_partition_stmt;
 
 INSERT INTO artist (artist_id, artist_name) VALUES
   ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'Alpha Artist'),
