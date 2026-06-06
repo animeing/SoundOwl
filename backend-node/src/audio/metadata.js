@@ -201,12 +201,15 @@ function normalizeTagText(value) {
  * @param {string} value 文字化けしている可能性がある文字列。
  * @returns {string[]} 復元候補の文字列一覧。
  */
-function repairStringCandidates(value) {
+function repairStringCandidates(value, depth = 0) {
   const candidates = [];
-  const highBitStrippedCp932 = repairHighBitStrippedCp932(value);
+  const highBitStrippedCp932 = depth < 2 ? repairHighBitStrippedCp932(value) : value;
+
   if (highBitStrippedCp932 !== value) {
     candidates.push(highBitStrippedCp932);
+    candidates.push(...repairStringCandidates(highBitStrippedCp932, depth + 1));
   }
+
   for (const wrongEncoding of WRONG_STRING_ENCODINGS) {
     let bytes;
     try {
