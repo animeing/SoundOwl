@@ -1,27 +1,58 @@
-version: "3"
 services:
-  web:
-    build: .
-    volumes:
-      - ${MUSIC_DIR}:/music
-      - ./api/lock:/var/www/html/api/lock
-      - ./parts/setting.ini:/var/www/html/parts/setting.ini
-    ports:
-      - "80:80"
+  frontend:
+    build:
+      context: .
+      target: frontend
+    container_name: soundowl-frontend
+    command: npm --prefix frontend start
     environment:
-      REDIS_SERVER: soundowl-redis
-      DB_SERVER: soundowl-db
-      SOUND_PATH: /music
+      FRONTEND_HOST: 0.0.0.0
+      FRONTEND_PORT: 8081
+      FRONTEND_CONFIG_PATH: /app/frontend/config/frontend-settings.json
+      FRONTEND_BACKEND_SERVER_DEFAULT: ${BACKEND_SERVER_URL:-http://192.168.0.135:3000/}
+    ports:
+      - "80:8081"
+    volumes:
+      - ./frontend/config:/app/frontend/config
+    depends_on:
+      - backend
     networks:
       - app-network
+
+  backend:
+    build:
+      context: .
+      target: backend
+    container_name: soundowl-backend
+    command: node backend-node/src/server.js
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      WEBSOCKET_HOST: 0.0.0.0
+      WEBSOCKET_PORT: 8080
+      DB_SERVER: soundowl-db
+      DB_NAME: sound
+      DB_USER: root
+      DB_PASSWORD: sound
+      REDIS_SERVER: soundowl-redis
+      SOUND_PATH: /music
+      SETTINGS_PATH: /app/backend-node/config/settings.json
+      CORS_ALLOW_ORIGINS: "*"
+    ports:
+      - "3000:3000"
+      - "8080:8080"
+    volumes:
+      - ${MUSIC_DIR:-./music}:/music
+      - ./audio_pulse:/app/audio_pulse
+      - ./backend-node/config:/app/backend-node/config
     depends_on:
       - db
       - redis
-      - websocket
-      - que
+    networks:
+      - app-network
 
   db:
-    image: mariadb
+    image: mariadb:11
     container_name: soundowl-db
     environment:
       MYSQL_ROOT_PASSWORD: sound
@@ -30,59 +61,25 @@ services:
       MYSQL_PASSWORD: sound
       MYSQL_ROOT_HOST: "%"
     ports:
-      - "3306:3306/tcp"
+      - "3306:3306"
     hostname: soundowl-db
     restart: always
     networks:
       - app-network
     volumes:
       - db_data:/var/lib/mysql
-      - ./parts/setup/db/soundowl_table_mysql.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./parts/setup/db/soundowl_table_mysql.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   redis:
+    image: redis:7
     container_name: soundowl-redis
-    image: redis
+    hostname: soundowl-redis
     ports:
       - "6379:6379"
     networks:
       - app-network
     volumes:
-      - "./data/redis:/data"
-
-  websocket:
-    build: .
-    command: php /var/www/html/api/sw/server.php
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./api/lock:/var/www/html/api/lock
-      - ./parts/setting.ini:/var/www/html/parts/setting.ini
-    environment:
-      REDIS_SERVER: soundowl-redis
-      DB_SERVER: soundowl-db
-      SOUND_PATH: /music
-    networks:
-      - app-network
-    depends_on:
-      - db
-      - redis
-
-  que:
-    build: .
-    command: php /var/www/html/api/quescript/queueAction.php
-    volumes:
-      - ${MUSIC_DIR}:/music
-      - ./api/lock:/var/www/html/api/lock
-      - ./parts/setting.ini:/var/www/html/parts/setting.ini
-    environment:
-      REDIS_SERVER: soundowl-redis
-      DB_SERVER: soundowl-db
-      SOUND_PATH: /music
-    networks:
-      - app-network
-    depends_on:
-      - db
-      - redis
+      - redis_data:/data
 
 networks:
   app-network:
@@ -90,3 +87,4 @@ networks:
 
 volumes:
   db_data:
+  redis_data:

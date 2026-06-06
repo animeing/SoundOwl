@@ -1,6 +1,8 @@
 import audio from '../audio/AudioPlayer';
 import { BaseFrameWork } from '../base';
 
+const toBoolean = value => value === true || value === 1 || value === '1' || value === 'true';
+
 export const audioParamSave=()=>{
   let localStorageMap = new BaseFrameWork.Storage.Application.LocalStorageMap();
   let saveParams = JSON.stringify(
@@ -26,8 +28,8 @@ export const audioParamLoad=()=>{
   audio.volume = audioParams.volume;
   audio.playList.loopMode = audioParams.loopMode;
   audio.loadGiveUpTime = audioParams.loadGiveUpTime;
-  audio.exAudioEffect.isUse = audioParams.soundSculpt;
-  audio.loudnessNormalize.isUse = audioParams.audioLondnessNormalize;
+  audio.exAudioEffect.isUse = toBoolean(audioParams.soundSculpt);
+  audio.loudnessNormalize.isUse = toBoolean(audioParams.audioLondnessNormalize);
   audio.equalizer.applyEffect(audioParams.equalizerGains);
   audio.inpulseResponseEffect.applyEffect(audioParams.audioIREffect);
 };

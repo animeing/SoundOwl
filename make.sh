@@ -1,63 +1,68 @@
 #!/bin/bash
+set -euo pipefail
 
-# 音楽ファイルのディレクトリをユーザーに尋ねる
-read -r -p "音楽ファイルが保存されているディレクトリのパスを入力してください: " music_dir
-
-# WindowsスタイルのパスをLinuxスタイルに変換
+echo "SoundOwl setup"
+read -r -p "Music directory path: " music_dir
 music_dir="${music_dir//\\//}"
 
-# SMB共有のパスかどうかを確認
-if [[ $music_dir =~ ^//[^/]+/ ]]; then
-  # SMB共有の場合
-  # ユーザー名とパスワードを尋ねる
-  read -p "SMB共有のユーザー名を入力してください: " smb_username
-  read -s -p "SMB共有のパスワードを入力してください: " smb_password
-  echo ""
-
-  # マウントポイントを確認
-  if mountpoint -q /mnt/music; then
-    echo "/mnt/music は既にマウントポイントとして使用されています。"
-    read -r -p "/mnt/music をアンマウントし、再マウントしてもよろしいですか？ (y/n): " response
-    if [[ "$response" != "y" ]]; then
-      echo "操作を中止しました。"
-      exit 1
-    fi
-
-    # アンマウント
-    sudo umount /mnt/music
-  fi
-
-  # マウントポイントを作成（存在しない場合）
-  sudo mkdir -p /mnt/music
-
-  # /etc/fstabにエントリがあるか確認し、削除
-  if grep -qs "^$music_dir" /etc/fstab; then
-    echo "既存のSMB共有エントリを /etc/fstab から削除しています。"
-    sudo sed -i "\|^$music_dir|d" /etc/fstab
-  fi
-
-  # SMB共有をマウント
-  sudo mount -t cifs "$music_dir" /mnt/music -o username="$smb_username",password="$smb_password"
-
-  # /etc/fstabにエントリを追加して自動マウントを設定
-  echo "$music_dir /mnt/music cifs username=$smb_username,password=$smb_password 0 0" | sudo tee -a /etc/fstab
-
-  # Dockerコンテナで使用するパスを設定
-  music_dir=/mnt/music
-else
-  # 通常のディレクトリの場合
-  music_dir=$music_dir
+if [[ -z "$music_dir" ]]; then
+  echo "Music directory is required." >&2
+  exit 1
 fi
 
-# .envファイルを生成
-echo "MUSIC_DIR=${music_dir}" > .env
+resolved_music_dir="$music_dir"
 
-# setting.iniのsound_directoryを更新
-sed -i "s|^sound_directory=.*|sound_directory='${music_dir}'|" ./parts/setting.ini
+if [[ "$music_dir" == //* ]]; then
+  mount_point="/mnt/music"
+  echo "SMB path detected. Mounting to ${mount_point}."
+  echo "fstab persistence is not restored because it stores passwords in plain text."
+  read -r -p "SMB username: " smb_user
+  read -r -s -p "SMB password: " smb_password
+  echo
 
-# 権限の設定
-sudo chown www-data:www-data ./parts/setting.ini
-sudo chown www-data:www-data ./api/lock/
+  if [[ -z "$smb_user" ]]; then
+    echo "SMB username is required." >&2
+    exit 1
+  fi
 
-# Dockerコンテナを起動
-docker-compose up -d
+  sudo mkdir -p "$mount_point"
+
+  if mountpoint -q "$mount_point"; then
+    read -r -p "${mount_point} is already mounted. Remount? [y/N]: " remount_answer
+    if [[ "$remount_answer" =~ ^[Yy]$ ]]; then
+      sudo umount "$mount_point"
+    else
+      echo "Using existing mount."
+      resolved_music_dir="$mount_point"
+    fi
+  fi
+
+  if ! mountpoint -q "$mount_point"; then
+    sudo mount -t cifs "$music_dir" "$mount_point" -o "username=${smb_user},password=${smb_password},iocharset=utf8"
+    resolved_music_dir="$mount_point"
+  fi
+fi
+
+cat > .env <<ENV
+MUSIC_DIR=${resolved_music_dir}
+ENV
+
+mkdir -p backend-node/config frontend/config audio_pulse music
+
+if [[ ! -f backend-node/config/settings.json ]]; then
+  cat > backend-node/config/settings.json <<JSON
+{
+  "db_ip_address": "soundowl-db",
+  "db_name": "sound",
+  "db_user": "root",
+  "db_pass": "sound",
+  "redis_ip_address": "soundowl-redis",
+  "sound_directory": "/music",
+  "exclusionPaths": [],
+  "websocket_retry_count": "7",
+  "websocket_retry_interval": "1234"
+}
+JSON
+fi
+
+docker compose up -d db redis backend frontend

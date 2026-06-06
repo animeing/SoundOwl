@@ -18,6 +18,8 @@ class AudioPlayer{
     this.eventSupport = new EventTarget;
 
     this.audio = new Audio;
+    // Web Audio API でクロスオリジン音源を解析できるよう、src 設定前に CORS モードへ切り替える。
+    this.audio.crossOrigin = 'anonymous';
     /**
      * @type {Playlist}
      */

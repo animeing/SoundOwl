@@ -1,8 +1,13 @@
 <template>
-  <SettingFormComponent ref="formRef" />
+  <SettingFormComponent
+    ref="formRef"
+    :backend-saving="isBackendSaving"
+    :settings-locked="isBackendSaving || !isBackendReady"
+    @backend-update="backendUpdate"
+  />
   <div class="d-flex justify-start mb-6">
     <v-btn
-      :disabled="isAction && !isConnectWebSocket"
+      :disabled="isBackendSaving || !isBackendReady || (isAction && !isConnectWebSocket)"
       :data-hint="isConnectWebSocket
         ? undefined
         : 'The operation cannot be performed because the WebSocket connection has not been established.'"
@@ -11,7 +16,7 @@
     >setting update</v-btn>
     <div style="position: relative; display: inline-block;">
       <v-btn
-        :disabled="isAction && !isConnectWebSocket"
+        :disabled="isBackendSaving || !isBackendReady || (isAction && !isConnectWebSocket)"
         :loading="isAction"
         style="position: relative;"
         :data-hint="isConnectWebSocket
@@ -28,7 +33,8 @@
 import { MessageButtonWindow, MessageWindow, toBoolean } from '../../../base';
 import SettingFormComponent from './SettingFormComponent.vue';
 import { SiteStatus, SoundRegistAction, UpdateSetting } from '../../../page';
-import { SoundOwlProperty } from '../../../websocket';
+import { reconnectWebSocket, SoundOwlProperty } from '../../../websocket';
+import { saveBackendServer } from '../../../utilization/path';
 
 export default {
   name:'SettingServerComponent',
@@ -38,7 +44,9 @@ export default {
   data(){
     return {
       isConnectWebSocket: SoundOwlProperty.WebSocket.status,
-      isAction: false
+      isAction: false,
+      isBackendSaving: false,
+      isBackendReady: true
     };
   },
   created(){
@@ -50,11 +58,32 @@ export default {
     SoundOwlProperty.WebSocket.EventTarget.removeEventListener('update', this.updateProperties);
   },
   methods:{
-    settingUpdate(){
+    async backendUpdate(){
+      this.isBackendSaving = true;
+      this.isBackendReady = false;
+      try {
+        await saveBackendServer(this.$refs.formRef.getBackendServer());
+        const settings = await this.$refs.formRef.reloadBackendSettings();
+        this.$refs.formRef.applyBackendSettings(settings);
+        reconnectWebSocket();
+        this.isBackendReady = true;
+        const message = new MessageWindow();
+        message.value = 'Backend updated.';
+        message.open();
+        message.close(700);
+      } finally {
+        this.isBackendSaving = false;
+      }
+    },
+    async settingUpdate(){
       const formData = this.$refs.formRef.getFormData();
       const updateSetting = new UpdateSetting();
       for(const [key, value] of Object.entries(formData)) {
-        updateSetting.formDataMap.set(key, value);
+        if (Array.isArray(value)) {
+          value.forEach((item) => updateSetting.formDataMap.append(`${key}[]`, item));
+        } else {
+          updateSetting.formDataMap.set(key, value);
+        }
       }
       updateSetting.httpRequestor.addEventListener('success', () => {
         const message = new MessageWindow();

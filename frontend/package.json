@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "eslint-fix": "npx eslint --fix \"src/**/*.{js,vue}\"",
-    "build": "npx webpack --config webpack.config.js"
+    "postinstall": "node scripts/sync-fontisto.js",
+    "sync:fontisto": "node scripts/sync-fontisto.js",
+    "update:fontisto": "npm update fontisto && npm run sync:fontisto",
+    "build": "npx webpack --config webpack.config.js",
+    "start": "node server.js"
   },
   "author": "",
   "license": "MIT",
@@ -15,7 +19,9 @@
     "@ffmpeg/util": "^0.12.1",
     "axios": "^1.6.2",
     "encoding-japanese": "^2.2.0",
+    "express": "^5.1.0",
     "ffmpeg-wasm": "^1.0.1",
+    "fontisto": "^3.0.4",
     "jschardet": "^3.1.4",
     "uglify-js": "^3.19.3",
     "vue": "^3.3.8",

@@ -62,7 +62,11 @@ export default {
         });
         const formData = this.$refs.formRef.getFormData();
         for(const [key, value] of Object.entries(formData)) {
-          updateSetting.formDataMap.set(key, value);
+          if (Array.isArray(value)) {
+            value.forEach((item) => updateSetting.formDataMap.append(`${key}[]`, item));
+          } else {
+            updateSetting.formDataMap.set(key, value);
+          }
         }
         let messageButtonWindow = new MessageButtonWindow();
         messageButtonWindow.value = 'Setting start.';

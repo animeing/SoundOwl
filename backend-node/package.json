@@ -1,0 +1,27 @@
+{
+  "name": "soundowl-backend-node",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "engines": {
+    "node": ">=26 <27"
+  },
+  "dependencies": {
+    "encoding-japanese": "^2.2.0",
+    "express": "^4.21.2",
+    "iconv-lite": "^0.7.2",
+    "music-metadata": "^11.12.3",
+    "mysql2": "^3.11.5",
+    "redis": "^4.7.0",
+    "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.7",
+    "vitest": "^4.1.7"
+  }
+}
