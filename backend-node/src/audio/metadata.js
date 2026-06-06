@@ -203,11 +203,12 @@ function normalizeTagText(value) {
  */
 function repairStringCandidates(value, depth = 0) {
   const candidates = [];
-  const highBitStrippedCp932 = depth < 2 ? repairHighBitStrippedCp932(value) : value;
 
-  if (highBitStrippedCp932 !== value) {
-    candidates.push(highBitStrippedCp932);
-    candidates.push(...repairStringCandidates(highBitStrippedCp932, depth + 1));
+  if (depth < 2) {
+    for (const repaired of repairHighBitStrippedCp932Candidates(value)) {
+      candidates.push(repaired);
+      candidates.push(...repairStringCandidates(repaired, depth + 1));
+    }
   }
 
   for (const wrongEncoding of WRONG_STRING_ENCODINGS) {
@@ -217,19 +218,22 @@ function repairStringCandidates(value, depth = 0) {
     } catch {
       continue;
     }
+
     for (const correctEncoding of BYTE_ENCODINGS) {
       try {
         candidates.push(iconv.decode(bytes, correctEncoding));
       } catch {
-        // 失敗した候補は無視します。
-        }
+        // 無視
+      }
     }
   }
+
   try {
     candidates.push(Buffer.from(value, 'latin1').toString('utf8'));
   } catch {
-    // 失敗した候補は無視します。
-    }
+    // 無視
+  }
+
   return candidates;
 }
 
