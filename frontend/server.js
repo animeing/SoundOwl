@@ -95,7 +95,13 @@ function createApp() {
   app.use(['/img', '/sound_create'], async (req, res, next) => {
     try {
       const config = await readConfig();
-      const target = new URL(req.originalUrl, config.backendServer);
+      const safePath = req.path;
+      if (!safePath.startsWith('/img') && !safePath.startsWith('/sound_create')) {
+        res.status(400).json({ error: 'Invalid proxy path' });
+        return;
+      }
+      const search = new URL(req.url, 'http://localhost').search;
+      const target = new URL(`${safePath}${search}`, config.backendServer);
       const headers = {};
       for (const name of ['range', 'accept', 'user-agent']) {
         if (req.headers[name]) {
