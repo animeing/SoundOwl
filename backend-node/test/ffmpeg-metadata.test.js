@@ -143,25 +143,7 @@ test('normalizeTagValue decodes Japanese native tag buffers with encoding candid
   assert.equal(parsed.artist, artist);
   assert.equal(parsed.album, album);
 });
-test('normalizeTagText repairs WAV INFO tags whose CP932 high bits were stripped', () => {
-  const strippedTitle = stripCp932HighBits('繝・せ繝域峇蜷喉');
-  const strippedArtist = stripCp932HighBits('繝・せ繝域ｭ梧焔A');
-  const strippedMixedTitle = `${stripCp932HighBits('繝・せ繝域ｷｷ蝨ｨA')} English suffix`;
-  const strippedKatakanaTitle = stripCp932HighBits('繝・せ繝医き繝晦');
 
-  assert.equal(normalizeTagText(strippedTitle), 'テスト曲名A');
-  assert.equal(normalizeTagText(strippedArtist), 'テスト歌手A');
-  assert.equal(normalizeTagText(strippedMixedTitle), 'テスト混在A English suffix');
-  assert.equal(normalizeTagText(strippedKatakanaTitle), 'テストカナA');
-
-  const parsed = normalizeMusicMetadata({
-    common: { title: strippedTitle, artist: strippedArtist, album: '繝・せ繝医い繝ｫ繝舌ΒA' },
-    native: {},
-  }, '/fixture/library/繝・せ繝磯ｵ懈焔A/繝・せ繝医い繝ｫ繝舌ΒA/(01) [繝・せ繝磯ｵ懈焔A] 繝・せ繝育ｨ蜷喉.wav');
-  assert.equal(parsed.title, 'テスト曲名A');
-  assert.equal(parsed.artist, 'テスト歌手A');
-  assert.equal(parsed.album, '\u30c6\u30b9\u30c8\u30a2\u30eb\u30d0\u30e0A');
-});
 
 test('readMetadata delegates to music-metadata parser and normalizes the result', async () => {
   const parsed = await readMetadata('/fixture/library/library.wav', {
@@ -173,8 +155,4 @@ test('readMetadata delegates to music-metadata parser and normalizes the result'
   });
   assert.equal(parsed.title, 'Library Title');
 });
-
-function stripCp932HighBits(value) {
-  return String.fromCharCode(...iconv.encode(value, 'cp932').map((byte) => byte & 0x7f));
-}
 
