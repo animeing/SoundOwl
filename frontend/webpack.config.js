@@ -115,7 +115,8 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         { from: 'node_modules/@ffmpeg/core/dist/umd/ffmpeg-core.wasm', to: './' },
-        { from: 'node_modules/@ffmpeg/core/dist/umd/ffmpeg-core.js', to:'./'}
+        { from: 'node_modules/@ffmpeg/core/dist/umd/ffmpeg-core.js', to:'./'},
+        { from: 'node_modules/fontisto/fonts/fontisto/fontisto.ttf', to: '../fonts/fontisto.ttf' }
       ]
     })
   ]

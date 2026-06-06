@@ -5,6 +5,7 @@
     style="height: 100%;width: 100%;"
   >
     <transition-group
+      v-if="!isLyricsVisible"
       name="album-art"
       tag="div"
       class="album-art-container"
@@ -29,7 +30,7 @@
       v-if="isLyricsVisible"
       class="lyrics-view"
     >
-      <pre>{{ lyrics }}</pre>
+      <pre class="lyrics-text">{{ lyrics }}</pre>
     </div>
   </ContextMenu>
 </template>
@@ -188,7 +189,7 @@ export default {
       }
     },
     updateLyrics() {
-      this.lyrics = audio.data.lyrics || 'No lyrics available';
+      this.lyrics = String(audio.data.lyrics || 'No lyrics available').replace(/\\r\\n?/g, '\\n');
     }
   }
 };
@@ -198,6 +199,8 @@ canvas {
   --box-color: #aaa;
 }
 .lyrics-view {
+  position: relative;
+  z-index: 2;
   white-space: pre-wrap;
   padding: 10px;
   font-size: 1.2em;
@@ -209,9 +212,18 @@ canvas {
   height: 100%;
   display: block; /* Ensure the lyrics-view is visible */
 }
+.lyrics-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  font: inherit;
+  color: inherit;
+}
 .album-art-container{
   position:absolute; inset:0;
   overflow:hidden; perspective:1000px;
+  pointer-events: none;
 }
 .album-art-img{
   position:absolute; top:50%; left:50%;

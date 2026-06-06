@@ -18,8 +18,8 @@ let isLoaded = false;
 const ffmpeg = new FFmpeg();
 export async function ffmpegInitalize() {
   await ffmpeg.load({
-    coreURL: await toBlobURL(`${BASE.HOME+'js'}/ffmpeg-core.js`, 'text/javascript'),
-    wasmURL: await toBlobURL(`${BASE.HOME+'js'}/ffmpeg-core.wasm`, 'application/wasm')
+    coreURL: await toBlobURL(`${BASE.FRONT_HOME}js/ffmpeg-core.js`, 'text/javascript'),
+    wasmURL: await toBlobURL(`${BASE.FRONT_HOME}js/ffmpeg-core.wasm`, 'application/wasm')
   });
   isLoaded = true;
 

@@ -1,5 +1,16 @@
 <template>
   <v-container class="settings-form" fluid>
+    <v-card class="box mb-6" style="background: inherit;">
+      <v-card-item>
+        <v-card-title class="text-h6 font-weight-medium">Backend</v-card-title>
+      </v-card-item>
+      <div class="settings-card-body">
+        <v-divider></v-divider>
+        <v-text-field class="settings-field" label="Backend Server" v-model="backendServer" name="backend_server" variant="filled" :disabled="backendSaving" />
+        <v-btn class="ma-2 pa-2" :loading="backendSaving" :disabled="backendSaving" @click="$emit('backend-update')">backend update</v-btn>
+      </div>
+    </v-card>
+
     <v-card class="box mb-12" style="background: inherit;">
       <v-card-item>
         <v-card-title class="text-h6 font-weight-medium">Current Status</v-card-title>
@@ -89,10 +100,10 @@
           </v-card-item>
           <div class="settings-card-body">
             <v-divider></v-divider>
-            <v-text-field class="settings-field" label="IP Address" v-model="ip" name="db_ip_address" variant="filled" />
-            <v-text-field class="settings-field" label="DB Name" v-model="dbName" name="db_name" variant="filled" />
-            <v-text-field class="settings-field" label="User" v-model="user" name="db_user" variant="filled" />
-            <v-text-field class="settings-field" label="Password" v-model="pass" name="db_pass" type="password" variant="filled" />
+            <v-text-field class="settings-field" label="IP Address" v-model="ip" name="db_ip_address" variant="filled" :disabled="settingsLocked" />
+            <v-text-field class="settings-field" label="DB Name" v-model="dbName" name="db_name" variant="filled" :disabled="settingsLocked" />
+            <v-text-field class="settings-field" label="User" v-model="user" name="db_user" variant="filled" :disabled="settingsLocked" />
+            <v-text-field class="settings-field" label="Password" v-model="pass" name="db_pass" type="password" variant="filled" :disabled="settingsLocked" />
           </div>
         </v-card>
       </v-col>
@@ -104,8 +115,8 @@
           </v-card-item>
           <div class="settings-card-body">
             <v-divider></v-divider>
-            <v-text-field class="settings-field" label="Sound Directory" v-model="sound" name="sound_directory" variant="filled" />
-            <v-textarea class="settings-field" label="Exclusion Paths" v-model="exclusionPaths" name="exclusionPaths" rows="4" auto-grow variant="filled" />
+            <v-text-field class="settings-field" label="Sound Directory" v-model="sound" name="sound_directory" variant="filled" :disabled="settingsLocked" />
+            <v-textarea class="settings-field" label="Exclusion Paths" v-model="exclusionPaths" name="exclusionPaths" rows="4" auto-grow variant="filled" :disabled="settingsLocked" />
           </div>
         </v-card>
       </v-col>
@@ -117,8 +128,8 @@
           </v-card-item>
           <div class="settings-card-body">
             <v-divider></v-divider>
-            <v-text-field class="settings-field" label="Retry Count Limit" v-model.number="websocketRetryCount" name="websocket_retry_count" type="number" min="0" max="100" variant="filled" />
-            <v-text-field class="settings-field" label="Reconnection Interval (ms)" v-model.number="websocketRetryIntervalMs" name="websocket_retry_interval" type="number" min="0" max="999999" variant="filled" />
+            <v-text-field class="settings-field" label="Retry Count Limit" v-model.number="websocketRetryCount" name="websocket_retry_count" type="number" min="0" max="100" variant="filled" :disabled="settingsLocked" />
+            <v-text-field class="settings-field" label="Reconnection Interval (ms)" v-model.number="websocketRetryIntervalMs" name="websocket_retry_interval" type="number" min="0" max="999999" variant="filled" :disabled="settingsLocked" />
           </div>
         </v-card>
       </v-col>
@@ -129,11 +140,24 @@
 import { SoundOwlProperty } from '../../../websocket';
 import { GetSetting } from '../../../page';
 import { BaseFrameWork } from '../../../base';
+import { getBackendServer } from '../../../utilization/path';
 export default {
+  emits: ['backend-update'],
+  props: {
+    backendSaving: {
+      type: Boolean,
+      default: false
+    },
+    settingsLocked: {
+      type: Boolean,
+      default: false
+    }
+  },
   
   data() {
     return {
       ip:'',
+      backendServer:getBackendServer(),
       dbName:'',
       user:'',
       pass:'',
@@ -153,24 +177,37 @@ export default {
     };
   },
   mounted() {
-    let getSettingAction = new GetSetting;
-    getSettingAction.httpRequestor.addEventListener('success', event=>{
-      this.ip = event.detail.response.db_ip_address;
-      this.dbName = event.detail.response.db_name;
-      this.user = event.detail.response.db_user;
-      this.pass = event.detail.response.db_pass;
-      this.sound = event.detail.response.sound_directory;
-      this.exclusionPaths = event.detail.response.exclusionPaths.replaceAll('|','\n');
-      this.websocketRetryCount = event.detail.response.websocket_retry_count;
-      this.websocketRetryIntervalMs = event.detail.response.websocket_retry_interval;
-    });
-    getSettingAction.execute();
+    this.reloadBackendSettings();
     SoundOwlProperty.WebSocket.EventTarget.addEventListener('update',this.updateCurrentStatus);
   },
   beforeUnmount() {
     SoundOwlProperty.WebSocket.EventTarget.removeEventListener('update', this.updateCurrentStatus);
   },
   methods:{
+    reloadBackendSettings() {
+      return new Promise((resolve) => {
+        let getSettingAction = new GetSetting;
+        getSettingAction.httpRequestor.addEventListener('success', event=>{
+          this.applyBackendSettings(event.detail.response);
+          resolve(event.detail.response);
+        });
+        getSettingAction.execute();
+      });
+    },
+    applyBackendSettings(settings) {
+      this.ip = settings.db_ip_address;
+      this.backendServer = getBackendServer();
+      this.dbName = settings.db_name;
+      this.user = settings.db_user;
+      this.pass = settings.db_pass;
+      this.sound = settings.sound_directory;
+      this.exclusionPaths = this.toExclusionText(settings.exclusionPaths);
+      this.websocketRetryCount = settings.websocket_retry_count;
+      this.websocketRetryIntervalMs = settings.websocket_retry_interval;
+    },
+    getBackendServer() {
+      return this.backendServer;
+    },
     getFormData() {
       return {
         db_ip_address: this.ip,
@@ -178,10 +215,22 @@ export default {
         db_user: this.user,
         db_pass: this.pass,
         sound_directory: this.sound,
-        exclusionPaths: BaseFrameWork.removeEmptyLines(this.exclusionPaths).replace(/\n/g, '|'),
+        exclusionPaths: this.toExclusionArray(this.exclusionPaths),
         websocket_retry_count: this.websocketRetryCount,
         websocket_retry_interval: this.websocketRetryIntervalMs
       };
+    },
+    toExclusionText(value) {
+      if (Array.isArray(value)) {
+        return value.join('\n');
+      }
+      return String(value || '').replaceAll('|','\n');
+    },
+    toExclusionArray(value) {
+      return BaseFrameWork.removeEmptyLines(value)
+        .split(/\r?\n/)
+        .map((item) => item.trim())
+        .filter(Boolean);
     },
     updateCurrentStatus(){
 

@@ -1,0 +1,11 @@
+.git
+.vs
+.vscode
+frontend/node_modules
+backend-node/node_modules
+backend-node/coverage
+test-results
+vendor
+data
+music
+*.old
