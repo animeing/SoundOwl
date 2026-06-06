@@ -201,16 +201,12 @@ function normalizeTagText(value) {
  * @param {string} value 文字化けしている可能性がある文字列。
  * @returns {string[]} 復元候補の文字列一覧。
  */
-function repairStringCandidates(value, depth = 0) {
+function repairStringCandidates(value) {
   const candidates = [];
-
-  if (depth < 2) {
-    for (const repaired of repairHighBitStrippedCp932Candidates(value)) {
-      candidates.push(repaired);
-      candidates.push(...repairStringCandidates(repaired, depth + 1));
-    }
+  const highBitStrippedCp932 = repairHighBitStrippedCp932(value);
+  if (highBitStrippedCp932 !== value) {
+    candidates.push(highBitStrippedCp932);
   }
-
   for (const wrongEncoding of WRONG_STRING_ENCODINGS) {
     let bytes;
     try {
@@ -218,59 +214,22 @@ function repairStringCandidates(value, depth = 0) {
     } catch {
       continue;
     }
-
     for (const correctEncoding of BYTE_ENCODINGS) {
       try {
         candidates.push(iconv.decode(bytes, correctEncoding));
       } catch {
-        // 無視
-      }
+        // 失敗した候補は無視します。
+        }
     }
   }
-
   try {
     candidates.push(Buffer.from(value, 'latin1').toString('utf8'));
   } catch {
-    // 無視
-  }
-
+    // 失敗した候補は無視します。
+    }
   return candidates;
 }
 
-function repairHighBitStrippedCp932Candidates(value) {
-  let candidates = [''];
-  let changed = false;
-
-  for (let index = 0; index < value.length;) {
-    const first = value.charCodeAt(index);
-    const second = index + 1 < value.length ? value.charCodeAt(index + 1) : null;
-
-    if (isHighBitStrippedLeadByte(first) && second !== null && second < 0x80) {
-      const lead = restoreHighBitStrippedLeadByte(first);
-      const trailOptions = [second];
-
-      if (second + 0x80 <= 0xff) {
-        trailOptions.push(second + 0x80);
-      }
-
-      const decodedOptions = [...new Set(trailOptions)]
-        .map((trail) => iconv.decode(Buffer.from([lead, trail]), 'cp932'));
-
-      candidates = candidates
-        .flatMap((prefix) => decodedOptions.map((decoded) => prefix + decoded))
-        .slice(0, 2048);
-
-      changed = true;
-      index += 2;
-      continue;
-    }
-
-    candidates = candidates.map((prefix) => prefix + value[index]);
-    index += 1;
-  }
-
-  return changed ? candidates : [];
-}
 /**
  * CP932 の上位 bit が欠落したように見える文字列を復元します。
  * @param {string} value 復元候補の文字列。
