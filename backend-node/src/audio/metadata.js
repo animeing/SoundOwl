@@ -291,7 +291,8 @@ function restoreHighBitStrippedTrailByte(strippedLead, trail) {
  * @returns {boolean} 0x01-0x1f の範囲なら true。
  */
 function isHighBitStrippedLeadByte(code) {
-  return code >= 0x01 && code <= 0x1f;
+  return (code >= 0x01 && code <= 0x1f)
+    || (code >= 0x60 && code <= 0x7c);
 }
 
 /**
