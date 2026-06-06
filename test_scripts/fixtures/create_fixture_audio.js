@@ -1,4 +1,4 @@
-const fs = require('node:fs');
+﻿const fs = require('node:fs');
 const path = require('node:path');
 
 const outputDir = process.argv[2] || path.join(__dirname, 'music');
@@ -36,4 +36,5 @@ function writeWav(filePath, frequency) {
 for (let index = 1; index <= 8; index += 1) {
   writeWav(path.join(outputDir, `track-${String(index).padStart(2, '0')}.wav`), 220 + index * 20);
 }
+
 

@@ -1,18 +1,24 @@
 /**
- * Node runtime内の登録/解析状態を保持する。
- *
- * PHP時代のlock fileではなく、同一process内で状態を直接管理する。
+ * @typedef {{regist_status:boolean,regist_status_step1:boolean,regist_status_step2:boolean}} LockStatus
+ * 曲登録処理の Step1/Step2 が実行中かどうかを表す状態です。
+ */
+
+/**
+ * Node.js プロセス内で曲登録処理の実行状態を保持するロックサービスです。
+ * ファイルロックではなくカウンタで保持し、同時実行時も最後の release まで実行中として扱います。
  */
 class LockService {
+  /**
+   * Step1/Step2 の実行中カウンタを 0 で初期化します。
+   */
   constructor() {
     this.step1Count = 0;
     this.step2Count = 0;
   }
 
   /**
-   * 登録/音量解析状態を返す。
-   *
-   * @returns {Promise<{regist_status:boolean,regist_status_step1:boolean,regist_status_step2:boolean}>} 状態DTO。
+   * 現在の曲登録処理状態を返します。
+   * @returns {Promise<LockStatus>} Step1 または Step2 が実行中かどうかを示す API 応答用オブジェクト。
    */
   async status() {
     const step1 = this.step1Count > 0;
@@ -25,9 +31,8 @@ class LockService {
   }
 
   /**
-   * 登録処理中フラグを設定する。
-   *
-   * @returns {() => void} フラグ解除関数。
+   * Step1 の実行中カウンタを増やし、処理終了時に呼ぶ release 関数を返します。
+   * @returns {()=>void} Step1 の実行中カウンタを 1 減らす release 関数。
    */
   beginStep1() {
     this.step1Count += 1;
@@ -37,9 +42,8 @@ class LockService {
   }
 
   /**
-   * 音量解析処理中フラグを設定する。
-   *
-   * @returns {() => void} フラグ解除関数。
+   * Step2 の実行中カウンタを増やし、処理終了時に呼ぶ release 関数を返します。
+   * @returns {()=>void} Step2 の実行中カウンタを 1 減らす release 関数。
    */
   beginStep2() {
     this.step2Count += 1;

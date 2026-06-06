@@ -1,4 +1,4 @@
-const test = require('node:test');
+﻿const test = require('node:test');
 const assert = require('node:assert/strict');
 const WebSocket = require('../frontend/node_modules/ws');
 
@@ -365,7 +365,7 @@ test('sound_data missing SoundHash returns an empty array', async () => {
   assert.deepEqual(missing.json, []);
 });
 
-test('sound_data malformed SoundHash preserves the current PHP fatal-error response', async () => {
+test('sound_data malformed SoundHash preserves the current API fatal-error response', async () => {
   const { response, text } = await fetchText('/api/sound_data.php?SoundHash=not-a-real-sound');
   assert.ok([200, 500].includes(response.status));
 });
@@ -392,7 +392,7 @@ test('sound_search finds a current sound by a token derived from live data', asy
   }
 });
 
-test('sound_search handles missing and empty SearchWord according to current PHP behavior', async () => {
+test('sound_search handles missing and empty SearchWord according to current API behavior', async () => {
   const missing = await fetchJson('/api/sound_search.php', { method: 'POST' });
   assert.deepEqual(missing.json, []);
 
@@ -452,7 +452,7 @@ test('album_sounds handles missing and empty AlbumHash as empty results', async 
   assert.deepEqual(empty.json, []);
 });
 
-test('album_sounds malformed AlbumHash preserves the current PHP fatal-error response', async () => {
+test('album_sounds malformed AlbumHash preserves the current API fatal-error response', async () => {
   const { response, text } = await fetchText('/api/album_sounds.php?AlbumHash=not-a-real-album');
   assert.ok([200, 500].includes(response.status));
 });
@@ -514,12 +514,12 @@ test('artist_sounds returns artist tracks in track order and handles missing inp
   assert.deepEqual(missing.json, []);
 });
 
-test('artist_sounds malformed ArtistHash preserves the current PHP fatal-error response', async () => {
+test('artist_sounds malformed ArtistHash preserves the current API fatal-error response', async () => {
   const { response, text } = await fetchText('/api/artist_sounds.php', formRequest({ ArtistHash: 'not-a-real-artist' }));
   assert.ok([200, 500].includes(response.status));
 });
 
-test('artist_list range boundaries return current PHP range behavior', async () => {
+test('artist_list range boundaries return current API range behavior', async () => {
   const normal = await fetchJson('/api/artist_list.php', formRequest({ start: '0', end: '1' }));
   assert.ok(Array.isArray(normal.json));
   assert.equal(normal.json.length, 1);
@@ -770,7 +770,7 @@ test('sound stream returns 404 when media_hash is omitted', async () => {
   assert.equal(response.status, 404);
 });
 
-test('sound stream malformed media_hash preserves the current PHP fatal-error response', async () => {
+test('sound stream malformed media_hash preserves the current API fatal-error response', async () => {
   const response = await fetch(`${BASE_URL}/sound_create/sound.php?media_hash=not-a-real-sound`);
   const text = await response.text();
   assert.ok([200, 500].includes(response.status));
@@ -852,7 +852,7 @@ test('setup_database_table recreates schema successfully in fixture environment'
   assert.deepEqual(json, { status: 'success' });
 });
 
-test('update_setting rewrites setting.ini with posted values', async () => {
+test('update_setting rewrites settings.json with posted values', async () => {
   if (!IS_FIXTURE) {
     return;
   }
@@ -931,3 +931,5 @@ function assertStatusContext(context) {
     assert.equal(context.regist_data_count.analysis_sound, 6);
   }
 }
+
+

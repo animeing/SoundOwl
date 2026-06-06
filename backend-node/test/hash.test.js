@@ -1,8 +1,8 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { compressHash, decompressHash, sha1 } from '../src/utils/hash.js';
 import { mapSoundRecord } from '../src/db/repositories/common.js';
 
-test('compressHash and decompressHash preserve PHP-compatible hashes including zero chunks', () => {
+test('compressHash and decompressHash preserve existing-compatible hashes including zero chunks', () => {
   const raw = '0000000010000000100000001000000010000001';
   const compressed = compressHash(raw);
   assert.equal(compressed, '--------1_-------g_------3v_-----SK_---1');
@@ -23,3 +23,5 @@ test('mapSoundRecord normalizes lyrics line breaks for existing DB rows', () => 
   assert.equal(mapped.lyrics, 'line1\nline2\nline3');
   assert.equal(mapped.artist_id, compressHash('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'));
 });
+
+

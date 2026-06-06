@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -18,8 +18,8 @@ test('response helpers and range predicate return explicit response DTOs', () =>
 });
 
 test('normalizeExclusionPaths accepts JSON array, legacy separators, and Japanese paths', () => {
-  assert.deepEqual(normalizeExclusionPaths(['除外パスA', ' 除外パスB ', '', null]), ['除外パスA', '除外パスB']);
-  assert.deepEqual(normalizeExclusionPaths('除外パスA|除外パスB\r\nignored-dir-a'), ['除外パスA', '除外パスB', 'ignored-dir-a']);
+  assert.deepEqual(normalizeExclusionPaths(['髯､螟悶ヱ繧ｹA', ' 髯､螟悶ヱ繧ｹB ', '', null]), ['髯､螟悶ヱ繧ｹA', '髯､螟悶ヱ繧ｹB']);
+  assert.deepEqual(normalizeExclusionPaths('髯､螟悶ヱ繧ｹA|髯､螟悶ヱ繧ｹB\r\nignored-dir-a'), ['髯､螟悶ヱ繧ｹA', '髯､螟悶ヱ繧ｹB', 'ignored-dir-a']);
   assert.deepEqual(normalizeExclusionPaths(null), []);
 });
 
@@ -57,7 +57,7 @@ test('handlers cover status settings setup sound list detail search play and reg
   const h01 = '8e002bf5f50db0553d82bc67e9225ef2b7ab1611';
   const repository = fullRepositoryMock();
   const settingsStore = {
-    read: vi.fn(async () => ({ sound_directory: '/fixture/library', exclusionPaths: ['skip', '除外パスC', 'ignored-dir-a'] })),
+    read: vi.fn(async () => ({ sound_directory: '/fixture/library', exclusionPaths: ['skip', '髯､螟悶ヱ繧ｹC', 'ignored-dir-a'] })),
     write: vi.fn(async () => {}),
   };
   const schemaService = { create: vi.fn(async () => {}) };
@@ -83,7 +83,7 @@ test('handlers cover status settings setup sound list detail search play and reg
 
   assert.equal((await handlers.siteStatus()).body.regist_data_count.sound, 8);
   assert.equal((await handlers.lockStatus()).body.regist_status, false);
-  assert.deepEqual((await handlers.getSetting()).body, { sound_directory: '/fixture/library', exclusionPaths: ['skip', '除外パスC', 'ignored-dir-a'] });
+  assert.deepEqual((await handlers.getSetting()).body, { sound_directory: '/fixture/library', exclusionPaths: ['skip', '髯､螟悶ヱ繧ｹC', 'ignored-dir-a'] });
   assert.equal((await handlers.updateSetting({ form: { a: 'b' } })).body, '');
   assert.equal(settingsStore.write.mock.calls[0][0].a, 'b');
   assert.deepEqual((await handlers.setupDatabaseTable()).body, { status: 'success' });
@@ -100,7 +100,7 @@ test('handlers cover status settings setup sound list detail search play and reg
   assert.deepEqual((await handlers.soundRegist({ query: { soundhash: compressHash(h01) } })).body, { count: 8 });
   assert.deepEqual((await handlers.soundRegist({ query: {} })).body, { count: 8 });
   assert.equal(registrar.registerDirectory.mock.calls[0][0], '/fixture/library');
-  assert.deepEqual(registrar.registerDirectory.mock.calls[0][1], ['skip', '除外パスC', 'ignored-dir-a']);
+  assert.deepEqual(registrar.registerDirectory.mock.calls[0][1], ['skip', '髯､螟悶ヱ繧ｹC', 'ignored-dir-a']);
 });
 
 test('soundRegist still works when no runtime lock state service is injected', async () => {
@@ -145,17 +145,19 @@ test('handlers cover artist album history playlist pulse media and binary paths'
   assert.deepEqual((await handlers.albumSounds({ query: {} })).body, []);
   assert.deepEqual((await handlers.albumSounds({ query: { AlbumHash: compressHash(h01) } })).body, ['albumSound']);
   assert.deepEqual((await handlers.albumCountList()).body, ['albumCount']);
-  assert.deepEqual((await handlers.historyRangeList({ body: { start: 2, end: 0 } })).body, ['history']);
+  assert.deepEqual((await handlers.historyRangeList({ body: {} })).body, []);
+  assert.deepEqual((await handlers.historyRangeList({ body: { start: 0, end: 50 } })).body, ['history']);
+  assert.deepEqual(repository.listHistory.mock.calls[0], [50, 0]);
 
   assert.equal((await handlers.playlistAction({ form: {} })).status, 400);
   assert.deepEqual((await handlers.playlistAction({ form: { method: 'names' } })).body, ['names']);
   assert.equal((await handlers.playlistAction({ form: { method: 'sounds' } })).status, 400);
-  assert.deepEqual((await handlers.playlistAction({ form: { method: 'sounds', name: 'プレイリストA' } })).body, ['playlistSound']);
+  assert.deepEqual((await handlers.playlistAction({ form: { method: 'sounds', name: '繝励Ξ繧､繝ｪ繧ｹ繝・' } })).body, ['playlistSound']);
   assert.equal((await handlers.playlistAction({ form: { method: 'create', playlist_name: 'p' } })).status, 400);
-  assert.deepEqual((await handlers.playlistAction({ form: { method: 'create', playlist_name: 'プレイリストA', sounds: [compressHash(h01)] } })).body, { status: 'success', detail: 'playlist created.' });
-  assert.deepEqual(repository.createPlaylist.mock.calls[0], ['プレイリストA', [h01]]);
+  assert.deepEqual((await handlers.playlistAction({ form: { method: 'create', playlist_name: '繝励Ξ繧､繝ｪ繧ｹ繝・', sounds: [compressHash(h01)] } })).body, { status: 'success', detail: 'playlist created.' });
+  assert.deepEqual(repository.createPlaylist.mock.calls[0], ['繝励Ξ繧､繝ｪ繧ｹ繝・', [h01]]);
   assert.equal((await handlers.playlistAction({ form: { method: 'delete' } })).status, 400);
-  assert.equal((await handlers.playlistAction({ form: { method: 'delete', name: 'プレイリストA' } })).body, '');
+  assert.equal((await handlers.playlistAction({ form: { method: 'delete', name: '繝励Ξ繧､繝ｪ繧ｹ繝・' } })).body, '');
 
   assert.deepEqual((await handlers.audioPulseDataList()).body, ['pulse.wav']);
   assert.equal((await handlers.audioPulseDataUpload({})).body.status, 'error');
@@ -253,3 +255,4 @@ async function tempJson(value) {
   const file = await tempFile(JSON.stringify(value));
   return file;
 }
+

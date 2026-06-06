@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -10,26 +10,26 @@ import { LockService } from '../src/api/lockService.js';
 import { createHttpServer, corsHeaders, decodeMultipartText, errorResponse, parseForm, parseMultipart, readBody, streamFileResponse, toApiRequest, writeResponse, withCors } from '../src/api/httpServer.js';
 
 test('settingsStore reads and writes JSON settings while preserving Japanese arrays', async () => {
-  const mojibakeSample = Buffer.from('文字化け復元A', 'utf8').toString('latin1');
-  assert.deepEqual(normalizeSettings({ a: 'b', num: 7, empty: null, exclusionPaths: ['除外パスA', '除外パスB'] }), {
+  const mojibakeSample = Buffer.from('譁・ｭ怜喧縺大ｾｩ蜈ア', 'utf8').toString('latin1');
+  assert.deepEqual(normalizeSettings({ a: 'b', num: 7, empty: null, exclusionPaths: ['髯､螟悶ヱ繧ｹA', '髯､螟悶ヱ繧ｹB'] }), {
     a: 'b',
     num: '7',
     empty: '',
-    exclusionPaths: ['除外パスA', '除外パスB'],
+    exclusionPaths: ['髯､螟悶ヱ繧ｹA', '髯､螟悶ヱ繧ｹB'],
   });
   assert.deepEqual(normalizeSettings({ customList: ['a', 'b', null, ''] }), { customList: ['a', 'b'] });
-  assert.equal(repairLatin1Mojibake(mojibakeSample), '文字化け復元A');
-  assert.equal(repairLatin1Mojibake('日本語'), '日本語');
-  assert.equal(repairLatin1Mojibake('ÿ'), 'ÿ');
-  assert.deepEqual(normalizeStringArray(`ignored-dir-a|${mojibakeSample}`), ['ignored-dir-a', '文字化け復元A']);
+  assert.equal(repairLatin1Mojibake(mojibakeSample), '譁・ｭ怜喧縺大ｾｩ蜈ア');
+  assert.equal(repairLatin1Mojibake('譌･譛ｬ隱・), '譌･譛ｬ隱・);
+  assert.equal(repairLatin1Mojibake('ﾃｿ'), 'ﾃｿ');
+  assert.deepEqual(normalizeStringArray(`ignored-dir-a|${mojibakeSample}`), ['ignored-dir-a', '譁・ｭ怜喧縺大ｾｩ蜈ア']);
   assert.deepEqual(normalizeStringArray(null), []);
   assert.deepEqual(normalizeSettings(null), {});
   const file = await tempPath('setting.json');
   const store = createSettingsStore(file);
-  await store.write({ db_name: 'sound', websocket_retry_count: 7, exclusionPaths: ['除外パスC', '除外パスB'] });
-  assert.deepEqual(await store.read(), { db_name: 'sound', websocket_retry_count: '7', exclusionPaths: ['除外パスC', '除外パスB'] });
+  await store.write({ db_name: 'sound', websocket_retry_count: 7, exclusionPaths: ['髯､螟悶ヱ繧ｹC', '髯､螟悶ヱ繧ｹB'] });
+  assert.deepEqual(await store.read(), { db_name: 'sound', websocket_retry_count: '7', exclusionPaths: ['髯､螟悶ヱ繧ｹC', '髯､螟悶ヱ繧ｹB'] });
   await fs.writeFile(file, JSON.stringify({ exclusionPaths: [mojibakeSample] }));
-  assert.deepEqual(await store.read(), { exclusionPaths: ['文字化け復元A'] });
+  assert.deepEqual(await store.read(), { exclusionPaths: ['譁・ｭ怜喧縺大ｾｩ蜈ア'] });
   await fs.writeFile(file, `\uFEFF${JSON.stringify({ db_name: 'sound-bom' })}`);
   assert.deepEqual(await store.read(), { db_name: 'sound-bom' });
   assert.equal(stripBom('\uFEFF{"ok":true}'), '{"ok":true}');
@@ -66,10 +66,10 @@ test('LockService reports in-memory registration and worker states', async () =>
 });
 
 test('http helpers parse forms, multipart bodies, route requests, and write response types', async () => {
-  assert.deepEqual(parseForm('a=1&a=2&sounds[]=x&sounds[]=y&SearchWord=%E6%A4%9C%E7%B4%A2%E8%AA%9EA'), { a: ['1', '2'], sounds: ['x', 'y'], SearchWord: '検索語A' });
+  assert.deepEqual(parseForm('a=1&a=2&sounds[]=x&sounds[]=y&SearchWord=%E6%A4%9C%E7%B4%A2%E8%AA%9EA'), { a: ['1', '2'], sounds: ['x', 'y'], SearchWord: '讀懃ｴ｢隱暸' });
   assert.deepEqual(parseForm(''), {});
   assert.deepEqual(parseForm('flag&encoded=a%2Bb+c'), { flag: '', encoded: 'a+b c' });
-  assert.equal(decodeMultipartText(Buffer.from('テスト音源.wav', 'utf8').toString('binary')), 'テスト音源.wav');
+  assert.equal(decodeMultipartText(Buffer.from('繝・せ繝磯浹貅・wav', 'utf8').toString('binary')), '繝・せ繝磯浹貅・wav');
   assert.deepEqual(parseMultipart('body', 'multipart/form-data'), {});
   const noFileMultipart = [
     '--abc',
@@ -103,7 +103,7 @@ test('http helpers parse forms, multipart bodies, route requests, and write resp
     '',
     's2',
     '--abc',
-    `Content-Disposition: form-data; name="impulseResponse"; filename="${Buffer.from('テスト音源.wav', 'utf8').toString('binary')}"`,
+    `Content-Disposition: form-data; name="impulseResponse"; filename="${Buffer.from('繝・せ繝磯浹貅・wav', 'utf8').toString('binary')}"`,
     '',
     'data',
     '--abc--',
@@ -111,7 +111,7 @@ test('http helpers parse forms, multipart bodies, route requests, and write resp
   ].join('\r\n');
   const parsedMultipart = parseMultipart(multipart, 'multipart/form-data; boundary=abc');
   assert.deepEqual(parsedMultipart.fields, { method: 'create', sounds: ['s1', 's2'] });
-  assert.equal(parsedMultipart.impulseResponse.filename, 'テスト音源.wav');
+  assert.equal(parsedMultipart.impulseResponse.filename, '繝・せ繝磯浹貅・wav');
   assert.equal(parsedMultipart.impulseResponse.mime, 'application/octet-stream');
 
   const handlers = {
@@ -161,7 +161,7 @@ test('http helpers parse forms, multipart bodies, route requests, and write resp
 
 test('toApiRequest reads json urlencoded multipart and readBody error branches', async () => {
   assert.deepEqual((await toApiRequest(fakeRequest('/x?a=1', 'GET', '', ''))).query, { a: '1' });
-  assert.deepEqual((await toApiRequest(fakeRequest('/x', 'POST', 'a=1&SearchWord=%E6%A4%9C%E7%B4%A2%E8%AA%9EB', 'application/x-www-form-urlencoded'))).form, { a: '1', SearchWord: '検索語B' });
+  assert.deepEqual((await toApiRequest(fakeRequest('/x', 'POST', 'a=1&SearchWord=%E6%A4%9C%E7%B4%A2%E8%AA%9EB', 'application/x-www-form-urlencoded'))).form, { a: '1', SearchWord: '讀懃ｴ｢隱曖' });
   assert.deepEqual((await toApiRequest(fakeRequest('/x', 'POST', '{"a":1}', 'application/json'))).body, { a: 1 });
   assert.equal(await readBody({ body: 'raw-text', headers: {} }), 'raw-text');
   assert.equal(await readBody({ body: Buffer.from('raw-buffer'), headers: {} }), 'raw-buffer');
@@ -317,3 +317,4 @@ async function tempPath(name) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'soundowl-settings-'));
   return path.join(dir, name);
 }
+

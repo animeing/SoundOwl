@@ -3,20 +3,18 @@ import crypto from 'node:crypto';
 const COMPRESS_TABLE = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@,.<>[]:;!$()';
 
 /**
- * SHA1ハッシュを16進文字列で返す。
- *
- * @param {string|Buffer} value ハッシュ化する値。現行PHPでは音楽ファイルパス文字列を主に使う。
- * @returns {string} 40桁のSHA1 hex文字列。
+ * 任意の文字列または Buffer から SHA-1 hex 文字列を作成します。
+ * @param {string|Buffer|Uint8Array} value hash 化する値。
+ * @returns {string} 40 桁の SHA-1 hex 文字列。
  */
 function sha1(value) {
   return crypto.createHash('sha1').update(value).digest('hex');
 }
 
 /**
- * PHPの`ComplessUtil::compless`と互換の形式にSHA1 hex文字列を圧縮する。
- *
- * @param {string} hex 40桁想定のhex文字列。9文字ごとのchunkに分割される。
- * @returns {string} `_`区切り、先頭0を`-`で表現した圧縮hash。
+ * SHA-1 hex を既存 API 互換の短縮 hash 表現へ圧縮します。
+ * @param {string} hex SHA-1 などの hex 文字列。
+ * @returns {string} 9 桁ごとの hex chunk を独自 72 進数へ変換し、_ で連結した短縮 hash。
  */
 function compressHash(hex) {
   if (!hex) {
@@ -30,10 +28,9 @@ function compressHash(hex) {
 }
 
 /**
- * PHPの`ComplessUtil::decompless`と互換の形式で圧縮hashをhex文字列へ戻す。
- *
- * @param {string} value `compressHash`が返す圧縮hash。
- * @returns {string} 復元したhex文字列。入力が不正な文字を含む場合、PHP同様に無視されうる。
+ * 独自短縮 hash を元の hex 文字列へ戻します。
+ * @param {string} value _ 区切りの短縮 hash。
+ * @returns {string} 展開した hex 文字列。
  */
 function decompressHash(value) {
   return String(value).split('_').map((chunk) => {
@@ -45,10 +42,9 @@ function decompressHash(value) {
 }
 
 /**
- * 10進BigIntをSoundOwl独自の72進表現へ変換する。
- *
- * @param {bigint} value 変換対象の非負整数。
- * @returns {string} `COMPRESS_TABLE`を桁として使った文字列。
+ * BigInt を短縮 hash 用の独自 72 進数文字列へ変換します。
+ * @param {bigint} value 変換する非負整数。
+ * @returns {string} COMPRESS_TABLE を基数にした文字列。0n の場合は空文字。
  */
 function toCustomBase(value) {
   if (value === 0n) {
@@ -66,10 +62,9 @@ function toCustomBase(value) {
 }
 
 /**
- * SoundOwl独自の72進表現をBigIntへ戻す。
- *
- * @param {string} value `COMPRESS_TABLE`の文字で構成された値。
- * @returns {bigint} 復元した非負整数。不明な文字はPHP実装と同様に寄与しない。
+ * 短縮 hash 用の独自 72 進数文字列を BigInt へ戻します。
+ * @param {string} value COMPRESS_TABLE の文字だけで構成された値。
+ * @returns {bigint} 復元した非負整数。未定義文字は無視します。
  */
 function fromCustomBase(value) {
   let result = 0n;

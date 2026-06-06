@@ -1,23 +1,10 @@
 import { WebSocketServer } from 'ws';
 
 /**
- * @typedef {Object} StatusWebSocketOptions
- * @property {() => Promise<Object>|Object} statusProvider 現在の登録/解析statusを返す関数。
- * @property {number} [intervalMs=5000] PHP WebSocket serverと同じ定期配信間隔ms。
- * @property {typeof WebSocketServer} [WebSocketServerImpl] テストで差し替えるWebSocketServer実装。
- * @property {() => number} [clock=Date.now] message header用の現在時刻msを返す関数。
- * @property {Function} [setIntervalImpl=setInterval] 定期配信用timer関数。
- * @property {Function} [clearIntervalImpl=clearInterval] timer停止関数。
- */
-
-/**
- * PHPの`api/sw/server.php`相当のWebSocket broadcasterを作成する。
- *
- * 接続直後と定期timerで`{time, context}`形式のstatusを送信し、clientからmessageを受けた場合は
- * PHPと同じくstatusへ`message`を追加して全clientへbroadcastする。
- *
- * @param {StatusWebSocketOptions & ({server: import('node:http').Server}|{port:number, host?:string})} options WebSocket server設定。
- * @returns {{server:Object,start:()=>void,stop:()=>Promise<void>,broadcastStatus:(message?:unknown)=>Promise<string>,formatPayload:(context:Object)=>string}} WebSocket runtime。
+ * WebSocket で状態通知を配信するサーバを作成します。
+ * 接続直後に現在状態を送り、以後は interval または受信メッセージを契機に全 client へ配信します。
+ * @param {{statusProvider:()=>Promise<Record<string, any>>,intervalMs?:number,WebSocketServerImpl?:typeof WebSocketServer,clock?:()=>number,setIntervalImpl?:(callback:()=>void,delayMs:number)=>any,clearIntervalImpl?:(timer:any)=>void,server?:import('node:http').Server,port?:number,host?:string}} options 状態取得関数、待受設定、テスト差し替え用の WebSocket/timer 実装。
+ * @returns {{server:any,formatPayload:(context:Record<string, any>)=>string,broadcastStatus:(message?:any)=>Promise<string>,start:()=>void,stop:()=>Promise<void>}} WebSocket サーバと制御関数。
  */
 function createStatusWebSocket(options) {
   const {
@@ -65,6 +52,7 @@ function createStatusWebSocket(options) {
     server,
     formatPayload,
     broadcastStatus,
+    /** @returns {void} 定期配信 timer を開始します。すでに開始済みの場合は何もしません。 */
     start() {
       if (!timer) {
         timer = setIntervalImpl(() => {
@@ -72,6 +60,7 @@ function createStatusWebSocket(options) {
         }, intervalMs);
       }
     },
+    /** @returns {Promise<void>} 定期配信 timer を止め、WebSocket server を close します。 */
     stop() {
       if (timer) {
         clearIntervalImpl(timer);

@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { SoundRedis } from '../src/redis/soundRedis.js';
 
 test('SoundRedis enqueues and pops audio processing jobs using node-redis style API', async () => {
@@ -25,7 +25,7 @@ test('SoundRedis returns null when queue pop times out', async () => {
   assert.equal(await redis.popAudioProcessing(), null);
 });
 
-test('SoundRedis stores album cache and configures current PHP image-cache Redis settings', async () => {
+test('SoundRedis stores album cache and configures current API image-cache Redis settings', async () => {
   const calls = [];
   const store = new Map();
   const redis = new SoundRedis({
@@ -74,3 +74,5 @@ test('SoundRedis restores legacy JSON-stringified Buffer album art cache', async
   assert.deepEqual(cached.album_art, image);
   assert.equal(cached.art_mime, 'image/jpeg');
 });
+
+

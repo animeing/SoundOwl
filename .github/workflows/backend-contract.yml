@@ -3,22 +3,16 @@ name: Backend Contract
 on:
   push:
     paths:
-      - "api/**"
       - "backend-node/**"
       - "parts/**"
-      - "sound_create/**"
-      - "img/**"
       - "test_scripts/**"
       - ".github/workflows/backend-contract.yml"
       - "Dockerfile"
       - "docker-compose.yml"
   pull_request:
     paths:
-      - "api/**"
       - "backend-node/**"
       - "parts/**"
-      - "sound_create/**"
-      - "img/**"
       - "test_scripts/**"
       - ".github/workflows/backend-contract.yml"
       - "Dockerfile"

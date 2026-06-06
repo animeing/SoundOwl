@@ -14,17 +14,21 @@ const MIME_BY_EXTENSION = {
 };
 
 /**
- * 画像表示と音声出力の基礎処理。
- *
- * HTTPレスポンス自体は次段階のAPI adapterで行い、このクラスは
- * MIME、byte range、fallback画像、Redisキャッシュ判定に必要な情報だけを返す。
+ * アルバムアート、プレイリスト画像、音声ストリーム配信の準備を担当するサービスです。
  */
 class MediaService {
   /**
-   * @param {Object} dependencies 依存オブジェクト。
-   * @param {Object} dependencies.repository Album/Playlist/Sound取得用Repository。
-   * @param {Object} dependencies.redis Album art cache用Redis DAO。
-   * @param {string} dependencies.blankImagePath blank画像ファイルパス。
+   * MediaService を初期化します。
+   * @param {{repository:{findAlbumByHash:(albumHash:string)=>Promise<{album_art?:Buffer,art_mime?:string}|null>,findPlaylistData:(playlistName:string)=>Promise<{art?:Buffer}|null>,findSoundByHash:(soundHash:string)=>Promise<{data_link:string}|null>},redis:{configureImageCache:()=>Promise<void>,getCachedAlbum:(albumHash:string)=>Promise<{album_art?:Buffer,art_mime?:string}|null>,cacheAlbum:(albumHash:string, album:Record<string, unknown>)=>Promise<unknown>},blankImagePath:string}} dependencies メディア配信に必要な依存関係。
+   * @param {object} dependencies.repository アルバム、プレイリスト、曲ファイルパスを取得する repository。
+   * @param {Function} dependencies.repository.findAlbumByHash albumHash からアルバム行を取得します。album_art、art_mime を参照します。
+   * @param {Function} dependencies.repository.findPlaylistData playlistName からプレイリスト代表画像を取得します。
+   * @param {Function} dependencies.repository.findSoundByHash soundHash から音声ファイルパス data_link を取得します。
+   * @param {object} dependencies.redis アルバムアートの Redis cache を扱う DAO。
+   * @param {Function} dependencies.redis.configureImageCache Redis の画像 cache 設定を初期化します。
+   * @param {Function} dependencies.redis.getCachedAlbum albumHash の cache 済みアルバム情報を取得します。
+   * @param {Function} dependencies.redis.cacheAlbum albumHash に対応するアルバム情報を cache します。
+   * @param {string} dependencies.blankImagePath アートが存在しない場合に返す代替画像ファイルパス。
    */
   constructor({ repository, redis, blankImagePath }) {
     this.repository = repository;
@@ -33,10 +37,9 @@ class MediaService {
   }
 
   /**
-   * アルバムアートを取得する。存在しなければblank画像を返す。
-   *
-   * @param {string|null|undefined} albumHash album_key。
-   * @returns {Promise<{status:number,mime:string,body:Buffer,cacheLoad:boolean}>} 画像レスポンス相当のDTO。
+   * アルバムハッシュからアルバムアートを取得します。未指定、未登録、画像なしの場合は代替画像を返します。
+   * @param {string|null|undefined} albumHash album.album_key として保存されているアルバム識別子。
+   * @returns {Promise<{status:number,mime:string,body:Buffer,cacheLoad:boolean}>} 配信する画像本文、MIME、HTTP status、Redis cache hit 有無。
    */
   async getAlbumArt(albumHash) {
     if (!albumHash) {
@@ -55,10 +58,9 @@ class MediaService {
   }
 
   /**
-   * プレイリストアートを取得する。存在しなければblank画像を返す。
-   *
-   * @param {string|null|undefined} playlistName プレイリスト名。
-   * @returns {Promise<{status:number,mime:string,body:Buffer,cacheLoad?:boolean}>} 画像レスポンス相当のDTO。
+   * プレイリスト名から代表画像を取得します。未指定または画像なしの場合は代替画像を返します。
+   * @param {string|null|undefined} playlistName 画像を取得するプレイリスト名。
+   * @returns {Promise<{status:number,mime:string,body:Buffer,cacheLoad?:boolean}>} 配信する画像本文、MIME、HTTP status。
    */
   async getPlaylistArt(playlistName) {
     if (!playlistName) {
@@ -72,11 +74,10 @@ class MediaService {
   }
 
   /**
-   * 音声配信用のファイルパス、HTTP status、Range headerを計算する。
-   *
-   * @param {string} soundHash sound_hash。
-   * @param {string|null|undefined} rangeHeader HTTP Range header。例: `bytes=1-1024`。
-   * @returns {Promise<{status:number,headers:Object,path:string|null,range?:{start:number,end:number}}>} 配信準備結果。
+   * 音声配信のためにファイル存在確認、MIME 推定、Range ヘッダー解析を行います。
+   * @param {string} soundHash 再生対象の sound_hash。
+   * @param {string|undefined|null} rangeHeader HTTP Range ヘッダー。未指定の場合はファイル全体を配信範囲にします。
+   * @returns {Promise<{status:number,headers:Record<string,string|number>,path:string|null,range?:{start:number,end:number}}>} HTTP 配信に必要なヘッダー、ファイルパス、byte range。曲またはファイルが存在しない場合は status 404 と path null を返します。
    */
   async prepareSoundStream(soundHash, rangeHeader) {
     const sound = await this.repository.findSoundByHash(soundHash);
@@ -110,9 +111,8 @@ class MediaService {
   }
 
   /**
-   * blank画像を読み込み、画像レスポンスDTOとして返す。
-   *
-   * @returns {Promise<{status:number,mime:string,body:Buffer,cacheLoad:boolean}>} blank画像DTO。
+   * アルバムアートが無い場合に返す代替画像を読み込みます。
+   * @returns {Promise<{status:number,mime:string,body:Buffer,cacheLoad:boolean}>} 代替画像の配信用 DTO。
    */
   async blankImage() {
     return {
@@ -125,11 +125,10 @@ class MediaService {
 }
 
 /**
- * HTTP Range headerを開始/終了byteへ変換する。
- *
- * @param {string|null|undefined} rangeHeader Range header。
- * @param {number} size ファイルサイズ。
- * @returns {{start:number,end:number}} byte範囲。未指定/不正時は全体。
+ * HTTP Range ヘッダーをファイルサイズ内の開始・終了 byte に変換します。
+ * @param {string|undefined|null} rangeHeader `bytes=start-end` 形式の Range ヘッダー。
+ * @param {number} size 対象ファイルの総 byte 数。
+ * @returns {{start:number,end:number}} 配信する byte 範囲。ヘッダー未指定または不正な場合は全体範囲を返します。
  */
 function parseRange(rangeHeader, size) {
   if (!rangeHeader) {
@@ -145,10 +144,9 @@ function parseRange(rangeHeader, size) {
 }
 
 /**
- * 拡張子から最低限のMIMEを推定する。
- *
- * @param {string} filePath ファイルパス。
- * @returns {string} MIME type。不明時は`application/octet-stream`。
+ * ファイル拡張子から配信用 MIME type を推定します。
+ * @param {string} filePath MIME type を判定するファイルパス。
+ * @returns {string} 対応拡張子の MIME type。未対応の場合は application/octet-stream。
  */
 function mimeFromPath(filePath) {
   return MIME_BY_EXTENSION[path.extname(filePath).toLowerCase()] || 'application/octet-stream';

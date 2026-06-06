@@ -1,12 +1,10 @@
 import fs from 'node:fs/promises';
 
 /**
- * MariaDB dump SQLを実行単位に分割する。
- *
- * `DELIMITER //`を使うTRIGGER/PROCEDURE/EVENTを壊さず、1 statementずつDBに渡せる配列へ変換する。
- *
- * @param {string} sql MariaDB dump SQL文字列。
- * @returns {string[]} 実行順を保ったSQL statement配列。
+ * MariaDB の SQL ファイルを実行可能な文単位へ分割します。
+ * DELIMITER ブロックを扱い、コメント行と空文は除外します。
+ * @param {string} sql SQL ファイル全体の文字列。
+ * @returns {string[]} 実行順に並んだ SQL 文一覧。
  */
 function splitMariaDbSql(sql) {
   const statements = [];
@@ -40,11 +38,10 @@ function splitMariaDbSql(sql) {
 }
 
 /**
- * 既存PHPと同じschema SQLを使ってDBとテーブル/VIEW/TRIGGER/EVENTを作成する。
- *
- * @param {{query(sql:string, params?:unknown[]): Promise<unknown>}} db mysql2 Pool/Connection互換のDBオブジェクト。
- * @param {{schemaPath:string, databaseName?:string}} options schema SQLファイルと作成対象DB名。
- * @returns {Promise<void>} 全SQLの実行が完了したらresolveする。SQLエラー時はrejectする。
+ * DB を作成して schema SQL を順番に実行します。
+ * @param {{query:(sql:string)=>Promise<any>}} db mysql2 互換の query 関数を持つ DB クライアント。
+ * @param {{schemaPath:string,databaseName?:string}} options schema ファイルパスと作成対象 DB 名。
+ * @returns {Promise<void>} schema 作成完了後に解決します。
  */
 async function createSchema(db, { schemaPath, databaseName = 'sound' }) {
   const sql = await fs.readFile(schemaPath, 'utf8');
@@ -56,11 +53,10 @@ async function createSchema(db, { schemaPath, databaseName = 'sound' }) {
 }
 
 /**
- * statement候補を配列へ追加する内部処理。
- *
- * @param {string[]} statements 追加先配列。
- * @param {string} buffer statement候補文字列。
- * @returns {void}
+ * バッファに残っている SQL 文を実行対象一覧へ追加します。
+ * @param {string[]} statements 追加先の SQL 文一覧。
+ * @param {string} buffer 現在読み込み中の SQL 断片。
+ * @returns {void} 実行可能な文がある場合だけ statements を更新します。
  */
 function flushBuffer(statements, buffer) {
   const statement = buffer.trim();
@@ -70,10 +66,9 @@ function flushBuffer(statements, buffer) {
 }
 
 /**
- * SQLとして実行すべきstatementか判定する。
- *
- * @param {string} statement 判定対象。
- * @returns {boolean} 空文字と通常コメント行はfalse、MariaDB実行コメントを含むSQLはtrue。
+ * 空文字や SQL コメントだけの行を実行対象から除外します。
+ * @param {string} statement 判定する SQL 文。
+ * @returns {boolean} DB に投げるべき SQL 文の場合は true。
  */
 function isExecutableStatement(statement) {
   if (!statement) {

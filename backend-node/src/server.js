@@ -21,6 +21,12 @@ import { createWorkerLoop } from './runtime/workerLoop.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/**
+ * 環境変数から runtime を構築し、HTTP server だけを返します。
+ * テストや外部起動コードが WebSocket/Worker を直接扱わず API server だけ必要な場合に使います。
+ * @param {NodeJS.ProcessEnv} [env=process.env] process.env 互換の環境変数。
+ * @returns {Promise<import('node:http').Server>} API を処理する HTTP server。
+ */
 async function buildServer(env = process.env) {
   return (await buildRuntime(env)).httpServer;
 }

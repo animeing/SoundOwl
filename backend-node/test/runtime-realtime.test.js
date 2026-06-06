@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { createStatusWebSocket } from '../src/realtime/statusWebSocket.js';
 import { createWorkerLoop } from '../src/runtime/workerLoop.js';
@@ -189,3 +189,4 @@ class FakeConnection extends EventEmitter {
 function nextTick() {
   return new Promise((resolve) => process.nextTick(resolve));
 }
+

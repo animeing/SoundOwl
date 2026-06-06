@@ -6,22 +6,22 @@ const __dirname = path.dirname(__filename);
 
 /**
  * @typedef {Object} BackendConfig
- * @property {{host:string,database:string,user:string,password:string,retry:{attempts:number,delayMs:number}}} db MariaDB 接続設定。
- * @property {{socket:{host:string,port:number}}} redis node-redis 接続設定。
- * @property {string} soundDirectory 音楽ファイルを走査するディレクトリ。PHP の `SOUND_DIRECTORY` 相当。
- * @property {string} blankImagePath アートが無い場合に返す blank PNG のパス。
- * @property {string} placeholderImagePath フロントから直接取得する placeholder WebP のパス。
+ * バックエンド起動時に参照する接続先、ファイル配置、常駐処理の設定です。
+ * @property {{host:string,database:string,user:string,password:string,retry:{attempts:number,delayMs:number}}} db MariaDB 接続情報と起動待ちリトライ設定。
+ * @property {{socket:{host:string,port:number}}} redis Redis 接続情報。
+ * @property {string} soundDirectory 登録対象の音楽ファイルを走査するディレクトリ。
+ * @property {string} blankImagePath アルバムアートがない場合に返す PNG 画像のパス。
+ * @property {string} placeholderImagePath フロントから直接取得する代替 WebP 画像のパス。
  * @property {string} settingsPath JSON 設定ファイルのパス。
- * @property {{allowOrigins:string[]}} cors CORS で許可する Origin の一覧。`*` の場合は全 Origin を許可する。
- * @property {{enabled:boolean,host:string,port:number,intervalMs:number}} websocket WebSocket status broadcaster 設定。
- * @property {{enabled:boolean,timeoutSeconds:number,idleDelayMs:number,errorDelayMs:number}} worker Redis 音量解析 worker loop 設定。
+ * @property {{allowOrigins:string[]}} cors API、画像、音声、WebSocket の CORS 許可 Origin 一覧。
+ * @property {{enabled:boolean,host:string,port:number,intervalMs:number}} websocket WebSocket サーバの起動可否、待受、配信間隔。
+ * @property {{enabled:boolean,timeoutSeconds:number,idleDelayMs:number,errorDelayMs:number}} worker 音量解析ワーカーの起動可否、ロック期限、待機時間。
  */
 
 /**
- * 環境変数から Node backend の実行設定を作成する。
- *
- * @param {NodeJS.ProcessEnv|Object.<string, string|undefined>} [env=process.env] 読み込み元の環境変数。
- * @returns {BackendConfig} DB、Redis、音楽ディレクトリ、ロック、画像、WebSocket、worker の設定。
+ * 環境変数からバックエンド全体の設定を組み立てます。
+ * @param {NodeJS.ProcessEnv} [env=process.env] process.env 互換の環境変数。テストでは任意の値を差し替えます。
+ * @returns {BackendConfig} DB、Redis、静的ファイル、CORS、WebSocket、ワーカー設定をまとめた設定オブジェクト。
  */
 function loadConfig(env = process.env) {
   return {

@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import iconv from 'iconv-lite';
 import { analyzeLoudness, probeMetadata } from '../src/audio/ffmpeg.js';
 import { normalizeMetadata, normalizeMusicMetadata, normalizeTagText, normalizeTagValue, readMetadata } from '../src/audio/metadata.js';
@@ -144,23 +144,23 @@ test('normalizeTagValue decodes Japanese native tag buffers with encoding candid
   assert.equal(parsed.album, album);
 });
 test('normalizeTagText repairs WAV INFO tags whose CP932 high bits were stripped', () => {
-  const strippedTitle = stripCp932HighBits('テスト曲名A');
-  const strippedArtist = stripCp932HighBits('テスト歌手A');
-  const strippedMixedTitle = `${stripCp932HighBits('テスト混在A')} English suffix`;
-  const strippedKatakanaTitle = stripCp932HighBits('テストカナA');
+  const strippedTitle = stripCp932HighBits('繝・せ繝域峇蜷喉');
+  const strippedArtist = stripCp932HighBits('繝・せ繝域ｭ梧焔A');
+  const strippedMixedTitle = `${stripCp932HighBits('繝・せ繝域ｷｷ蝨ｨA')} English suffix`;
+  const strippedKatakanaTitle = stripCp932HighBits('繝・せ繝医き繝晦');
 
-  assert.equal(normalizeTagText(strippedTitle), 'テスト稀名A');
-  assert.equal(normalizeTagText(strippedArtist), 'テスト鵜手A');
-  assert.equal(normalizeTagText(strippedMixedTitle), 'テスト混江A English suffix');
-  assert.equal(normalizeTagText(strippedKatakanaTitle), 'テストカナA');
+  assert.equal(normalizeTagText(strippedTitle), '繝・せ繝育ｨ蜷喉');
+  assert.equal(normalizeTagText(strippedArtist), '繝・せ繝磯ｵ懈焔A');
+  assert.equal(normalizeTagText(strippedMixedTitle), '繝・せ繝域ｷｷ豎蘗 English suffix');
+  assert.equal(normalizeTagText(strippedKatakanaTitle), '繝・せ繝医き繝晦');
 
   const parsed = normalizeMusicMetadata({
-    common: { title: strippedTitle, artist: strippedArtist, album: 'テストアルバムA' },
+    common: { title: strippedTitle, artist: strippedArtist, album: '繝・せ繝医い繝ｫ繝舌ΒA' },
     native: {},
-  }, '/fixture/library/テスト鵜手A/テストアルバムA/(01) [テスト鵜手A] テスト稀名A.wav');
-  assert.equal(parsed.title, 'テスト稀名A');
-  assert.equal(parsed.artist, 'テスト鵜手A');
-  assert.equal(parsed.album, 'テストアルバムA');
+  }, '/fixture/library/繝・せ繝磯ｵ懈焔A/繝・せ繝医い繝ｫ繝舌ΒA/(01) [繝・せ繝磯ｵ懈焔A] 繝・せ繝育ｨ蜷喉.wav');
+  assert.equal(parsed.title, '繝・せ繝育ｨ蜷喉');
+  assert.equal(parsed.artist, '繝・せ繝磯ｵ懈焔A');
+  assert.equal(parsed.album, '繝・せ繝医い繝ｫ繝舌ΒA');
 });
 
 test('readMetadata delegates to music-metadata parser and normalizes the result', async () => {
@@ -177,3 +177,4 @@ test('readMetadata delegates to music-metadata parser and normalizes the result'
 function stripCp932HighBits(value) {
   return String.fromCharCode(...iconv.encode(value, 'cp932').map((byte) => byte & 0x7f));
 }
+

@@ -1,34 +1,33 @@
 import { compressNullableHash, queryRows } from './common.js';
 
 /**
- * albumテーブルと、album基準の一覧表示を扱うDAO。
+ * AlbumRepositoryを扱う class です。
  */
 class AlbumRepository {
-  /**
-   * @param {{query(sql:string, params?:unknown[]): Promise<[unknown[], unknown]|unknown[]>}} db mysql2 Pool/Connection。
-   */
-  constructor(db) {
+/**
+ * 依存関係を受け取って instance を初期化します。
+ * @param {{query:function(string, Array<unknown>=):Promise<unknown>}} db mysql2互換の query 関数を持つ DB client。
+ */
+    constructor(db) {
     this.db = db;
   }
 
-  /**
-   * album titleで候補を検索する。
-   *
-   * @param {string} title album title。
-   * @returns {Promise<Object[]>} 同名album候補。
-   */
-  async findAlbumByTitle(title) {
+    /**
+     * findAlbumByTitle は、指定条件に一致する1件のデータを取得します。
+     * @param {string} title findAlbumByTitle の処理で使用する title。
+     * @returns {Promise<unknown>} findAlbumByTitle の処理結果。
+     */
+    async findAlbumByTitle(title) {
     return queryRows(this.db, 'SELECT * FROM album WHERE title = ?', [title]);
   }
 
-  /**
-   * album一覧を範囲取得する。
-   *
-   * @param {number} start OFFSET。
-   * @param {number} end LIMIT。
-   * @returns {Promise<Object[]>} API表示用album DTO配列。
-   */
-  async listAlbums(start, end) {
+    /**
+     * listAlbums は、指定条件に一致するデータ一覧を取得します。
+     * @param {number} start 取得範囲の開始位置または offset。
+     * @param {number} end 取得範囲の終了位置または limit。
+     * @returns {Promise<unknown[]>} 条件に一致したデータ一覧。
+     */
+    async listAlbums(start, end) {
     const albums = await queryRows(this.db, 'SELECT a.*, r.artist_name FROM album a LEFT JOIN artist r ON a.artist_id = r.artist_id LIMIT ? OFFSET ?', [end, start]);
     return albums.map((album) => ({
       album_key: compressNullableHash(album.album_key),
@@ -40,13 +39,12 @@ class AlbumRepository {
     }));
   }
 
-  /**
-   * albumをsound_linkの合計play_count順で取得する。
-   *
-   * @param {number} [limit=100] 最大件数。
-   * @returns {Promise<Object[]>} `{title, albumKey}`配列。
-   */
-  async listAlbumsByPlayCount(limit = 100) {
+    /**
+     * listAlbumsByPlayCount は、指定条件に一致するデータ一覧を取得します。
+     * @param {number} limit 取得する最大件数。
+     * @returns {Promise<unknown[]>} 条件に一致したデータ一覧。
+     */
+    async listAlbumsByPlayCount(limit = 100) {
     const rows = await queryRows(
       this.db,
       `SELECT album_title AS title, album_hash AS albumKey
@@ -62,24 +60,22 @@ class AlbumRepository {
       .map((row) => ({ title: row.title, albumKey: compressNullableHash(row.albumKey) }));
   }
 
-  /**
-   * album_keyでalbumを1件取得する。
-   *
-   * @param {string} albumHash album_key。
-   * @returns {Promise<Object|null>} album DTO。存在しない場合はnull。
-   */
-  async findAlbumByHash(albumHash) {
+    /**
+     * findAlbumByHash は、指定条件に一致する1件のデータを取得します。
+     * @param {string} albumHash アルバムを一意に識別する album_key または album_hash。
+     * @returns {Promise<unknown>} findAlbumByHash の処理結果。
+     */
+    async findAlbumByHash(albumHash) {
     const rows = await queryRows(this.db, 'SELECT * FROM album WHERE album_key = ?', [albumHash]);
     return rows[0] || null;
   }
 
-  /**
-   * albumを登録する。
-   *
-   * @param {Object} album 登録するalbum DTO。
-   * @returns {Promise<Object>} 登録したalbum DTO。
-   */
-  async insertAlbum(album) {
+    /**
+     * insertAlbum は、新規レコードを DB に追加します。
+     * @param {Record<string, unknown>} album insertAlbum の処理で使用する album。
+     * @returns {Promise<unknown>} insertAlbum の処理結果。
+     */
+    async insertAlbum(album) {
     await queryRows(
       this.db,
       `INSERT INTO album

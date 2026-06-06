@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { waitForMysql } from '../src/db/mysql.js';
 
 test('waitForMysql retries failed connections until a pool connection is available', async () => {
@@ -26,3 +26,4 @@ test('waitForMysql throws the last connection error after retry exhaustion', asy
 
   await assert.rejects(waitForMysql(pool, { attempts: 2, delayMs: 0 }), /still down/);
 });
+

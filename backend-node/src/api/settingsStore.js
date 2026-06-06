@@ -2,16 +2,30 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 /**
- * JSON設定ファイルの読み書きを行う。
- *
- * @param {string} filePath setting JSONのパス。
- * @returns {{read(): Promise<Object.<string,string>>, write(values:Object.<string,unknown>): Promise<void>}} 設定store。
+ * @typedef {Record<string, string|string[]>} RuntimeSettings
+ * フロントから保存され、get_setting.php 相当 API で返す実行時設定です。
+ * 値は文字列、exclusionPaths など複数値の項目は文字列配列として保持します。
+ */
+
+/**
+ * JSON 設定ファイルを読み書きするストアを作成します。
+ * @param {string} filePath 読み書きする settings.json のパス。
+ * @returns {{read:()=>Promise<RuntimeSettings>,write:(values:Record<string, any>)=>Promise<void>}} 設定の読み込みと保存を行うストア。
  */
 function createSettingsStore(filePath) {
   return {
+    /**
+     * 設定ファイルを読み込み、文字列配列や文字化け補正を適用して返します。
+     * @returns {Promise<RuntimeSettings>} 正規化済みの実行時設定。
+     */
     async read() {
       return normalizeSettings(JSON.parse(stripBom(await fs.readFile(filePath, 'utf8'))));
     },
+    /**
+     * 投稿された設定値を正規化して JSON ファイルへ保存します。
+     * @param {Record<string, any>} values フォームまたは JSON body から受け取った設定値。
+     * @returns {Promise<void>} 保存完了後に解決します。
+     */
     async write(values) {
       await fs.mkdir(path.dirname(filePath), { recursive: true });
       await fs.writeFile(filePath, `${JSON.stringify(normalizeSettings(values), null, 2)}\n`);
@@ -20,10 +34,9 @@ function createSettingsStore(filePath) {
 }
 
 /**
- * 設定値をAPI互換の文字列値へ揃える。
- *
- * @param {Object.<string,unknown>} values JSONから読んだ設定値。
- * @returns {Object.<string,string>} API返却/保存用設定値。
+ * 設定値を API 応答と保存に使う形へ正規化します。
+ * @param {Record<string, any>} values フォーム、JSON、設定ファイルから読み込んだ key/value。
+ * @returns {RuntimeSettings} null/undefined を空文字にし、配列項目と文字化けを補正した設定。
  */
 function normalizeSettings(values) {
   const result = {};
@@ -42,12 +55,9 @@ function normalizeSettings(values) {
 }
 
 /**
- * 設定JSON内の配列値を文字列配列へ正規化する。
- *
- * `exclusionPaths` は旧設定の`|`区切り文字列も配列へ移行する。
- *
- * @param {unknown} value 配列、または旧区切り文字列。
- * @returns {string[]} 空値を除いた文字列配列。
+ * パイプ区切り、改行区切り、配列のいずれでも渡される文字列リストを配列へ統一します。
+ * @param {string|string[]|number|boolean|null|undefined} value 設定画面から渡された単一値または複数値。
+ * @returns {string[]} 空要素を除外し、Latin-1 経由の文字化けを補正した文字列配列。
  */
 function normalizeStringArray(value) {
   const items = Array.isArray(value) ? value : String(value || '').split(/[|\r\n]+/);
@@ -58,14 +68,9 @@ function normalizeStringArray(value) {
 }
 
 /**
- * UTF-8文字列をLatin-1として扱ったことで発生した既存設定の文字化けを修復する。
- *
- * 例: `è½èª` -> `落語`。
- * すでに正常な日本語は対象外にするため、全コードポイントがLatin-1範囲内で、
- * 復元後に置換文字がなく、日本語文字を含む場合だけ変換する。
- *
- * @param {string} value 設定値。
- * @returns {string} 修復可能ならUTF-8へ戻した文字列。通常値はそのまま返す。
+ * UTF-8 文字列が Latin-1 として解釈された場合だけ、元の UTF-8 文字列へ戻します。
+ * @param {string} value 補正候補の文字列。
+ * @returns {string} 日本語として復元できた場合は復元後の文字列。それ以外は入力値。
  */
 function repairLatin1Mojibake(value) {
   if (![...value].every((char) => char.codePointAt(0) <= 0xff)) {
@@ -79,10 +84,9 @@ function repairLatin1Mojibake(value) {
 }
 
 /**
- * UTF-8 BOM付きJSONも受け入れるため、先頭BOMだけを取り除く。
- *
- * @param {string} text JSON文字列。
- * @returns {string} JSON.parseへ渡せる文字列。
+ * UTF-8 BOM が付いた JSON を JSON.parse できるように BOM だけを除去します。
+ * @param {string} text ファイルから読み込んだ文字列。
+ * @returns {string} 先頭 BOM を除去した文字列。
  */
 function stripBom(text) {
   return text.replace(/^\uFEFF/, '');

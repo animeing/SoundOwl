@@ -1,18 +1,11 @@
 import { execFile } from 'node:child_process';
 
 /**
- * @typedef {Object} LoudnessAnalysis
- * @property {number|null} mean_volume ffmpeg volumedetectの平均音量dB。解析できない場合はnull。
- * @property {number|null} max_volume ffmpeg volumedetectの最大音量dB。解析できない場合はnull。
- * @property {string} raw ffmpeg stdout/stderrの生出力。診断用。
- */
-
-/**
- * ffmpeg `volumedetect`で音源の音量を解析する。
- *
- * @param {string} filePath 解析対象音源ファイルパス。
- * @param {{execFileImpl?:Function}} [options] テスト時に差し替えるexecFile実装。
- * @returns {Promise<LoudnessAnalysis>} mean/max volumeを含む解析結果。
+ * ffmpeg の volumedetect を実行し、音声ファイルの平均音量と最大音量を解析します。
+ * @param {string} filePath 解析対象の音声ファイルパス。
+ * @param {{execFileImpl?: typeof import('node:child_process').execFile}} [options] ffmpeg 実行関数を差し替えるためのオプション。通常は node:child_process の execFile を使います。
+ * @param {typeof import('node:child_process').execFile} [options.execFileImpl] テスト時に注入する ffmpeg 実行関数。
+ * @returns {Promise<{mean_volume:number|null,max_volume:number|null,raw:string}>} mean_volume は平均音量 dB、max_volume は最大音量 dB、raw は ffmpeg の stdout/stderr 全文です。値を抽出できない項目は null になります。
  */
 function analyzeLoudness(filePath, { execFileImpl = execFile } = {}) {
   return new Promise((resolve, reject) => {
@@ -34,11 +27,11 @@ function analyzeLoudness(filePath, { execFileImpl = execFile } = {}) {
 }
 
 /**
- * ffprobeで音源メタデータをJSONとして取得する。
- *
- * @param {string} filePath 解析対象音源ファイルパス。
- * @param {{execFileImpl?:Function}} [options] テスト時に差し替えるexecFile実装。
- * @returns {Promise<Object>} ffprobeの`-show_format -show_streams` JSON。
+ * ffprobe を実行し、音声ファイルの format と stream 情報を JSON として取得します。
+ * @param {string} filePath メタデータを取得する音声ファイルパス。
+ * @param {{execFileImpl?: typeof import('node:child_process').execFile}} [options] ffprobe 実行関数を差し替えるためのオプション。
+ * @param {typeof import('node:child_process').execFile} [options.execFileImpl] テスト時に注入する ffprobe 実行関数。
+ * @returns {Promise<Record<string, unknown>>} ffprobe の JSON 出力を parse したオブジェクト。
  */
 function probeMetadata(filePath, { execFileImpl = execFile } = {}) {
   return new Promise((resolve, reject) => {

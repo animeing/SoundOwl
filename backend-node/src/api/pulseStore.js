@@ -5,20 +5,25 @@ const PULSE_EXTENSIONS = /\.(wav|mp3)$/i;
 const PULSE_MIME = /^(audio\/wav|audio\/wave|audio\/x-wav|audio\/mpeg)$/i;
 
 /**
- * audio_pulseディレクトリを扱うstore。
+ * @typedef {{filename:string,mime:string,buffer:Buffer}} UploadedPulseFile
+ * audio_pulse_data_upload.php 相当 API で受け取るアップロード済み音声ファイルです。
+ */
+
+/**
+ * 音声波形プリセット用ファイルを保存・一覧・削除するストアです。
  */
 class PulseStore {
   /**
-   * @param {string} directory audio_pulseディレクトリ。
+   * 保存先ディレクトリを指定して PulseStore を初期化します。
+   * @param {string} directory wav/mp3 プリセットファイルを保存するディレクトリ。
    */
   constructor(directory) {
     this.directory = directory;
   }
 
   /**
-   * wav/mp3のpulse file basenameを列挙する。
-   *
-   * @returns {Promise<string[]>} 対応ファイル名配列。
+   * 保存済みの wav/mp3 プリセットファイル名を一覧します。
+   * @returns {Promise<string[]>} 保存先ディレクトリ内のプリセットファイル名一覧。
    */
   async list() {
     await fs.mkdir(this.directory, { recursive: true });
@@ -29,10 +34,9 @@ class PulseStore {
   }
 
   /**
-   * pulse fileを保存する。
-   *
-   * @param {{filename:string,mime:string,buffer:Buffer}} file multipartから取り出したfile。
-   * @returns {Promise<{status:'success'|'error',message:string}>} 保存結果。
+   * アップロードされた wav/mp3 プリセットを保存します。
+   * @param {UploadedPulseFile|null|undefined} file multipart から抽出したファイル。
+   * @returns {Promise<{status:'success'|'error',message:string}>} 保存可否を表す API 応答。
    */
   async upload(file) {
     if (!file?.buffer || !isSupportedPulse(file.filename, file.mime)) {
@@ -44,10 +48,9 @@ class PulseStore {
   }
 
   /**
-   * pulse fileを削除する。
-   *
-   * @param {string} preset 削除対象ファイル名。
-   * @returns {Promise<{status:'success'|'error',message:string}>} 削除結果。
+   * 指定されたプリセットファイルを削除します。
+   * @param {string} preset 削除するプリセットファイル名。
+   * @returns {Promise<{status:'success'|'error',message:string}>} 削除結果を表す API 応答。
    */
   async delete(preset) {
     const target = path.join(this.directory, path.basename(preset));
@@ -61,11 +64,10 @@ class PulseStore {
 }
 
 /**
- * pulse fileとして受け入れ可能か判定する。
- *
- * @param {string} filename ファイル名。
- * @param {string} mime MIME。
- * @returns {boolean} wav/mp3として許可する場合true。
+ * audio_pulse に保存できる拡張子と MIME type か判定します。
+ * @param {string} filename アップロードファイル名。
+ * @param {string} mime multipart の Content-Type。
+ * @returns {boolean} wav/mp3 として許可する場合は true。
  */
 function isSupportedPulse(filename, mime) {
   return PULSE_EXTENSIONS.test(filename || '') && PULSE_MIME.test(mime || '');

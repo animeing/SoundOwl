@@ -6,18 +6,25 @@ import { sha1 } from '../utils/hash.js';
 const SOUND_EXTENSIONS = /\.(mp3|m4a|wav|ogg|flac|ape)$/i;
 
 /**
- * 音楽ファイル登録サービス。
- *
- * PHPの`sound_regist.php`相当の責務を担う。ファイル走査、メタデータ抽出、
- * artist/album/sound_linkの登録、音量解析jobのenqueueまでを行う。
+ * 音楽ディレクトリの走査、タグ読み込み、アーティスト・アルバム・曲データ登録を担当するサービスです。
  */
 class SoundRegistrar {
   /**
-   * @param {Object} dependencies 依存オブジェクト。
-   * @param {import('../db/soundRepository').SoundRepository|Object} dependencies.repository SoundRepository互換DAO。
-   * @param {{enqueueAudioProcessing(job:{file_path:string,hash:string}): Promise<unknown>}} dependencies.redis Redis DAO。
-   * @param {(filePath:string) => Promise<import('../audio/metadata').NormalizedMetadata>} dependencies.metadataReader メタデータ取得関数。
-   * @param {() => Date} [dependencies.clock] 登録時刻を返す関数。テストで固定するため注入可能。
+   * SoundRegistrar を初期化します。
+   * @param {{repository:Record<string, Function>,redis:{enqueueAudioProcessing:(job:{file_path:string,hash:string})=>Promise<unknown>},metadataReader:(filePath:string)=>Promise<{hasTags:boolean,title:string|false,artist:string|false,album:string|false,genre:string|false,lyrics:string|false,track:string|false,year:string|false,picture:{data?:Buffer,mime?:string|null,length?:number|null}|null,raw:unknown}>,clock?:()=>Date}} dependencies 曲登録に必要な依存関係。
+   * @param {object} dependencies.repository 曲、アーティスト、アルバム、件数を読み書きする repository。
+   * @param {Function} dependencies.repository.findSoundByPath data_link から既存曲を検索します。
+   * @param {Function} dependencies.repository.findSoundByHash sound_hash から既存曲を検索します。
+   * @param {Function} dependencies.repository.upsertSound 登録用に組み立てた曲レコードを追加または更新します。
+   * @param {Function} dependencies.repository.findArtistByName アーティスト名から既存アーティストを検索します。
+   * @param {Function} dependencies.repository.insertArtist アーティストを新規登録します。
+   * @param {Function} dependencies.repository.findAlbumByTitle アルバム名から同名アルバム候補を取得します。
+   * @param {Function} dependencies.repository.insertAlbum アルバムを新規登録します。
+   * @param {Function} dependencies.repository.countSounds 登録済み曲数を取得します。
+   * @param {object} dependencies.redis 音量解析キューへ登録ジョブを投入する DAO。
+   * @param {Function} dependencies.redis.enqueueAudioProcessing Step2 の音量解析キューへ {file_path, hash} を投入します。
+   * @param {Function} dependencies.metadataReader 音声ファイルパスから正規化済みメタデータを読み込む関数。
+   * @param {Function} [dependencies.clock] add_time を固定したいテストで差し替える現在時刻取得関数。
    */
   constructor({ repository, redis, metadataReader, clock = () => new Date() }) {
     this.repository = repository;
@@ -27,11 +34,10 @@ class SoundRegistrar {
   }
 
   /**
-   * ディレクトリを再帰走査し、未登録の音楽ファイルを登録する。
-   *
-   * @param {string} rootDirectory 走査対象ディレクトリ。
-   * @param {string[]} [exclusionPaths=[]] 除外する正規表現文字列。PHPの`EXCLUSION_PATHS`相当。
-   * @returns {Promise<{count:number}>} 登録後のsound_link総件数。
+   * 音楽ディレクトリを再帰走査し、未登録の音源ファイルを登録します。
+   * @param {string} rootDirectory 走査を開始する音楽ディレクトリ。
+   * @param {string[]} [exclusionPaths=[]] 走査対象から除外するパス正規表現文字列。
+   * @returns {Promise<{count:number}>} 登録処理後の曲総数。
    */
   async registerDirectory(rootDirectory, exclusionPaths = []) {
     const files = await listSoundFiles(rootDirectory, exclusionPaths);
@@ -50,10 +56,9 @@ class SoundRegistrar {
   }
 
   /**
-   * 既存sound_hashからdata_linkを取得して1曲だけ再登録する。
-   *
-   * @param {string} soundHash 更新対象sound_hash。
-   * @returns {Promise<{count:number}>} 処理後のsound_link総件数。
+   * 既存曲のファイルパスを使ってメタデータを再読み込みし、曲情報を再登録します。
+   * @param {string} soundHash 再登録対象の sound_hash。
+   * @returns {Promise<{count:number}>} 再登録後の曲総数。対象が無い、または再登録失敗時も現在の総数を返します。
    */
   async refreshByHash(soundHash) {
     const sound = await this.repository.findSoundByHash(soundHash);
@@ -69,10 +74,10 @@ class SoundRegistrar {
   }
 
   /**
-   * 1つの音楽ファイルを登録または更新し、音量解析jobをenqueueする。
-   *
-   * @param {string} filePath 登録対象音楽ファイルパス。
-   * @returns {Promise<{action:'inserted'|'updated', sound:Object}|null>} 非対応拡張子ならnull。
+   * 1つの音声ファイルを読み込み、曲・アーティスト・アルバムを DB へ保存し、音量解析キューへ投入します。
+   * @param {string} filePath 登録対象の音声ファイルパス。
+   * @param {string|null} [soundHashOverride=null] 既存曲更新時に使用する sound_hash。未指定時はファイルパスから生成します。
+   * @returns {Promise<unknown|null>} repository.upsertSound の結果。対応拡張子でない場合は null。
    */
   async registerFile(filePath, soundHashOverride = null) {
     if (!SOUND_EXTENSIONS.test(filePath)) {
@@ -89,13 +94,12 @@ class SoundRegistrar {
   }
 
   /**
-   * メタデータと既存行からsound_link DTOを組み立てる。
-   *
-   * @param {string} filePath 音楽ファイルパス。
-   * @param {string} soundHash filePathのSHA1。
-   * @param {import('../audio/metadata').NormalizedMetadata} metadata 正規化済みメタデータ。
-   * @param {Object|null} existing 既存sound_link行。新規時はnull。
-   * @returns {Promise<Object>} SoundLinkDto相当の値。
+   * 正規化済みメタデータと既存曲情報から sound_data 保存用レコードを作成します。
+   * @param {string} filePath 登録対象ファイルパス。
+   * @param {string} soundHash 保存する sound_hash。
+   * @param {{title:string|false,artist:string|false,album:string|false,genre:string|false,lyrics:string|false,track:string|false,year:string|false,picture?:{data?:Buffer,mime?:string|null,length?:number|null}|null}} metadata 正規化済みタグ情報。
+   * @param {{play_count?:number,loudness_target?:number}|null|undefined} existing 既存登録済み曲。再登録時に再生回数と音量解析値を引き継ぎます。
+   * @returns {Promise<Record<string, unknown>>} sound_data へ保存する曲レコード。
    */
   async buildSoundRecord(filePath, soundHash, metadata, existing) {
     const sound = {
@@ -132,10 +136,9 @@ class SoundRegistrar {
   }
 
   /**
-   * アーティストを検索し、存在しなければPHPと同じく名前SHA1で作成する。
-   *
-   * @param {string} artistName アーティスト名。
-   * @returns {Promise<{artist_id:string,artist_name:string}>} アーティストDTO。
+   * アーティスト名から既存アーティストを取得し、無ければ新規作成します。
+   * @param {string} artistName 登録または検索するアーティスト名。
+   * @returns {Promise<{artist_id:string,artist_name:string}>} 登録済みまたは新規作成したアーティスト。
    */
   async findOrCreateArtist(artistName) {
     const existing = await this.repository.findArtistByName(artistName);
@@ -149,12 +152,11 @@ class SoundRegistrar {
   }
 
   /**
-   * アルバムを検索し、artist/year等の一致条件で見つからなければ作成する。
-   *
-   * @param {string} albumTitle アルバムタイトル。
-   * @param {string|null} artistId アーティストID。
-   * @param {import('../audio/metadata').NormalizedMetadata} metadata アルバム作成に使うメタデータ。
-   * @returns {Promise<Object>} AlbumDto相当の値。
+   * アルバム名、アーティスト、画像、年の情報から同一アルバムを探し、無ければ作成します。
+   * @param {string} albumTitle 登録または検索するアルバム名。
+   * @param {string|null} artistId アルバムアーティストの artist_id。タグが無い場合は null。
+   * @param {{year?:string|false,picture?:{data?:Buffer,mime?:string|null,length?:number|null}|null}} metadata 正規化済みタグ情報。画像と年の同一判定にも使います。
+   * @returns {Promise<Record<string, unknown>>} 登録済みまたは新規作成したアルバム。
    */
   async findOrCreateAlbum(albumTitle, artistId, metadata) {
     const existing = await this.repository.findAlbumByTitle(albumTitle);
@@ -179,14 +181,10 @@ class SoundRegistrar {
 }
 
 /**
- * 既存album行と読み取ったタグが同一アルバムか判定する。
- *
- * PHP実装と同じく、artist一致を最優先にし、別artistでもart情報またはyearが一致すれば
- * 同じアルバム候補として扱う。
- *
- * @param {Object} album 既存AlbumDto相当。
- * @param {{artistId:string|null,metadata:Object}} context 比較対象のartist/metadata。
- * @returns {boolean} 同一アルバムと見なせる場合true。
+ * 既存アルバムが今回登録する音源のアルバムと同一か判定します。
+ * @param {{artist_id:string|null,album_art?:Buffer,art_length?:number|null,art_mime?:string|null,year?:string|null}} album DB から取得した同名アルバム候補。
+ * @param {{artistId:string|null,metadata:{year?:string|false,picture?:{data?:Buffer,mime?:string|null,length?:number|null}|null}}} context 今回登録する音源のアーティスト ID とメタデータ。
+ * @returns {boolean} アーティスト ID、画像ハッシュ、年のいずれかが一致すれば true。
  */
 function isSameAlbum(album, { artistId, metadata }) {
   if (album.artist_id === artistId) {
@@ -199,11 +197,10 @@ function isSameAlbum(album, { artistId, metadata }) {
 }
 
 /**
- * アルバムアートのMIME/長さ/内容hashが一致するか判定する。
- *
- * @param {Object} album 既存AlbumDto相当。
- * @param {{data?:Buffer,mime?:string,length?:number}|null} picture 読み取った画像情報。
- * @returns {boolean} アートが同一ならtrue。
+ * 既存アルバム画像と今回のタグ画像が同じ画像か判定します。
+ * @param {{album_art?:Buffer,art_length?:number|null,art_mime?:string|null}} album DB に保存済みのアルバム画像情報。
+ * @param {{data?:Buffer,mime?:string|null,length?:number|null}|null|undefined} picture 今回読み込んだタグ画像。
+ * @returns {boolean} サイズ、MIME、SHA-256 が矛盾なく一致する場合は true。
  */
 function hasSameArtwork(album, picture) {
   if (!picture || !album.album_art) {
@@ -219,21 +216,19 @@ function hasSameArtwork(album, picture) {
 }
 
 /**
- * Buffer互換値のSHA256を返す。
- *
- * @param {Buffer|Uint8Array|string} value hash対象。
- * @returns {string} hex SHA256。
+ * 値の SHA-256 ハッシュを16進文字列で作成します。
+ * @param {string|Buffer|Uint8Array} value ハッシュ化する値。
+ * @returns {string} SHA-256 の16進文字列。
  */
 function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
 /**
- * ディレクトリ配下の対応音楽ファイルを列挙する。
- *
- * @param {string} rootDirectory 走査対象ディレクトリ。
- * @param {string[]} [exclusionPaths=[]] 除外正規表現文字列。
- * @returns {Promise<string[]>} 対応拡張子のファイルパス配列。
+ * 音楽ディレクトリから登録対象の音源ファイル一覧を取得します。
+ * @param {string} rootDirectory 走査を開始するディレクトリ。
+ * @param {string[]} [exclusionPaths=[]] 除外対象を表す正規表現文字列。
+ * @returns {Promise<string[]>} 登録対象拡張子に一致した音源ファイルパス一覧。
  */
 async function listSoundFiles(rootDirectory, exclusionPaths = []) {
   const result = [];
@@ -242,12 +237,11 @@ async function listSoundFiles(rootDirectory, exclusionPaths = []) {
 }
 
 /**
- * 再帰的にファイルを走査する内部処理。
- *
- * @param {string} directory 走査対象ディレクトリ。
- * @param {string[]} result 結果配列。
- * @param {RegExp[]} exclusionPatterns 除外正規表現。
- * @returns {Promise<void>} 走査完了時にresolveする。
+ * ディレクトリを再帰走査し、音源ファイルを result に追加します。
+ * @param {string} directory 現在走査しているディレクトリ。
+ * @param {string[]} result 見つかった音源ファイルパスを蓄積する配列。
+ * @param {RegExp[]} exclusionPatterns 除外判定に使う正規表現配列。
+ * @returns {Promise<void>} 走査完了後に解決します。
  */
 async function walk(directory, result, exclusionPatterns) {
   if (directory.includes('RECYCLE.BIN') || exclusionPatterns.some((pattern) => pattern.test(directory))) {
@@ -266,10 +260,9 @@ async function walk(directory, result, exclusionPatterns) {
 }
 
 /**
- * DateをPHPの`Y-m-d H:i:s`相当へ変換する。
- *
- * @param {Date} date 変換対象日時。
- * @returns {string} `YYYY-MM-DD HH:mm:ss`形式の文字列。
+ * Date を DB の日時文字列 `YYYY-MM-DD HH:mm:ss` へ変換します。
+ * @param {Date} date 変換する日時。
+ * @returns {string} DB保存用の日時文字列。
  */
 function formatDateTime(date) {
   const pad = (value) => String(value).padStart(2, '0');

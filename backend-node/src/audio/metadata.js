@@ -6,26 +6,10 @@ const BYTE_ENCODINGS = ['utf8', 'cp932', 'shift_jis', 'euc-jp', 'latin1', 'win12
 const WRONG_STRING_ENCODINGS = ['cp932', 'shift_jis', 'euc-jp', 'latin1', 'win1252'];
 
 /**
- * @typedef {Object} NormalizedMetadata
- * @property {boolean} hasTags タグが存在したか。
- * @property {string|false} title タイトル。タグがない場合はファイル名。
- * @property {string|false} artist アーティスト名。未検出の場合は false。
- * @property {string|false} album アルバム名。未検出の場合は false。
- * @property {string|false} genre ジャンル。未検出の場合は false。
- * @property {string|false} lyrics 歌詞。未検出の場合は false。
- * @property {string|false} track トラック番号。未検出の場合は false。
- * @property {string|false} year 年または日付の先頭 10 文字。未検出の場合は false。
- * @property {{mime:string|null,length:number|null,data?:Buffer}|null} picture 埋め込み画像の概要。存在しない場合は null。
- * @property {Object} raw 解析元のメタデータ。
- */
-
-/**
- * ffprobe の解析結果を登録処理で扱いやすいメタデータ DTO に正規化する。
- * 通常は music-metadata を優先するが、ffprobe fallback 用に PHP 版の getID3 利用箇所と近い戻り値へ寄せる。
- *
- * @param {Object} probeResult ffprobe が返した JSON オブジェクト。
- * @param {string} filePath タイトル fallback に使う音源ファイルパス。
- * @returns {NormalizedMetadata} 登録処理が扱う正規化済みメタデータ。
+ * ffprobe の解析結果を曲登録用メタデータへ正規化します。
+ * @param {{format?:{tags?:Record<string, unknown>},streams?:Array<{tags?:Record<string, unknown>,disposition?:Record<string, unknown>,codec_name?:string,duration_ts?:number|string}>}} probeResult ffprobe の解析結果。
+ * @param {string} filePath title fallback に使う音声ファイルパス。
+ * @returns {{hasTags:boolean,title:string|false,artist:string|false,album:string|false,genre:string|false,lyrics:string|false,track:string|false,year:string|false,picture:{mime:string|null,length:number|null}|null,raw:unknown}} 登録処理用に正規化したメタデータ。
  */
 function normalizeMetadata(probeResult, filePath) {
   const formatTags = probeResult?.format?.tags || {};
@@ -55,12 +39,10 @@ function normalizeMetadata(probeResult, filePath) {
 }
 
 /**
- * 音源ファイルからタグを読み取り、登録処理用 DTO へ正規化する。
- * music-metadata の parseFile を使い、テストでは parser を差し替えられる。
- *
- * @param {string} filePath 解析対象の音源ファイルパス。
- * @param {{parseFile?:Function}} [options] テスト時に差し替える parser 実装。
- * @returns {Promise<NormalizedMetadata>} 正規化済みメタデータ。
+ * music-metadata で音声ファイルのタグを読み込み、曲登録用メタデータへ正規化します。
+ * @param {string} filePath 読み込み対象の音声ファイルパス。
+ * @param {{parseFile?:(filePath:string, options:Record<string, unknown>)=>Promise<Record<string, unknown>>}} [options={}] テスト時に parser を差し替えるためのオプション。
+ * @returns {Promise<Record<string, unknown>>} 登録処理用に正規化したメタデータ。
  */
 async function readMetadata(filePath, options = {}) {
   const parseFile = options.parseFile || (await import('music-metadata')).parseFile;
@@ -68,12 +50,10 @@ async function readMetadata(filePath, options = {}) {
 }
 
 /**
- * music-metadata の解析結果を PHP getID3 相当の DTO に変換する。
- * common tag を優先し、欠けている場合は native tag から拾う。native tag が Buffer の場合も文字コード候補から復元する。
- *
- * @param {Object} metadata music-metadata の parse 結果。
- * @param {string} filePath タイトル fallback に使う音源ファイルパス。
- * @returns {NormalizedMetadata} 登録処理で使う正規化済みメタデータ。
+ * music-metadata の common/native タグを曲登録用メタデータへ正規化します。
+ * @param {{common?:Record<string, unknown>,native?:Record<string, Array<{id:string,value:unknown}>>}} metadata music-metadata の parse 結果。
+ * @param {string} filePath title fallback に使う音声ファイルパス。
+ * @returns {Record<string, unknown>} 登録処理用に正規化したメタデータ。
  */
 function normalizeMusicMetadata(metadata, filePath) {
   const common = metadata?.common || {};
@@ -101,10 +81,9 @@ function normalizeMusicMetadata(metadata, filePath) {
 }
 
 /**
- * native tag 群から候補名に一致する最初の値を返す。
- *
- * @param {Object.<string, Array<{id:string,value:unknown}>>} native native tag のまとまり。
- * @param {string[]} names 探索する tag 名。大文字小文字は区別しない。
+ * native タグ群から候補名に一致する最初の値を返します。
+ * @param {Record<string, Array<{id:string,value:unknown}>>} native native tag のまとまり。
+ * @param {string[]} names 探索する tag 名。大文字小文字は区別しません。
  * @returns {unknown|false} 見つかった値。存在しない場合は false。
  */
 function firstNativeTag(native, names) {
@@ -120,22 +99,20 @@ function firstNativeTag(native, names) {
 }
 
 /**
- * common/native のどちらかにタグが存在するか判定する。
- *
- * @param {Object} common common tags。
- * @param {Object} native native tags。
- * @returns {boolean} タグが 1 件以上あれば true。
+ * common/native のどちらかにタグが存在するか判定します。
+ * @param {Record<string, any>} common music-metadata の common タグ。
+ * @param {Record<string, Array<{id:string,value:any}>>} native music-metadata の native タグ。
+ * @returns {boolean} 登録に使えるタグが 1 件以上ある場合は true。
  */
 function hasMetadataTags(common, native) {
   return Object.keys(common || {}).length > 0 || Object.values(native || {}).some((tags) => (tags || []).length > 0);
 }
 
 /**
- * 複数のタグ名候補から最初に存在する値を返す。
- *
- * @param {Object.<string, unknown>} tags タグ名と値の object。
- * @param {string[]} names 優先順に並べたタグ名候補。
- * @returns {string|false|unknown} 見つかった値。存在しない場合は false。
+ * ffprobe のタグ集合から候補名に一致する最初の値を取得します。
+ * @param {Record<string, any>} tags ffprobe 由来のタグ key/value。
+ * @param {string[]} names 探索するタグ名候補。
+ * @returns {any|false} 最初に見つかったタグ値。存在しない場合は false。
  */
 function firstTag(tags, names) {
   for (const name of names) {
@@ -147,10 +124,9 @@ function firstTag(tags, names) {
 }
 
 /**
- * 空値を false へ揃え、値がある場合はタグ文字列として正規化する。
- *
- * @param {unknown} value 変換対象の値。
- * @returns {string|false} 正規化済み文字列。値がない場合は false。
+ * 空値を false にし、それ以外のタグ値を表示用文字列へ変換します。
+ * @param {any} value 文字列、Buffer、配列などタグから取得した値。
+ * @returns {string|false} 正規化済み文字列。空値の場合は false。
  */
 function stringOrFalse(value) {
   if (value === false || value === undefined || value === null || value === '') {
@@ -160,11 +136,9 @@ function stringOrFalse(value) {
 }
 
 /**
- * music-metadata が返す歌詞タグを登録用文字列へ正規化する。
- * USLT などは `{ language, descriptor, text }` の object で返るため、通常の `String(value)` に渡すと `[object Object]` になる。
- *
- * @param {unknown} value 歌詞タグ。文字列、object、配列のいずれもあり得る。
- * @returns {string|false} 歌詞本文。未検出の場合は false。
+ * 歌詞タグを表示用文字列へ正規化します。
+ * @param {string|Array<unknown>|{text?:string,lyrics?:string,value?:string}|false|null|undefined} value 歌詞タグ。
+ * @returns {string|false} LF 改行に統一した歌詞本文。未検出の場合は false。
  */
 function normalizeLyrics(value) {
   if (value === false || value === undefined || value === null || value === '') {
@@ -190,21 +164,18 @@ function normalizeLyrics(value) {
 }
 
 /**
- * 歌詞などの複数行テキストの改行コードをブラウザ表示で扱いやすい LF に統一する。
- *
- * @param {string} value 改行コードを含み得る文字列。
- * @returns {string} CRLF/CR を LF に統一した文字列。
+ * CRLF/CR の改行を LF に統一します。
+ * @param {string} value 改行を含む文字列。
+ * @returns {string} LF 改行へ統一した文字列。
  */
 function normalizeLineBreaks(value) {
   return value.replace(/\r\n?/g, '\n');
 }
 
 /**
- * Buffer/string/数値などのタグ値を登録用文字列へ正規化する。
- * Buffer は複数 encoding 候補から最も文字化けが少ない値を選ぶ。string は正しく読めている値を壊さないよう、文字化け候補に見える場合だけ復元を試す。
- *
- * @param {unknown} value タグ値。
- * @returns {string} 正規化済み文字列。
+ * タグ値を文字列へ変換し、Buffer の場合は複数文字コード候補から最良の文字列を選びます。
+ * @param {any} value タグから取得した値。
+ * @returns {string} 文字化け補正を試みた表示用文字列。
  */
 function normalizeTagValue(value) {
   if (Buffer.isBuffer(value) || value instanceof Uint8Array) {
@@ -214,11 +185,9 @@ function normalizeTagValue(value) {
 }
 
 /**
- * タグ文字列が典型的な文字化けに見える場合だけ UTF-8 へ復元する。
- * 正常な日本語や欧文名を無条件変換すると逆に壊れるため、品質が上がる候補だけ採用する。
- *
- * @param {string} value music-metadata または ffprobe から受け取ったタグ文字列。
- * @returns {string} 必要な場合だけ復元したタグ文字列。判断できない場合は元の値。
+ * 文字列タグが文字化けしている場合だけ候補を生成して補正します。
+ * @param {string} value タグ文字列。
+ * @returns {string} 補正後の文字列。補正不要または改善しない場合は入力値。
  */
 function normalizeTagText(value) {
   if (!looksMojibake(value)) {
@@ -228,11 +197,9 @@ function normalizeTagText(value) {
 }
 
 /**
- * 文字列化済み mojibake から復元候補を作る。
- * PHP 版と同じく「誤った encoding で読まれた byte 列を作り直し、正しい encoding として読み直す」方向で候補を評価する。
- *
- * @param {string} value 文字化けした可能性がある文字列。
- * @returns {string[]} 復元候補の配列。
+ * 文字化け文字列に対する復元候補を複数の文字コード経路で生成します。
+ * @param {string} value 文字化けしている可能性がある文字列。
+ * @returns {string[]} 復元候補の文字列一覧。
  */
 function repairStringCandidates(value) {
   const candidates = [];
@@ -251,25 +218,22 @@ function repairStringCandidates(value) {
       try {
         candidates.push(iconv.decode(bytes, correctEncoding));
       } catch {
-        // iconv-lite が未対応の候補は無視する。
-      }
+        // 失敗した候補は無視します。
+        }
     }
   }
   try {
     candidates.push(Buffer.from(value, 'latin1').toString('utf8'));
   } catch {
-    // latin1 経由の復元に失敗した候補は無視する。
-  }
+    // 失敗した候補は無視します。
+    }
   return candidates;
 }
 
 /**
- * CP932 の各 byte から高 bit だけが落ちた WAV INFO タグを復元する。
- * 例: CP932 の `82 A0 82 C8` が `02 20 02 48` として読まれた場合、byte ごとに `0x80` を戻して CP932 として読み直す。
- * ASCII 部分は壊さないよう、制御文字を含む 2 byte 単位の区間だけ復元対象にする。
- *
- * @param {string} value music-metadata または ffprobe が文字列として返したタグ値。
- * @returns {string} 復元できた文字列。対象パターンでなければ元の値。
+ * CP932 の上位 bit が欠落したように見える文字列を復元します。
+ * @param {string} value 復元候補の文字列。
+ * @returns {string} 復元できた場合は CP932 decode 後の文字列。該当しない場合は入力値。
  */
 function repairHighBitStrippedCp932(value) {
   let repaired = '';
@@ -299,22 +263,19 @@ function repairHighBitStrippedCp932(value) {
 }
 
 /**
- * 高 bit が欠落した CP932 lead byte を元に戻す。
- *
- * @param {number} code 高 bit が欠落している可能性がある lead byte。
- * @returns {number} 復元後の CP932 lead byte。
+ * 上位 bit が欠落した CP932 lead byte を元の byte 値へ戻します。
+ * @param {number} code 0x01-0x1f の範囲にある欠落後 lead byte。
+ * @returns {number} 0x80 を加算した lead byte。
  */
 function restoreHighBitStrippedLeadByte(code) {
   return code + 0x80;
 }
 
 /**
- * 高 bit が欠落した CP932 trail byte を必要な場合だけ元に戻す。
- * CP932 の trail byte は元から ASCII 範囲のことがあるため、常に `0x80` を足すと `春` が `畳` になるような誤変換が起きる。
- *
- * @param {number} strippedLead 高 bit が欠落した lead byte。
- * @param {number} trail 判定対象の trail byte。
- * @returns {number} 復元後の CP932 trail byte。
+ * lead byte の種類を見て CP932 trail byte の上位 bit 欠落を補正します。
+ * @param {number} strippedLead 上位 bit が欠落した lead byte。
+ * @param {number} trail trail byte 候補。
+ * @returns {number} 復元後の trail byte。
  */
 function restoreHighBitStrippedTrailByte(strippedLead, trail) {
   const lead = restoreHighBitStrippedLeadByte(strippedLead);
@@ -325,21 +286,18 @@ function restoreHighBitStrippedTrailByte(strippedLead, trail) {
 }
 
 /**
- * 高 bit が欠落した CP932 の先頭 byte らしい値か判定する。
- * CP932 の日本語 2 byte 文字は 0x81-0x9F または 0xE0-0xFC から始まるため、高 bit 欠落後は 0x01-0x1F または 0x60-0x7C に見える。
- *
- * @param {number} code 文字列中の 1 code unit。
- * @returns {boolean} 高 bit 欠落 CP932 の lead byte 候補なら true。
+ * CP932 lead byte の上位 bit が欠落した値か判定します。
+ * @param {number} code 判定する文字コード。
+ * @returns {boolean} 0x01-0x1f の範囲なら true。
  */
 function isHighBitStrippedLeadByte(code) {
   return code >= 0x01 && code <= 0x1f;
 }
 
 /**
- * Buffer tag を複数 encoding 候補で decode し、最も自然な文字列を選ぶ。
- *
- * @param {Buffer} buffer タグの生 byte。
- * @returns {string} decode 結果。
+ * Buffer を複数 encoding で decode し、最も文字化けが少ない候補を返します。
+ * @param {Buffer} buffer タグから取得した raw byte。
+ * @returns {string} 最良と判定した decode 結果。
  */
 function bestDecodedBuffer(buffer) {
   const candidates = [];
@@ -347,25 +305,24 @@ function bestDecodedBuffer(buffer) {
     try {
       candidates.push(iconv.decode(buffer, encoding));
     } catch {
-      // iconv-lite が未対応の候補は無視する。
-    }
+      // 失敗した候補は無視します。
+      }
   }
   const detected = detectJapaneseEncoding(buffer);
   if (detected) {
     try {
       candidates.push(Encoding.codeToString(Encoding.convert([...buffer], { to: 'UNICODE', from: detected })));
     } catch {
-      // encoding-japanese の候補変換に失敗した場合は無視する。
-    }
+      // 失敗した候補は無視します。
+      }
   }
   return bestCandidate(buffer.toString('utf8'), candidates);
 }
 
 /**
- * encoding-japanese で日本語系 encoding を推定する。
- *
- * @param {Buffer} buffer 推定対象 byte。
- * @returns {string|false} 推定された encoding 名。推定できない場合は false。
+ * encoding-japanese で日本語系 encoding を推定します。
+ * @param {Buffer} buffer 判定対象の raw byte。
+ * @returns {string|false} 推定 encoding 名。ASCII または推定不能の場合は false。
  */
 function detectJapaneseEncoding(buffer) {
   const detected = Encoding.detect([...buffer]);
@@ -373,11 +330,10 @@ function detectJapaneseEncoding(buffer) {
 }
 
 /**
- * 候補の中から、元の値より文字化けらしさが少なく、変換不能文字が増えない値を選ぶ。
- *
- * @param {string} original 元の文字列。
- * @param {string[]} candidates 変換候補。
- * @returns {string} 採用した候補。良い候補がない場合は元の値。
+ * 復元候補の中から文字化けスコアが最も低い文字列を選びます。
+ * @param {string} original 補正前の文字列。
+ * @param {string[]} candidates 復元候補。
+ * @returns {string} 最良候補。改善候補がない場合は original。
  */
 function bestCandidate(original, candidates) {
   let best = original;
@@ -393,11 +349,10 @@ function bestCandidate(original, candidates) {
 }
 
 /**
- * 変換不能文字や制御文字が増えた候補を捨てる。
- *
- * @param {string} original 元の文字列。
- * @param {string} candidate 変換候補。
- * @returns {boolean} 採用すべきではない候補なら true。
+ * 候補が元文字列より情報落ちしているか判定します。
+ * @param {string} original 補正前の文字列。
+ * @param {string} candidate 復元候補。
+ * @returns {boolean} 置換文字や制御文字が増えるなど劣化している場合は true。
  */
 function isLossyCandidate(original, candidate) {
   return candidate.includes('\uFFFD')
@@ -406,10 +361,9 @@ function isLossyCandidate(original, candidate) {
 }
 
 /**
- * 文字化けらしさを総合的に数値化する。
- *
- * @param {string} value 評価対象の文字列。
- * @returns {number} 小さいほど自然な文字列。
+ * 文字化けらしさ、置換文字、制御文字、日本語文字数から品質スコアを算出します。
+ * @param {string} value 評価対象文字列。
+ * @returns {number} 小さいほど表示品質が高いスコア。
  */
 function textQualityScore(value) {
   return mojibakeScore(value)
@@ -420,24 +374,22 @@ function textQualityScore(value) {
 }
 
 /**
- * 文字列が典型的な mojibake を含むか判定する。
- *
- * @param {string} value 判定対象の文字列。
- * @returns {boolean} 復元を試すべき文字化け候補なら true。
+ * 文字列が文字化けしている可能性があるか判定します。
+ * @param {string} value 判定対象文字列。
+ * @returns {boolean} 文字化け marker、制御文字、置換文字があれば true。
  */
 function looksMojibake(value) {
   return mojibakeScore(value) > 0 || countDisallowedControls(value) > 0 || countReplacementChars(value) > 0;
 }
 
 /**
- * 文字化けらしさを簡易的に数値化する。
- *
- * @param {string} value 評価対象の文字列。
- * @returns {number} 大きいほど文字化けの疑いが強い。
+ * mojibake marker、半角カナ、C1 制御文字、UTF-8 を Latin-1 と誤読した連続 byte を点数化します。
+ * @param {string} value 評価対象文字列。
+ * @returns {number} 文字化けらしさのスコア。
  */
 function mojibakeScore(value) {
-  const markerMatches = value.match(/[縺繧繝螳蜿謗莨莉譁蟆荳鬆謖莠ÂÃ�]/gu) || [];
-  const halfWidthKanaMatches = value.match(/[｡-ﾟ]/gu) || [];
+  const markerMatches = value.match(/[\u7E3A\u7E67\u8B41\u7E5D\u90B5\u90E2\u30FB\uFFFD]/gu) || [];
+  const halfWidthKanaMatches = value.match(/[\uFF61-\uFF9F]/gu) || [];
   const c1ControlMatches = value.match(/[\u0080-\u009f]/gu) || [];
   const utf8AsLatin1Pairs = value.match(/(?:[\u00c2-\u00f4][\u0080-\u00bf]){2,}/gu) || [];
   return markerMatches.length * 2
@@ -447,60 +399,49 @@ function mojibakeScore(value) {
 }
 
 /**
- * 疑問符の数を数える。
- *
- * @param {string} value 評価対象の文字列。
- * @returns {number} 疑問符の数。
+ * @param {string} value 評価対象文字列。
+ * @returns {number} ? の出現数。
  */
 function countQuestionMarks(value) {
   return (value.match(/\?/g) || []).length;
 }
 
 /**
- * Unicode replacement character の数を数える。
- *
- * @param {string} value 評価対象の文字列。
- * @returns {number} replacement character の数。
+ * @param {string} value 評価対象文字列。
+ * @returns {number} Unicode replacement character の出現数。
  */
 function countReplacementChars(value) {
   return (value.match(/\uFFFD/gu) || []).length;
 }
 
 /**
- * 登録タグに入れたくない制御文字が含まれるか判定する。
- *
- * @param {string} value 評価対象の文字列。
- * @returns {boolean} 許可外制御文字があれば true。
+ * @param {string} value 評価対象文字列。
+ * @returns {boolean} 表示に不要な制御文字を含む場合は true。
  */
 function containsDisallowedControl(value) {
   return countDisallowedControls(value) > 0;
 }
 
 /**
- * 登録タグに入れたくない制御文字の数を数える。改行、CR、タブは歌詞などであり得るため許可する。
- *
- * @param {string} value 評価対象の文字列。
- * @returns {number} 許可外制御文字の数。
+ * @param {string} value 評価対象文字列。
+ * @returns {number} 表示に不要な制御文字の出現数。
  */
 function countDisallowedControls(value) {
   return (value.match(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u0080-\u009f]/gu) || []).length;
 }
 
 /**
- * 日本語文字の数を数える。候補比較時に、自然な日本語へ戻った値を少し優先するために使う。
- *
- * @param {string} value 評価対象の文字列。
- * @returns {number} 日本語文字の数。
+ * @param {string} value 評価対象文字列。
+ * @returns {number} ひらがな、カタカナ、漢字の出現数。
  */
 function countJapaneseChars(value) {
   return (value.match(/[\u3040-\u30ff\u3400-\u9fff]/gu) || []).length;
 }
 
 /**
- * ffprobe stream 情報から埋め込み画像の概要を取り出す。
- *
- * @param {Object} probeResult ffprobe が返した JSON オブジェクト。
- * @returns {{mime:string|null,length:number|null}|null} 画像概要。存在しない場合は null。
+ * ffprobe の stream 情報から attached picture の概要を取り出します。
+ * @param {{streams?:Array<{disposition?:{attached_pic?:boolean},codec_name?:string,duration_ts?:number|string}>}} probeResult ffprobe の解析結果。
+ * @returns {{mime:string|null,length:number|null}|null} 画像 stream の MIME と推定長。画像がない場合は null。
  */
 function extractPicture(probeResult) {
   const pictureStream = (probeResult?.streams || []).find((stream) => stream.disposition?.attached_pic);

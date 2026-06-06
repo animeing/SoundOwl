@@ -1,11 +1,18 @@
 import mysql from 'mysql2/promise';
 
 /**
- * mysql2/promise のコネクションプールを作成する。
- * Docker 起動直後など DB がまだ接続を受け付けない場合に備え、作成後に ping 相当の retry を行う。
- *
- * @param {{host:string,user:string,password:string,database:string,retry?:{attempts?:number,delayMs?:number}}} config MariaDB 接続設定。
- * @returns {Promise<import('mysql2/promise').Pool>} query/execute 可能な mysql2 Pool。
+ * @typedef {Object} MysqlConfig
+ * @property {string} host MariaDB ホスト名。
+ * @property {string} user MariaDB ユーザー名。
+ * @property {string} password MariaDB パスワード。
+ * @property {string} database 接続先データベース名。
+ * @property {{attempts?:number,delayMs?:number}} [retry] 起動直後の DB 待ちに使うリトライ設定。
+ */
+
+/**
+ * mysql2 の connection pool を作成し、接続確認に成功するまでリトライします。
+ * @param {MysqlConfig} config DB 接続情報とリトライ設定。
+ * @returns {Promise<import('mysql2/promise').Pool>} 接続確認済みの mysql2 connection pool。
  */
 async function createMysqlPool(config) {
   const pool = mysql.createPool({
@@ -23,11 +30,11 @@ async function createMysqlPool(config) {
 }
 
 /**
- * Docker 起動直後など DB がまだ受け付けない場合に備えて接続確認を retry する。
- *
- * @param {import('mysql2/promise').Pool} pool mysql2 Pool。
- * @param {{attempts?:number,delayMs?:number}} [retry] retry 設定。
- * @returns {Promise<void>} 接続確認に成功した時点で resolve する。
+ * DB 起動待ちのため、pool から connection を取得できるまで指定回数リトライします。
+ * @param {{getConnection:()=>Promise<{release:()=>void}>}} pool mysql2 Pool または同じ getConnection/release 契約を持つテスト用 fake。
+ * @param {{attempts?:number,delayMs?:number}} [retry={}] 最大試行回数と試行間隔。
+ * @returns {Promise<void>} 接続確認に成功した場合は値を返しません。
+ * @throws {Error} 指定回数すべて失敗した場合、最後に発生した接続エラーを投げます。
  */
 async function waitForMysql(pool, retry = {}) {
   const attempts = Number(retry.attempts || 30);
@@ -49,10 +56,9 @@ async function waitForMysql(pool, retry = {}) {
 }
 
 /**
- * 指定ミリ秒だけ待機する。
- *
- * @param {number} ms 待機時間のミリ秒。
- * @returns {Promise<void>} 待機完了時に resolve する。
+ * 指定時間だけ非同期処理を待機させます。
+ * @param {number} ms 待機するミリ秒。
+ * @returns {Promise<void>} 待機完了後に解決する Promise。
  */
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

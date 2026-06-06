@@ -290,7 +290,7 @@ function normalizeExclusionPaths(value) {
 /**
  * JSON response DTOを作成する。
  *
- * @param {unknown} body JSON body。
+ * @param {Record<string, any>|Array<any>|string|number|boolean|null} body JSON.stringify 可能なレスポンス本文。
  * @param {number} [status=200] HTTP status。
  * @returns {ApiResponse} response DTO。
  */

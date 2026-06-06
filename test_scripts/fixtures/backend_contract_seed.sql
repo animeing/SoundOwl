@@ -1,4 +1,4 @@
-DELETE FROM sound_play_history;
+﻿DELETE FROM sound_play_history;
 DELETE FROM playlist;
 DELETE FROM playlist_data;
 DELETE FROM sound_link;
@@ -38,3 +38,4 @@ INSERT INTO playlist_data (play_list, art, create_datetime, update_datetime) VAL
 INSERT INTO playlist (play_list, sound_point, sound_hash) VALUES
   ('fixture-list', 0, '206f8970206ca2be1c578654d323c4783e58b5bb'),
   ('fixture-list', 1, '3bc9837935760d7094815b18a6fd929a7a133ff8');
+

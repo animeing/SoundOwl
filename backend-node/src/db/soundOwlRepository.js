@@ -6,15 +6,18 @@ import { HistoryRepository } from './repositories/historyRepository.js';
 import { MetricsRepository } from './repositories/metricsRepository.js';
 
 /**
- * SoundOwl backend が利用するDB操作をまとめるfacade。
- * 個別SQLは用途別Repositoryへ分割し、handler/service層はこのfacadeを通してDBへアクセスする。
- * PHP互換APIの移行中も既存メソッド名を維持し、将来必要になれば用途別Repositoryを直接注入できるようにする。
+ * @typedef {Record<string, any>} SoundRow
+ * sound_link 系の API 応答または登録処理で扱う楽曲レコードです。
+ */
+
+/**
+ * 楽曲、アーティスト、アルバム、プレイリスト、履歴、集計の各 Repository を束ねる Facade です。
+ * API 層や登録処理が複数 Repository の場所を意識しなくて済むように、用途単位のメソッド名で委譲します。
  */
 class SoundOwlRepository {
   /**
-   * 用途別Repositoryを同じDB接続で初期化する。
-   *
-   * @param {{query(sql:string, params?:unknown[]): Promise<[unknown[], unknown]|unknown[]>}} db mysql2 PoolまたはConnection。
+   * DB クライアントを各 Repository に渡して Facade を初期化します。
+   * @param {{query:(sql:string, params?:Array<any>)=>Promise<[Array<Record<string, any>>, any]>|Promise<Array<Record<string, any>>>}} db mysql2 互換の query 関数を持つ DB クライアント。
    */
   constructor(db) {
     this.soundCatalog = new SoundCatalogRepository(db);
@@ -25,238 +28,92 @@ class SoundOwlRepository {
     this.metrics = new MetricsRepository(db);
   }
 
-  /**
-   * sound_hashで音源を1件取得する。
-   *
-   * @param {string} soundHash 音源のSHA-1 hash。
-   * @returns {Promise<Object|null>} sound_link行。存在しない場合はnull。
-   */
-  findSoundByHash(...args) { return this.soundCatalog.findSoundByHash(...args); }
+  /** @param {string} soundHash 楽曲を一意に識別する sound_hash。 @returns {Promise<SoundRow|null>} 一致した楽曲行。存在しない場合は null。 */
+  findSoundByHash(soundHash) { return this.soundCatalog.findSoundByHash(soundHash); }
 
-  /**
-   * data_linkで音源を1件取得する。
-   *
-   * @param {string} dataLink 音声ファイルパス。
-   * @returns {Promise<Object|null>} sound_link行。存在しない場合はnull。
-   */
-  findSoundByPath(...args) { return this.soundCatalog.findSoundByPath(...args); }
+  /** @param {string} dataLink 音声ファイルの保存パス。 @returns {Promise<SoundRow|null>} 一致した楽曲行。存在しない場合は null。 */
+  findSoundByPath(dataLink) { return this.soundCatalog.findSoundByPath(dataLink); }
 
-  /**
-   * 追加日時が新しい順に音源一覧を取得する。
-   *
-   * @param {number} [limit=100] 取得する最大件数。
-   * @returns {Promise<Object[]>} API表示用sound DTO配列。
-   */
-  listSoundsByAddTime(...args) { return this.soundCatalog.listSoundsByAddTime(...args); }
+  /** @param {number} [limit=100] 取得する最大件数。 @returns {Promise<SoundRow[]>} 追加日時の新しい順に整形した楽曲一覧。 */
+  listSoundsByAddTime(limit = 100) { return this.soundCatalog.listSoundsByAddTime(limit); }
 
-  /**
-   * 再生回数が多い順に音源一覧を取得する。
-   *
-   * @param {number} [limit=100] 取得する最大件数。
-   * @returns {Promise<Object[]>} API表示用sound DTO配列。
-   */
-  listSoundsByPlayCount(...args) { return this.soundCatalog.listSoundsByPlayCount(...args); }
+  /** @param {number} [limit=100] 取得する最大件数。 @returns {Promise<SoundRow[]>} 再生回数の多い順に整形した楽曲一覧。 */
+  listSoundsByPlayCount(limit = 100) { return this.soundCatalog.listSoundsByPlayCount(limit); }
 
-  /**
-   * 音源詳細を取得し、配信用MIME情報を付与する。
-   *
-   * @param {string} soundHash 音源のSHA-1 hash。
-   * @returns {Promise<Object|null>} API詳細DTO。存在しない場合はnull。
-   */
-  findSoundDetail(...args) { return this.soundCatalog.findSoundDetail(...args); }
+  /** @param {string} soundHash 詳細を取得する sound_hash。 @returns {Promise<(SoundRow & {mime:string})|null>} API 応答用に整形した楽曲詳細。存在しない場合は null。 */
+  findSoundDetail(soundHash) { return this.soundCatalog.findSoundDetail(soundHash); }
 
-  /**
-   * artist/title/album_titleを対象に音源を検索する。
-   *
-   * @param {string} word 検索語。
-   * @returns {Promise<Object[]>} API表示用sound DTO配列。
-   */
-  searchSounds(...args) { return this.soundCatalog.searchSounds(...args); }
+  /** @param {string} word 検索語。曲名、アーティスト名、アルバム名を部分一致検索します。 @returns {Promise<SoundRow[]>} 検索語に一致した楽曲一覧。 */
+  searchSounds(word) { return this.soundCatalog.searchSounds(word); }
 
-  /**
-   * 音源の再生回数を増やし、再生履歴を追加する。
-   *
-   * @param {string} soundHash 音源のSHA-1 hash。
-   * @param {Date} playedAt 再生日時。
-   * @returns {Promise<void>} 更新完了時にresolveする。
-   */
-  incrementPlayCount(...args) { return this.soundCatalog.incrementPlayCount(...args); }
+  /** @param {string} soundHash 再生済みにする sound_hash。 @param {Date} playedAt 再生日時。 @returns {Promise<void>} 再生回数と履歴を更新し、値は返しません。 */
+  incrementPlayCount(soundHash, playedAt) { return this.soundCatalog.incrementPlayCount(soundHash, playedAt); }
 
-  /**
-   * 音源を登録または更新する。
-   *
-   * @param {Object} sound 保存するsound_link DTO。
-   * @returns {Promise<{action:'inserted'|'updated', sound:Object}>} 登録または更新結果。
-   */
-  upsertSound(...args) { return this.soundCatalog.upsertSound(...args); }
+  /** @param {SoundRow} sound 登録または更新する楽曲レコード。 @returns {Promise<{action:'inserted'|'updated',sound:SoundRow}>} 追加か更新かと保存後の楽曲情報。 */
+  upsertSound(sound) { return this.soundCatalog.upsertSound(sound); }
 
-  /**
-   * album配下の音源をtrack_no順に取得する。
-   *
-   * @param {string} albumHash album_key。
-   * @returns {Promise<Object[]>} API表示用sound DTO配列。
-   */
-  listAlbumSounds(...args) { return this.soundCatalog.listAlbumSounds(...args); }
+  /** @param {string} albumHash アルバムを一意に識別する album_hash。 @returns {Promise<SoundRow[]>} アルバム内の楽曲一覧。 */
+  listAlbumSounds(albumHash) { return this.soundCatalog.listAlbumSounds(albumHash); }
 
-  /**
-   * artist配下の音源をtrack_no順に取得する。
-   *
-   * @param {string} artistHash artist_id。
-   * @returns {Promise<Object[]>} API表示用sound DTO配列。
-   */
-  listArtistSounds(...args) { return this.soundCatalog.listArtistSounds(...args); }
+  /** @param {string} artistHash アーティストを一意に識別する artist_id。 @returns {Promise<SoundRow[]>} アーティストに紐づく楽曲一覧。 */
+  listArtistSounds(artistHash) { return this.soundCatalog.listArtistSounds(artistHash); }
 
-  /**
-   * 音源のloudness_targetを更新する。
-   *
-   * @param {string} soundHash 音源のSHA-1 hash。
-   * @param {number} loudnessTarget ffmpeg解析で得た音量補正値。
-   * @returns {Promise<void>} 更新完了時にresolveする。
-   */
-  updateLoudness(...args) { return this.soundCatalog.updateLoudness(...args); }
+  /** @param {string} soundHash 音量解析結果を更新する sound_hash。 @param {number|string|null} loudnessTarget ffmpeg 解析で得た loudness_target。 @returns {Promise<void>} DB を更新し、値は返しません。 */
+  updateLoudness(soundHash, loudnessTarget) { return this.soundCatalog.updateLoudness(soundHash, loudnessTarget); }
 
-  /**
-   * artist名でartistを1件取得する。
-   *
-   * @param {string} artistName artist名。
-   * @returns {Promise<Object|null>} artist DTO。存在しない場合はnull。
-   */
-  findArtistByName(...args) { return this.artist.findArtistByName(...args); }
+  /** @param {string} artistName アーティスト名。 @returns {Promise<Record<string, any>|null>} 一致した artist 行。存在しない場合は null。 */
+  findArtistByName(artistName) { return this.artist.findArtistByName(artistName); }
 
-  /**
-   * artist一覧を範囲指定で取得し、代表album情報を付与する。
-   *
-   * @param {number} start OFFSET。
-   * @param {number} end LIMIT。
-   * @returns {Promise<Object[]>} API表示用artist DTO配列。
-   */
-  listArtists(...args) { return this.artist.listArtists(...args); }
+  /** @param {number} start 取得開始位置。 @param {number} end 取得件数。 @returns {Promise<Array<{artist_id:string,artist_name:string,album:{album_key:string,title:string}}>>} アーティスト一覧と代表アルバム。 */
+  listArtists(start, end) { return this.artist.listArtists(start, end); }
 
-  /**
-   * artistを登録する。
-   *
-   * @param {{artist_id:string, artist_name:string}} artist 登録するartist DTO。
-   * @returns {Promise<Object>} 登録したartist DTO。
-   */
-  insertArtist(...args) { return this.artist.insertArtist(...args); }
+  /** @param {{artist_id:string,artist_name:string}} artist 登録するアーティスト。 @returns {Promise<{artist_id:string,artist_name:string}>} 登録したアーティスト。 */
+  insertArtist(artist) { return this.artist.insertArtist(artist); }
 
-  /**
-   * album titleでalbum候補を取得する。
-   *
-   * @param {string} title album title。
-   * @returns {Promise<Object[]>} 同名album候補配列。
-   */
-  findAlbumByTitle(...args) { return this.album.findAlbumByTitle(...args); }
+  /** @param {string} title アルバムタイトル。 @returns {Promise<Array<Record<string, any>>>} タイトルが一致した album 行一覧。 */
+  findAlbumByTitle(title) { return this.album.findAlbumByTitle(title); }
 
-  /**
-   * album一覧を範囲指定で取得する。
-   *
-   * @param {number} start OFFSET。
-   * @param {number} end LIMIT。
-   * @returns {Promise<Object[]>} API表示用album DTO配列。
-   */
-  listAlbums(...args) { return this.album.listAlbums(...args); }
+  /** @param {number} start 取得開始位置。 @param {number} end 取得件数。 @returns {Promise<Array<{album_key:string,title:string,artist:{artist_id:string,artist_name:string}}>>} アルバム一覧。 */
+  listAlbums(start, end) { return this.album.listAlbums(start, end); }
 
-  /**
-   * albumを配下音源の合計再生回数順で取得する。
-   *
-   * @param {number} [limit=100] 取得する最大件数。
-   * @returns {Promise<Object[]>} `{title, albumKey}` DTO配列。
-   */
-  listAlbumsByPlayCount(...args) { return this.album.listAlbumsByPlayCount(...args); }
+  /** @param {number} [limit=100] 取得する最大件数。 @returns {Promise<Array<{title:string,albumKey:string}>>} 再生回数順のアルバム一覧。 */
+  listAlbumsByPlayCount(limit = 100) { return this.album.listAlbumsByPlayCount(limit); }
 
-  /**
-   * album_keyでalbumを1件取得する。
-   *
-   * @param {string} albumHash album_key。
-   * @returns {Promise<Object|null>} album DTO。存在しない場合はnull。
-   */
-  findAlbumByHash(...args) { return this.album.findAlbumByHash(...args); }
+  /** @param {string} albumHash アルバムを一意に識別する album_key。 @returns {Promise<Record<string, any>|null>} 一致した album 行。存在しない場合は null。 */
+  findAlbumByHash(albumHash) { return this.album.findAlbumByHash(albumHash); }
 
-  /**
-   * albumを登録する。
-   *
-   * @param {Object} album 登録するalbum DTO。
-   * @returns {Promise<Object>} 登録したalbum DTO。
-   */
-  insertAlbum(...args) { return this.album.insertAlbum(...args); }
+  /** @param {Record<string, any>} album 登録するアルバム行。 @returns {Promise<Record<string, any>>} 登録したアルバム行。 */
+  insertAlbum(album) { return this.album.insertAlbum(album); }
 
-  /**
-   * playlist_dataを1件取得する。
-   *
-   * @param {string} playList playlist名。
-   * @returns {Promise<Object|null>} playlist_data行。存在しない場合はnull。
-   */
-  findPlaylistData(...args) { return this.playlist.findPlaylistData(...args); }
+  /** @param {string} playList プレイリスト名。 @returns {Promise<Record<string, any>|null>} playlist_data の行。存在しない場合は null。 */
+  findPlaylistData(playList) { return this.playlist.findPlaylistData(playList); }
 
-  /**
-   * playlist名一覧を更新日時の新しい順に取得する。
-   *
-   * @returns {Promise<Object[]>} playlist名DTO配列。
-   */
-  listPlaylistNames(...args) { return this.playlist.listPlaylistNames(...args); }
+  /** @returns {Promise<Array<{play_list:string}>>} 更新日時の新しい順に並んだプレイリスト名一覧。 */
+  listPlaylistNames() { return this.playlist.listPlaylistNames(); }
 
-  /**
-   * playlist内の音源をsound_point順に取得する。
-   *
-   * @param {string} name playlist名。
-   * @returns {Promise<Object[]>} API表示用sound DTO配列。
-   */
-  listPlaylistSounds(...args) { return this.playlist.listPlaylistSounds(...args); }
+  /** @param {string} name プレイリスト名。 @returns {Promise<Array<Record<string, any>>>} 指定プレイリストに含まれる楽曲一覧。 */
+  listPlaylistSounds(name) { return this.playlist.listPlaylistSounds(name); }
 
-  /**
-   * playlistを作成する。
-   *
-   * @param {string} name playlist名。
-   * @param {string[]} soundHashes playlistへ登録するsound_hash配列。
-   * @returns {Promise<void>} 作成完了時にresolveする。
-   */
-  createPlaylist(...args) { return this.playlist.createPlaylist(...args); }
+  /** @param {string} name 作成するプレイリスト名。 @param {string[]} soundHashes 並び順どおりの sound_hash 配列。 @returns {Promise<void>} playlist_data と playlist を登録し、値は返しません。 */
+  createPlaylist(name, soundHashes) { return this.playlist.createPlaylist(name, soundHashes); }
 
-  /**
-   * playlistを削除する。
-   *
-   * @param {string} name playlist名。
-   * @returns {Promise<void>} 削除完了時にresolveする。
-   */
-  deletePlaylist(...args) { return this.playlist.deletePlaylist(...args); }
+  /** @param {string} name 削除するプレイリスト名。 @returns {Promise<void>} playlist_data を削除し、値は返しません。 */
+  deletePlaylist(name) { return this.playlist.deletePlaylist(name); }
 
-  /**
-   * 再生履歴を範囲指定で取得する。
-   *
-   * @param {number} start OFFSET。
-   * @param {number} end LIMIT。
-   * @returns {Promise<Object[]>} API表示用履歴DTO配列。
-   */
-  listHistory(...args) { return this.history.listHistory(...args); }
+  /** @param {number} start 取得開始位置。 @param {number} end 取得件数。 @returns {Promise<Array<Record<string, any>>>} 再生履歴一覧。 */
+  listHistory(start, end) { return this.history.listHistory(start, end); }
 
-  /**
-   * 登録済み音源数を取得する。
-   *
-   * @returns {Promise<number>} sound_link件数。
-   */
-  countSounds(...args) { return this.metrics.countSounds(...args); }
+  /** @returns {Promise<number>} 登録済み楽曲数。 */
+  countSounds() { return this.metrics.countSounds(); }
 
-  /**
-   * 登録済みartist数を取得する。
-   *
-   * @returns {Promise<number>} artist件数。
-   */
-  countArtists(...args) { return this.metrics.countArtists(...args); }
+  /** @returns {Promise<number>} 登録済みアーティスト数。 */
+  countArtists() { return this.metrics.countArtists(); }
 
-  /**
-   * 登録済みalbum数を取得する。
-   *
-   * @returns {Promise<number>} album件数。
-   */
-  countAlbums(...args) { return this.metrics.countAlbums(...args); }
+  /** @returns {Promise<number>} 登録済みアルバム数。 */
+  countAlbums() { return this.metrics.countAlbums(); }
 
-  /**
-   * loudness_targetが解析済みの音源数を取得する。
-   *
-   * @returns {Promise<number>} 音量解析済み音源件数。
-   */
-  countAnalysisSounds(...args) { return this.metrics.countAnalysisSounds(...args); }
+  /** @returns {Promise<number>} 音量解析済み楽曲数。 */
+  countAnalysisSounds() { return this.metrics.countAnalysisSounds(); }
 }
 
 export { SoundOwlRepository };

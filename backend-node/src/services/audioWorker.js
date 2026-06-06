@@ -1,16 +1,10 @@
 /**
- * Redisキューから音量解析jobを処理するworker。
- *
- * PHPの`api/quescript/queueAction.php`相当。1 jobずつ処理する単位にしているため、
- * 実際に常駐させる場合は呼び出し側でループする。
+ * Redis キューから音量解析ジョブを取り出し、ffmpeg 解析結果を DB へ反映する Worker です。
  */
 class AudioWorker {
   /**
-   * @param {Object} dependencies 依存オブジェクト。
-   * @param {{popAudioProcessing(timeoutSeconds?:number): Promise<Object|null>}} dependencies.redis Redis DAO。
-   * @param {{findSoundByHash(hash:string): Promise<Object|null>, updateLoudness(hash:string,value:number): Promise<void>}} dependencies.repository SoundRepository互換DAO。
-   * @param {(filePath:string) => Promise<{mean_volume:number|null}>} dependencies.analyzeLoudness ffmpeg解析関数。
-   * @param {{beginStep2?:Function}} [dependencies.lockService] runtime内状態管理service。
+   * Worker の依存関係を受け取って初期化します。
+   * @param {{redis:{popAudioProcessing:(timeoutSeconds:number)=>Promise<{hash?:string,file_path?:string}|null>},repository:{findSoundByHash:(soundHash:string)=>Promise<{data_link?:string}|null>,updateLoudness:(soundHash:string,loudnessTarget:number|string|null)=>Promise<void>},analyzeLoudness:(filePath:string)=>Promise<{mean_volume:number|null}>,lockService?:{beginStep2:()=>()=>void}|null}} dependencies Redis、Repository、音量解析関数、任意の登録状態ロック。
    */
   constructor({ redis, repository, analyzeLoudness, lockService = null }) {
     this.redis = redis;
@@ -20,10 +14,9 @@ class AudioWorker {
   }
 
   /**
-   * Redisから1件jobを取り出し処理する。
-   *
-   * @param {number} [timeoutSeconds=5] queue待機秒数。
-   * @returns {Promise<{status:'idle'|'invalid'|'not_found'|'updated'|'failed', mean_volume?:number}>} 処理結果。
+   * Redis キューから 1 件だけジョブを取得し、音量解析と DB 更新を行います。
+   * @param {number} [timeoutSeconds=5] Redis の brPop 待機秒数。
+   * @returns {Promise<{status:'idle'|'invalid'|'not_found'|'updated'|'failed',mean_volume?:number}>} 1 件分の処理結果。
    */
   async processOne(timeoutSeconds = 5) {
     const job = await this.redis.popAudioProcessing(timeoutSeconds);

@@ -1,7 +1,5 @@
 /**
- * Node.js backend baseの公開エントリポイント。
- *
- * API adapter実装時はこのファイルからDB/Redis/登録/worker/media機能をimportする。
+ * Node.js backend base の公開エントリポイントです。
  */
 import { loadConfig } from './config.js';
 import { createMysqlPool } from './db/mysql.js';

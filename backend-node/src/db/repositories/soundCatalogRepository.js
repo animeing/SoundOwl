@@ -99,7 +99,7 @@ class SoundCatalogRepository {
    * 音源をinsertまたはupdateする。
    *
    * @param {Object} sound 保存するsound_link DTO。
-   * @returns {Promise<{action:'inserted'|'updated', sound:Object}>} 実行結果。
+   * @returns {Promise<{action:'inserted'|'updated', sound:Object}>} 新規登録の場合は action が inserted、既存更新の場合は updated になり、保存後の sound_link DTO を sound に持つ結果。
    */
   async upsertSound(sound) {
     const exists = await this.findSoundByHash(sound.sound_hash);

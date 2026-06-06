@@ -1,22 +1,13 @@
 /**
- * @typedef {Object} WorkerLoopOptions
- * @property {{processOne(timeoutSeconds?:number): Promise<Object>}} worker Redis jobを1件処理するworker。
- * @property {number} [timeoutSeconds=5] Redis BRPOP相当の待機秒数。
- * @property {number} [idleDelayMs=50] idle時に次の処理へ進むまでの待機ms。
- * @property {number} [errorDelayMs=1000] 例外発生時に次の処理へ進むまでの待機ms。
- * @property {Function} [setTimeoutImpl=setTimeout] timer関数。テストで差し替え可能。
- * @property {Function} [clearTimeoutImpl=clearTimeout] timer停止関数。テストで差し替え可能。
- * @property {{error:Function}} [logger=console] 例外ログ出力先。
+ * @typedef {{status:string}} WorkerResult
+ * AudioWorker.processOne が返す 1 回分の処理結果です。
  */
 
 /**
- * PHPの常駐`queueAction.php`をNode runtime内で動かすためのworker loopを作成する。
- *
- * NodeではHTTP/WebSocketと同じprocess内で非同期loopとして常駐できるため、PHPのように
- * 別entrypointを常時起動する構成に固定しない。
- *
- * @param {WorkerLoopOptions} options worker loop設定。
- * @returns {{start:()=>void,stop:()=>void,processNext:()=>Promise<Object>,isRunning:()=>boolean}} worker loop controller。
+ * AudioWorker を setTimeout ベースで継続実行するループを作成します。
+ * idle の場合は短い待機、例外時は長めの待機を入れて CPU を空回りさせないようにします。
+ * @param {{worker:{processOne:(timeoutSeconds:number)=>Promise<WorkerResult>},timeoutSeconds?:number,idleDelayMs?:number,errorDelayMs?:number,setTimeoutImpl?:(callback:()=>void,delayMs:number)=>any,clearTimeoutImpl?:(timer:any)=>void,logger?:{error:(error:any)=>void}}} options Worker と待機時間、テスト差し替え用 timer/logger。
+ * @returns {{start:()=>void,stop:()=>void,processNext:()=>Promise<WorkerResult>,isRunning:()=>boolean}} Worker loop の操作 API。
  */
 function createWorkerLoop(options) {
   const {
@@ -51,12 +42,14 @@ function createWorkerLoop(options) {
   };
 
   return {
+    /** @returns {void} ループが停止中の場合だけ実行を開始します。 */
     start() {
       if (!running) {
         running = true;
         schedule(0);
       }
     },
+    /** @returns {void} 次回実行を止め、予約済み timer を解除します。 */
     stop() {
       running = false;
       if (timer) {
@@ -65,6 +58,7 @@ function createWorkerLoop(options) {
       }
     },
     processNext,
+    /** @returns {boolean} ループが実行状態の場合は true。 */
     isRunning() {
       return running;
     },

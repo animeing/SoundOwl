@@ -36,23 +36,20 @@ const ROUTES = {
 };
 
 /**
- * Express applicationを内包したNode HTTP serverを作成する。
- *
- * @param {Object.<string, Function>} handlers `createApiHandlers`が返すAPI handler群。
- * @param {{cors?:{allowOrigins?:string[]},bodyLimit?:string}} [options={}] HTTP adapter設定。
- * @returns {import('node:http').Server} `listen`/`close`できるHTTP server。
+ * Express アプリを Node.js HTTP server として作成します。
+ * @param {Record<string, Function>} handlers createApiHandlers が返す API handler マップ。
+ * @param {{cors?:{allowOrigins?:string[]},bodyLimit?:string}} [options={}] CORS と body size limit の設定。
+ * @returns {import('node:http').Server} Node.js HTTP server。
  */
 function createHttpServer(handlers, options = {}) {
   return http.createServer(createHttpApp(handlers, options));
 }
 
 /**
- * PHP互換APIを受けるExpress applicationを構築する。
- * handler層のDTO契約は維持し、HTTP受信、body受信、error pathだけをExpressへ委譲する。
- *
- * @param {Object.<string, Function>} handlers `createApiHandlers`が返すAPI handler群。
- * @param {{cors?:{allowOrigins?:string[]},bodyLimit?:string}} [options={}] HTTP adapter設定。
- * @returns {import('express').Express} Node HTTP serverへ渡せるExpress application。
+ * 互換 API パスを Express に登録したアプリを作成します。
+ * @param {Record<string, Function>} handlers createApiHandlers が返す API handler マップ。
+ * @param {{cors?:{allowOrigins?:string[]},bodyLimit?:string}} [options={}] CORS と body size limit の設定。
+ * @returns {import('express').Express} Express アプリ。
  */
 function createHttpApp(handlers, options = {}) {
   const app = express();
@@ -84,12 +81,11 @@ function createHttpApp(handlers, options = {}) {
 }
 
 /**
- * Express/handler例外をAPI互換のJSON error responseへ変換する。
- *
- * @param {Error} error 発生した例外。
- * @param {import('node:http').IncomingMessage} req HTTP request。
- * @param {{allowOrigins?:string[]}} cors CORS設定。
- * @returns {{status:number,headers:Object,body:Object}} error response DTO。
+ * 例外を API error response DTO へ変換します。
+ * @param {Error & {status?:number}} error handler または middleware から投げられた例外。
+ * @param {import('node:http').IncomingMessage} req CORS 判定に使う HTTP request。
+ * @param {{allowOrigins?:string[]}|undefined} cors CORS 許可 origin 設定。
+ * @returns {{status:number,headers:Record<string,string|number>,body:{status:string,message:string}}} JSON error response DTO。
  */
 function errorResponse(error, req, cors) {
   return {
@@ -100,10 +96,9 @@ function errorResponse(error, req, cors) {
 }
 
 /**
- * Express/NodeのHTTP requestをhandler層が扱うrequest DTOへ変換する。
- *
- * @param {import('node:http').IncomingMessage & {body?:Buffer|string}} req HTTP request。
- * @returns {Promise<{method:string,path:string,query:Object,headers:Object,form:Object,file:Object|null,body:Object}>} API request DTO。
+ * Express request を API handler が扱う request DTO へ変換します。
+ * @param {import('express').Request & {body?:Buffer|string}} req Express request。
+ * @returns {Promise<{method:string,path:string,query:Record<string,string>,headers:Record<string, unknown>,form:Record<string, unknown>,file:Record<string, unknown>|null,body:Record<string, unknown>}>} API handler 用 request DTO。
  */
 async function toApiRequest(req) {
   const url = new URL(req.url, 'http://localhost');
@@ -122,13 +117,10 @@ async function toApiRequest(req) {
 }
 
 /**
- * PHP互換APIで必要な最小限のmultipart/form-dataを解析する。
- * 通常fieldは`fields`へ、ファイルfieldはfield名をkeyにしたfile DTOへ格納する。
- * 現状のファイルアップロード用途は`impulseResponse`単一fileを想定している。
- *
- * @param {string} rawBody request body。
- * @param {string} contentType Content-Type header。
- * @returns {Object.<string,{filename:string,mime:string,buffer:Buffer}> & {fields?:Object}} multipart解析結果。
+ * multipart/form-data body を file と fields へ分解します。
+ * @param {string} rawBody binary string として読み込んだ multipart body。
+ * @param {string} contentType boundary を含む Content-Type header。
+ * @returns {Record<string, unknown>} field 名を key にした file DTO と fields。
  */
 function parseMultipart(rawBody, contentType) {
   const boundary = contentType.match(/boundary=([^;]+)/)?.[1];
@@ -160,12 +152,11 @@ function parseMultipart(rawBody, contentType) {
 }
 
 /**
- * API response DTOへCORS headerを付与する。
- *
- * @param {{status:number,headers:Object,body:unknown}} response API response DTO。
- * @param {import('node:http').IncomingMessage} req HTTP request。
- * @param {{allowOrigins?:string[]}} [cors={}] CORS設定。
- * @returns {{status:number,headers:Object,body:unknown}} CORS headerを含むAPI response DTO。
+ * API response DTO に CORS header を追加します。
+ * @param {{status:number,headers:Record<string,string|number>,body:unknown}} response handler が返した response DTO。
+ * @param {import('node:http').IncomingMessage} req Origin header を参照する HTTP request。
+ * @param {{allowOrigins?:string[]}} [cors={}] CORS 許可 origin 設定。
+ * @returns {{status:number,headers:Record<string,string|number>,body:unknown}} CORS header 追加後の response DTO。
  */
 function withCors(response, req, cors = {}) {
   return {
@@ -178,11 +169,10 @@ function withCors(response, req, cors = {}) {
 }
 
 /**
- * FrontServerからBackendServerへアクセスするためのCORS headerを作成する。
- *
- * @param {import('node:http').IncomingMessage} req HTTP request。
- * @param {{allowOrigins?:string[]}} [cors={}] 許可Origin設定。`*`の場合はrequest Originを反映する。
- * @returns {Object.<string,string>} 許可できる場合はCORS headers、許可できない場合は空object。
+ * request origin と許可設定から CORS header を作成します。
+ * @param {import('node:http').IncomingMessage} req Origin header を参照する HTTP request。
+ * @param {{allowOrigins?:string[]}} [cors={}] CORS 許可 origin 設定。
+ * @returns {Record<string,string>} 許可できる場合は CORS header、許可できない場合は空 object。
  */
 function corsHeaders(req, cors = {}) {
   const origin = req.headers.origin || '';
@@ -202,12 +192,10 @@ function corsHeaders(req, cors = {}) {
 }
 
 /**
- * API response DTOをHTTP responseへ書き込む。
- * Buffer/string/object/nullと、音声stream用の`streamPath` DTOを扱う。
- *
- * @param {import('node:http').ServerResponse} res HTTP response。
- * @param {{status:number,headers:Object,body:unknown}} response API response DTO。
- * @returns {Promise<void>} 書き込み完了時にresolveする。
+ * response DTO を Node.js response に書き込みます。
+ * @param {import('node:http').ServerResponse} res 書き込み先の HTTP response。
+ * @param {{status:number,headers:Record<string,string|number>,body:unknown}} response handler が返した response DTO。
+ * @returns {Promise<void>} 書き込み完了後に解決します。
  */
 async function writeResponse(res, response) {
   res.writeHead(response.status, response.headers);
@@ -227,13 +215,11 @@ async function writeResponse(res, response) {
 }
 
 /**
- * ファイルをHTTP responseへstreamする。
- * Range指定がある場合は指定byte範囲のみを送信する。
- *
- * @param {import('node:http').ServerResponse} res HTTP response。
- * @param {string} filePath stream対象のファイルパス。
- * @param {{start:number,end:number}|undefined} range byte range。未指定の場合は全体を送信する。
- * @returns {Promise<void>} stream完了時にresolveする。
+ * ファイルを HTTP response へ stream 配信します。
+ * @param {import('node:http').ServerResponse} res 書き込み先の HTTP response。
+ * @param {string} filePath 配信するファイルパス。
+ * @param {{start:number,end:number}|undefined} range 配信 byte 範囲。未指定の場合は全体を配信します。
+ * @returns {Promise<void>} stream 完了後に解決します。
  */
 function streamFileResponse(res, filePath, range) {
   return new Promise((resolve, reject) => {
@@ -275,11 +261,9 @@ function streamFileResponse(res, filePath, range) {
 }
 
 /**
- * request bodyを文字列として読み込む。
- * Express raw middlewareで設定されたBuffer bodyと、素のIncomingMessage streamの両方を扱う。
- *
- * @param {import('node:http').IncomingMessage & {body?:Buffer|string}} req HTTP request。
- * @returns {Promise<string>} request body文字列。
+ * HTTP request body を文字列として読み込みます。
+ * @param {import('node:http').IncomingMessage & {body?:Buffer|string}} req 読み込み対象の request。
+ * @returns {Promise<string>} body 文字列。multipart の場合は binary string として返します。
  */
 function readBody(req) {
   if (Buffer.isBuffer(req.body)) {
@@ -302,11 +286,9 @@ function readBody(req) {
 }
 
 /**
- * application/x-www-form-urlencoded bodyをform objectへ変換する。
- * 同一keyや`name[]`形式はPHPの`$_POST`に近い配列へ変換する。
- *
- * @param {string} rawBody request body。
- * @returns {Object} form object。
+ * application/x-www-form-urlencoded body を form object へ変換します。
+ * @param {string} rawBody URL encoded body。
+ * @returns {Record<string,string|string[]>} form key/value。key が [] で終わる場合や重複 key は配列化します。
  */
 function parseForm(rawBody) {
   const form = {};
@@ -331,29 +313,28 @@ function parseForm(rawBody) {
   return form;
 }
 
+/**
+ * URL encoded form の key/value を decode します。
+ * @param {string} value decode 対象の文字列。
+ * @returns {string} + を空白に戻し decodeURIComponent した文字列。
+ */
 function decodeFormComponent(value) {
   return decodeURIComponent(value.replace(/\+/g, ' '));
 }
 
 /**
- * multipart/form-dataをbinary文字列として読んだ値をUTF-8文字列へ戻す。
- *
- * FormDataの通常field名、filename、field値はブラウザからUTF-8で届くため、
- * binary文字列のまま扱うと日本語が文字化けする。
- *
- * @param {string} value multipartから切り出したbinary文字列。
- * @returns {string} UTF-8として復元した文字列。
+ * multipart header/body の binary string を UTF-8 文字列へ戻します。
+ * @param {string} value binary string として扱う文字列。
+ * @returns {string} UTF-8 として復元した文字列。
  */
 function decodeMultipartText(value) {
   return Buffer.from(String(value), 'binary').toString('utf8');
 }
 /**
- * PHPの`$_POST`に近い形でform値を追加する。
- * 同一keyや`sounds[]`のような配列keyは配列として保持する。
- *
- * @param {Object} form 更新対象のform DTO。
- * @param {string} key 入力field名。
- * @param {string} value 入力field値。
+ * form object に key/value を追加します。
+ * @param {Record<string,string|string[]>} form 追加先の form object。
+ * @param {string} key form key。末尾 [] は配列指定として扱います。
+ * @param {string} value 追加する form value。
  * @returns {void}
  */
 function appendFormValue(form, key, value) {

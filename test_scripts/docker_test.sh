@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 export MUSIC_DIR='/music'
 

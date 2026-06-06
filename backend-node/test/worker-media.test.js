@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -54,7 +54,7 @@ test('AudioWorker reports not_found and failed analysis branches', async () => {
   assert.deepEqual(await workerFailed.processOne(), { status: 'failed' });
 });
 
-test('MediaService prepares PHP-compatible range metadata and blank/art fallbacks', async () => {
+test('MediaService prepares existing-compatible range metadata and blank/art fallbacks', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'soundowl-media-'));
   const audio = path.join(dir, 'a.wav');
   const blank = path.join(dir, 'blank.png');
@@ -141,3 +141,5 @@ test('MediaService returns 404 for missing sound and defaults invalid range and 
   assert.equal((await media.getAlbumArt('missing')).mime, 'image/png');
   assert.equal((await media.getPlaylistArt('missing')).mime, 'image/png');
 });
+
+
