@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import iconv from 'iconv-lite';
 import { analyzeLoudness, probeMetadata } from '../src/audio/ffmpeg.js';
 import { normalizeMetadata, normalizeMusicMetadata, normalizeTagText, normalizeTagValue, readMetadata } from '../src/audio/metadata.js';
@@ -149,17 +149,17 @@ test('normalizeTagText repairs WAV INFO tags whose CP932 high bits were stripped
   const strippedMixedTitle = `${stripCp932HighBits('繝・せ繝域ｷｷ蝨ｨA')} English suffix`;
   const strippedKatakanaTitle = stripCp932HighBits('繝・せ繝医き繝晦');
 
-  assert.equal(normalizeTagText(strippedTitle), '繝・せ繝育ｨ蜷喉');
-  assert.equal(normalizeTagText(strippedArtist), '繝・せ繝磯ｵ懈焔A');
-  assert.equal(normalizeTagText(strippedMixedTitle), '繝・せ繝域ｷｷ豎蘗 English suffix');
-  assert.equal(normalizeTagText(strippedKatakanaTitle), '繝・せ繝医き繝晦');
+  assert.equal(normalizeTagText(strippedTitle), 'テスト曲名A');
+  assert.equal(normalizeTagText(strippedArtist), 'テスト歌手A');
+  assert.equal(normalizeTagText(strippedMixedTitle), 'テスト混在A English suffix');
+  assert.equal(normalizeTagText(strippedKatakanaTitle), 'テストカナA');
 
   const parsed = normalizeMusicMetadata({
     common: { title: strippedTitle, artist: strippedArtist, album: '繝・せ繝医い繝ｫ繝舌ΒA' },
     native: {},
   }, '/fixture/library/繝・せ繝磯ｵ懈焔A/繝・せ繝医い繝ｫ繝舌ΒA/(01) [繝・せ繝磯ｵ懈焔A] 繝・せ繝育ｨ蜷喉.wav');
-  assert.equal(parsed.title, '繝・せ繝育ｨ蜷喉');
-  assert.equal(parsed.artist, '繝・せ繝磯ｵ懈焔A');
+  assert.equal(parsed.title, 'テスト曲名A');
+  assert.equal(parsed.artist, 'テスト歌手A');
   assert.equal(parsed.album, '繝・せ繝医い繝ｫ繝舌ΒA');
 });
 

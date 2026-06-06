@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -19,7 +19,7 @@ test('settingsStore reads and writes JSON settings while preserving Japanese arr
   });
   assert.deepEqual(normalizeSettings({ customList: ['a', 'b', null, ''] }), { customList: ['a', 'b'] });
   assert.equal(repairLatin1Mojibake(mojibakeSample), '譁・ｭ怜喧縺大ｾｩ蜈ア');
-  assert.equal(repairLatin1Mojibake('譌･譛ｬ隱・), '譌･譛ｬ隱・);
+  assert.equal(repairLatin1Mojibake('plain ascii'), 'plain ascii');
   assert.equal(repairLatin1Mojibake('ﾃｿ'), 'ﾃｿ');
   assert.deepEqual(normalizeStringArray(`ignored-dir-a|${mojibakeSample}`), ['ignored-dir-a', '譁・ｭ怜喧縺大ｾｩ蜈ア']);
   assert.deepEqual(normalizeStringArray(null), []);
