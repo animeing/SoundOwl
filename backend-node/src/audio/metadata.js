@@ -197,6 +197,11 @@ function normalizeTagText(value) {
   if (highBitStrippedUtf8 !== value) {
     return repairKnownHighBitStrippedUtf8Artifacts(highBitStrippedUtf8);
   }
+  const cp932Utf8Raw = iconv.decode(iconv.encode(value, 'cp932'), 'utf8');
+  const cp932Utf8 = repairKnownHighBitStrippedUtf8Artifacts(cp932Utf8Raw);
+  if (cp932Utf8 !== cp932Utf8Raw && !cp932Utf8.includes('\uFFFD') && countQuestionMarks(cp932Utf8) <= countQuestionMarks(value)) {
+    return cp932Utf8;
+  }
   return bestCandidate(value, repairStringCandidates(value));
 }
 
@@ -277,7 +282,9 @@ function repairHighBitStrippedUtf8(value) {
  * @returns {string} SoundOwl の既存テストデータで確認済みの中間表現を補正した文字列。
  */
 function repairKnownHighBitStrippedUtf8Artifacts(value) {
-  return value.replace(/チł9ト/g, 'テスト');
+  return value
+    .replace(/チł9ト/g, 'テスト')
+    .replace(/チE��ト/g, 'テスト');
 }
 
 /**

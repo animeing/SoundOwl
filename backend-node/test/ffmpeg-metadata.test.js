@@ -160,7 +160,7 @@ test('normalizeTagText repairs WAV INFO tags whose CP932 high bits were stripped
   }, '/fixture/library/繝・せ繝磯ｵ懈焔A/繝・せ繝医い繝ｫ繝舌ΒA/(01) [繝・せ繝磯ｵ懈焔A] 繝・せ繝育ｨ蜷喉.wav');
   assert.equal(parsed.title, 'テスト曲名A');
   assert.equal(parsed.artist, 'テスト歌手A');
-  assert.equal(parsed.album, '繝・せ繝医い繝ｫ繝舌ΒA');
+  assert.equal(parsed.album, '\u30c6\u30b9\u30c8\u30a2\u30eb\u30d0\u30e0A');
 });
 
 test('readMetadata delegates to music-metadata parser and normalizes the result', async () => {
