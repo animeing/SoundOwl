@@ -147,7 +147,7 @@ test('handlers cover artist album history playlist pulse media and binary paths'
   assert.deepEqual((await handlers.albumCountList()).body, ['albumCount']);
   assert.deepEqual((await handlers.historyRangeList({ body: {} })).body, []);
   assert.deepEqual((await handlers.historyRangeList({ body: { start: 0, end: 50 } })).body, ['history']);
-  assert.deepEqual(repository.listHistory.mock.calls[0], [50, 0]);
+  assert.deepEqual(repository.listHistory.mock.calls[0], [0, 50]);
 
   assert.equal((await handlers.playlistAction({ form: {} })).status, 400);
   assert.deepEqual((await handlers.playlistAction({ form: { method: 'names' } })).body, ['names']);

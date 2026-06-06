@@ -73,6 +73,7 @@ services:
   redis:
     image: redis:7
     container_name: soundowl-redis
+    hostname: soundowl-redis
     ports:
       - "6379:6379"
     networks:

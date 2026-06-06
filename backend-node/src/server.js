@@ -65,7 +65,7 @@ async function buildRuntime(env = process.env) {
     lockService,
     fontPath: path.resolve(__dirname, '../assets/fontisto.ttf'),
     placeholderImagePath: config.placeholderImagePath,
-    equalizerPresetPath: path.resolve(__dirname, '../../api/sound_equalizer_preset.json'),
+    equalizerPresetPath: path.resolve(__dirname, '../assets/sound_equalizer_preset.json'),
     soundDirectoryOverride: config.soundDirectory,
   });
   const httpServer = createHttpServer(handlers, { cors: config.cors });

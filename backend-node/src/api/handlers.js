@@ -134,7 +134,7 @@ function createApiHandlers(deps) {
       if (!hasRange(body)) {
         return json([]);
       }
-      return json(await repository.listHistory(Number(body.end), Number(body.start)));
+      return json(await repository.listHistory(Number(body.start), Number(body.end)));
     },
 
     async playlistAction({ form }) {
