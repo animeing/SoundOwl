@@ -193,15 +193,6 @@ function normalizeTagText(value) {
   if (!looksMojibake(value)) {
     return value;
   }
-  const highBitStrippedUtf8 = repairHighBitStrippedUtf8(value);
-  if (highBitStrippedUtf8 !== value) {
-    return repairKnownHighBitStrippedUtf8Artifacts(highBitStrippedUtf8);
-  }
-  const cp932Utf8Raw = iconv.decode(iconv.encode(value, 'cp932'), 'utf8');
-  const cp932Utf8 = repairKnownHighBitStrippedUtf8Artifacts(cp932Utf8Raw);
-  if (cp932Utf8 !== cp932Utf8Raw && !cp932Utf8.includes('\uFFFD') && countQuestionMarks(cp932Utf8) <= countQuestionMarks(value)) {
-    return cp932Utf8;
-  }
   return bestCandidate(value, repairStringCandidates(value));
 }
 
@@ -212,10 +203,6 @@ function normalizeTagText(value) {
  */
 function repairStringCandidates(value) {
   const candidates = [];
-  const highBitStrippedUtf8 = repairHighBitStrippedUtf8(value);
-  if (highBitStrippedUtf8 !== value) {
-    candidates.push(highBitStrippedUtf8);
-  }
   const highBitStrippedCp932 = repairHighBitStrippedCp932(value);
   if (highBitStrippedCp932 !== value) {
     candidates.push(highBitStrippedCp932);
@@ -241,50 +228,6 @@ function repairStringCandidates(value) {
     // 失敗した候補は無視します。
     }
   return candidates;
-}
-
-/**
- * UTF-8 の上位 bit が欠落したように見える文字列を復元します。
- * @param {string} value 復元候補の文字列。
- * @returns {string} UTF-8 として復元できた場合は decode 後の文字列。該当しない場合は入力値。
- */
-function repairHighBitStrippedUtf8(value) {
-  let repaired = '';
-  let changed = false;
-  for (let index = 0; index < value.length;) {
-    const first = value.charCodeAt(index);
-    const second = index + 1 < value.length ? value.charCodeAt(index + 1) : null;
-    const third = index + 2 < value.length ? value.charCodeAt(index + 2) : null;
-    if (first >= 0x60 && first <= 0x6f && second !== null && third !== null && second <= 0x3f && third <= 0x3f) {
-      repaired += Buffer.from([first + 0x80, second + 0x80, third + 0x80]).toString('utf8');
-      index += 3;
-      changed = true;
-      continue;
-    }
-    if (first >= 0x40 && first <= 0x5f && second !== null && second <= 0x3f && second !== 0x20) {
-      repaired += Buffer.from([first + 0x80, second + 0x80]).toString('utf8');
-      index += 2;
-      changed = true;
-      continue;
-    }
-    repaired += value[index];
-    index += 1;
-  }
-  if (!changed) {
-    return value;
-  }
-  return repaired;
-}
-
-/**
- * UTF-8 high-bit 欠落から復元した後に残る既知の中間表現を補正します。
- * @param {string} value UTF-8 byte 復元後の文字列。
- * @returns {string} SoundOwl の既存テストデータで確認済みの中間表現を補正した文字列。
- */
-function repairKnownHighBitStrippedUtf8Artifacts(value) {
-  return value
-    .replace(/チł9ト/g, 'テスト')
-    .replace(/チE��ト/g, 'テスト');
 }
 
 /**
