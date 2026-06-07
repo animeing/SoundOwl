@@ -14,12 +14,12 @@ class HistoryRepository {
 
     /**
      * listHistory は、指定条件に一致するデータ一覧を取得します。
-     * @param {number} start 取得範囲の開始位置または offset。
-     * @param {number} end 取得範囲の終了位置または limit。
+     * @param {number} start 取得範囲の開始位置。
+     * @param {number} end 取得範囲の終了位置。
      * @returns {Promise<unknown[]>} 条件に一致したデータ一覧。
      */
     async listHistory(start, end) {
-    return (await queryRows(this.db, 'SELECT * FROM v_history ORDER BY play_date DESC LIMIT ? OFFSET ?', [start, end]))
+    return (await queryRows(this.db, 'SELECT * FROM v_history ORDER BY play_date DESC LIMIT ? OFFSET ?', [end, start]))
       .map((row) => mapHashFields(row));
   }
 }
