@@ -18,12 +18,9 @@ class HistoryRepository {
      * @param {number} end 取得範囲の終了位置または limit。
      * @returns {Promise<unknown[]>} 条件に一致したデータ一覧。
      */
-  async listHistory(start, end) {
-    return (await queryRows(
-      this.db,
-      'SELECT * FROM v_history ORDER BY play_date DESC LIMIT ? OFFSET ?',
-      [end, start]
-    )).map((row) => mapHashFields(row));
+    async listHistory(start, end) {
+    return (await queryRows(this.db, 'SELECT * FROM v_history ORDER BY play_date DESC LIMIT ? OFFSET ?', [start, end]))
+      .map((row) => mapHashFields(row));
   }
 }
 
