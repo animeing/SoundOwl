@@ -56,7 +56,7 @@ export default {
   },
   methods: {
     createImageSrc(playlistName) {
-      return `${BASE.HOME}img/playlist_art.php?playlist=${playlistName}`;
+      return `${BASE.HOME}img/playlist_art?playlist=${playlistName}`;
     },
   },
 };
