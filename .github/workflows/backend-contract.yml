@@ -81,7 +81,7 @@ jobs:
       - name: Wait for HTTP and WebSocket
         run: |
           for i in {1..60}; do
-            if curl -fsS http://127.0.0.1:3000/api/get_setting.php > /dev/null; then
+            if curl -fsS http://127.0.0.1:3000/api/get_setting > /dev/null; then
               exit 0
             fi
             sleep 2
