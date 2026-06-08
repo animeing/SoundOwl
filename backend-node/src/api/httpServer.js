@@ -3,37 +3,37 @@ import fs from 'node:fs';
 import { URL } from 'node:url';
 import express from 'express';
 
-const ROUTES = {
-  '/api/site_status.php': 'siteStatus',
-  '/api/lock_status.php': 'lockStatus',
-  '/api/get_setting.php': 'getSetting',
-  '/api/update_setting.php': 'updateSetting',
-  '/api/setup_database_table.php': 'setupDatabaseTable',
-  '/api/sound_addtime_list.php': 'soundAddtimeList',
-  '/api/play_count_list.php': 'playCountList',
-  '/api/sound_data.php': 'soundData',
-  '/api/sound_search.php': 'soundSearch',
-  '/api/sound_regist.php': 'soundRegist',
-  '/api/action/sound_played.php': 'soundPlayed',
-  '/api/artist_list.php': 'artistList',
-  '/api/artist_sounds.php': 'artistSounds',
-  '/api/album_list.php': 'albumList',
-  '/api/album_sounds.php': 'albumSounds',
-  '/api/album_count_list.php': 'albumCountList',
-  '/api/history_range_list.php': 'historyRangeList',
-  '/api/playlist_action.php': 'playlistAction',
-  '/api/audio_pulse_data_list.php': 'audioPulseDataList',
-  '/api/audio_pulse_data_upload.php': 'audioPulseDataUpload',
-  '/api/audio_pulse_data_delete.php': 'audioPulseDataDelete',
-  '/api/sound_equalizer_preset.json': 'soundEqualizerPreset',
-  '/api//sound_equalizer_preset.json': 'soundEqualizerPreset',
-  '/img/album_art.php': 'albumArt',
-  '/img/playlist_art.php': 'playlistArt',
-  '/img/fontisto.php': 'fontisto',
-  '/fonts/fontisto.ttf': 'fontisto',
-  '/img/placeholder-image.webp': 'placeholderImage',
-  '/sound_create/sound.php': 'soundStream',
-};
+const ROUTES = [
+  ['/api/site_status', 'siteStatus'],
+  ['/api/lock_status', 'lockStatus'],
+  ['/api/get_setting', 'getSetting'],
+  ['/api/update_setting', 'updateSetting'],
+  ['/api/setup_database_table', 'setupDatabaseTable'],
+  ['/api/sound_addtime_list', 'soundAddtimeList'],
+  ['/api/play_count_list', 'playCountList'],
+  ['/api/sound_data', 'soundData'],
+  ['/api/sound_search', 'soundSearch'],
+  ['/api/sound_regist', 'soundRegist'],
+  ['/api/action/sound_played', 'soundPlayed'],
+  ['/api/artist_list', 'artistList'],
+  ['/api/artist_sounds', 'artistSounds'],
+  ['/api/album_list', 'albumList'],
+  ['/api/album_sounds', 'albumSounds'],
+  ['/api/album_count_list', 'albumCountList'],
+  ['/api/history_range_list', 'historyRangeList'],
+  ['/api/playlist_action', 'playlistAction'],
+  ['/api/audio_pulse_data_list', 'audioPulseDataList'],
+  ['/api/audio_pulse_data_upload', 'audioPulseDataUpload'],
+  ['/api/audio_pulse_data_delete', 'audioPulseDataDelete'],
+  ['/api/sound_equalizer_preset.json', 'soundEqualizerPreset'],
+  ['/api//sound_equalizer_preset.json', 'soundEqualizerPreset'],
+  ['/img/album_art', 'albumArt'],
+  ['/img/playlist_art', 'playlistArt'],
+  ['/img/fontisto', 'fontisto'],
+  ['/fonts/fontisto.ttf', 'fontisto'],
+  ['/img/placeholder-image.webp', 'placeholderImage'],
+  ['/sound_create/sound', 'soundStream'],
+];
 
 /**
  * Express アプリを Node.js HTTP server として作成します。
@@ -54,25 +54,32 @@ function createHttpServer(handlers, options = {}) {
 function createHttpApp(handlers, options = {}) {
   const app = express();
   app.use(express.raw({ type: () => true, limit: options.bodyLimit || '100mb' }));
-  app.use(async (req, res) => {
-    try {
-      if (req.method === 'OPTIONS') {
-        await writeResponse(res, {
-          status: 204,
-          headers: corsHeaders(req, options.cors),
-          body: null,
-        });
-        return;
+  app.options('*', async (req, res) => {
+    await writeResponse(res, {
+      status: 204,
+      headers: corsHeaders(req, options.cors),
+      body: null,
+    });
+  });
+  for (const [path, handlerName] of ROUTES) {
+    app.all(path, async (req, res) => {
+      try {
+        const request = await toApiRequest(req);
+        const response = handlers[handlerName]
+          ? await handlers[handlerName](request)
+          : { status: 404, headers: { 'content-type': 'text/plain' }, body: 'not found' };
+        await writeResponse(res, withCors(response, req, options.cors));
+      } catch (error) {
+        await writeResponse(res, errorResponse(error, req, options.cors));
       }
-      const request = await toApiRequest(req);
-      const handlerName = ROUTES[request.path];
-      const response = handlerName && handlers[handlerName]
-        ? await handlers[handlerName](request)
-        : { status: 404, headers: { 'content-type': 'text/plain' }, body: 'not found' };
-      await writeResponse(res, withCors(response, req, options.cors));
-    } catch (error) {
-      await writeResponse(res, errorResponse(error, req, options.cors));
-    }
+    });
+  }
+  app.use(async (req, res) => {
+    await writeResponse(res, withCors(
+      { status: 404, headers: { 'content-type': 'text/plain' }, body: 'not found' },
+      req,
+      options.cors,
+    ));
   });
   app.use(async (error, req, res, _next) => {
     await writeResponse(res, errorResponse(error, req, options.cors));
