@@ -35,22 +35,10 @@ const ROUTES = [
   ['/sound_create/sound', 'soundStream'],
 ];
 
-/**
- * Express アプリを Node.js HTTP server として作成します。
- * @param {Record<string, Function>} handlers createApiHandlers が返す API handler マップ。
- * @param {{cors?:{allowOrigins?:string[]},bodyLimit?:string}} [options={}] CORS と body size limit の設定。
- * @returns {import('node:http').Server} Node.js HTTP server。
- */
 function createHttpServer(handlers, options = {}) {
   return http.createServer(createHttpApp(handlers, options));
 }
 
-/**
- * 互換 API パスを Express に登録したアプリを作成します。
- * @param {Record<string, Function>} handlers createApiHandlers が返す API handler マップ。
- * @param {{cors?:{allowOrigins?:string[]},bodyLimit?:string}} [options={}] CORS と body size limit の設定。
- * @returns {import('express').Express} Express アプリ。
- */
 function createHttpApp(handlers, options = {}) {
   const app = express();
   app.use(express.raw({ type: () => true, limit: options.bodyLimit || '100mb' }));
@@ -62,7 +50,7 @@ function createHttpApp(handlers, options = {}) {
     });
   });
   for (const [path, handlerName] of ROUTES) {
-    app.all(path, async (req, res) => {
+    app.all(routePaths(path), async (req, res) => {
       try {
         const request = await toApiRequest(req);
         const response = handlers[handlerName]
@@ -87,13 +75,13 @@ function createHttpApp(handlers, options = {}) {
   return app;
 }
 
-/**
- * 例外を API error response DTO へ変換します。
- * @param {Error & {status?:number}} error handler または middleware から投げられた例外。
- * @param {import('node:http').IncomingMessage} req CORS 判定に使う HTTP request。
- * @param {{allowOrigins?:string[]}|undefined} cors CORS 許可 origin 設定。
- * @returns {{status:number,headers:Record<string,string|number>,body:{status:string,message:string}}} JSON error response DTO。
- */
+function routePaths(path) {
+  if (path.includes('.')) {
+    return path;
+  }
+  return [path, `${path}.php`];
+}
+
 function errorResponse(error, req, cors) {
   return {
     status: error.status || 500,
@@ -102,11 +90,6 @@ function errorResponse(error, req, cors) {
   };
 }
 
-/**
- * Express request を API handler が扱う request DTO へ変換します。
- * @param {import('express').Request & {body?:Buffer|string}} req Express request。
- * @returns {Promise<{method:string,path:string,query:Record<string,string>,headers:Record<string, unknown>,form:Record<string, unknown>,file:Record<string, unknown>|null,body:Record<string, unknown>}>} API handler 用 request DTO。
- */
 async function toApiRequest(req) {
   const url = new URL(req.url, 'http://localhost');
   const rawBody = await readBody(req);
@@ -123,12 +106,6 @@ async function toApiRequest(req) {
   };
 }
 
-/**
- * multipart/form-data body を file と fields へ分解します。
- * @param {string} rawBody binary string として読み込んだ multipart body。
- * @param {string} contentType boundary を含む Content-Type header。
- * @returns {Record<string, unknown>} field 名を key にした file DTO と fields。
- */
 function parseMultipart(rawBody, contentType) {
   const boundary = contentType.match(/boundary=([^;]+)/)?.[1];
   if (!boundary) {
@@ -158,13 +135,6 @@ function parseMultipart(rawBody, contentType) {
   return Object.keys(fields).length > 0 ? { ...files, fields } : files;
 }
 
-/**
- * API response DTO に CORS header を追加します。
- * @param {{status:number,headers:Record<string,string|number>,body:unknown}} response handler が返した response DTO。
- * @param {import('node:http').IncomingMessage} req Origin header を参照する HTTP request。
- * @param {{allowOrigins?:string[]}} [cors={}] CORS 許可 origin 設定。
- * @returns {{status:number,headers:Record<string,string|number>,body:unknown}} CORS header 追加後の response DTO。
- */
 function withCors(response, req, cors = {}) {
   return {
     ...response,
@@ -175,12 +145,6 @@ function withCors(response, req, cors = {}) {
   };
 }
 
-/**
- * request origin と許可設定から CORS header を作成します。
- * @param {import('node:http').IncomingMessage} req Origin header を参照する HTTP request。
- * @param {{allowOrigins?:string[]}} [cors={}] CORS 許可 origin 設定。
- * @returns {Record<string,string>} 許可できる場合は CORS header、許可できない場合は空 object。
- */
 function corsHeaders(req, cors = {}) {
   const origin = req.headers.origin || '';
   const allowOrigins = cors.allowOrigins || ['*'];
@@ -198,12 +162,6 @@ function corsHeaders(req, cors = {}) {
   };
 }
 
-/**
- * response DTO を Node.js response に書き込みます。
- * @param {import('node:http').ServerResponse} res 書き込み先の HTTP response。
- * @param {{status:number,headers:Record<string,string|number>,body:unknown}} response handler が返した response DTO。
- * @returns {Promise<void>} 書き込み完了後に解決します。
- */
 async function writeResponse(res, response) {
   res.writeHead(response.status, response.headers);
   if (response.body === null || response.body === undefined) {
@@ -221,13 +179,6 @@ async function writeResponse(res, response) {
   res.end(JSON.stringify(response.body));
 }
 
-/**
- * ファイルを HTTP response へ stream 配信します。
- * @param {import('node:http').ServerResponse} res 書き込み先の HTTP response。
- * @param {string} filePath 配信するファイルパス。
- * @param {{start:number,end:number}|undefined} range 配信 byte 範囲。未指定の場合は全体を配信します。
- * @returns {Promise<void>} stream 完了後に解決します。
- */
 function streamFileResponse(res, filePath, range) {
   return new Promise((resolve, reject) => {
     if (!fs.existsSync(filePath)) {
@@ -246,7 +197,6 @@ function streamFileResponse(res, filePath, range) {
         resolve();
       }
     };
-    /* c8 ignore next 6 */
     const fail = (error) => {
       if (!settled) {
         settled = true;
@@ -254,7 +204,6 @@ function streamFileResponse(res, filePath, range) {
       }
     };
     const stream = fs.createReadStream(filePath, range ? { start: range.start, end: range.end } : {});
-    /* c8 ignore next 7 */
     stream.on('error', (error) => {
       if (!res.headersSent) {
         res.writeHead(500, { 'content-type': 'application/json' });
@@ -267,11 +216,6 @@ function streamFileResponse(res, filePath, range) {
   });
 }
 
-/**
- * HTTP request body を文字列として読み込みます。
- * @param {import('node:http').IncomingMessage & {body?:Buffer|string}} req 読み込み対象の request。
- * @returns {Promise<string>} body 文字列。multipart の場合は binary string として返します。
- */
 function readBody(req) {
   if (Buffer.isBuffer(req.body)) {
     const contentType = req.headers['content-type'] || '';
@@ -292,11 +236,6 @@ function readBody(req) {
   });
 }
 
-/**
- * application/x-www-form-urlencoded body を form object へ変換します。
- * @param {string} rawBody URL encoded body。
- * @returns {Record<string,string|string[]>} form key/value。key が [] で終わる場合や重複 key は配列化します。
- */
 function parseForm(rawBody) {
   const form = {};
   const body = String(rawBody);
@@ -320,30 +259,14 @@ function parseForm(rawBody) {
   return form;
 }
 
-/**
- * URL encoded form の key/value を decode します。
- * @param {string} value decode 対象の文字列。
- * @returns {string} + を空白に戻し decodeURIComponent した文字列。
- */
 function decodeFormComponent(value) {
   return decodeURIComponent(value.replace(/\+/g, ' '));
 }
 
-/**
- * multipart header/body の binary string を UTF-8 文字列へ戻します。
- * @param {string} value binary string として扱う文字列。
- * @returns {string} UTF-8 として復元した文字列。
- */
 function decodeMultipartText(value) {
   return Buffer.from(String(value), 'binary').toString('utf8');
 }
-/**
- * form object に key/value を追加します。
- * @param {Record<string,string|string[]>} form 追加先の form object。
- * @param {string} key form key。末尾 [] は配列指定として扱います。
- * @param {string} value 追加する form value。
- * @returns {void}
- */
+
 function appendFormValue(form, key, value) {
   let cleanKey = key;
   if (key.endsWith('[]')) {
