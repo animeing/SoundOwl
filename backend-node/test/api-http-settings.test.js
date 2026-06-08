@@ -199,12 +199,12 @@ test('toApiRequest reads json urlencoded multipart and readBody error branches',
 test('createHttpServer writes handler result and converts thrown errors to JSON 500', async () => {
   const okServer = createHttpServer({ getSetting: async () => ({ status: 200, headers: { 'content-type': 'application/json' }, body: { ok: true } }) }, { cors: { allowOrigins: ['http://127.0.0.1:8081'] } });
   const okBaseUrl = await listenServer(okServer);
-  const okRes = await fetch(`${okBaseUrl}/api/get_setting.php`, { headers: { origin: 'http://127.0.0.1:8081' } });
+  const okRes = await fetch(`${okBaseUrl}/api/get_setting`, { headers: { origin: 'http://127.0.0.1:8081' } });
   assert.equal(okRes.status, 200);
   assert.equal(okRes.headers.get('access-control-allow-origin'), 'http://127.0.0.1:8081');
   assert.deepEqual(await okRes.json(), { ok: true });
 
-  const optionsRes = await fetch(`${okBaseUrl}/api/get_setting.php`, {
+  const optionsRes = await fetch(`${okBaseUrl}/api/get_setting`, {
     method: 'OPTIONS',
     headers: { origin: 'http://127.0.0.1:8081', 'access-control-request-headers': 'content-type' },
   });
@@ -217,21 +217,21 @@ test('createHttpServer writes handler result and converts thrown errors to JSON 
 
   const missingHandlerServer = createHttpServer({});
   const missingHandlerBaseUrl = await listenServer(missingHandlerServer);
-  const missingHandlerRes = await fetch(`${missingHandlerBaseUrl}/api/get_setting.php`);
+  const missingHandlerRes = await fetch(`${missingHandlerBaseUrl}/api/get_setting`);
   assert.equal(missingHandlerRes.status, 404);
   assert.equal(await missingHandlerRes.text(), 'not found');
   await closeServer(missingHandlerServer);
 
   const badServer = createHttpServer({ getSetting: async () => { throw new Error('bad'); } });
   const badBaseUrl = await listenServer(badServer);
-  const badRes = await fetch(`${badBaseUrl}/api/get_setting.php`);
+  const badRes = await fetch(`${badBaseUrl}/api/get_setting`);
   assert.equal(badRes.status, 500);
   assert.match(await badRes.text(), /bad/);
   await closeServer(badServer);
 
   const limitedServer = createHttpServer({ getSetting: async () => ({ status: 200, headers: {}, body: {} }) }, { bodyLimit: '1b' });
   const limitedBaseUrl = await listenServer(limitedServer);
-  const limitedRes = await fetch(`${limitedBaseUrl}/api/get_setting.php`, { method: 'POST', body: 'too-large' });
+  const limitedRes = await fetch(`${limitedBaseUrl}/api/get_setting`, { method: 'POST', body: 'too-large' });
   assert.equal(limitedRes.status, 413);
   assert.match(await limitedRes.text(), /too large/i);
   await closeServer(limitedServer);
@@ -317,4 +317,3 @@ async function tempPath(name) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'soundowl-settings-'));
   return path.join(dir, name);
 }
-
