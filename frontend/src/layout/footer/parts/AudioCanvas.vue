@@ -120,7 +120,7 @@ export default {
     },
     pushArt(){
       if(audio.currentAudioClip == null) return; // 現在の曲が無い場合は何もしない
-      const url = `${BASE.HOME}img/album_art.php?media_hash=${audio.currentAudioClip.albumKey}`;
+      const url = `${BASE.HOME}img/album_art?media_hash=${audio.currentAudioClip.albumKey}`;
       if(this.seq[this.seq.length-1] == url) return; // 連続で同じアートを追加しない
       this.arts.push({id:++this.seq,url});
       // 600ms 後に旧アートを削除して1枚だけ残す
@@ -189,7 +189,7 @@ export default {
       }
     },
     updateLyrics() {
-      this.lyrics = String(audio.data.lyrics || 'No lyrics available').replace(/\\r\\n?/g, '\\n');
+      this.lyrics = String(audio.data.lyrics || 'No lyrics available').replace(/\r\n?/g, '\n');
     }
   }
 };
