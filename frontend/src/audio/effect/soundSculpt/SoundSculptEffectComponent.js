@@ -24,7 +24,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
     // setInterval 用タイマーID
     this._effectInterval = null;
     // ループ間隔（ミリ秒） — 必要に応じて変更してください
-    this.effectIntervalMs = 50;
+    this.effectIntervalMs = 1000/60;
 
     /**
      * 前回のゲイン値を保存するオブジェクト
