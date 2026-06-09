@@ -416,19 +416,19 @@ export class SoundSculptEffectComponent extends AudioComponent {
      * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, previousAvg: number, smoothing: number, normalizedAvg: number, multiplier: number, order: number}>}
      */
     let frequencyBands = {
-      '8': { 'hz': 8, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 0.01, "order": 0 },
-      '16': { 'hz': 16, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 0.01, "order": 0 },
-      '32': { 'hz': 32, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 0.01, "order": 0 },
-      '64': { 'hz': 64, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 0.01, "order": 0 },
-      '125': { 'hz': 125, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.3, "order": 0 },
-      '250': { 'hz': 250, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.8, "order": 0 },
-      '500': { 'hz': 500, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.0, "order": 0 },
-      '1000': { 'hz': 1000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.2, "order": 0 },
-      '2000': { 'hz': 2000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.5, "order": 0 },
-      '4000': { 'hz': 4000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.8, "order": 0 },
-      '8000': { 'hz': 8000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 3.0, "order": 0 },
-      '16000': { 'hz': 16000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 3.2, "order": 0 },
-      '24000': { 'hz': 24000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 3.5, "order": 0 }
+      '8': { 'hz': 8, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2, "order": 0 },
+      '16': { 'hz': 16, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2, "order": 0 },
+      '32': { 'hz': 32, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2, "order": 0 },
+      '64': { 'hz': 64, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.7, "order": 0 },
+      '125': { 'hz': 125, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.7, "order": 0 },
+      '250': { 'hz': 250, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.4, "order": 0 },
+      '500': { 'hz': 500, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.4, "order": 0 },
+      '1000': { 'hz': 1000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.7, "order": 0 },
+      '2000': { 'hz': 2000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.7, "order": 0 },
+      '4000': { 'hz': 4000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.7, "order": 0 },
+      '8000': { 'hz': 8000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2, "order": 0 },
+      '16000': { 'hz': 16000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2, "order": 0 },
+      '24000': { 'hz': 24000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.5, "order": 0 }
     };
     this.voiceMetrics = { 'hz': 'voiceRange', 'sum': 0, 'count': 0, 'avg': 0, 'previousAvg': 0, 'normalizedAvg': 0, 'minHz': 300, 'maxHz': 3400 };
     let total = { 'count': 0, 'sum': 0 };
