@@ -21,6 +21,10 @@ export class SoundSculptEffectComponent extends AudioComponent {
 
     this.voiceMetrics = { 'sum': 0, 'count': 0, 'avg': 0, 'previousAvg': 0, 'normalizedAvg': 0, 'minHz': 300, 'maxHz': 3400 };
     this.animationFrame = new BaseFrameWork.AnimationFrame();
+    // setInterval 用タイマーID
+    this._effectInterval = null;
+    // ループ間隔（ミリ秒） — 必要に応じて変更してください
+    this.effectIntervalMs = 50;
 
     /**
      * 前回のゲイン値を保存するオブジェクト
@@ -31,19 +35,19 @@ export class SoundSculptEffectComponent extends AudioComponent {
      * 周波数帯ごとの強調レベルを設定するオブジェクト
      */
     this.emphasisLevels = {
-      '8': 1.9,
-      '16': 1.9,
-      '32': 1.9,
-      '64': 1.9,
-      '125': 2.5,
-      '250': 1.5,
-      '500': 1.5,
-      '1000': 2.5,
-      '2000': 2.5,
-      '4000': 4.5,
-      '8000': 4.5,
-      '16000': 4.5,
-      '24000': 4.5
+      '8': 2.0,
+      '16': 2.0,
+      '32': 2.0,
+      '64': 1.7,
+      '125': 1.7,
+      '250': 1.4,
+      '500': 1.4,
+      '1000': 1.7,
+      '2000': 1.7,
+      '4000': 1.7,
+      '8000': 2.0,
+      '16000': 2.0,
+      '24000': 2.5
     };
 
     /**
@@ -80,7 +84,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
     if (this.isUse) {
       this.startEffectLoop();
     } else {
-      this.animationFrame.stopAnimation();
+      this.stopEffectLoop();
       this.resetDefaultGains();
     }
   }
@@ -91,7 +95,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
     if (this.isUse) {
       this.startEffectLoop();
     } else {
-      this.animationFrame.stopAnimation();
+      this.stopEffectLoop();
       this.resetDefaultGains();
     }
   }
@@ -109,7 +113,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
   startEffectLoop() {
     const loop = () => {
       if (!this.isUse) {
-        this.animationFrame.stopAnimation();
+        this.stopEffectLoop();
         this.resetDefaultGains();
         return;
       }
@@ -157,7 +161,26 @@ export class SoundSculptEffectComponent extends AudioComponent {
       });
 
     };
-    this.animationFrame.startAnimation(loop);
+    // 既存のタイマーがあればクリア
+    if (this._effectInterval) {
+      clearInterval(this._effectInterval);
+      this._effectInterval = null;
+    }
+    this._effectInterval = setInterval(loop, this.effectIntervalMs);
+  }
+
+  stopEffectLoop() {
+    if (this._effectInterval) {
+      clearInterval(this._effectInterval);
+      this._effectInterval = null;
+    }
+    try {
+      if (this.animationFrame && this.animationFrame.stopAnimation) {
+        this.animationFrame.stopAnimation();
+      }
+    } catch (e) {
+      // noop
+    }
   }
   
 
