@@ -34,7 +34,7 @@ export default {
     this.updateControllerHeight();
     window.addEventListener('resize', this.updateControllerHeight);
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('resize', this.updateControllerHeight);
   },
   methods: {
