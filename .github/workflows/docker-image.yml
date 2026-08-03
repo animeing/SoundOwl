@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Soundowl Docker Image Build and Test
 
 on:
   push:
@@ -8,12 +8,20 @@ permissions:
   contents: read
 
 jobs:
+  frontend-build:
+    uses: ./.github/workflows/webpack.yml
+  
+  backend-contract-test:
+    uses: ./.github/workflows/backend-contract.yml
+  
+  sql-setup:
+    uses: ./.github/workflows/mariadb.yml
 
   build-and-test:
-
+    needs: [frontend-build, backend-contract-test, sql-setup]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Build Docker image
       run: docker build -t soundowl .
     - name: List files
