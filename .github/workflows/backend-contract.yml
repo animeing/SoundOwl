@@ -1,6 +1,7 @@
 name: Backend Contract
 
 on:
+  workflow_call:
   push:
     paths:
       - "backend-node/**"
