@@ -2,18 +2,25 @@ name: Docker Image CI
 
 on:
   push:
+    paths: ["backend-node/**"]
   pull_request:
+    paths: ["backend-node/**"]
 
 permissions:
   contents: read
 
 jobs:
-
-  build-and-test:
-
+  webpack:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - name: Build and Test Webpack
+        uses: ./.github/workflows/webpack.yml
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
     - name: Build Docker image
       run: docker build -t soundowl .
     - name: List files
