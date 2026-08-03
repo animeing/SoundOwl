@@ -11,11 +11,7 @@ permissions:
 
 jobs:
   webpack:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Build and Test Webpack
-        uses: ./.github/workflows/webpack.yml
+    uses: ./.github/workflows/webpack.yml
 
   build-and-test:
     runs-on: ubuntu-latest
