@@ -2,19 +2,22 @@ name: Docker Image CI
 
 on:
   push:
-    paths: ["backend-node/**", "parts/**", ".github/workflows/docker-image.yml", "Dockerfile", "docker-compose.yml"]
   pull_request:
-    paths: ["backend-node/**", "parts/**", ".github/workflows/docker-image.yml", "Dockerfile", "docker-compose.yml"]
 
 permissions:
   contents: read
 
 jobs:
-  webpack:
+  frontend-build:
     uses: ./.github/workflows/webpack.yml
+  
+  sql-setup:
+    uses: ./.github/workflows/mariadb.yml
 
   build-and-test:
+    needs: [frontend-build, sql-setup]
     runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v7
     - name: Build Docker image
