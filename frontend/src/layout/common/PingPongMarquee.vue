@@ -7,8 +7,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
-import {BaseFrameWork} from '../../base.js'
+import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
+import {BaseFrameWork} from '../../base.js';
 
 const props = defineProps({
   speed: {
@@ -21,39 +21,39 @@ const props = defineProps({
     default: 2000, // ミリ秒
     validator: value => value >= 0
   },
-})
+});
 
-const { speed, pauseTime } = props
+const { speed, pauseTime } = props;
 
 // Refs
-const containerRef = ref(null)
-const textRef = ref(null)
+const containerRef = ref(null);
+const textRef = ref(null);
 
 // コンテナ幅およびテキスト幅の取得用
-const containerWidthValue = ref(0)
-const textWidth = ref(0)
+const containerWidthValue = ref(0);
+const textWidth = ref(0);
 
 // スクロール位置（offset）
-const offset = ref(0)
+const offset = ref(0);
 
 // アニメーション管理
 let animationFrame = new BaseFrameWork.AnimationFrame();
-let isComponentMounted = true
+let isComponentMounted = true;
 
 // MutationObserver 管理
-let mutationObserver = null
-let debounceTimeout = null  // デバウンス用タイマー
+let mutationObserver = null;
+let debounceTimeout = null;  // デバウンス用タイマー
 
 // テキストに適用するスタイル
 const textStyle = computed(() => ({
   transform: `translateX(${offset.value}px)`,
   whiteSpace: 'nowrap',
   transition: 'none',
-}))
+}));
 
 // 一時停止用の Promise
 function pause(duration) {
-  return new Promise(resolve => setTimeout(resolve, duration))
+  return new Promise(resolve => setTimeout(resolve, duration));
 }
 
 // 指定したオフセットまでスクロールする関数
@@ -61,99 +61,104 @@ function scrollTo(targetOffset) {
   return new Promise(resolve => {
     function step() {
       if (!isComponentMounted) {
-        resolve()
-        return
+        resolve();
+        return;
       }
-      const distance = targetOffset - offset.value
-      const direction = distance < 0 ? -1 : 1
-      const move = Math.min(Math.abs(distance), speed) * direction
-      offset.value += move
+      const distance = targetOffset - offset.value;
+      const direction = distance < 0 ? -1 : 1;
+      const move = Math.min(Math.abs(distance), speed) * direction;
+      offset.value += move;
 
       // 目標に到達したか判定
       if (
         (direction === -1 && offset.value <= targetOffset) ||
         (direction === 1 && offset.value >= targetOffset)
       ) {
-        offset.value = targetOffset
-        resolve()
-        animationFrame.stopAnimation()
+        offset.value = targetOffset;
+        resolve();
+        animationFrame.stopAnimation();
       }
     }
-    animationFrame.startAnimation(step)
-  })
+    animationFrame.startAnimation(step);
+  });
 }
 
 // メインのスクロールループ
 async function runMarquee() {
   // 初期状態で数秒停止（offset = 0：テキスト左端が揃っている）
-  await pause(pauseTime)
+  await pause(pauseTime);
   while (isComponentMounted) {
     // 左方向へスクロール：テキスト末尾がコンテナ右端に来る位置
-    const targetOffset = containerWidthValue.value - textWidth.value
-    await scrollTo(targetOffset)
-    await pause(pauseTime)
+    const targetOffset = containerWidthValue.value - textWidth.value;
+    await scrollTo(targetOffset);
+    await pause(pauseTime);
 
     // 右方向へスクロール：テキスト先頭がコンテナ左端に戻る（offset = 0）
-    await scrollTo(0)
-    await pause(pauseTime)
+    await scrollTo(0);
+    await pause(pauseTime);
   }
 }
 
 async function updateMeasurementsAndRestart() {
-  await nextTick()
+  await nextTick();
   if (!containerRef.value || !textRef.value) {
-    console.error('containerRef or textRef is null')
-    return
+    console.error('containerRef or textRef is null');
+    return;
   }
-  containerWidthValue.value = containerRef.value.clientWidth
-  textWidth.value = textRef.value.scrollWidth
+  containerWidthValue.value = containerRef.value.clientWidth;
+  textWidth.value = textRef.value.scrollWidth;
 
   // テキストがコンテナに収まるならスクロール不要
   if (textWidth.value <= containerWidthValue.value) {
-    offset.value = 0
-    return
+    offset.value = 0;
+    return;
   }
 
   // 再起動する前にキャンセル
-  animationFrame.stopAnimation()
-  offset.value = 0
-  runMarquee()
+  animationFrame.stopAnimation();
+  offset.value = 0;
+  runMarquee();
 }
 
 onMounted(async () => {
-  await nextTick()
+  await nextTick();
   if (!containerRef.value || !textRef.value) {
-    console.error('containerRef or textRef is null')
-    return
+    console.error('containerRef or textRef is null');
+    return;
   }
-  containerWidthValue.value = containerRef.value.clientWidth
-  textWidth.value = textRef.value.scrollWidth
+  containerWidthValue.value = containerRef.value.clientWidth;
+  textWidth.value = textRef.value.scrollWidth;
 
   mutationObserver = new MutationObserver(() => {
-    if (debounceTimeout) clearTimeout(debounceTimeout)
+    if (debounceTimeout) clearTimeout(debounceTimeout);
     debounceTimeout = setTimeout(() => {
-      updateMeasurementsAndRestart()
-    }, 100)
+      updateMeasurementsAndRestart();
+    }, 100);
   })
 
   mutationObserver.observe(textRef.value, {
     childList: true,
     subtree: true,
     characterData: true,
-  })
+  });
+  mutationObserver.observe(containerRef.value, {
+    attributes: true,
+    childList: true,
+    subtree: true,
+  });
 
   if (textWidth.value <= containerWidthValue.value) {
-    return
+    return;
   }
-  offset.value = 0
-  runMarquee()
+  offset.value = 0;
+  runMarquee();
 })
 
 onBeforeUnmount(() => {
-  isComponentMounted = false
-  animationFrame.stopAnimation()
-  if (mutationObserver) mutationObserver.disconnect()
-})
+  isComponentMounted = false;
+  animationFrame.stopAnimation();
+  if (mutationObserver) mutationObserver.disconnect();
+});
 </script>
 
 <style scoped>
