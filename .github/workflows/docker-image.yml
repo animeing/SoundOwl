@@ -2,9 +2,9 @@ name: Docker Image CI
 
 on:
   push:
-    paths: ["backend-node/**"]
+    paths: ["backend-node/**", "parts/**", ".github/workflows/docker-image.yml", "Dockerfile", "docker-compose.yml"]
   pull_request:
-    paths: ["backend-node/**"]
+    paths: ["backend-node/**", "parts/**", ".github/workflows/docker-image.yml", "Dockerfile", "docker-compose.yml"]
 
 permissions:
   contents: read
