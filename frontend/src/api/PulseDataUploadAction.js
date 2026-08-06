@@ -3,7 +3,7 @@ import { ApiClientClass } from './apiClient/ApiClientClass';
 export class PulseDataUploadAction {
   execute(formData) {
     return new ApiClientClass(
-      'audio_pulse_data_upload.php',
+      'audio_pulse_data_upload',
       'post', 
       {
         headers: {

@@ -32,7 +32,7 @@ export default {
   mounted(){
     let action = new class extends BaseFrameWork.Network.RequestServerBase {
       constructor() {
-        super(null, BASE.API+'playlist_action.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
+        super(null, BASE.API+'playlist_action', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.POST);
       }
     };
     action.formDataMap.append('method', 'sounds');
