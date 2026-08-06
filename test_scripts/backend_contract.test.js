@@ -543,7 +543,7 @@ test('history_range_list returns fixture history in descending play_date order',
   const { response, json } = await fetchJson('/api/history_range_list.php', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ start: 2, end: 0 }),
+    body: JSON.stringify({ start: 0, end: 2 }),
   });
   assertJsonContentType(response);
   assert.ok(Array.isArray(json));
