@@ -13,7 +13,7 @@ export class AudioClip{
 
   get src(){
     if(this.soundHash != null){
-      return BASE.HOME+'sound_create/sound.php?media_hash='+this.soundHash;
+      return BASE.HOME+'sound_create/sound?media_hash='+this.soundHash;
     }
     return null;
   }
