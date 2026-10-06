@@ -29,6 +29,7 @@
                     <v-img
                       loading="lazy"
                       aspect-ratio="1"
+                      position="center bottom"
                       :src="createImageSrc(item.albumKey)"
                       class="slide-image"
                       :style="{ height: cardImgHeight + 'px' }"
@@ -173,7 +174,7 @@ export default {
       // Math.floor を使わず、浮動小数点のまま設定する
       this.cardWidth = availableWidth / itemsPerView;
       this.cardImgHeight = this.cardWidth * 0.9;
-      this.cardHeight = this.cardImgHeight + 52;
+      this.cardHeight = this.cardWidth * 1.2;
     },
   },
 };
@@ -182,33 +183,36 @@ export default {
 <style scoped>
 .slide-item {
   box-sizing: border-box;
-  padding-inline: 2px;
 }
 
 .slide-card {
   overflow: hidden;
 }
 
-.slide-image {
-  flex: 0 0 auto;
-}
-
 .slide-title-frame {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
-  flex: 0 0 52px;
+  flex: 0 1 52px;
   justify-content: center;
   min-width: 0;
   overflow: hidden;
-  padding: 8px;
+  padding: 16px 8px 0;
 }
 
 .slide-title {
+  font-size: 1rem;
+  letter-spacing: 0;
   margin: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .slide-title-frame {
+    flex-basis: 56px;
+    padding-top: 20px;
+  }
 }
 </style>
 

@@ -1,6 +1,6 @@
 <template>
     <div class="box">
-        <p class="px-4">{{ slideTitle }}</p>
+        <p class="slide-heading">{{ slideTitle }}</p>
         <SlideList
             :on-click="itemClick"
             :context-menu="contextmenu"
@@ -56,3 +56,9 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.slide-heading {
+  padding-inline: 16px;
+}
+</style>

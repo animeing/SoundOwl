@@ -427,7 +427,7 @@ export default {
 <style scoped>
 
 .audio-controller-bar {
-  padding: 10px 12px 8px;
+  padding: 5px 6px 3px;
 }
 
 .audio-controller-grid {
@@ -498,7 +498,7 @@ export default {
 .control-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
   min-width: 0;
 }
 
@@ -524,7 +524,7 @@ export default {
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content;
   align-items: center;
-  gap: 8px;
+  gap: 80px;
   min-width: 0;
 }
 
@@ -568,7 +568,7 @@ export default {
 
 @media screen and (max-width: 768px) {
   .audio-controller-bar {
-    padding: 8px 10px 6px;
+    padding: 4px 0 4px 6px;
   }
 
   .audio-controller-grid {
@@ -577,35 +577,25 @@ export default {
       "track"
       "actions"
       "progress";
-    row-gap: 8px;
+    row-gap: 0;
   }
 
   .audio-actions {
-    display: flex;
     grid-column: auto;
     grid-row: auto;
-    justify-content: center;
-    gap: 4px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    padding-right: 4px;
   }
 
-  .primary-controls,
+  .primary-controls {
+    grid-column: 1;
+    justify-self: center;
+  }
+
   .secondary-controls {
-    grid-column: auto;
-    justify-self: auto;
-  }
-
-  .control-group {
-    gap: 4px;
-  }
-
-  .control-button {
-    width: 44px;
-    height: 44px;
-  }
-
-  .album-wrap :deep(.v-img) {
-    width: 64px !important;
-    height: 64px !important;
+    grid-column: 2;
+    justify-self: end;
   }
 
   .audio-title {
@@ -629,7 +619,7 @@ export default {
   .utility-group {
     flex: 0 0 100%;
     max-width: 100%;
-    justify-content: center !important;
+    justify-content: center;
   }
 
   .utility-group {
@@ -637,11 +627,13 @@ export default {
   }
 
   .progress-row {
+    gap: 2px;
     margin-top: 8px;
+    margin-inline: 10px 0;
   }
 
   .progress-time {
-    justify-content: flex-end !important;
+    justify-content: flex-end;
     font-size: 0.9rem;
   }
 }

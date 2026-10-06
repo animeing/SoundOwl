@@ -18,8 +18,8 @@
     <v-btn
       v-if="isSmall && !showSearch"
       variant="outlined"
-      density="compact"
       rounded
+      height="40"
       @click="toggleSearch"
       class="search-btn"
     >
@@ -100,7 +100,7 @@ export default {
 
 <style scoped>
   :deep(.v-toolbar__content) {
-    padding-inline: 16px 6px;
+    padding-inline: 20px 6px;
   }
 
   .search-input {
@@ -118,10 +118,11 @@ export default {
 
   .v-toolbar-title{
     overflow-x: hidden;
-    margin-inline-start: 0 !important;
+    margin-inline-start: 0;
     flex: 0 0 auto;
   }
   .search-btn {
+    border: 1px solid currentColor;
     flex: 0 0 auto;
   }
 
@@ -132,7 +133,7 @@ export default {
 
   @media screen and (max-width: 768px) {
     :deep(.v-toolbar__content) {
-      padding-inline: 14px 4px;
+      padding-inline: 20px 4px;
     }
 
     .search-input {
@@ -150,7 +151,6 @@ export default {
     }
 
     .menu-slot {
-      margin-left: 4px;
       flex: 0 0 auto;
     }
   }
