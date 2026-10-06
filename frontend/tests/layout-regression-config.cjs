@@ -17,11 +17,16 @@ const ROUTES = [
   { name: 'setup', path: '/setup' },
 ];
 
+const LAYOUT_BROWSER = process.env.SOUNDOWL_LAYOUT_BROWSER || 'chromium';
+if (!['chromium', 'firefox'].includes(LAYOUT_BROWSER)) {
+  throw new Error(`Unsupported SOUNDOWL_LAYOUT_BROWSER: ${LAYOUT_BROWSER}`);
+}
+
 const VIEWPORTS = [
-  { name: 'chromium-dark-1920x1080', width: 1920, height: 1080 },
-  { name: 'chromium-dark-768x1024', width: 768, height: 1024 },
-  { name: 'chromium-dark-390x844', width: 390, height: 844 },
-  { name: 'chromium-dark-320x667', width: 320, height: 667 },
+  { name: `${LAYOUT_BROWSER}-dark-1920x1080`, width: 1920, height: 1080 },
+  { name: `${LAYOUT_BROWSER}-dark-768x1024`, width: 768, height: 1024 },
+  { name: `${LAYOUT_BROWSER}-dark-390x844`, width: 390, height: 844 },
+  { name: `${LAYOUT_BROWSER}-dark-320x667`, width: 320, height: 667 },
 ];
 
 const LAYOUT_STATES = [
@@ -29,14 +34,23 @@ const LAYOUT_STATES = [
   { name: 'full-layout', action: 'full-layout' },
 ];
 
+const EXCLUDED_ROUTE_NAMES = new Set(
+  (process.env.SOUNDOWL_LAYOUT_EXCLUDE_ROUTES || '').split(',').map((name) => name.trim()).filter(Boolean),
+);
+for (const name of EXCLUDED_ROUTE_NAMES) {
+  if (!ROUTES.some((route) => route.name === name)) {
+    throw new Error(`Unknown SOUNDOWL_LAYOUT_EXCLUDE_ROUTES name: ${name}`);
+  }
+}
+
 const DEFAULT_BASELINE_DIR = path.join(__dirname, 'layout-baselines');
 const DEFAULT_ACTUAL_BACKEND_URL = 'http://soundowl-layout-baseline.local/';
 const LAYOUT_COLOR_SCHEME = 'dark';
 
 function selectRoutes(filter) {
-  return filter
-    ? ROUTES.filter((route) => route.name.includes(filter) || route.path.includes(filter))
-    : ROUTES;
+  return ROUTES
+    .filter((route) => !EXCLUDED_ROUTE_NAMES.has(route.name))
+    .filter((route) => !filter || route.name.includes(filter) || route.path.includes(filter));
 }
 
 function selectViewports(filter) {
@@ -75,6 +89,7 @@ function safeName(value) {
 module.exports = {
   DEFAULT_ACTUAL_BACKEND_URL,
   DEFAULT_BASELINE_DIR,
+  LAYOUT_BROWSER,
   LAYOUT_COLOR_SCHEME,
   LAYOUT_STATES,
   ROUTES,

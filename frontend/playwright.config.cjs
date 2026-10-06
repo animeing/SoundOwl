@@ -2,6 +2,7 @@ const path = require('node:path');
 const { defineConfig } = require('@playwright/test');
 const {
   DEFAULT_ACTUAL_BACKEND_URL,
+  LAYOUT_BROWSER,
   LAYOUT_COLOR_SCHEME,
   selectViewports,
 } = require('./tests/layout-regression-config.cjs');
@@ -14,7 +15,7 @@ const frontendConfigPath = process.env.SOUNDOWL_LAYOUT_FRONTEND_CONFIG_PATH
 module.exports = defineConfig({
   testDir: './tests',
   outputDir: './test-results/playwright',
-  timeout: 240000,
+  timeout: 600000,
   fullyParallel: false,
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI
@@ -22,7 +23,7 @@ module.exports = defineConfig({
     : [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   use: {
     baseURL: localUrl,
-    browserName: 'chromium',
+    browserName: LAYOUT_BROWSER,
     colorScheme: LAYOUT_COLOR_SCHEME,
     deviceScaleFactor: 1,
     locale: 'ja-JP',

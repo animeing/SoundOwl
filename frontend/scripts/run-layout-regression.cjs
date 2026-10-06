@@ -31,7 +31,7 @@ async function main() {
   logFilter('state', env.SOUNDOWL_LAYOUT_STATE_FILTER);
 
   if (options.installBrowser) {
-    await runCommand(process.execPath, [playwrightCli(), 'install', 'chromium'], { env });
+    await runCommand(process.execPath, [playwrightCli(), 'install', env.SOUNDOWL_LAYOUT_BROWSER || 'chromium'], { env });
   }
 
   if (!options.skipBuild) {

@@ -184,7 +184,7 @@ function settingsResponse() {
     db_user: 'layout_user',
     db_pass: 'layout_password',
     sound_directory: '/synthetic/sound-library',
-    exclusionPaths: ['Temporary Files', 'Ignore This Folder'],
+    exclusionPaths: 'Temporary Files|Ignore This Folder',
     websocket_retry_count: 2,
     websocket_retry_interval: 2500,
   };
