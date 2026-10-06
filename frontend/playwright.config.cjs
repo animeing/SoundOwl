@@ -31,7 +31,7 @@ module.exports = defineConfig({
     video: 'off',
   },
   webServer: {
-    command: 'npm start',
+    command: `"${process.execPath}" "${path.join(__dirname, 'server.js')}"`,
     url: localUrl,
     reuseExistingServer: false,
     timeout: 120000,

@@ -17,7 +17,7 @@ const {
   summarizeScreenshotStats,
 } = require('./layout-image-assertions.cjs');
 const { compareScreenshots } = require('./layout-diff-analysis.cjs');
-const { captureLayoutScreenshot } = require('./layout-page-actions.cjs');
+const { assertSyntheticSoundList, captureLayoutScreenshot } = require('./layout-page-actions.cjs');
 const { installSyntheticNetworkMocks } = require('./layout-synthetic-mocks.cjs');
 
 const ROUTE_FILTER = process.env.SOUNDOWL_LAYOUT_ROUTE_FILTER;
@@ -52,6 +52,7 @@ test.describe('SoundOwl layout regression', () => {
     const actualErrors = collectBrowserErrors(page);
 
     await installSyntheticNetworkMocks(page, BACKEND_URL);
+    await installSyntheticNetworkMocks(page, testInfo.project.use.baseURL);
 
     for (const route of SELECTED_ROUTES) {
       for (const state of SELECTED_STATES) {
@@ -77,6 +78,7 @@ test.describe('SoundOwl layout regression', () => {
           networkIdleTimeoutMs: NETWORK_IDLE_TIMEOUT_MS,
           settleMs: SETTLE_MS,
         });
+        await assertSyntheticSoundList(page, route.name);
         await fs.copyFile(baselinePath, referencePath);
 
         const [baselineStats, actualStats, actualElementRecords] = await Promise.all([
@@ -744,7 +746,13 @@ function formatIssueSummary(comparison) {
 }
 
 function escapeMarkdownTableCell(value) {
-  return String(value).replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>');
+  return String(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\|/g, '\\|')
+    .replace(/\r?\n/g, '<br>');
 }
 
 function formatRatio(value) {

@@ -25,20 +25,20 @@ async function main() {
   env.PORT = String(port);
 
   console.log(`[layout] frontend port: ${port}`);
-  console.log(`[layout] artifact dir: ${path.resolve(FRONTEND_ROOT, env.SOUNDOWL_LAYOUT_ARTIFACT_DIR)}`);
+  console.log('[layout] artifacts will be written to the selected artifact directory');
   logFilter('route', env.SOUNDOWL_LAYOUT_ROUTE_FILTER);
   logFilter('viewport', env.SOUNDOWL_LAYOUT_VIEWPORT_FILTER);
   logFilter('state', env.SOUNDOWL_LAYOUT_STATE_FILTER);
 
   if (options.installBrowser) {
-    await runCommand(npxCommand(), ['playwright', 'install', 'chromium'], { env });
+    await runCommand(process.execPath, [playwrightCli(), 'install', 'chromium'], { env });
   }
 
   if (!options.skipBuild) {
-    await runCommand(npmCommand(), ['run', 'build'], { env });
+    await runCommand(process.execPath, [require.resolve('webpack-cli/bin/cli.js'), '--config', 'webpack.config.js'], { env });
   }
 
-  const playwrightArgs = ['playwright', 'test', '--config', 'playwright.config.cjs'];
+  const playwrightArgs = [playwrightCli(), 'test', '--config', 'playwright.config.cjs'];
   if (!hasWorkersArg(options.playwrightArgs)) {
     playwrightArgs.push('--workers=1');
   }
@@ -46,7 +46,7 @@ async function main() {
 
   let testExitCode = 0;
   try {
-    await runCommand(npxCommand(), playwrightArgs, { env });
+    await runCommand(process.execPath, playwrightArgs, { env });
   } catch (error) {
     testExitCode = error.exitCode || 1;
   }
@@ -156,10 +156,9 @@ function setOptionalEnv(env, name, value) {
 }
 
 function runCommand(command, args, options) {
-  console.log(`[layout] ${command} ${args.join(' ')}`);
-  const spawned = getSpawnCommand(command, args);
+  console.log('[layout] running build or Playwright command');
   return new Promise((resolve, reject) => {
-    const child = spawn(spawned.command, spawned.args, {
+    const child = spawn(command, args, {
       cwd: FRONTEND_ROOT,
       env: options.env,
       shell: false,
@@ -178,26 +177,8 @@ function runCommand(command, args, options) {
   });
 }
 
-function getSpawnCommand(command, args) {
-  if (process.platform !== 'win32') {
-    return { command, args };
-  }
-  return {
-    command: process.env.ComSpec || 'cmd.exe',
-    args: ['/d', '/s', '/c', quoteCmdCommand([command, ...args])],
-  };
-}
-
-function quoteCmdCommand(parts) {
-  return parts.map(quoteCmdArg).join(' ');
-}
-
-function quoteCmdArg(part) {
-  const value = String(part);
-  if (/^[A-Za-z0-9_./:=\\-]+$/.test(value)) {
-    return value;
-  }
-  return `"${value.replace(/"/g, '""')}"`;
+function playwrightCli() {
+  return path.join(FRONTEND_ROOT, 'node_modules', '@playwright', 'test', 'cli.js');
 }
 
 function findOpenPort(startPort) {
@@ -224,13 +205,7 @@ function printSummaryLocations(artifactDir) {
   const resolvedArtifactDir = path.resolve(FRONTEND_ROOT, artifactDir);
   const summaries = findFiles(resolvedArtifactDir, 'summary.md');
   const jsonSummaries = findFiles(resolvedArtifactDir, 'summary.json');
-  console.log(`[layout] artifacts: ${resolvedArtifactDir}`);
-  for (const summary of summaries) {
-    console.log(`[layout] summary: ${summary}`);
-  }
-  for (const summary of jsonSummaries) {
-    console.log(`[layout] summary json: ${summary}`);
-  }
+  console.log(`[layout] generated ${summaries.length} Markdown and ${jsonSummaries.length} JSON summaries in the selected artifact directory`);
 }
 
 function findFiles(rootDir, fileName) {
@@ -259,16 +234,8 @@ function hasWorkersArg(args) {
 
 function logFilter(label, value) {
   if (value) {
-    console.log(`[layout] ${label} filter: ${value}`);
+    console.log(`[layout] ${label} filter: enabled`);
   }
-}
-
-function npmCommand() {
-  return process.platform === 'win32' ? 'npm.cmd' : 'npm';
-}
-
-function npxCommand() {
-  return process.platform === 'win32' ? 'npx.cmd' : 'npx';
 }
 
 function printHelp() {

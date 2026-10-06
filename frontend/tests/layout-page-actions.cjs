@@ -22,6 +22,17 @@ async function captureLayoutScreenshot(page, url, state, screenshotPath, options
   });
 }
 
+async function assertSyntheticSoundList(page, routeName) {
+  if (!['history-list', 'album', 'artist', 'search', 'playlist-sounds'].includes(routeName)) {
+    return;
+  }
+  const titles = await page.locator('#base button.audio-item .audio-title').allTextContents();
+  const expectedCount = routeName === 'playlist-sounds' ? 8 : 16;
+  if (titles.length !== expectedCount || titles.some((title) => !title.startsWith('Synthetic Layout Track '))) {
+    throw new Error(`${routeName} rendered ${titles.length}/${expectedCount} synthetic sound titles; unexpected: ${titles.filter((title) => !title.startsWith('Synthetic Layout Track ')).slice(0, 3).join(', ')}`);
+  }
+}
+
 async function prepareLayoutPage(page, url, state, options = {}) {
   const networkIdleTimeoutMs = options.networkIdleTimeoutMs ?? 3000;
   const settleMs = options.settleMs ?? 1000;
@@ -103,6 +114,7 @@ async function waitForSettledPage(page, networkIdleTimeoutMs, settleMs) {
 
 module.exports = {
   applyLayoutState,
+  assertSyntheticSoundList,
   captureLayoutScreenshot,
   prepareLayoutPage,
 };

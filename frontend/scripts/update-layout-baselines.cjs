@@ -11,7 +11,7 @@ const {
   selectViewports,
 } = require('../tests/layout-regression-config.cjs');
 const { assertUsefulScreenshot, summarizeScreenshotStats } = require('../tests/layout-image-assertions.cjs');
-const { captureLayoutScreenshot } = require('../tests/layout-page-actions.cjs');
+const { assertSyntheticSoundList, captureLayoutScreenshot } = require('../tests/layout-page-actions.cjs');
 const {
   DEFAULT_SYNTHETIC_BACKEND_URL,
   installSyntheticFrontendConfigMock,
@@ -84,7 +84,7 @@ async function main() {
             const baselinePath = buildBaselinePath(CAPTURE_ROOT, viewport.name, route.name, state.name);
             await fs.mkdir(path.dirname(baselinePath), { recursive: true });
             const label = `${viewport.name} ${route.name} ${state.name}`;
-            const stats = await captureBaseline(page, buildRouteUrl(REFERENCE_URL, route.path), state, baselinePath, label);
+            const stats = await captureBaseline(page, buildRouteUrl(REFERENCE_URL, route.path), state, baselinePath, label, route.name);
             console.log(`Captured ${label} (${summarizeScreenshotStats(stats)})`);
           }
         }
@@ -135,7 +135,7 @@ npm run test:layout:local --prefix frontend -- --route home --viewport 320x667 -
 \`\`\`
 `);
 }
-async function captureBaseline(page, url, state, screenshotPath, label) {
+async function captureBaseline(page, url, state, screenshotPath, label, routeName) {
   const tempPath = `${screenshotPath}.tmp-${process.pid}.png`;
   try {
     await fs.rm(tempPath, { force: true });
@@ -143,6 +143,7 @@ async function captureBaseline(page, url, state, screenshotPath, label) {
       networkIdleTimeoutMs: NETWORK_IDLE_TIMEOUT_MS,
       settleMs: SETTLE_MS,
     });
+    await assertSyntheticSoundList(page, routeName);
     const stats = await assertUsefulScreenshot(tempPath, `Baseline ${label}`);
     await fs.rm(screenshotPath, { force: true });
     await fs.rename(tempPath, screenshotPath);

@@ -9,6 +9,7 @@
       <v-btn
         v-bind="props"
         variant="elevated"
+        color="grey-darken-4"
         class="menu-button"
       >
         MENU

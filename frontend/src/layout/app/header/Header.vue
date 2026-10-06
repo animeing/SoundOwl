@@ -108,12 +108,12 @@ export default {
     max-width: 760px;
   }
 
-  .search-input :deep(.v-field__outline) {
-    --v-field-border-opacity: 0.7;
+  .search-input :deep(input) {
+    font-family: Roboto, sans-serif;
   }
 
-  .search-input :deep(.v-field) {
-    border: 1px solid rgba(var(--v-theme-on-surface), 0.55);
+  .search-input :deep(.v-field__outline) {
+    --v-field-border-opacity: 0.7;
   }
 
   .v-toolbar-title{

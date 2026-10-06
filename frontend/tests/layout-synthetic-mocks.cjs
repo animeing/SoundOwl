@@ -23,7 +23,7 @@ async function installSyntheticNetworkMocks(page, backendUrl) {
 
       const url = new URL(request.url());
       if (url.pathname.startsWith('/api/')) {
-        await fulfillJson(route, responseForApi(url.pathname, request.postData() || ''));
+        await fulfillJson(route, await responseForApi(url.pathname, request));
         return;
       }
       if (url.pathname.startsWith('/img/')) {
@@ -70,7 +70,7 @@ function isSyntheticBackendPath(pathname) {
     || pathname.startsWith('/audio_pulse/');
 }
 
-function responseForApi(pathname, postData) {
+async function responseForApi(pathname, request) {
   switch (pathname.replace(/^\/api\/+/, '')) {
     case 'album_count_list.php':
       return ALBUMS.map((album, index) => ({ ...album, count: 100 - index }));
@@ -87,7 +87,7 @@ function responseForApi(pathname, postData) {
     case 'artist_list.php':
       return ARTISTS;
     case 'playlist_action.php':
-      return playlistResponse(postData);
+      return playlistResponse(request);
     case 'get_setting.php':
       return settingsResponse();
     case 'site_status.php':
@@ -116,8 +116,18 @@ function responseForApi(pathname, postData) {
   }
 }
 
-function playlistResponse(postData) {
-  const params = new URLSearchParams(postData);
+async function playlistResponse(request) {
+  const body = request.postDataBuffer();
+  const contentType = request.headers()['content-type'];
+  if (!body || !contentType) {
+    return PLAYLISTS;
+  }
+  const formRequest = new Request(request.url(), {
+    method: 'POST',
+    headers: { 'content-type': contentType },
+    body,
+  });
+  const params = await formRequest.formData();
   if (params.get('method') === 'sounds') {
     return TRACKS.slice(0, 8).map(flattenTrack);
   }

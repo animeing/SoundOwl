@@ -515,8 +515,8 @@ export default {
 
 .control-button {
   flex: 0 0 auto;
-  background: rgba(255, 255, 255, 0.14);
-  color: white;
+  background: #212121;
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .progress-row {
@@ -526,6 +526,10 @@ export default {
   align-items: center;
   gap: 80px;
   min-width: 0;
+}
+
+.progress-times {
+  align-self: start;
 }
 
 .progress-time-text {
@@ -627,9 +631,9 @@ export default {
   }
 
   .progress-row {
-    gap: 2px;
+    gap: 6px;
     margin-top: 8px;
-    margin-inline: 10px 0;
+    margin-inline: 10px 4px;
   }
 
   .progress-time {
