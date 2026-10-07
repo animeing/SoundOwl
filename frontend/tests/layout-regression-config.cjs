@@ -67,14 +67,16 @@ function selectLayoutStates(filter) {
 
 function buildRouteUrl(root, routePath) {
   const url = new URL(root);
-  const trimmedRoute = routePath.replace(/^\/+/, '');
+  const routeUrl = new URL(routePath, url.origin);
+  const trimmedRoute = routeUrl.pathname.replace(/^\/+/, '');
   if (url.hash) {
     const baseHash = url.hash.replace(/^#/, '').replace(/\/?$/, '/');
-    url.hash = trimmedRoute ? `${baseHash}${trimmedRoute}` : baseHash;
+    url.hash = trimmedRoute ? `${baseHash}${trimmedRoute}${routeUrl.search}` : baseHash;
     return url.href;
   }
   const basePath = url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`;
   url.pathname = `${basePath}${trimmedRoute}`.replace(/\/{2,}/g, '/');
+  url.search = routeUrl.search;
   return url.href;
 }
 
