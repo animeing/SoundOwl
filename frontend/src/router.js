@@ -109,7 +109,8 @@ const router = createRouter({
       name: 'equalizer',
       component: SettingVue,
       meta:{
-        title:'Equalizer'
+        title:'Equalizer',
+        fullBleed: true
       }
     },
     {

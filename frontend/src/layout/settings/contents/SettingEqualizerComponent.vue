@@ -1,6 +1,6 @@
 <template>
-  <v-container class="py-4" fluid>
-    <v-card style="background: inherit;">
+  <v-container class="equalizer-container" fluid>
+    <v-card class="equalizer-card" style="background: inherit;">
       <v-card-title>Equalizer</v-card-title>
         <v-card-actions>
           <v-select
@@ -14,7 +14,7 @@
             class="equalizer-preset-select"></v-select>
         </v-card-actions>
         <v-card-text>
-          <v-card class="mb-4" outlined style="background: inherit;">
+          <v-card class="equalizer-setting-card" outlined style="background: inherit;">
             <v-card-title>Setting</v-card-title>
             <v-card-text>
                 <div class="equalizer-setting-container">
@@ -100,3 +100,48 @@ export default {
   }
 };
 </script>
+<style>
+/* The legacy element reset overrides Vuetify's layered card spacing. */
+.equalizer-container {
+  padding: 16px;
+}
+
+.equalizer-card > .v-card-title,
+.equalizer-setting-card > .v-card-title {
+  padding: 8px 16px;
+  font-size: 20px;
+  line-height: 32px;
+}
+
+.equalizer-card > .v-card-actions {
+  padding: 0 8px 8px;
+}
+
+.equalizer-preset-select .v-field {
+  padding: 0 12px 0 0;
+}
+
+.equalizer-preset-select .v-field__input {
+  padding: 24px 6px 4px 16px;
+}
+
+.equalizer-preset-select .v-field-label {
+  margin: 0 6px 0 16px;
+}
+
+.equalizer-preset-select .v-field__append-inner {
+  width: 28px;
+}
+
+.equalizer-card > .v-card-text {
+  padding: 16px;
+}
+
+.equalizer-setting-card {
+  margin-bottom: 16px;
+}
+
+.equalizer-setting-card > .v-card-text {
+  padding: 0 16px 16px;
+}
+</style>
