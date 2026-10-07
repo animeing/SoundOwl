@@ -144,4 +144,8 @@ export default {
 .equalizer-setting-card > .v-card-text {
   padding: 0 16px 16px;
 }
+
+.equalizer-card .equalizer-setting-container {
+  line-height: 1.425;
+}
 </style>
