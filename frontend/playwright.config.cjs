@@ -7,8 +7,13 @@ const {
   selectViewports,
 } = require('./tests/layout-regression-config.cjs');
 
-const frontendPort = Number(process.env.FRONTEND_PORT || process.env.PORT || 8081);
-const localUrl = process.env.SOUNDOWL_LAYOUT_LOCAL_URL || `http://127.0.0.1:${frontendPort}/#/`;
+const defaultPort = Number(process.env.FRONTEND_PORT || process.env.PORT || 8081);
+const localUrl = process.env.SOUNDOWL_LAYOUT_LOCAL_URL || `http://127.0.0.1:${defaultPort}/#/`;
+const localAddress = new URL(localUrl);
+if (localAddress.protocol !== 'http:') {
+  throw new Error('SOUNDOWL_LAYOUT_LOCAL_URL must use http.');
+}
+const frontendPort = Number(localAddress.port || 80);
 const frontendConfigPath = process.env.SOUNDOWL_LAYOUT_FRONTEND_CONFIG_PATH
   || path.join(process.cwd(), 'test-results', 'layout-frontend-settings.json');
 
@@ -37,7 +42,7 @@ module.exports = defineConfig({
     reuseExistingServer: false,
     timeout: 120000,
     env: {
-      FRONTEND_HOST: '127.0.0.1',
+      FRONTEND_HOST: localAddress.hostname,
       FRONTEND_PORT: String(frontendPort),
       FRONTEND_CONFIG_PATH: frontendConfigPath,
       FRONTEND_BACKEND_SERVER_DEFAULT: process.env.SOUNDOWL_LAYOUT_BACKEND_URL || DEFAULT_ACTUAL_BACKEND_URL,

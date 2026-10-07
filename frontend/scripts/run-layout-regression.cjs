@@ -20,9 +20,14 @@ async function main() {
   }
 
   const env = buildEnvironment(options);
-  const port = options.port || await findOpenPort(18080);
+  const localUrl = env.SOUNDOWL_LAYOUT_LOCAL_URL ? new URL(env.SOUNDOWL_LAYOUT_LOCAL_URL) : null;
+  const port = options.port || Number(localUrl?.port) || await findOpenPort(18080);
   env.FRONTEND_PORT = String(port);
   env.PORT = String(port);
+  if (localUrl) {
+    localUrl.port = String(port);
+    env.SOUNDOWL_LAYOUT_LOCAL_URL = localUrl.href;
+  }
 
   console.log(`[layout] frontend port: ${port}`);
   console.log('[layout] artifacts will be written to the selected artifact directory');

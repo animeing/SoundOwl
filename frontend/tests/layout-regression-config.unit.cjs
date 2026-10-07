@@ -21,3 +21,23 @@ test('every configured route rejects a NotFound baseline', async () => {
     await assert.rejects(assertSyntheticRoute(notFoundPage, route.name), /unexpected page title/, route.name);
   }
 });
+
+test('custom local URL selects the Playwright server port', () => {
+  const configPath = require.resolve('../playwright.config.cjs');
+  const previousUrl = process.env.SOUNDOWL_LAYOUT_LOCAL_URL;
+  try {
+    process.env.SOUNDOWL_LAYOUT_LOCAL_URL = 'http://127.0.0.1:9000/#/';
+    delete require.cache[configPath];
+    const config = require(configPath);
+    assert.equal(config.use.baseURL, 'http://127.0.0.1:9000/#/');
+    assert.equal(config.webServer.env.FRONTEND_PORT, '9000');
+    assert.equal(config.webServer.env.FRONTEND_HOST, '127.0.0.1');
+  } finally {
+    if (previousUrl === undefined) {
+      delete process.env.SOUNDOWL_LAYOUT_LOCAL_URL;
+    } else {
+      process.env.SOUNDOWL_LAYOUT_LOCAL_URL = previousUrl;
+    }
+    delete require.cache[configPath];
+  }
+});
