@@ -243,9 +243,13 @@ async function replaceBaselineDir(sourceDir, targetDir) {
   await fs.mkdir(targetDir, { recursive: true });
   const sourceName = path.basename(sourceDir);
   const existingEntries = await fs.readdir(targetDir, { withFileTypes: true });
+  const preservedEntries = new Set([sourceName]);
+  if (path.resolve(targetDir) === path.resolve(DEFAULT_BASELINE_DIR)) {
+    preservedEntries.add('ubuntu-firefox');
+  }
 
   await Promise.all(existingEntries
-    .filter((entry) => entry.name !== sourceName)
+    .filter((entry) => !preservedEntries.has(entry.name))
     .map((entry) => fs.rm(path.join(targetDir, entry.name), { recursive: true, force: true })));
 
   const capturedEntries = await fs.readdir(sourceDir, { withFileTypes: true });

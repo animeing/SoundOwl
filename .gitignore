@@ -19,6 +19,7 @@
 /backend-node/test-results/
 **/test-results/
 **/playwright-report/
+/frontend/tests/layout-baselines/local-review/
 *.log
 
 # Runtime/local data
