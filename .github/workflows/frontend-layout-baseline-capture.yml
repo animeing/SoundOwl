@@ -1,10 +1,8 @@
-name: Temporary Vuetify v3 Layout Baseline Capture
+name: Temporary Completed Layout Baseline Capture
 
 on:
   pull_request:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/frontend-layout-baseline-capture.yml"
+    branches: ["codex/frontend-layout-regression"]
 
 permissions:
   contents: read
@@ -32,18 +30,12 @@ jobs:
       SOUNDOWL_LAYOUT_BROWSER: ${{ matrix.browser }}
       SOUNDOWL_LAYOUT_EXCLUDE_ROUTES: ${{ matrix.exclude_routes }}
       SOUNDOWL_LAYOUT_BASELINE_DIR: ${{ github.workspace }}/frontend/tests/layout-baselines/${{ matrix.label }}
-      SOUNDOWL_LAYOUT_REFERENCE_ROOT: ${{ github.workspace }}/reference
+      SOUNDOWL_LAYOUT_REFERENCE_ROOT: ${{ github.workspace }}/frontend/tests/completed-reference
+      SOUNDOWL_LAYOUT_REFERENCE_STATIC_INDEX: "1"
       SOUNDOWL_LAYOUT_NETWORK_IDLE_TIMEOUT_MS: "3000"
 
     steps:
       - uses: actions/checkout@v7
-
-      - name: Check out last Vuetify v3 commit
-        uses: actions/checkout@v7
-        with:
-          ref: 2fb6d510c066162d19829e6d779cd1e128b18105
-          path: reference
-          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
@@ -53,14 +45,6 @@ jobs:
 
       - name: Install capture dependencies
         run: npm ci
-
-      - name: Install v3 dependencies
-        run: npm ci
-        working-directory: reference/frontend
-
-      - name: Build v3 frontend
-        run: npm run build
-        working-directory: reference/frontend
 
       - name: Install Firefox and Linux dependencies
         if: runner.os == 'Linux'
@@ -76,6 +60,6 @@ jobs:
       - name: Upload captured baseline
         uses: actions/upload-artifact@v7
         with:
-          name: v3-layout-baseline-${{ matrix.label }}
+          name: completed-layout-baseline-${{ matrix.label }}
           path: frontend/tests/layout-baselines/${{ matrix.label }}
           retention-days: 7

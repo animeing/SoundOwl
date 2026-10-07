@@ -143,17 +143,35 @@ async function installSyntheticWebSocketMock(page) {
 
 async function startReferenceServer(root) {
   const resolvedRoot = path.resolve(root);
-  const indexPhp = await fs.readFile(path.join(resolvedRoot, 'index.php'), 'utf8');
-  for (const asset of ['css/style.css', 'css/dark-mode.css', 'js/main.bundle.js']) {
-    if (!indexPhp.includes(asset)) {
-      throw new Error(`Reference index.php does not include ${asset}`);
+  const staticIndex = process.env.SOUNDOWL_LAYOUT_REFERENCE_STATIC_INDEX === '1';
+  if (staticIndex) {
+    await fs.access(path.join(resolvedRoot, 'index.html'));
+    await fs.access(path.join(resolvedRoot, 'js/main.bundle.js'));
+  } else {
+    const indexPhp = await fs.readFile(path.join(resolvedRoot, 'index.php'), 'utf8');
+    for (const asset of ['css/style.css', 'css/dark-mode.css', 'js/main.bundle.js']) {
+      if (!indexPhp.includes(asset)) {
+        throw new Error(`Reference index.php does not include ${asset}`);
+      }
+      await fs.access(path.join(resolvedRoot, asset));
     }
-    await fs.access(path.join(resolvedRoot, asset));
   }
 
   const app = express();
-  app.get('/', (_req, res) => res.sendFile(path.resolve(__dirname, '../../index.html')));
+  const entry = staticIndex ? path.join(resolvedRoot, 'index.html') : path.resolve(__dirname, '../../index.html');
+  app.get('/', (_req, res) => res.sendFile(entry));
   app.use('/fonts', express.static(path.resolve(__dirname, '../../fonts')));
+  if (staticIndex) {
+    const mdiFonts = path.resolve(__dirname, '../node_modules/@mdi/font/fonts');
+    app.use('/js', (req, res, next) => {
+      const fingerprintedFont = /^\/[a-f0-9]{20}\.(woff2?|ttf|eot)$/.exec(req.path);
+      if (!fingerprintedFont) {
+        next();
+        return;
+      }
+      res.sendFile(path.join(mdiFonts, `materialdesignicons-webfont.${fingerprintedFont[1]}`));
+    });
+  }
   app.use(express.static(resolvedRoot));
   const server = await new Promise((resolve, reject) => {
     const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
@@ -166,12 +184,17 @@ async function startReferenceServer(root) {
 }
 
 async function writeBaselineReadme(targetDir) {
-  const sourceDescription = REFERENCE_ROOT
-    ? 'the pinned pre-v4 main revision 2fb6d510c066162d19829e6d779cd1e128b18105 (Vuetify 3.11.7)'
-    : 'the completed SoundOwl layout';
-  const updateInstructions = REFERENCE_ROOT
-    ? 'Recreate these images with the temporary v3 capture workflow and review them before adoption.'
-    : `Update them from a machine that can access the completed local domain:
+  const isStaticSnapshot = process.env.SOUNDOWL_LAYOUT_REFERENCE_STATIC_INDEX === '1';
+  const sourceDescription = isStaticSnapshot
+    ? 'a sanitized static snapshot of the completed SoundOwl layout'
+    : REFERENCE_ROOT
+      ? 'the pinned pre-v4 main revision 2fb6d510c066162d19829e6d779cd1e128b18105 (Vuetify 3.11.7)'
+      : 'the completed SoundOwl layout';
+  const updateInstructions = isStaticSnapshot
+    ? 'Recreate these images with the temporary completed-layout capture workflow and review them before adoption.'
+    : REFERENCE_ROOT
+      ? 'Recreate these images with the temporary v3 capture workflow and review them before adoption.'
+      : `Update them from a machine that can access the completed local domain:
 
 \`\`\`sh
 npm run test:layout:update-baseline --prefix frontend
