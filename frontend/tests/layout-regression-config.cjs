@@ -67,16 +67,12 @@ function selectLayoutStates(filter) {
 
 function buildRouteUrl(root, routePath) {
   const url = new URL(root);
-  const routeUrl = new URL(routePath, url.origin);
-  const trimmedRoute = routeUrl.pathname.replace(/^\/+/, '');
-  if (url.hash) {
-    const baseHash = url.hash.replace(/^#/, '').replace(/\/?$/, '/');
-    url.hash = trimmedRoute ? `${baseHash}${trimmedRoute}${routeUrl.search}` : baseHash;
-    return url.href;
+  if (!url.hash) {
+    throw new Error('Layout root URL must include a hash route (#/).');
   }
-  const basePath = url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`;
-  url.pathname = `${basePath}${trimmedRoute}`.replace(/\/{2,}/g, '/');
-  url.search = routeUrl.search;
+  const trimmedRoute = routePath.replace(/^\/+/, '');
+  const baseHash = url.hash.replace(/^#/, '').replace(/\/?$/, '/');
+  url.hash = trimmedRoute ? `${baseHash}${trimmedRoute}` : baseHash;
   return url.href;
 }
 

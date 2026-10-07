@@ -13,7 +13,7 @@ const {
   selectViewports,
 } = require('../tests/layout-regression-config.cjs');
 const { assertUsefulScreenshot, summarizeScreenshotStats } = require('../tests/layout-image-assertions.cjs');
-const { assertSyntheticSoundList, captureLayoutScreenshot } = require('../tests/layout-page-actions.cjs');
+const { assertSyntheticRoute, captureLayoutScreenshot } = require('../tests/layout-page-actions.cjs');
 const {
   DEFAULT_SYNTHETIC_BACKEND_URL,
   installSyntheticFrontendConfigMock,
@@ -221,7 +221,7 @@ async function captureBaseline(page, url, state, screenshotPath, label, routeNam
     if (pageErrors.length > 0) {
       throw new Error(`Baseline ${label} has browser errors: ${pageErrors.join('; ')}`);
     }
-    await assertSyntheticSoundList(page, routeName);
+    await assertSyntheticRoute(page, routeName);
     const stats = await assertUsefulScreenshot(tempPath, `Baseline ${label}`);
     await fs.rm(screenshotPath, { force: true });
     await fs.rename(tempPath, screenshotPath);

@@ -17,7 +17,7 @@ const {
   summarizeScreenshotStats,
 } = require('./layout-image-assertions.cjs');
 const { compareScreenshots } = require('./layout-diff-analysis.cjs');
-const { assertSyntheticSoundList, captureLayoutScreenshot } = require('./layout-page-actions.cjs');
+const { assertSyntheticRoute, captureLayoutScreenshot } = require('./layout-page-actions.cjs');
 const { installSyntheticNetworkMocks } = require('./layout-synthetic-mocks.cjs');
 
 const ROUTE_FILTER = process.env.SOUNDOWL_LAYOUT_ROUTE_FILTER;
@@ -78,7 +78,7 @@ test.describe('SoundOwl layout regression', () => {
           networkIdleTimeoutMs: NETWORK_IDLE_TIMEOUT_MS,
           settleMs: SETTLE_MS,
         });
-        await assertSyntheticSoundList(page, route.name);
+        await assertSyntheticRoute(page, route.name);
         await fs.copyFile(baselinePath, referencePath);
 
         const [baselineStats, actualStats, actualElementRecords] = await Promise.all([

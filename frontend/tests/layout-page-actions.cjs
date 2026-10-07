@@ -11,6 +11,23 @@ const STABILIZE_CSS = `
   }
 `;
 
+const ROUTE_TITLES = {
+  home: 'Home',
+  'album-list': 'Album List',
+  'artist-list': 'Artist List',
+  'history-list': 'History List',
+  album: 'Album',
+  artist: 'Artist',
+  search: 'Search',
+  playlists: 'Play List',
+  'playlist-sounds': 'Playlist Sounds',
+  'setting-server': 'Server',
+  'setting-equalizer': 'Equalizer',
+  'setting-effect': 'Effect',
+  'sound-sculpt-debug': 'Sound Sculpt Debug',
+  setup: 'Setup',
+};
+
 async function captureLayoutScreenshot(page, url, state, screenshotPath, options = {}) {
   await prepareLayoutPage(page, url, state, options);
   await page.screenshot({
@@ -22,7 +39,15 @@ async function captureLayoutScreenshot(page, url, state, screenshotPath, options
   });
 }
 
-async function assertSyntheticSoundList(page, routeName) {
+async function assertSyntheticRoute(page, routeName) {
+  const expectedTitle = ROUTE_TITLES[routeName];
+  if (!expectedTitle) {
+    throw new Error(`Unknown layout route: ${routeName}`);
+  }
+  const actualTitle = await page.title();
+  if (actualTitle !== `${expectedTitle} - SoundOwl`) {
+    throw new Error(`${routeName} rendered an unexpected page title: ${actualTitle}`);
+  }
   if (!['history-list', 'album', 'artist', 'search', 'playlist-sounds'].includes(routeName)) {
     return;
   }
@@ -114,7 +139,7 @@ async function waitForSettledPage(page, networkIdleTimeoutMs, settleMs) {
 
 module.exports = {
   applyLayoutState,
-  assertSyntheticSoundList,
+  assertSyntheticRoute,
   captureLayoutScreenshot,
   prepareLayoutPage,
 };
