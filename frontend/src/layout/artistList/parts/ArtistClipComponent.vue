@@ -48,7 +48,7 @@ export default {
   },
   methods:{
     createImageSrc(albumKey) {
-      return `${BASE.HOME}img/album_art.php?media_hash=`+albumKey;
+      return `${BASE.HOME}img/album_art?media_hash=`+albumKey;
     }
   }
 };

@@ -134,7 +134,7 @@ export default {
       }
     },
     createImageSrc(albumKey) {
-      return `${BASE.HOME}img/album_art.php?media_hash=` + albumKey;
+      return `${BASE.HOME}img/album_art?media_hash=` + albumKey;
     },
     click(item) {
       if (this.onClick) {
@@ -211,4 +211,3 @@ export default {
   width: 100%;
 }
 </style>
-
