@@ -129,6 +129,7 @@
           <span class="progress-time-text">{{ progressText() }}</span>
       </section>
     </div>
+    <v-divider vertical :opacity="0.0625" class="track-divider" />
   </v-container>
 
   <teleport to="body">
@@ -428,6 +429,15 @@ export default {
 
 .audio-controller-bar {
   padding: 5px 6px 3px;
+  position: relative;
+}
+
+.track-divider {
+  position: absolute;
+  inset-inline-start: 33.333333%;
+  top: 4px;
+  bottom: 4px;
+  margin-left: 0;
 }
 
 .audio-controller-grid {
@@ -571,6 +581,10 @@ export default {
 }
 
 @media screen and (max-width: 768px) {
+  .track-divider {
+    display: none;
+  }
+
   .audio-controller-bar {
     padding: 4px 0 4px 6px;
   }

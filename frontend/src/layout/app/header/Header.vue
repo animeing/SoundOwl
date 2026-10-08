@@ -116,6 +116,12 @@ export default {
     --v-field-border-opacity: 0.7;
   }
 
+  /* The legacy unlayered reset otherwise wins over Vuetify's field borders. */
+  .search-input :deep(.v-field__outline__start),
+  .search-input :deep(.v-field__outline__end) {
+    border: revert-layer;
+  }
+
   .v-toolbar-title{
     overflow-x: hidden;
     margin-inline-start: 0;
