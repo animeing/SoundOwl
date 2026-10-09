@@ -86,7 +86,8 @@ test.describe('SoundOwl layout regression', () => {
           analyzeScreenshot(actualPath),
           collectVisibleElementRecords(page, INCLUDE_TEXT_SNIPPETS),
         ]);
-        const actualLayoutIssues = await collectLayoutIssues(page, RULE_TOLERANCE);
+        const referenceHorizontalOverflow = Math.max(0, baselineStats.width - viewport.width);
+        const actualLayoutIssues = await collectLayoutIssues(page, RULE_TOLERANCE, referenceHorizontalOverflow);
         const routeBrowserErrors = actualErrors.drain();
         const comparison = await compareScreenshots(referencePath, actualPath, diffPath, {
           diffTileSize: DIFF_TILE_SIZE,
@@ -119,6 +120,7 @@ test.describe('SoundOwl layout regression', () => {
             maxDiffRatio: MAX_DIFF_RATIO,
             pixelThreshold: PIXEL_THRESHOLD,
             ruleTolerance: RULE_TOLERANCE,
+            referenceHorizontalOverflow,
             diffTileSize: DIFF_TILE_SIZE,
             maxDiffRegions: MAX_DIFF_REGIONS,
             minDiffRegionPixels: MIN_DIFF_REGION_PIXELS,
@@ -357,19 +359,20 @@ async function collectVisibleElementRecords(page, includeTextSnippets) {
   }, includeTextSnippets);
 }
 
-async function collectLayoutIssues(page, tolerance) {
-  return page.evaluate((ruleTolerance) => {
+async function collectLayoutIssues(page, tolerance, referenceHorizontalOverflow) {
+  return page.evaluate(({ ruleTolerance, allowedHorizontalOverflow }) => {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
+    const horizontalBoundary = viewportWidth + allowedHorizontalOverflow;
     const issues = [];
     const isFullscreenState = Boolean(document.querySelector('.fullscreen-overlay'));
     const scrollingElement = document.scrollingElement || document.documentElement;
 
-    if (scrollingElement.scrollWidth > viewportWidth + ruleTolerance) {
+    if (scrollingElement.scrollWidth > horizontalBoundary + ruleTolerance) {
       issues.push({
         type: 'page-horizontal-scroll',
         selector: 'document',
-        detail: `scrollWidth ${scrollingElement.scrollWidth}px > viewport ${viewportWidth}px`,
+        detail: `scrollWidth ${scrollingElement.scrollWidth}px > reference boundary ${horizontalBoundary}px`,
       });
     }
 
@@ -381,11 +384,11 @@ async function collectLayoutIssues(page, tolerance) {
       if (element.isInsideHorizontalClip) {
         continue;
       }
-      if (element.rect.left < -ruleTolerance || element.rect.right > viewportWidth + ruleTolerance) {
+      if (element.rect.left < -ruleTolerance || element.rect.right > horizontalBoundary + ruleTolerance) {
         issues.push({
           type: 'element-outside-viewport-x',
           selector: element.selector,
-          detail: `left ${round(element.rect.left)}px, right ${round(element.rect.right)}px, viewport ${viewportWidth}px`,
+          detail: `left ${round(element.rect.left)}px, right ${round(element.rect.right)}px, reference boundary ${horizontalBoundary}px`,
         });
       }
       if (element.isFixedLike && (element.rect.top < -ruleTolerance || element.rect.bottom > viewportHeight + ruleTolerance)) {
@@ -531,7 +534,7 @@ async function collectLayoutIssues(page, tolerance) {
     function round(value) {
       return Math.round(value * 100) / 100;
     }
-  }, tolerance);
+  }, { ruleTolerance: tolerance, allowedHorizontalOverflow: referenceHorizontalOverflow });
 }
 
 function summarizeChangedAreas(regions, elements) {

@@ -76,16 +76,19 @@ async function responseForApi(pathname, request) {
       return ALBUMS.map((album, index) => ({ ...album, count: 100 - index }));
     case 'sound_addtime_list.php':
     case 'play_count_list.php':
-    case 'sound_search.php':
-    case 'album_sounds.php':
-    case 'artist_sounds.php':
       return TRACKS;
+    case 'sound_search.php':
+      return (await requestParameters(request)).has('SearchWord') ? TRACKS : [];
+    case 'album_sounds.php':
+      return hasNonEmptyParameter(await requestParameters(request), 'AlbumHash') ? TRACKS : [];
+    case 'artist_sounds.php':
+      return hasNonEmptyParameter(await requestParameters(request), 'ArtistHash') ? TRACKS : [];
     case 'history_range_list.php':
-      return TRACKS.map(flattenTrack);
+      return hasRange(await requestParameters(request)) ? TRACKS.map(flattenTrack) : [];
     case 'album_list.php':
-      return ALBUMS;
+      return hasRange(await requestParameters(request)) ? ALBUMS : [];
     case 'artist_list.php':
-      return ARTISTS;
+      return hasRange(await requestParameters(request)) ? ARTISTS : [];
     case 'playlist_action.php':
       return playlistResponse(request);
     case 'get_setting.php':
@@ -117,21 +120,59 @@ async function responseForApi(pathname, request) {
 }
 
 async function playlistResponse(request) {
-  const body = request.postDataBuffer();
-  const contentType = request.headers()['content-type'];
-  if (!body || !contentType) {
-    return PLAYLISTS;
-  }
-  const formRequest = new Request(request.url(), {
-    method: 'POST',
-    headers: { 'content-type': contentType },
-    body,
-  });
-  const params = await formRequest.formData();
+  const params = await requestParameters(request);
   if (params.get('method') === 'sounds') {
     return TRACKS.slice(0, 8).map(flattenTrack);
   }
   return PLAYLISTS;
+}
+
+async function requestParameters(request) {
+  const params = new URL(request.url()).searchParams;
+  if (request.method() === 'GET' || request.method() === 'HEAD') {
+    return params;
+  }
+
+  const body = request.postDataBuffer();
+  if (!body || body.length === 0) {
+    return params;
+  }
+
+  const contentType = request.headers()['content-type'] || '';
+  if (contentType.includes('multipart/form-data')) {
+    const formRequest = new Request(request.url(), {
+      method: request.method(),
+      headers: { 'content-type': contentType },
+      body,
+    });
+    for (const [name, value] of await formRequest.formData()) {
+      params.set(name, String(value));
+    }
+    return params;
+  }
+
+  if (contentType.includes('application/json')) {
+    const values = JSON.parse(body.toString('utf8'));
+    for (const [name, value] of Object.entries(values)) {
+      params.set(name, String(value));
+    }
+    return params;
+  }
+
+  for (const [name, value] of new URLSearchParams(body.toString('utf8'))) {
+    params.set(name, value);
+  }
+  return params;
+}
+
+function hasNonEmptyParameter(params, name) {
+  return params.has(name) && params.get(name).trim() !== '';
+}
+
+function hasRange(params) {
+  return ['start', 'end'].every((name) => params.has(name)
+    && Number.isFinite(Number(params.get(name)))
+    && Number(params.get(name)) >= 0);
 }
 
 function createTrack(index) {
