@@ -1,5 +1,5 @@
 <template>
-    <v-tabs v-model="tab" class="mt-2 settings-tabs" :class="{ 'settings-tabs--padded-page': !$route.meta.fullBleed }">
+    <v-tabs v-model="tab" class="mt-2 settings-tabs">
       <v-tab
         v-for="(item, index) in menuItems"
         :key="index"
@@ -56,8 +56,4 @@ export default {
   padding-inline: 20px;
 }
 
-.settings-tabs--padded-page {
-  margin-inline: -20px;
-  width: calc(100% + 40px);
-}
 </style>

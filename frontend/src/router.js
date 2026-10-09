@@ -101,7 +101,8 @@ const router = createRouter({
       name: 'setting',
       component: SettingVue,
       meta:{
-        title:'Server'
+        title:'Server',
+        fullBleed: true
       }
     },
     {
@@ -118,7 +119,8 @@ const router = createRouter({
       name: 'effect',
       component: SettingVue,
       meta: {
-        title: 'Effect'
+        title: 'Effect',
+        fullBleed: true
       }
     },
     {
@@ -126,7 +128,8 @@ const router = createRouter({
       name: 'soundSculptDebug',
       component: SettingVue,
       meta:{
-        title:'Sound Sculpt Debug'
+        title:'Sound Sculpt Debug',
+        fullBleed: true
       }
     },
     {
