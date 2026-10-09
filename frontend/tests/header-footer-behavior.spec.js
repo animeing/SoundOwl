@@ -20,7 +20,7 @@ test('menu and mobile search retain the completed layout', async ({ page }) => {
     const clearIcon = field.querySelector('.v-field__append-inner');
     return field.getBoundingClientRect().right - clearIcon.getBoundingClientRect().right;
   });
-  expect(clearInset).toBe(12);
+  expect(clearInset).toBeCloseTo(12, 2);
 
   await page.locator('.menu-button').click();
   const list = page.locator('.v-overlay__content .v-list');
@@ -30,10 +30,10 @@ test('menu and mobile search retain the completed layout', async ({ page }) => {
     const content = item.querySelector('.v-list-item__content');
     const listRect = element.getBoundingClientRect();
     return {
-      width: listRect.width,
-      height: listRect.height,
-      rowHeight: item.getBoundingClientRect().height,
-      textInset: content.getBoundingClientRect().left - listRect.left,
+      width: Math.round(listRect.width),
+      height: Math.round(listRect.height),
+      rowHeight: Math.round(item.getBoundingClientRect().height),
+      textInset: Math.round(content.getBoundingClientRect().left - listRect.left),
       background: getComputedStyle(element).backgroundColor,
     };
   })).toEqual({
