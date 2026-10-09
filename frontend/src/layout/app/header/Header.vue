@@ -116,6 +116,10 @@ export default {
     padding-inline-start: 12px;
   }
 
+  .search-input :deep(.v-field--appended) {
+    padding-inline-end: 12px;
+  }
+
   .search-input :deep(.v-field__outline) {
     --v-field-border-opacity: 0.7;
   }

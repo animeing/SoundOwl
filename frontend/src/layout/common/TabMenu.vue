@@ -1,5 +1,5 @@
 <template>
-    <v-tabs v-model="tab" class="mt-2 settings-tabs">
+    <v-tabs v-model="tab" class="mt-2 settings-tabs" :scroll-to-active="$route.name === 'soundSculptDebug'">
       <v-tab
         v-for="(item, index) in menuItems"
         :key="index"
