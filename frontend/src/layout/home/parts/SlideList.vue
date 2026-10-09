@@ -29,7 +29,6 @@
                     <v-img
                       loading="lazy"
                       aspect-ratio="1"
-                      position="center bottom"
                       :src="createImageSrc(item.albumKey)"
                       class="slide-image"
                       :style="{ height: cardImgHeight + 'px' }"
@@ -41,9 +40,11 @@
                       </template>
                     </v-img>
                     <v-card-text class="slide-title-frame">
-                      <p :data-hint="item.title" class="slide-title">
-                        {{ item.title }}
-                      </p>
+                      <HoverPingPongMarquee class="slide-marquee">
+                        <p class="slide-title">
+                          {{ item.title }}
+                        </p>
+                      </HoverPingPongMarquee>
                     </v-card-text>
                   </v-card>
                 </div>
@@ -61,11 +62,12 @@
 
 <script>
 import ContextMenu from '../../common/ContextMenu.vue';
+import HoverPingPongMarquee from '../../common/HoverPingPongMarquee.vue';
 import { BASE } from '../../../utilization/path';
 import audio from '../../../audio/AudioPlayer';
 
 export default {
-  components: { ContextMenu },
+  components: { ContextMenu, HoverPingPongMarquee },
   props: {
     dataRequest: {
       type: Function,
@@ -203,9 +205,17 @@ export default {
   font-size: 1rem;
   letter-spacing: 0;
   margin: 0;
-  overflow: hidden;
   white-space: nowrap;
+}
+
+.slide-marquee {
+  display: flex;
+  justify-content: safe center;
   width: 100%;
+}
+
+.slide-marquee :deep(.marquee-text) {
+  flex: 0 0 auto;
 }
 
 @media (min-width: 1024px) {

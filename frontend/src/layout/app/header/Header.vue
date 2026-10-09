@@ -112,6 +112,10 @@ export default {
     font-family: Roboto, sans-serif;
   }
 
+  .search-input :deep(.v-field--prepended) {
+    padding-inline-start: 12px;
+  }
+
   .search-input :deep(.v-field__outline) {
     --v-field-border-opacity: 0.7;
   }
