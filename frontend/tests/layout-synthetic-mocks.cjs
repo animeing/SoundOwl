@@ -122,7 +122,9 @@ async function responseForApi(pathname, request) {
 async function playlistResponse(request) {
   const params = await requestParameters(request);
   if (params.get('method') === 'sounds') {
-    return TRACKS.slice(0, 8).map(flattenTrack);
+    return params.get('name') === PLAYLISTS[0].play_list
+      ? TRACKS.slice(0, 8).map(flattenTrack)
+      : [];
   }
   return PLAYLISTS;
 }

@@ -526,7 +526,7 @@ export default {
 .control-button {
   flex: 0 0 auto;
   background: #212121;
-  color: rgb(var(--v-theme-on-surface));
+  color: #c7c7c7;
 }
 
 .progress-row {
