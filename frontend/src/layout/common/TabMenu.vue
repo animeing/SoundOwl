@@ -1,5 +1,5 @@
 <template>
-    <v-tabs v-model="tab" class="mt-2 settings-tabs" :class="{ 'settings-tabs--equalizer': $route.name === 'equalizer' }">
+    <v-tabs v-model="tab" class="mt-2 settings-tabs" :class="{ 'settings-tabs--padded-page': !$route.meta.fullBleed }">
       <v-tab
         v-for="(item, index) in menuItems"
         :key="index"
@@ -53,26 +53,11 @@ export default {
 
 <style scoped>
 .settings-tabs :deep(.v-tab) {
-  min-width: auto;
-  padding-inline: 16px;
+  padding-inline: 20px;
 }
 
-.settings-tabs--equalizer :deep(.v-tab) {
-  min-width: 90px;
-}
-
-@media screen and (max-width: 600px) {
-  .settings-tabs:not(.settings-tabs--equalizer) :deep(.v-tab) {
-    max-width: 84px;
-    min-width: auto;
-    padding-inline: 12px;
-  }
-
-  .settings-tabs:not(.settings-tabs--equalizer) :deep(.v-btn__content) {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+.settings-tabs--padded-page {
+  margin-inline: -20px;
+  width: calc(100% + 40px);
 }
 </style>

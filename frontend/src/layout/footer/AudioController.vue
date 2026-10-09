@@ -212,7 +212,7 @@ export default {
     });
     const currentPlayListStyle = computed(() => {
       return {
-        background: 'rgb(var(--v-theme-surface))',
+        background: '#212121',
         bottom: containerHeight.value + 'px',
         'z-index': 2000,
         'max-height': `calc(100vh - ${containerHeight.value}px - 48px)`
