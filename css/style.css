@@ -554,10 +554,6 @@ input[type="button"].button:hover {
   display: list-item;
 }
 
-.layout-base {
-  padding-inline: 20px;
-}
-
 #controller {
   z-index: 100;
 }
