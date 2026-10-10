@@ -18,8 +18,8 @@
     <v-btn
       v-if="isSmall && !showSearch"
       variant="outlined"
-      density="compact"
       rounded
+      height="40"
       @click="toggleSearch"
       class="search-btn"
     >
@@ -100,7 +100,7 @@ export default {
 
 <style scoped>
   :deep(.v-toolbar__content) {
-    padding-inline: 16px 6px;
+    padding-inline: 20px 6px;
   }
 
   .search-input {
@@ -108,20 +108,35 @@ export default {
     max-width: 760px;
   }
 
+  .search-input :deep(input) {
+    font-family: Roboto, sans-serif;
+  }
+
+  .search-input :deep(.v-field--prepended) {
+    padding-inline-start: 12px;
+  }
+
+  .search-input :deep(.v-field--appended) {
+    padding-inline-end: 12px;
+  }
+
   .search-input :deep(.v-field__outline) {
     --v-field-border-opacity: 0.7;
   }
 
-  .search-input :deep(.v-field) {
-    border: 1px solid rgba(var(--v-theme-on-surface), 0.55);
+  /* The legacy unlayered reset otherwise wins over Vuetify's field borders. */
+  .search-input :deep(.v-field__outline__start),
+  .search-input :deep(.v-field__outline__end) {
+    border: revert-layer;
   }
 
   .v-toolbar-title{
     overflow-x: hidden;
-    margin-inline-start: 0 !important;
+    margin-inline-start: 0;
     flex: 0 0 auto;
   }
   .search-btn {
+    border: 1px solid currentColor;
     flex: 0 0 auto;
   }
 
@@ -132,7 +147,7 @@ export default {
 
   @media screen and (max-width: 768px) {
     :deep(.v-toolbar__content) {
-      padding-inline: 14px 4px;
+      padding-inline: 20px 4px;
     }
 
     .search-input {
@@ -150,7 +165,6 @@ export default {
     }
 
     .menu-slot {
-      margin-left: 4px;
       flex: 0 0 auto;
     }
   }

@@ -554,10 +554,6 @@ input[type="button"].button:hover {
   display: list-item;
 }
 
-.layout-base {
-  padding-inline: 20px;
-}
-
 #controller {
   z-index: 100;
 }
@@ -583,6 +579,7 @@ sw-audio-slide-list img,
   transition: 0.8s;
   display: block;
   width: 100%;
+  padding: 0;
   background: var(--basecolor);
   text-align: start;
 }

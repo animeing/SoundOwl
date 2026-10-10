@@ -2,6 +2,7 @@
   <v-menu
     :open-on-hover="isDesktop"
     :close-on-content-click="false"
+    :width="176"
     :max-width="200"
     transition="scale-transition"
   >
@@ -9,13 +10,14 @@
       <v-btn
         v-bind="props"
         variant="elevated"
+        color="grey-darken-4"
         class="menu-button"
       >
         MENU
       </v-btn>
     </template>
 
-    <v-list>
+    <v-list bg-color="grey-darken-4" class="menu-list">
       <v-list-item
         v-for="(item, index) in menuItems"
         :key="index"
@@ -52,8 +54,17 @@ export default {
 
 <style scoped>
 .menu-button {
+  color: rgb(var(--v-theme-on-surface));
   letter-spacing: 0.08em;
   min-width: 96px;
+}
+
+.menu-list {
+  padding-block: 8px;
+}
+
+.menu-list :deep(.v-list-item) {
+  padding-inline: 16px;
 }
 
 @media screen and (max-width: 600px) {

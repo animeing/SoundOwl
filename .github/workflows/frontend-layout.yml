@@ -1,0 +1,83 @@
+name: Frontend Layout Regression
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "frontend/**"
+      - "css/**"
+      - "img/**"
+      - "index.html"
+      - "manifest.json"
+      - ".github/workflows/frontend-layout.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  layout-regression:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            browser: chromium
+            label: windows-chromium
+            baseline_dir: frontend/tests/layout-baselines
+            exclude_routes: ""
+          - os: ubuntu-latest
+            browser: firefox
+            label: ubuntu-firefox
+            baseline_dir: frontend/tests/layout-baselines/ubuntu-firefox
+            exclude_routes: sound-sculpt-debug
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: frontend
+
+    env:
+      SOUNDOWL_LAYOUT_BROWSER: ${{ matrix.browser }}
+      SOUNDOWL_LAYOUT_BASELINE_DIR: ${{ github.workspace }}/${{ matrix.baseline_dir }}
+      SOUNDOWL_LAYOUT_EXCLUDE_ROUTES: ${{ matrix.exclude_routes }}
+      SOUNDOWL_LAYOUT_MAX_DIFF_PIXELS: "0"
+      SOUNDOWL_LAYOUT_MAX_DIFF_RATIO: "0"
+      SOUNDOWL_LAYOUT_PIXEL_THRESHOLD: "0.02"
+      SOUNDOWL_LAYOUT_NETWORK_IDLE_TIMEOUT_MS: "3000"
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test layout route URLs
+        run: node --test tests/layout-regression-config.unit.cjs
+
+      - name: Install Firefox and Linux dependencies
+        if: runner.os == 'Linux'
+        run: npx playwright install --with-deps firefox
+
+      - name: Install Chromium
+        if: runner.os == 'Windows'
+        run: npx playwright install chromium
+
+      - name: Compare layout with committed baseline
+        run: npm run test:layout:ci
+
+      - name: Upload layout comparison artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-layout-regression-${{ matrix.label }}
+          path: |
+            frontend/test-results/layout-regression
+            frontend/test-results/playwright
+            frontend/playwright-report
+          retention-days: 14

@@ -40,9 +40,11 @@
                       </template>
                     </v-img>
                     <v-card-text class="slide-title-frame">
-                      <p :data-hint="item.title" class="slide-title">
-                        {{ item.title }}
-                      </p>
+                      <HoverPingPongMarquee class="slide-marquee">
+                        <p class="slide-title">
+                          {{ item.title }}
+                        </p>
+                      </HoverPingPongMarquee>
                     </v-card-text>
                   </v-card>
                 </div>
@@ -60,11 +62,12 @@
 
 <script>
 import ContextMenu from '../../common/ContextMenu.vue';
+import HoverPingPongMarquee from '../../common/HoverPingPongMarquee.vue';
 import { BASE } from '../../../utilization/path';
 import audio from '../../../audio/AudioPlayer';
 
 export default {
-  components: { ContextMenu },
+  components: { ContextMenu, HoverPingPongMarquee },
   props: {
     dataRequest: {
       type: Function,
@@ -173,7 +176,7 @@ export default {
       // Math.floor を使わず、浮動小数点のまま設定する
       this.cardWidth = availableWidth / itemsPerView;
       this.cardImgHeight = this.cardWidth * 0.9;
-      this.cardHeight = this.cardImgHeight + 52;
+      this.cardHeight = this.cardWidth * 1.2;
     },
   },
 };
@@ -182,33 +185,44 @@ export default {
 <style scoped>
 .slide-item {
   box-sizing: border-box;
-  padding-inline: 2px;
 }
 
 .slide-card {
   overflow: hidden;
 }
 
-.slide-image {
-  flex: 0 0 auto;
-}
-
 .slide-title-frame {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
-  flex: 0 0 52px;
+  flex: 0 1 52px;
   justify-content: center;
   min-width: 0;
   overflow: hidden;
-  padding: 8px;
+  padding: 16px 8px 0;
 }
 
 .slide-title {
+  font-size: 1rem;
+  letter-spacing: 0;
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.slide-marquee {
+  display: flex;
+  justify-content: safe center;
   width: 100%;
+}
+
+.slide-marquee :deep(.marquee-text) {
+  flex: 0 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .slide-title-frame {
+    flex-basis: 56px;
+    padding-top: 20px;
+  }
 }
 </style>
 
