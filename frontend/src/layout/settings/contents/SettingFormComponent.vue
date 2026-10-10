@@ -7,7 +7,14 @@
       <div class="settings-card-body">
         <v-divider></v-divider>
         <v-text-field class="settings-field" label="Backend Server" v-model="backendServer" name="backend_server" variant="filled" :disabled="backendSaving" />
-        <v-btn class="ma-2 pa-2" :loading="backendSaving" :disabled="backendSaving" @click="$emit('backend-update')">backend update</v-btn>
+        <v-btn
+          color="grey-darken-4"
+          style="color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));"
+          class="ma-2 pa-2"
+          :loading="backendSaving"
+          :disabled="backendSaving"
+          @click="$emit('backend-update')"
+        >backend update</v-btn>
       </div>
     </v-card>
 
