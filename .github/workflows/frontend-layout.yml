@@ -40,6 +40,7 @@ jobs:
       SOUNDOWL_LAYOUT_BROWSER: ${{ matrix.browser }}
       SOUNDOWL_LAYOUT_BASELINE_DIR: ${{ github.workspace }}/${{ matrix.baseline_dir }}
       SOUNDOWL_LAYOUT_EXCLUDE_ROUTES: ${{ matrix.exclude_routes }}
+      SOUNDOWL_LAYOUT_LABEL: ${{ matrix.label }}
       SOUNDOWL_LAYOUT_MAX_DIFF_PIXELS: "0"
       SOUNDOWL_LAYOUT_MAX_DIFF_RATIO: "0"
       SOUNDOWL_LAYOUT_PIXEL_THRESHOLD: "0.02"
@@ -70,6 +71,10 @@ jobs:
 
       - name: Compare layout with committed baseline
         run: npm run test:layout:ci
+
+      - name: Publish layout difference table
+        if: always()
+        run: node scripts/publish-layout-summary.cjs
 
       - name: Upload layout comparison artifacts
         if: always()
