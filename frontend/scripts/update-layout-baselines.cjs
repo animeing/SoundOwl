@@ -151,8 +151,9 @@ async function startReferenceServer(root) {
     await fs.access(path.join(resolvedRoot, asset));
   }
 
+  const frontendIndex = await fs.readFile(path.resolve(__dirname, '../../index.html'));
   const app = express();
-  app.get('/', (_req, res) => res.sendFile(path.resolve(__dirname, '../../index.html')));
+  app.get('/', (_req, res) => res.type('html').send(frontendIndex));
   app.use('/fonts', express.static(path.resolve(__dirname, '../../fonts')));
   app.use(express.static(resolvedRoot));
   const server = await new Promise((resolve, reject) => {
