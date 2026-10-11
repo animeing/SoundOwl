@@ -45,6 +45,9 @@ jobs:
       SOUNDOWL_LAYOUT_MAX_DIFF_RATIO: "0"
       SOUNDOWL_LAYOUT_PIXEL_THRESHOLD: "0.02"
       SOUNDOWL_LAYOUT_NETWORK_IDLE_TIMEOUT_MS: "3000"
+      SOUNDOWL_LAYOUT_BACKEND_URL: "http://127.0.0.1:18081/"
+      SOUNDOWL_LAYOUT_WEBSOCKET_MOCK_HOST: "127.0.0.1"
+      SOUNDOWL_LAYOUT_WEBSOCKET_MOCK_PORT: "8080"
 
     steps:
       - uses: actions/checkout@v7
@@ -58,8 +61,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Test layout route URLs
-        run: node --test tests/layout-regression-config.unit.cjs
+      - name: Test layout configuration and WebSocket mock
+        run: node --test tests/layout-regression-config.unit.cjs tests/mocks/layout-websocket/server.unit.cjs
 
       - name: Install Firefox and Linux dependencies
         if: runner.os == 'Linux'

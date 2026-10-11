@@ -1,4 +1,5 @@
 const path = require('node:path');
+const { SYNTHETIC_BACKEND_URL } = require('./mocks/layout-websocket/config.cjs');
 
 const ROUTES = [
   { name: 'home', path: '/' },
@@ -44,7 +45,7 @@ for (const name of EXCLUDED_ROUTE_NAMES) {
 }
 
 const DEFAULT_BASELINE_DIR = path.join(__dirname, 'layout-baselines');
-const DEFAULT_ACTUAL_BACKEND_URL = 'http://soundowl-layout-baseline.local/';
+const DEFAULT_ACTUAL_BACKEND_URL = SYNTHETIC_BACKEND_URL;
 const LAYOUT_COLOR_SCHEME = 'dark';
 
 function selectRoutes(filter) {

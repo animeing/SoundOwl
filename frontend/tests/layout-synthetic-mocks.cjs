@@ -1,5 +1,8 @@
-const BACKEND_HOSTNAME = 'soundowl-layout-baseline.local';
-const DEFAULT_SYNTHETIC_BACKEND_URL = `http://${BACKEND_HOSTNAME}/`;
+const {
+  SYNTHETIC_BACKEND_URL: DEFAULT_SYNTHETIC_BACKEND_URL,
+} = require('./mocks/layout-websocket/config.cjs');
+
+const BACKEND_HOSTNAME = new URL(DEFAULT_SYNTHETIC_BACKEND_URL).hostname;
 const TRACKS = Array.from({ length: 16 }, (_, index) => createTrack(index + 1));
 const ALBUMS = Array.from({ length: 12 }, (_, index) => createAlbum(index + 1));
 const ARTISTS = Array.from({ length: 12 }, (_, index) => createArtist(index + 1));
