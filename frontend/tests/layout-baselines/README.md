@@ -1,9 +1,9 @@
 # Layout Baselines
 
-These PNG files were captured from the completed SoundOwl layout in dark mode with synthetic test data only, on the same GitHub Actions runners used for comparison.
+These PNG files represent the current SoundOwl layout in dark mode with synthetic test data only, captured on the same GitHub Actions runners used for comparison.
 Windows Chromium images are in `chromium-dark-*`; Ubuntu Firefox images are in `ubuntu-firefox/firefox-dark-*`.
-Ubuntu omits `sound-sculpt-debug` as agreed. The capture run is [Temporary Completed Layout Baseline Capture #3](https://github.com/animeing/SoundOwl/actions/runs/37566465170).
-The temporary completed-code snapshot is not included in this PR. The capture script routes API and media requests to synthetic data.
+Ubuntu omits `sound-sculpt-debug` as agreed.
+The baseline source is commit `4d30944`, captured by [Frontend Layout Regression #25](https://github.com/animeing/SoundOwl/actions/runs/39050579875). The capture script routes API, media, and WebSocket requests to synthetic data.
 Each route stores default.png and full-layout.png so the fullscreen/full layout control is also covered.
 Do not capture or commit screenshots that contain real song titles, lyrics, artwork, or audio-related user data.
 The update script rejects screenshots that look blank or unrendered so an inaccessible reference URL cannot silently become the baseline.
