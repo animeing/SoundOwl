@@ -25,6 +25,41 @@ export const normalizeBackendServer = (value, fallback = window.location.href.sp
 export const getBackendServer = () => normalizeBackendServer(window.SoundOwlFrontendConfig?.backendServer);
 
 /**
+ * WebSocket URLを正規化し、未指定時はBackendServerのホストと8080番ポートを使う。
+ *
+ * @param {string|null|undefined} value WebSocket server URL。
+ * @param {string} backendServer フォールバック元のBackendServer URL。
+ * @returns {string} 接続に使うWebSocket URL。
+ */
+export const normalizeWebSocketServer = (value, backendServer = getBackendServer()) => {
+  const raw = String(value || '').trim();
+  if (raw) {
+    const withProtocol = /^wss?:\/\//i.test(raw) ? raw : `ws://${raw}`;
+    try {
+      const url = new URL(withProtocol);
+      if (url.protocol === 'ws:' || url.protocol === 'wss:') {
+        return url.href.replace(/\/$/, '');
+      }
+    } catch (_error) {
+      // BackendServerから生成したURLへフォールバックする。
+    }
+  }
+
+  const url = new URL(normalizeBackendServer(backendServer));
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  url.port = '8080';
+  url.pathname = '/';
+  url.search = '';
+  url.hash = '';
+  return url.href.replace(/\/$/, '');
+};
+
+export const getWebSocketServer = () => normalizeWebSocketServer(
+  window.SoundOwlFrontendConfig?.websocketServer,
+  getBackendServer()
+);
+
+/**
  * BackendServer URLをFrontServerへ保存し、現在のBASEにも即時反映する。
  *
  * @param {string} value 保存するBackendServer URL。
@@ -54,11 +89,11 @@ export const saveBackendServer = async (value) => {
  */
 export const applyBackendServer = (value) => {
   const home = normalizeBackendServer(value);
-  const url = new URL(home);
+  const websocketServer = normalizeWebSocketServer(window.SoundOwlFrontendConfig?.websocketServer, home);
   BASE.HOME = home;
   BASE.API = `${home}api/`;
-  BASE.WEBSOCKET = url.hostname;
-  BASE.WEBSOCKET_URL = `${url.protocol === 'https:' ? 'wss' : 'ws'}://${url.hostname}:8080`;
+  BASE.WEBSOCKET = new URL(websocketServer).hostname;
+  BASE.WEBSOCKET_URL = websocketServer;
 };
 
 export const BASE = {
@@ -68,6 +103,6 @@ export const BASE = {
   HOME:getBackendServer(),
   VUE_HOME:window.location.href.split('#')[0]+'#/',
   API:`${getBackendServer()}api/`,
-  WEBSOCKET:new URL(getBackendServer()).hostname,
-  WEBSOCKET_URL:`${new URL(getBackendServer()).protocol === 'https:' ? 'wss' : 'ws'}://${new URL(getBackendServer()).hostname}:8080`
+  WEBSOCKET:new URL(getWebSocketServer()).hostname,
+  WEBSOCKET_URL:getWebSocketServer()
 };
