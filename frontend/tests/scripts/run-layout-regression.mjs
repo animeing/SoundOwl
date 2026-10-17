@@ -1,13 +1,16 @@
 #!/usr/bin/env node
-const fs = require('node:fs');
-const net = require('node:net');
-const path = require('node:path');
-const { spawn } = require('node:child_process');
+// CIと同じレイアウト比較をローカルから実行する。
+import fs from 'node:fs';
+import net from 'node:net';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
-const FRONTEND_ROOT = path.resolve(__dirname, '..');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const FRONTEND_ROOT = path.resolve(__dirname, '../..');
 const DEFAULT_ARTIFACT_DIR = path.join('test-results', 'layout-regression-local');
 
-if (require.main === module) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch((error) => {
     console.error(error.stack || error.message || String(error));
     process.exitCode = 1;
@@ -43,10 +46,10 @@ async function main() {
   }
 
   if (!options.skipBuild) {
-    await runCommand(process.execPath, [require.resolve('webpack-cli/bin/cli.js'), '--config', 'webpack.config.js'], { env });
+    await runCommand(process.execPath, [webpackCli(), '--config', 'webpack.config.js'], { env });
   }
 
-  const playwrightArgs = [playwrightCli(), 'test', '--config', 'playwright.config.cjs'];
+  const playwrightArgs = [playwrightCli(), 'test', '--config', 'playwright.config.mjs'];
   if (!hasWorkersArg(options.playwrightArgs)) {
     playwrightArgs.push('--workers=1');
   }
@@ -189,6 +192,10 @@ function playwrightCli() {
   return path.join(FRONTEND_ROOT, 'node_modules', '@playwright', 'test', 'cli.js');
 }
 
+function webpackCli() {
+  return path.join(FRONTEND_ROOT, 'node_modules', 'webpack-cli', 'bin', 'cli.js');
+}
+
 function normalizeListenHost(hostname) {
   return String(hostname || '127.0.0.1').replace(/^\[|\]$/g, '');
 }
@@ -273,7 +280,7 @@ Examples:
 `);
 }
 
-module.exports = {
+export {
   findOpenPort,
   normalizeListenHost,
 };

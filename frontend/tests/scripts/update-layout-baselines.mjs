@@ -1,8 +1,10 @@
-const fs = require('node:fs/promises');
-const path = require('node:path');
-const express = require('express');
-const { chromium, firefox } = require('playwright');
-const {
+// 合成データを使ってレビュー済みのレイアウト基準画像を更新する。
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import express from 'express';
+import { chromium, firefox } from 'playwright';
+import {
   DEFAULT_BASELINE_DIR,
   LAYOUT_BROWSER,
   LAYOUT_COLOR_SCHEME,
@@ -11,14 +13,16 @@ const {
   selectLayoutStates,
   selectRoutes,
   selectViewports,
-} = require('../tests/layout-regression-config.cjs');
-const { assertUsefulScreenshot, summarizeScreenshotStats } = require('../tests/layout-image-assertions.cjs');
-const { assertSyntheticRoute, captureLayoutScreenshot } = require('../tests/layout-page-actions.cjs');
-const {
+} from '../layout-regression-config.mjs';
+import { assertUsefulScreenshot, summarizeScreenshotStats } from '../layout-image-assertions.mjs';
+import { assertSyntheticRoute, captureLayoutScreenshot } from '../layout-page-actions.mjs';
+import {
   DEFAULT_SYNTHETIC_BACKEND_URL,
   installSyntheticFrontendConfigMock,
   installSyntheticNetworkMocks,
-} = require('../tests/layout-synthetic-mocks.cjs');
+} from '../layout-synthetic-mocks.mjs';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const REFERENCE_ROOT = process.env.SOUNDOWL_LAYOUT_REFERENCE_ROOT;
 const REFERENCE_URL = process.env.SOUNDOWL_LAYOUT_REFERENCE_URL || 'http://soundowl.animeing.net/#/';
@@ -93,7 +97,15 @@ async function main() {
             const baselinePath = buildBaselinePath(CAPTURE_ROOT, viewport.name, route.name, state.name);
             await fs.mkdir(path.dirname(baselinePath), { recursive: true });
             const label = `${viewport.name} ${route.name} ${state.name}`;
-            const stats = await captureBaseline(page, buildRouteUrl(referenceUrl, route.path), state, baselinePath, label, route.name);
+            const stats = await captureBaseline(
+              page,
+              buildRouteUrl(referenceUrl, route.path),
+              state,
+              baselinePath,
+              label,
+              route.name,
+              route.baselineHiddenSelectors,
+            );
             console.log(`Captured ${label} (${summarizeScreenshotStats(stats)})`);
           }
         }
@@ -151,10 +163,10 @@ async function startReferenceServer(root) {
     await fs.access(path.join(resolvedRoot, asset));
   }
 
-  const frontendIndex = await fs.readFile(path.resolve(__dirname, '../../index.html'));
+  const frontendIndex = await fs.readFile(path.resolve(__dirname, '../../../index.html'));
   const app = express();
   app.get('/', (_req, res) => res.type('html').send(frontendIndex));
-  app.use('/fonts', express.static(path.resolve(__dirname, '../../fonts')));
+  app.use('/fonts', express.static(path.resolve(__dirname, '../../../fonts')));
   app.use(express.static(resolvedRoot));
   const server = await new Promise((resolve, reject) => {
     const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
@@ -208,7 +220,7 @@ npm run test:layout:local --prefix frontend -- --route home --viewport 320x667 -
 \`\`\`
 `);
 }
-async function captureBaseline(page, url, state, screenshotPath, label, routeName) {
+async function captureBaseline(page, url, state, screenshotPath, label, routeName, hiddenSelectors) {
   const tempPath = `${screenshotPath}.tmp-${process.pid}.png`;
   const pageErrors = [];
   const recordPageError = (error) => pageErrors.push(error.message);
@@ -216,6 +228,7 @@ async function captureBaseline(page, url, state, screenshotPath, label, routeNam
   try {
     await fs.rm(tempPath, { force: true });
     await captureLayoutScreenshot(page, url, state, tempPath, {
+      hiddenSelectors,
       networkIdleTimeoutMs: NETWORK_IDLE_TIMEOUT_MS,
       settleMs: SETTLE_MS,
     });

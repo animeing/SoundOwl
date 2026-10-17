@@ -10,11 +10,11 @@
     "update:fontisto": "npm update fontisto && npm run sync:fontisto",
     "build": "npx webpack --config webpack.config.js",
     "start": "node server.js",
-    "test:layout": "playwright test --config playwright.config.cjs",
-    "test:layout:ci": "node scripts/run-layout-regression.cjs --artifact-dir test-results/layout-regression",
-    "test:layout:update-baseline": "node scripts/update-layout-baselines.cjs",
-    "test:layout:local": "node scripts/run-layout-regression.cjs",
-    "test:layout:quick": "node scripts/run-layout-regression.cjs --route home --viewport 320x667"
+    "test:layout": "playwright test --config playwright.config.mjs",
+    "test:layout:ci": "node tests/scripts/run-layout-regression.mjs --artifact-dir test-results/layout-regression",
+    "test:layout:update-baseline": "node tests/scripts/update-layout-baselines.mjs",
+    "test:layout:local": "node tests/scripts/run-layout-regression.mjs",
+    "test:layout:quick": "node tests/scripts/run-layout-regression.mjs --route home --viewport 320x667"
   },
   "author": "",
   "license": "MIT",

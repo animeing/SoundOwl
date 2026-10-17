@@ -12,12 +12,12 @@ import { useOverflowMarquee } from './useOverflowMarquee';
 const props = defineProps({
   speed: {
     type: Number,
-    default: 1,
+    default: 1, // ピクセル/フレーム
     validator: value => value > 0,
   },
   pauseTime: {
     type: Number,
-    default: 2000,
+    default: 2000, // ミリ秒
     validator: value => value >= 0,
   },
 });

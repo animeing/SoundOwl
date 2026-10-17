@@ -1,9 +1,10 @@
-const path = require('node:path');
-const { DEFAULT_ACTUAL_BACKEND_URL } = require('./layout-regression-config.cjs');
-const { WEBSOCKET_MOCK_URL } = require('./mocks/layout-websocket/config.cjs');
-const { startLayoutWebSocketMock } = require('./mocks/layout-websocket/server.cjs');
+// Playwright実行前にフロントエンドとWebSocketモックを起動する。
+import path from 'node:path';
+import { DEFAULT_ACTUAL_BACKEND_URL } from './layout-regression-config.mjs';
+import { WEBSOCKET_MOCK_URL } from './mocks/layout-websocket/config.mjs';
+import { startLayoutWebSocketMock } from './mocks/layout-websocket/server.mjs';
 
-module.exports = async function startLayoutTestServers(config) {
+export default async function startLayoutTestServers(config) {
   const localUrl = config.projects[0]?.use?.baseURL;
   if (!localUrl) {
     throw new Error('Layout test baseURL is not configured.');
@@ -21,7 +22,8 @@ module.exports = async function startLayoutTestServers(config) {
     || DEFAULT_ACTUAL_BACKEND_URL;
   process.env.FRONTEND_WEBSOCKET_SERVER_DEFAULT = WEBSOCKET_MOCK_URL;
 
-  const { createApp } = require('../server.js');
+  const { default: serverModule } = await import('../server.js');
+  const { createApp } = serverModule;
   const frontendServer = await listen(createApp(), port, host);
   let websocketMock;
   try {
@@ -49,7 +51,10 @@ function listen(app, port, host) {
 
 function closeHttpServer(server) {
   server.closeAllConnections?.();
+  if (!server.listening) {
+    return Promise.resolve();
+  }
   return new Promise((resolve, reject) => {
-    server.close((error) => error ? reject(error) : resolve());
+    server.close((error) => error?.code === 'ERR_SERVER_NOT_RUNNING' || !error ? resolve() : reject(error));
   });
 }

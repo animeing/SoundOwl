@@ -1,10 +1,11 @@
-const { test, expect } = require('@playwright/test');
-const { buildRouteUrl } = require('./layout-regression-config.cjs');
-const {
+// ヘッダーとフッターのレスポンシブ挙動を実ブラウザで検証する。
+import { test, expect } from '@playwright/test';
+import { buildRouteUrl } from './layout-regression-config.mjs';
+import {
   DEFAULT_SYNTHETIC_BACKEND_URL,
   installSyntheticFrontendConfigMock,
   installSyntheticNetworkMocks,
-} = require('./layout-synthetic-mocks.cjs');
+} from './layout-synthetic-mocks.mjs';
 
 test.beforeEach(async ({ page }, testInfo) => {
   test.skip(testInfo.project.use.viewport.width !== 390, 'The responsive transition is checked in the 390px project.');
@@ -69,6 +70,20 @@ test('fixed dark action buttons retain readable labels in light mode', async ({ 
     expect(colors.foreground).toEqual([199, 199, 199]);
     expect(colors.background).toEqual([33, 33, 33]);
   }
+
+  await page.locator('.secondary-controls .control-button').first().click();
+  const playlist = page.locator('.audio-list-overlay');
+  await expect(playlist).toBeVisible();
+  const playlistColors = await playlist.evaluate((element) => {
+    const parseChannels = (value) => value.match(/[\d.]+/g).slice(0, 3).map(Number);
+    const style = getComputedStyle(element);
+    return {
+      foreground: parseChannels(style.color),
+      background: parseChannels(style.backgroundColor),
+    };
+  });
+  expect(playlistColors.foreground).toEqual([199, 199, 199]);
+  expect(playlistColors.background).toEqual([33, 33, 33]);
 });
 
 test('footer text scrolls only while clipped and rechecks content and viewport changes', async ({ page }) => {

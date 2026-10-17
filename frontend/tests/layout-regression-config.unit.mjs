@@ -1,9 +1,10 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
-const { ROUTES, buildRouteUrl } = require('./layout-regression-config.cjs');
-const { assertSyntheticRoute } = require('./layout-page-actions.cjs');
-const { buildSyntheticFrontendConfigScript } = require('./layout-synthetic-mocks.cjs');
-const { normalizeListenHost } = require('../scripts/run-layout-regression.cjs');
+// レイアウト比較設定とURL生成の契約を検証する。
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { ROUTES, buildRouteUrl } from './layout-regression-config.mjs';
+import { assertSyntheticRoute } from './layout-page-actions.mjs';
+import { buildSyntheticFrontendConfigScript } from './layout-synthetic-mocks.mjs';
+import { normalizeListenHost } from './scripts/run-layout-regression.mjs';
 
 test('hash-mode routes preserve paths and query parameters', () => {
   for (const route of ROUTES) {
@@ -24,22 +25,20 @@ test('every configured route rejects a NotFound baseline', async () => {
   }
 });
 
-test('custom local URL selects the Playwright base URL', () => {
-  const configPath = require.resolve('../playwright.config.cjs');
+test('custom local URL selects the Playwright base URL', async () => {
   const previousUrl = process.env.SOUNDOWL_LAYOUT_LOCAL_URL;
   try {
     process.env.SOUNDOWL_LAYOUT_LOCAL_URL = 'http://127.0.0.1:9000/#/';
-    delete require.cache[configPath];
-    const config = require(configPath);
+    const configUrl = new URL(`../playwright.config.mjs?test=${Date.now()}`, import.meta.url);
+    const { default: config } = await import(configUrl.href);
     assert.equal(config.use.baseURL, 'http://127.0.0.1:9000/#/');
-    assert.equal(config.globalSetup.endsWith('layout-global-setup.cjs'), true);
+    assert.equal(config.globalSetup.endsWith('layout-global-setup.mjs'), true);
   } finally {
     if (previousUrl === undefined) {
       delete process.env.SOUNDOWL_LAYOUT_LOCAL_URL;
     } else {
       process.env.SOUNDOWL_LAYOUT_LOCAL_URL = previousUrl;
     }
-    delete require.cache[configPath];
   }
 });
 

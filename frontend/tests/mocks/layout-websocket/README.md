@@ -1,9 +1,8 @@
-# Layout WebSocket Mock
+# レイアウト比較用WebSocketモック
 
-This directory contains the WebSocket server used only by layout regression tests.
-Playwright starts it with the frontend server on both Windows and Ubuntu CI runners.
+このディレクトリには、レイアウト回帰テストだけで使うWebSocketサーバーを配置しています。
+WindowsとUbuntuのどちらのCIでも、Playwrightがフロントエンドサーバーと一緒に起動します。
 
-The mock accepts and keeps connections open without sending application state. This
-matches the synthetic WebSocket used to capture the committed baselines and prevents
-connection retries or error messages from changing screenshots. It contains no
-production backend code or user content.
+モックは接続を受け入れて維持しますが、アプリケーションの状態は送信しません。
+コミット済み基準画像の撮影条件と揃えることで、再接続やエラー表示によるスクリーンショットの変化を防ぎます。
+本番バックエンドのコードや利用者データは含みません。

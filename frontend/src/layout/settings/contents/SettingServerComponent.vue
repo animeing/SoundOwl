@@ -7,21 +7,21 @@
   />
   <div class="d-flex justify-start mb-6">
     <v-btn
-      color="grey-darken-4"
+      color="fixed-dark-surface"
       :disabled="isBackendSaving || !isBackendReady || (isAction && !isConnectWebSocket)"
       :data-hint="isConnectWebSocket
         ? undefined
         : 'The operation cannot be performed because the WebSocket connection has not been established.'"
       @click="settingUpdate"
-      style="color: #c7c7c7;"
+      style="color: rgb(var(--v-theme-on-fixed-dark-surface));"
       class="ma-2 pa-2 text-uppercase"
     >setting update</v-btn>
     <div style="position: relative; display: inline-block;">
       <v-btn
-        color="grey-darken-4"
+        color="fixed-dark-surface"
         :disabled="isBackendSaving || !isBackendReady || (isAction && !isConnectWebSocket)"
         :loading="isAction"
-        style="position: relative; color: #c7c7c7;"
+        style="position: relative; color: rgb(var(--v-theme-on-fixed-dark-surface));"
         :data-hint="isConnectWebSocket
           ? undefined
           : 'The operation cannot be performed because the WebSocket connection has not been established.'"

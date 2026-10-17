@@ -1,7 +1,8 @@
-const {
-  SYNTHETIC_BACKEND_URL: DEFAULT_SYNTHETIC_BACKEND_URL,
+// レイアウト比較用の合成API・画像応答を提供する。
+import {
+  SYNTHETIC_BACKEND_URL as DEFAULT_SYNTHETIC_BACKEND_URL,
   WEBSOCKET_MOCK_URL,
-} = require('./mocks/layout-websocket/config.cjs');
+} from './mocks/layout-websocket/config.mjs';
 
 const BACKEND_HOSTNAME = new URL(DEFAULT_SYNTHETIC_BACKEND_URL).hostname;
 const TRACKS = Array.from({ length: 16 }, (_, index) => createTrack(index + 1));
@@ -367,7 +368,7 @@ function pad(value) {
   return String(value).padStart(2, '0');
 }
 
-module.exports = {
+export {
   BACKEND_HOSTNAME,
   DEFAULT_SYNTHETIC_BACKEND_URL,
   buildSyntheticFrontendConfigScript,

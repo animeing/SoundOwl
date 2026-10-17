@@ -1,9 +1,10 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
-const {
+// 合成モックのURL判定とAPI契約を検証する。
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import {
   playlistResponseForParameters,
   syntheticPathForUrl,
-} = require('./layout-synthetic-mocks.cjs');
+} from './layout-synthetic-mocks.mjs';
 
 test('synthetic network matching preserves the configured backend base path', () => {
   const backendUrl = 'http://127.0.0.1:18081/soundowl/';

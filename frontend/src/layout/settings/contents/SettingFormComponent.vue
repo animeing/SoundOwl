@@ -8,8 +8,8 @@
         <v-divider></v-divider>
         <v-text-field class="settings-field" label="Backend Server" v-model="backendServer" name="backend_server" variant="filled" :disabled="backendSaving" />
         <v-btn
-          color="grey-darken-4"
-          style="color: #c7c7c7;"
+          color="fixed-dark-surface"
+          style="color: rgb(var(--v-theme-on-fixed-dark-surface));"
           class="ma-2 pa-2"
           :loading="backendSaving"
           :disabled="backendSaving"

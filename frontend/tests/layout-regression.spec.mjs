@@ -1,7 +1,8 @@
-const fs = require('node:fs/promises');
-const path = require('node:path');
-const { test, expect } = require('@playwright/test');
-const {
+// 全画面の基準画像比較と差分成果物の生成を行う。
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { test, expect } from '@playwright/test';
+import {
   DEFAULT_ACTUAL_BACKEND_URL,
   DEFAULT_BASELINE_DIR,
   LAYOUT_COLOR_SCHEME,
@@ -10,15 +11,15 @@ const {
   safeName,
   selectLayoutStates,
   selectRoutes,
-} = require('./layout-regression-config.cjs');
-const {
+} from './layout-regression-config.mjs';
+import {
   analyzeScreenshot,
   hasUsefulScreenshotContent,
   summarizeScreenshotStats,
-} = require('./layout-image-assertions.cjs');
-const { compareScreenshots } = require('./layout-diff-analysis.cjs');
-const { assertSyntheticRoute, captureLayoutScreenshot } = require('./layout-page-actions.cjs');
-const { installSyntheticNetworkMocks } = require('./layout-synthetic-mocks.cjs');
+} from './layout-image-assertions.mjs';
+import { compareScreenshots } from './layout-diff-analysis.mjs';
+import { assertSyntheticRoute, captureLayoutScreenshot } from './layout-page-actions.mjs';
+import { installSyntheticNetworkMocks } from './layout-synthetic-mocks.mjs';
 
 const ROUTE_FILTER = process.env.SOUNDOWL_LAYOUT_ROUTE_FILTER;
 const STATE_FILTER = process.env.SOUNDOWL_LAYOUT_STATE_FILTER;

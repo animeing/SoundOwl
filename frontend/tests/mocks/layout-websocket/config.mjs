@@ -26,7 +26,7 @@ function readPort(value, fallback) {
   return port;
 }
 
-module.exports = {
+export {
   MOCK_HOST,
   MOCK_PORT,
   SYNTHETIC_BACKEND_URL,
@@ -35,3 +35,4 @@ module.exports = {
   buildServiceUrl,
   normalizeHost,
 };
+// WebSocketモックと合成バックエンドの接続先を一元化する。

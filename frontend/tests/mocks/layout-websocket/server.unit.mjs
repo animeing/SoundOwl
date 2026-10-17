@@ -1,10 +1,13 @@
-const assert = require('node:assert/strict');
-const { once } = require('node:events');
-const { test } = require('node:test');
-const WebSocket = require('ws');
-const { normalizeWebSocketUrl, withRuntimeConfig } = require('../../../server.js');
-const { buildServiceUrl, normalizeHost } = require('./config.cjs');
-const { startLayoutWebSocketMock } = require('./server.cjs');
+// WebSocketモックの接続・URL・実行時設定を検証する。
+import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import { test } from 'node:test';
+import WebSocket from 'ws';
+import serverModule from '../../../server.js';
+import { buildServiceUrl, normalizeHost } from './config.mjs';
+import { startLayoutWebSocketMock } from './server.mjs';
+
+const { normalizeWebSocketUrl, withRuntimeConfig } = serverModule;
 
 test('layout WebSocket mock formats IPv6 hosts for URLs without changing the listen host', () => {
   assert.equal(normalizeHost('[::1]'), '::1');
@@ -38,4 +41,10 @@ test('layout WebSocket mock accepts a connection and exposes health status', asy
   context.after(() => websocket.terminate());
   await once(websocket, 'open');
   assert.equal(websocket.readyState, WebSocket.OPEN);
+});
+
+test('layout WebSocket mock can be closed more than once', async () => {
+  const mock = await startLayoutWebSocketMock({ host: '127.0.0.1', port: 0 });
+  await mock.close();
+  await mock.close();
 });

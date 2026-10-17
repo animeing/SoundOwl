@@ -1,5 +1,6 @@
-const fs = require('node:fs');
-const path = require('node:path');
+// CIの比較結果を画面別・表示サイズ別の表へ集約する。
+import fs from 'node:fs';
+import path from 'node:path';
 
 const root = path.resolve(process.argv[2] || 'test-results/layout-regression');
 const outputPath = path.resolve(process.argv[3] || path.join(root, 'ci-summary.md'));

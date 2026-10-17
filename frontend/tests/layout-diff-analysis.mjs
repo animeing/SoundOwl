@@ -1,5 +1,6 @@
-const fs = require('node:fs/promises');
-const { PNG } = require('pngjs');
+// スクリーンショットの画素差分を領域ごとに集計する。
+import fs from 'node:fs/promises';
+import { PNG } from 'pngjs';
 
 async function compareScreenshots(referencePath, actualPath, diffPath, options = {}) {
   const { default: pixelmatch } = await import('pixelmatch');
@@ -307,6 +308,6 @@ function ratio(value, total) {
   return total === 0 ? 0 : value / total;
 }
 
-module.exports = {
+export {
   compareScreenshots,
 };

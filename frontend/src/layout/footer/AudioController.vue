@@ -129,7 +129,7 @@
           <span class="progress-time-text">{{ progressText() }}</span>
       </section>
     </div>
-    <v-divider vertical :opacity="0.0625" class="track-divider" />
+    <v-divider vertical class="track-divider" />
   </v-container>
 
   <teleport to="body">
@@ -212,7 +212,8 @@ export default {
     });
     const currentPlayListStyle = computed(() => {
       return {
-        background: '#212121',
+        background: 'rgb(var(--v-theme-fixed-dark-surface))',
+        color: 'rgb(var(--v-theme-on-fixed-dark-surface))',
         bottom: containerHeight.value + 'px',
         'z-index': 2000,
         'max-height': `calc(100vh - ${containerHeight.value}px - 48px)`
@@ -434,7 +435,7 @@ export default {
 
 .track-divider {
   position: absolute;
-  inset-inline-start: 33.333333%;
+  inset-inline-start: calc(100% / 3);
   top: 4px;
   bottom: 4px;
   margin-left: 0;
@@ -525,8 +526,8 @@ export default {
 
 .control-button {
   flex: 0 0 auto;
-  background: #212121;
-  color: #c7c7c7;
+  background: rgb(var(--v-theme-fixed-dark-surface));
+  color: rgb(var(--v-theme-on-fixed-dark-surface));
 }
 
 .progress-row {
@@ -543,7 +544,7 @@ export default {
 }
 
 .progress-time-text {
-  color: white;
+  color: rgb(var(--v-theme-on-fixed-dark-surface));
   font-variant-numeric: tabular-nums;
   line-height: 1;
   min-width: 4ch;

@@ -10,14 +10,14 @@
       <v-btn
         v-bind="props"
         variant="elevated"
-        color="grey-darken-4"
+        color="fixed-dark-surface"
         class="menu-button"
       >
         MENU
       </v-btn>
     </template>
 
-    <v-list bg-color="grey-darken-4" class="menu-list">
+    <v-list bg-color="fixed-dark-surface" class="menu-list">
       <v-list-item
         v-for="(item, index) in menuItems"
         :key="index"
@@ -54,7 +54,7 @@ export default {
 
 <style scoped>
 .menu-button {
-  color: #c7c7c7;
+  color: rgb(var(--v-theme-on-fixed-dark-surface));
   letter-spacing: 0.08em;
   min-width: 96px;
 }

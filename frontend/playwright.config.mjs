@@ -1,9 +1,10 @@
-const { defineConfig } = require('@playwright/test');
-const {
+import { fileURLToPath } from 'node:url';
+import { defineConfig } from '@playwright/test';
+import {
   LAYOUT_BROWSER,
   LAYOUT_COLOR_SCHEME,
   selectViewports,
-} = require('./tests/layout-regression-config.cjs');
+} from './tests/layout-regression-config.mjs';
 
 const defaultPort = Number(process.env.FRONTEND_PORT || process.env.PORT || 8081);
 const localUrl = process.env.SOUNDOWL_LAYOUT_LOCAL_URL || `http://127.0.0.1:${defaultPort}/#/`;
@@ -12,9 +13,9 @@ if (localAddress.protocol !== 'http:') {
   throw new Error('SOUNDOWL_LAYOUT_LOCAL_URL must use http.');
 }
 
-module.exports = defineConfig({
+export default defineConfig({
   testDir: './tests',
-  globalSetup: require.resolve('./tests/layout-global-setup.cjs'),
+  globalSetup: fileURLToPath(new URL('./tests/layout-global-setup.mjs', import.meta.url)),
   outputDir: './test-results/playwright',
   timeout: 600000,
   fullyParallel: false,

@@ -1,4 +1,5 @@
-const { LAYOUT_COLOR_SCHEME } = require('./layout-regression-config.cjs');
+// 各画面の遷移・安定化・撮影操作を共通化する。
+import { LAYOUT_COLOR_SCHEME } from './layout-regression-config.mjs';
 
 const STABILIZE_CSS = `
   *, *::before, *::after {
@@ -158,7 +159,7 @@ async function waitForSettledPage(page, networkIdleTimeoutMs, settleMs) {
   await page.waitForTimeout(settleMs);
 }
 
-module.exports = {
+export {
   applyLayoutState,
   assertSyntheticRoute,
   captureLayoutScreenshot,

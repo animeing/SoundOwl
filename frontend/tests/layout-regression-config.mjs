@@ -1,5 +1,9 @@
-const path = require('node:path');
-const { SYNTHETIC_BACKEND_URL } = require('./mocks/layout-websocket/config.cjs');
+// レイアウト比較対象の画面・サイズ・状態を定義する。
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { SYNTHETIC_BACKEND_URL } from './mocks/layout-websocket/config.mjs';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const ROUTES = [
   { name: 'home', path: '/' },
@@ -85,7 +89,7 @@ function safeName(value) {
   return value.replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '') || 'root';
 }
 
-module.exports = {
+export {
   DEFAULT_ACTUAL_BACKEND_URL,
   DEFAULT_BASELINE_DIR,
   LAYOUT_BROWSER,

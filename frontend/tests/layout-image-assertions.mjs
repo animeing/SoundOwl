@@ -1,5 +1,6 @@
-const fs = require('node:fs/promises');
-const { PNG } = require('pngjs');
+// 基準画像が空画像や未描画でないことを検証する。
+import fs from 'node:fs/promises';
+import { PNG } from 'pngjs';
 
 const NEAR_WHITE_CHANNEL = 245;
 const TRANSPARENT_ALPHA = 10;
@@ -111,7 +112,7 @@ function readNumberEnv(name, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-module.exports = {
+export {
   analyzeScreenshot,
   assertUsefulScreenshot,
   hasUsefulScreenshotContent,
