@@ -14,10 +14,9 @@ const PLAYLISTS = [
   { play_list: 'Typography Stress Cases', sound_point: 5 },
 ];
 
-async function installSyntheticNetworkMocks(page, backendUrl) {
-  const backendOrigin = new URL(backendUrl).origin;
+async function installSyntheticNetworkMocks(page, backendUrl, options = {}) {
   await page.route(
-    (url) => url.origin === backendOrigin && isSyntheticBackendPath(url.pathname),
+    (url) => Boolean(syntheticPathForUrl(url, backendUrl, options)),
     async (route) => {
       const request = route.request();
       if (request.method() === 'OPTIONS') {
@@ -26,19 +25,25 @@ async function installSyntheticNetworkMocks(page, backendUrl) {
       }
 
       const url = new URL(request.url());
-      if (url.pathname.startsWith('/api/')) {
-        await fulfillJson(route, await responseForApi(url.pathname, request));
+      const pathname = syntheticPathForUrl(url, backendUrl, options);
+      if (pathname.startsWith('/api/')) {
+        const response = await responseForApi(pathname, request);
+        if (isSyntheticJsonResponse(response)) {
+          await fulfillJson(route, response.data, response.status);
+          return;
+        }
+        await fulfillJson(route, response);
         return;
       }
-      if (url.pathname.startsWith('/img/')) {
-        await fulfillSvg(route, imageSvg(url.search || url.pathname));
+      if (pathname.startsWith('/img/')) {
+        await fulfillSvg(route, imageSvg(url.search || pathname));
         return;
       }
-      if (url.pathname.startsWith('/sound_create/')) {
+      if (pathname.startsWith('/sound_create/')) {
         await route.fulfill({ status: 204, headers: corsHeaders(), body: '' });
         return;
       }
-      if (url.pathname.startsWith('/audio_pulse/')) {
+      if (pathname.startsWith('/audio_pulse/')) {
         await route.fulfill({ status: 404, headers: corsHeaders(), body: '' });
       }
     },
@@ -74,8 +79,25 @@ function buildSyntheticFrontendConfigScript(backendUrl, websocketUrl) {
   return `window.SoundOwlFrontendConfig = ${JSON.stringify(config)};\n`;
 }
 
-function isSyntheticBackendPath(pathname) {
-  return pathname.startsWith('/api/')
+function syntheticPathForUrl(requestUrl, backendUrl, options = {}) {
+  const request = requestUrl instanceof URL ? requestUrl : new URL(requestUrl);
+  const backend = new URL(backendUrl);
+  if (request.origin !== backend.origin) {
+    return null;
+  }
+
+  const basePath = backend.pathname.endsWith('/') ? backend.pathname : `${backend.pathname}/`;
+  if (!request.pathname.startsWith(basePath)) {
+    return null;
+  }
+
+  const pathname = `/${request.pathname.slice(basePath.length).replace(/^\/+/, '')}`;
+  return isSyntheticBackendPath(pathname, options) ? pathname : null;
+}
+
+function isSyntheticBackendPath(pathname, options = {}) {
+  const includeApi = options.includeApi !== false;
+  return (includeApi && pathname.startsWith('/api/'))
     || pathname.startsWith('/img/')
     || pathname.startsWith('/sound_create/')
     || pathname.startsWith('/audio_pulse/');
@@ -131,13 +153,28 @@ async function responseForApi(pathname, request) {
 }
 
 async function playlistResponse(request) {
-  const params = await requestParameters(request);
+  return playlistResponseForParameters(await requestParameters(request));
+}
+
+function playlistResponseForParameters(params) {
+  if (params.get('method') === 'names') {
+    return syntheticJsonResponse(200, PLAYLISTS);
+  }
   if (params.get('method') === 'sounds') {
-    return params.get('name') === PLAYLISTS[0].play_list
+    const tracks = params.get('name') === PLAYLISTS[0].play_list
       ? TRACKS.slice(0, 8).map(flattenTrack)
       : [];
+    return syntheticJsonResponse(200, tracks);
   }
-  return PLAYLISTS;
+  return syntheticJsonResponse(400, { error: 'Unsupported playlist method' });
+}
+
+function syntheticJsonResponse(status, data) {
+  return { __layoutSyntheticResponse: true, status, data };
+}
+
+function isSyntheticJsonResponse(value) {
+  return value?.__layoutSyntheticResponse === true;
 }
 
 async function requestParameters(request) {
@@ -257,9 +294,9 @@ function createEqualizerGains(gains) {
   return frequencies.map((hz, index) => ({ hz, gain: gains[index] || 0 }));
 }
 
-async function fulfillJson(route, data) {
+async function fulfillJson(route, data, status = 200) {
   await route.fulfill({
-    status: 200,
+    status,
     headers: {
       ...corsHeaders(),
       'cache-control': 'no-store',
@@ -336,4 +373,7 @@ module.exports = {
   buildSyntheticFrontendConfigScript,
   installSyntheticFrontendConfigMock,
   installSyntheticNetworkMocks,
+  isSyntheticBackendPath,
+  playlistResponseForParameters,
+  syntheticPathForUrl,
 };

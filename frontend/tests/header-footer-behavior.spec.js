@@ -45,6 +45,32 @@ test('menu and mobile search retain the completed layout', async ({ page }) => {
   });
 });
 
+test('fixed dark action buttons retain readable labels in light mode', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+
+  const buttons = [
+    page.locator('.menu-button'),
+    page.getByRole('button', { name: 'setting update', exact: true }),
+    page.getByRole('button', { name: 'sound regist', exact: true }),
+    page.getByRole('button', { name: 'backend update', exact: true }),
+  ];
+
+  for (const button of buttons) {
+    await expect(button).toBeVisible();
+    const colors = await button.evaluate((element) => {
+      const parseChannels = (value) => value.match(/[\d.]+/g).slice(0, 3).map(Number);
+      const style = getComputedStyle(element);
+      return {
+        foreground: parseChannels(style.color),
+        background: parseChannels(style.backgroundColor),
+      };
+    });
+    expect(Math.min(...colors.foreground)).toBeGreaterThanOrEqual(200);
+    expect(Math.max(...colors.background)).toBeLessThanOrEqual(40);
+  }
+});
+
 test('footer text scrolls only while clipped and rechecks content and viewport changes', async ({ page }) => {
   const state = () => page.locator('.track-text .marquee-text').evaluateAll((elements) =>
     elements.map((element) => ({

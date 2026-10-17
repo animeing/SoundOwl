@@ -7,10 +7,12 @@ const { spawn } = require('node:child_process');
 const FRONTEND_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_ARTIFACT_DIR = path.join('test-results', 'layout-regression-local');
 
-main().catch((error) => {
-  console.error(error.stack || error.message || String(error));
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error.stack || error.message || String(error));
+    process.exitCode = 1;
+  });
+}
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
@@ -21,7 +23,8 @@ async function main() {
 
   const env = buildEnvironment(options);
   const localUrl = env.SOUNDOWL_LAYOUT_LOCAL_URL ? new URL(env.SOUNDOWL_LAYOUT_LOCAL_URL) : null;
-  const port = options.port || Number(localUrl?.port) || await findOpenPort(18080);
+  const probeHost = normalizeListenHost(localUrl?.hostname);
+  const port = options.port || Number(localUrl?.port) || await findOpenPort(18080, probeHost);
   env.FRONTEND_PORT = String(port);
   env.PORT = String(port);
   if (localUrl) {
@@ -186,7 +189,11 @@ function playwrightCli() {
   return path.join(FRONTEND_ROOT, 'node_modules', '@playwright', 'test', 'cli.js');
 }
 
-function findOpenPort(startPort) {
+function normalizeListenHost(hostname) {
+  return String(hostname || '127.0.0.1').replace(/^\[|\]$/g, '');
+}
+
+function findOpenPort(startPort, host = '127.0.0.1') {
   return new Promise((resolve, reject) => {
     const tryPort = (port) => {
       const server = net.createServer();
@@ -200,7 +207,7 @@ function findOpenPort(startPort) {
       server.once('listening', () => {
         server.close(() => resolve(port));
       });
-      server.listen(port, '127.0.0.1');
+      server.listen(port, host);
     };
     tryPort(startPort);
   });
@@ -265,3 +272,8 @@ Examples:
   npm run test:layout:local -- --state full-layout -- --debug
 `);
 }
+
+module.exports = {
+  findOpenPort,
+  normalizeListenHost,
+};

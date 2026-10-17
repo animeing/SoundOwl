@@ -52,7 +52,7 @@ test.describe('SoundOwl layout regression', () => {
     const actualErrors = collectBrowserErrors(page);
 
     await installSyntheticNetworkMocks(page, BACKEND_URL);
-    await installSyntheticNetworkMocks(page, testInfo.project.use.baseURL);
+    await installSyntheticNetworkMocks(page, testInfo.project.use.baseURL, { includeApi: false });
 
     for (const route of SELECTED_ROUTES) {
       for (const state of SELECTED_STATES) {

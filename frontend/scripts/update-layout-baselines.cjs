@@ -85,7 +85,7 @@ async function main() {
       }
       await installSyntheticFrontendConfigMock(page, referenceUrl, REFERENCE_BACKEND_URL);
       await installSyntheticNetworkMocks(page, REFERENCE_BACKEND_URL);
-      await installSyntheticNetworkMocks(page, new URL(referenceUrl).origin + '/');
+      await installSyntheticNetworkMocks(page, new URL(referenceUrl).origin + '/', { includeApi: false });
 
       try {
         for (const route of ROUTES) {

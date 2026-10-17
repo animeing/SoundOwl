@@ -13,7 +13,6 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { BaseFrameWork } from '../../base.js'
 
 const props = defineProps({
   speed: { type: Number, default: 1, validator: v => v > 0 },
@@ -28,7 +27,9 @@ const textWidth = ref(0)
 const offset = ref(0)
 const isHovered = ref(false)
 
-let animationFrame = new BaseFrameWork.AnimationFrame()
+let animationFrameId = null
+let animationCancel = null
+let runGeneration = 0
 let isComponentMounted = true
 
 const textStyle = computed(() => ({
@@ -41,11 +42,42 @@ function pause(duration) {
   return new Promise(resolve => setTimeout(resolve, duration))
 }
 
-function scrollTo(targetOffset) {
+function stopAnimation() {
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
+  const cancel = animationCancel
+  animationCancel = null
+  cancel?.()
+}
+
+function isRunActive(generation) {
+  return isComponentMounted && isHovered.value && generation === runGeneration
+}
+
+function scrollTo(targetOffset, generation) {
   return new Promise(resolve => {
+    stopAnimation()
+
+    let settled = false
+    const finish = () => {
+      if (settled) return
+      settled = true
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId)
+        animationFrameId = null
+      }
+      if (animationCancel === finish) {
+        animationCancel = null
+      }
+      resolve()
+    }
+    animationCancel = finish
+
     function step() {
-      if (!isComponentMounted || !isHovered.value) {
-        resolve()
+      if (!isRunActive(generation)) {
+        finish()
         return
       }
       const distance = targetOffset - offset.value
@@ -57,40 +89,45 @@ function scrollTo(targetOffset) {
         (direction === 1 && offset.value >= targetOffset)
       ) {
         offset.value = targetOffset
-        resolve()
-        animationFrame.stopAnimation()
+        finish()
+        return
       }
+
+      animationFrameId = requestAnimationFrame(step)
     }
-    animationFrame.startAnimation(step)
+    animationFrameId = requestAnimationFrame(step)
   })
 }
 
-async function runMarquee() {
-  while (isHovered.value && isComponentMounted) {
+async function runMarquee(generation) {
+  while (isRunActive(generation)) {
     const targetOffset = containerWidthValue.value - textWidth.value
-    await scrollTo(targetOffset)
-    if (!isHovered.value) break
+    await scrollTo(targetOffset, generation)
+    if (!isRunActive(generation)) break
     await pause(pauseTime)
-    await scrollTo(0)
-    if (!isHovered.value) break
+    if (!isRunActive(generation)) break
+    await scrollTo(0, generation)
+    if (!isRunActive(generation)) break
     await pause(pauseTime)
   }
 }
 
 function handleMouseEnter() {
+  const generation = ++runGeneration
   isHovered.value = true
   if (containerRef.value && textRef.value) {
     containerWidthValue.value = containerRef.value.clientWidth
     textWidth.value = textRef.value.scrollWidth
   }
   if (textWidth.value > containerWidthValue.value) {
-    runMarquee()
+    runMarquee(generation)
   }
 }
 
 function handleMouseLeave() {
+  runGeneration += 1
   isHovered.value = false
-  animationFrame.stopAnimation()
+  stopAnimation()
   offset.value = 0
 }
 
@@ -102,8 +139,9 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  runGeneration += 1
   isComponentMounted = false
-  animationFrame.stopAnimation()
+  stopAnimation()
 })
 </script>
 

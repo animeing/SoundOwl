@@ -3,6 +3,7 @@ const { test } = require('node:test');
 const { ROUTES, buildRouteUrl } = require('./layout-regression-config.cjs');
 const { assertSyntheticRoute } = require('./layout-page-actions.cjs');
 const { buildSyntheticFrontendConfigScript } = require('./layout-synthetic-mocks.cjs');
+const { normalizeListenHost } = require('../scripts/run-layout-regression.cjs');
 
 test('hash-mode routes preserve paths and query parameters', () => {
   for (const route of ROUTES) {
@@ -46,4 +47,10 @@ test('synthetic frontend config passes the selected WebSocket mock port to the b
   const script = buildSyntheticFrontendConfigScript('http://127.0.0.1:18081/', 'ws://127.0.0.1:19080');
   assert.match(script, /"backendServer":"http:\/\/127\.0\.0\.1:18081\/"/);
   assert.match(script, /"websocketServer":"ws:\/\/127\.0\.0\.1:19080"/);
+});
+
+test('layout runner normalizes configured IPv4 and IPv6 host names for port probing', () => {
+  assert.equal(normalizeListenHost('192.168.0.125'), '192.168.0.125');
+  assert.equal(normalizeListenHost('[::1]'), '::1');
+  assert.equal(normalizeListenHost(), '127.0.0.1');
 });

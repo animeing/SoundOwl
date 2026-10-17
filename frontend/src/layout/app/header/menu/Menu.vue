@@ -11,7 +11,7 @@
         v-bind="props"
         variant="elevated"
         color="grey-darken-4"
-        class="menu-button"
+        class="menu-button text-white"
       >
         MENU
       </v-btn>
@@ -54,7 +54,6 @@ export default {
 
 <style scoped>
 .menu-button {
-  color: rgb(var(--v-theme-on-surface));
   letter-spacing: 0.08em;
   min-width: 96px;
 }
