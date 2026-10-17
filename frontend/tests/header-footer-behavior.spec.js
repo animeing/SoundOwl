@@ -66,8 +66,8 @@ test('fixed dark action buttons retain readable labels in light mode', async ({ 
         background: parseChannels(style.backgroundColor),
       };
     });
-    expect(Math.min(...colors.foreground)).toBeGreaterThanOrEqual(200);
-    expect(Math.max(...colors.background)).toBeLessThanOrEqual(40);
+    expect(colors.foreground).toEqual([199, 199, 199]);
+    expect(colors.background).toEqual([33, 33, 33]);
   }
 });
 

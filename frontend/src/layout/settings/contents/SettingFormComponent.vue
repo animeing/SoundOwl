@@ -9,7 +9,8 @@
         <v-text-field class="settings-field" label="Backend Server" v-model="backendServer" name="backend_server" variant="filled" :disabled="backendSaving" />
         <v-btn
           color="grey-darken-4"
-          class="ma-2 pa-2 text-white"
+          style="color: #c7c7c7;"
+          class="ma-2 pa-2"
           :loading="backendSaving"
           :disabled="backendSaving"
           @click="$emit('backend-update')"

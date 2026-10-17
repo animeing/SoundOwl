@@ -13,19 +13,20 @@
         ? undefined
         : 'The operation cannot be performed because the WebSocket connection has not been established.'"
       @click="settingUpdate"
-      class="ma-2 pa-2 text-uppercase text-white"
+      style="color: #c7c7c7;"
+      class="ma-2 pa-2 text-uppercase"
     >setting update</v-btn>
     <div style="position: relative; display: inline-block;">
       <v-btn
         color="grey-darken-4"
         :disabled="isBackendSaving || !isBackendReady || (isAction && !isConnectWebSocket)"
         :loading="isAction"
-        style="position: relative;"
+        style="position: relative; color: #c7c7c7;"
         :data-hint="isConnectWebSocket
           ? undefined
           : 'The operation cannot be performed because the WebSocket connection has not been established.'"
         @click="soundRegist"
-        class="ma-2 pa-2 text-uppercase text-white"
+        class="ma-2 pa-2 text-uppercase"
       >sound regist</v-btn>
     </div>
   </div>
