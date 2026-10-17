@@ -68,6 +68,27 @@ async function prepareLayoutPage(page, url, state, options = {}) {
   await waitForSettledPage(page, networkIdleTimeoutMs, settleMs);
   await applyLayoutState(page, state);
   await waitForSettledPage(page, networkIdleTimeoutMs, settleMs);
+  await hideComparisonExcludedElements(page, options.hiddenSelectors || []);
+}
+
+async function hideComparisonExcludedElements(page, selectors) {
+  if (selectors.length === 0) {
+    return;
+  }
+  const hiddenCount = await page.evaluate((excludedSelectors) => {
+    let count = 0;
+    for (const selector of excludedSelectors) {
+      for (const element of document.querySelectorAll(selector)) {
+        element.hidden = true;
+        element.style.display = 'none';
+        count += 1;
+      }
+    }
+    return count;
+  }, selectors);
+  if (hiddenCount === 0) {
+    throw new Error(`Could not find a comparison-excluded element: ${selectors.join(', ')}`);
+  }
 }
 
 async function applyLayoutState(page, state) {

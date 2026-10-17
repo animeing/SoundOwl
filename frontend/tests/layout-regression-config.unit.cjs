@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { ROUTES, buildRouteUrl } = require('./layout-regression-config.cjs');
 const { assertSyntheticRoute } = require('./layout-page-actions.cjs');
+const { buildSyntheticFrontendConfigScript } = require('./layout-synthetic-mocks.cjs');
 
 test('hash-mode routes preserve paths and query parameters', () => {
   for (const route of ROUTES) {
@@ -39,4 +40,10 @@ test('custom local URL selects the Playwright base URL', () => {
     }
     delete require.cache[configPath];
   }
+});
+
+test('synthetic frontend config passes the selected WebSocket mock port to the browser', () => {
+  const script = buildSyntheticFrontendConfigScript('http://127.0.0.1:18081/', 'ws://127.0.0.1:19080');
+  assert.match(script, /"backendServer":"http:\/\/127\.0\.0\.1:18081\/"/);
+  assert.match(script, /"websocketServer":"ws:\/\/127\.0\.0\.1:19080"/);
 });

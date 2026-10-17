@@ -1,5 +1,6 @@
 const {
   SYNTHETIC_BACKEND_URL: DEFAULT_SYNTHETIC_BACKEND_URL,
+  WEBSOCKET_MOCK_URL,
 } = require('./mocks/layout-websocket/config.cjs');
 
 const BACKEND_HOSTNAME = new URL(DEFAULT_SYNTHETIC_BACKEND_URL).hostname;
@@ -46,8 +47,7 @@ async function installSyntheticNetworkMocks(page, backendUrl) {
 
 async function installSyntheticFrontendConfigMock(page, frontendUrl, backendUrl = DEFAULT_SYNTHETIC_BACKEND_URL) {
   const frontendOrigin = new URL(frontendUrl).origin;
-  const normalizedBackendUrl = new URL(backendUrl).href;
-  const configScript = `window.SoundOwlFrontendConfig = ${JSON.stringify({ backendServer: normalizedBackendUrl })};\n`;
+  const configScript = buildSyntheticFrontendConfigScript(backendUrl, WEBSOCKET_MOCK_URL);
 
   await page.addInitScript(configScript);
   await page.route(
@@ -64,6 +64,14 @@ async function installSyntheticFrontendConfigMock(page, frontendUrl, backendUrl 
       });
     },
   );
+}
+
+function buildSyntheticFrontendConfigScript(backendUrl, websocketUrl) {
+  const config = {
+    backendServer: new URL(backendUrl).href,
+    websocketServer: new URL(websocketUrl).href.replace(/\/$/, ''),
+  };
+  return `window.SoundOwlFrontendConfig = ${JSON.stringify(config)};\n`;
 }
 
 function isSyntheticBackendPath(pathname) {
@@ -325,6 +333,7 @@ function pad(value) {
 module.exports = {
   BACKEND_HOSTNAME,
   DEFAULT_SYNTHETIC_BACKEND_URL,
+  buildSyntheticFrontendConfigScript,
   installSyntheticFrontendConfigMock,
   installSyntheticNetworkMocks,
 };

@@ -1,5 +1,6 @@
 const path = require('node:path');
 const { DEFAULT_ACTUAL_BACKEND_URL } = require('./layout-regression-config.cjs');
+const { WEBSOCKET_MOCK_URL } = require('./mocks/layout-websocket/config.cjs');
 const { startLayoutWebSocketMock } = require('./mocks/layout-websocket/server.cjs');
 
 module.exports = async function startLayoutTestServers(config) {
@@ -18,6 +19,7 @@ module.exports = async function startLayoutTestServers(config) {
   process.env.FRONTEND_CONFIG_PATH = frontendConfigPath;
   process.env.FRONTEND_BACKEND_SERVER_DEFAULT = process.env.SOUNDOWL_LAYOUT_BACKEND_URL
     || DEFAULT_ACTUAL_BACKEND_URL;
+  process.env.FRONTEND_WEBSOCKET_SERVER_DEFAULT = WEBSOCKET_MOCK_URL;
 
   const { createApp } = require('../server.js');
   const frontendServer = await listen(createApp(), port, host);

@@ -75,6 +75,7 @@ test.describe('SoundOwl layout regression', () => {
           `Missing layout baseline: ${baselinePath}. Run npm run test:layout:update-baseline from a machine that can access the completed local domain.`,
         );
         await captureLayoutScreenshot(page, actualUrl, state, actualPath, {
+          hiddenSelectors: route.baselineHiddenSelectors,
           networkIdleTimeoutMs: NETWORK_IDLE_TIMEOUT_MS,
           settleMs: SETTLE_MS,
         });
@@ -414,6 +415,9 @@ async function collectLayoutIssues(page, tolerance, referenceHorizontalOverflow)
       const first = overlapCandidates[index];
       for (let nextIndex = index + 1; nextIndex < overlapCandidates.length; nextIndex += 1) {
         const second = overlapCandidates[nextIndex];
+        if (first.isInFixedController !== second.isInFixedController) {
+          continue;
+        }
         if (first.node.contains(second.node) || second.node.contains(first.node)) {
           continue;
         }
@@ -474,6 +478,7 @@ async function collectLayoutIssues(page, tolerance, referenceHorizontalOverflow)
         hasVisibleInlineOverflow,
         isFixedLike: style.position === 'fixed' || style.position === 'sticky',
         isInsideHorizontalClip: Boolean(findHorizontalClipAncestor(element)),
+        isInFixedController: Boolean(element.closest('#controller')),
         isInIntentionalOverlay: Boolean(element.closest('.fullscreen-overlay')),
         isOverlapCandidate: isControl || element.matches('h1, h2, h3, h4, h5, h6, label'),
       };

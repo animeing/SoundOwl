@@ -266,7 +266,7 @@ export default {
 }
 
 .settings-panel {
-  min-width: 300px;
+  min-width: min(300px, 100%);
   max-width: 100%;
 }
 </style>

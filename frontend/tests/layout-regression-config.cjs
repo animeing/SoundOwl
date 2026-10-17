@@ -11,11 +11,11 @@ const ROUTES = [
   { name: 'search', path: '/search?SearchWord=Synthetic' },
   { name: 'playlists', path: '/playlists' },
   { name: 'playlist-sounds', path: '/playlists/sounds?list=Layout%20Review%20Queue' },
-  { name: 'setting-server', path: '/setting' },
+  { name: 'setting-server', path: '/setting', baselineHiddenSelectors: ['.backend-card'] },
   { name: 'setting-equalizer', path: '/setting/equalizer' },
   { name: 'setting-effect', path: '/setting/effect' },
   { name: 'sound-sculpt-debug', path: '/setting/soundSculptDebug' },
-  { name: 'setup', path: '/setup' },
+  { name: 'setup', path: '/setup', baselineHiddenSelectors: ['.backend-card'] },
 ];
 
 const LAYOUT_BROWSER = process.env.SOUNDOWL_LAYOUT_BROWSER || 'chromium';

@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 const http = require('node:http');
 const { WebSocketServer } = require('ws');
-const { MOCK_HOST, MOCK_PORT } = require('./config.cjs');
+const {
+  MOCK_HOST,
+  MOCK_PORT,
+  buildServiceUrl,
+  normalizeHost,
+} = require('./config.cjs');
 
 async function startLayoutWebSocketMock(options = {}) {
-  const host = options.host || MOCK_HOST;
+  const host = normalizeHost(options.host || MOCK_HOST);
   const port = options.port ?? MOCK_PORT;
   const httpServer = http.createServer((request, response) => {
     if (request.method === 'GET' && request.url === '/health') {
@@ -31,8 +36,8 @@ async function startLayoutWebSocketMock(options = {}) {
   const address = httpServer.address();
   const actualPort = typeof address === 'object' && address ? address.port : port;
   return {
-    healthUrl: `http://${host}:${actualPort}/health`,
-    websocketUrl: `ws://${host}:${actualPort}`,
+    healthUrl: buildServiceUrl('http', host, actualPort, '/health'),
+    websocketUrl: buildServiceUrl('ws', host, actualPort),
     close: async () => {
       for (const client of websocketServer.clients) {
         client.terminate();
