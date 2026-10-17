@@ -196,7 +196,7 @@ async function writeBaselineReadme(targetDir) {
     ? 'the reviewed frontend build in SOUNDOWL_LAYOUT_REFERENCE_ROOT'
     : 'the completed SoundOwl layout';
   const updateInstructions = REFERENCE_ROOT
-    ? 'Recreate these images with the temporary v3 capture workflow and review them before adoption.'
+    ? 'Recreate these images with the temporary baseline capture workflow and review them before adoption.'
     : `Update them from a machine that can access the completed local domain:
 
 \`\`\`sh
