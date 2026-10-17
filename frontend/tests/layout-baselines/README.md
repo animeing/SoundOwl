@@ -1,24 +1,15 @@
 # Layout Baselines
 
-These PNG files represent the current SoundOwl layout in dark mode with synthetic test data only, captured on the same GitHub Actions runners used for comparison.
-Windows Chromium images are in `chromium-dark-*`; Ubuntu Firefox images are in `ubuntu-firefox/firefox-dark-*`.
-Ubuntu omits `sound-sculpt-debug` as agreed.
-The baseline source is commit `4d30944`, captured by [Frontend Layout Regression #25](https://github.com/animeing/SoundOwl/actions/runs/39050579875). The capture script routes API, media, and WebSocket requests to synthetic data.
+These PNG files are generated from reviewed frontend commit `10cd736d56ff6d161f85f90665561fcfd77880ce` in dark mode with synthetic test data only (GitHub Actions run `39074375597`).
+The update script routes API and media requests to synthetic test data.
 Each route stores default.png and full-layout.png so the fullscreen/full layout control is also covered.
+
 Do not capture or commit screenshots that contain real song titles, lyrics, artwork, or audio-related user data.
 The update script rejects screenshots that look blank or unrendered so an inaccessible reference URL cannot silently become the baseline.
 
-The strict CI check uses runner-native images. A local run on a different machine may show rendering differences even when the app code is unchanged.
-For local diagnostics against the completed local site, use a separate ignored baseline directory. On PowerShell:
+Recreate these images with the temporary baseline capture workflow and review them before adoption.
 
-```powershell
-$env:SOUNDOWL_LAYOUT_BASELINE_DIR = 'tests/layout-baselines/local-review'
-npm run test:layout:update-baseline --prefix frontend
-npm run test:layout:local --prefix frontend
-Remove-Item Env:SOUNDOWL_LAYOUT_BASELINE_DIR
-```
-
-To compare against the committed CI baseline locally (which may differ because of the runner environment):
+Run the committed baseline comparison locally with the same runner used by CI:
 
 ```sh
 npm run test:layout:local --prefix frontend
