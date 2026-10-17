@@ -155,10 +155,10 @@ async function installSyntheticWebSocketMock(page) {
 
 async function startReferenceServer(root) {
   const resolvedRoot = path.resolve(root);
-  const indexPhp = await fs.readFile(path.join(resolvedRoot, 'index.php'), 'utf8');
+  const { name: indexName, contents: referenceIndex } = await readReferenceIndex(resolvedRoot);
   for (const asset of ['css/style.css', 'css/dark-mode.css', 'js/main.bundle.js']) {
-    if (!indexPhp.includes(asset)) {
-      throw new Error(`Reference index.php does not include ${asset}`);
+    if (!referenceIndex.includes(asset)) {
+      throw new Error(`Reference ${indexName} does not include ${asset}`);
     }
     await fs.access(path.join(resolvedRoot, asset));
   }
@@ -178,9 +178,22 @@ async function startReferenceServer(root) {
   };
 }
 
+async function readReferenceIndex(root) {
+  for (const name of ['index.php', 'index.html']) {
+    try {
+      return { name, contents: await fs.readFile(path.join(root, name), 'utf8') };
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
+    }
+  }
+  throw new Error(`Reference root does not contain index.php or index.html: ${root}`);
+}
+
 async function writeBaselineReadme(targetDir) {
   const sourceDescription = REFERENCE_ROOT
-    ? 'the pinned pre-v4 main revision 2fb6d510c066162d19829e6d779cd1e128b18105 (Vuetify 3.11.7)'
+    ? 'the reviewed frontend build in SOUNDOWL_LAYOUT_REFERENCE_ROOT'
     : 'the completed SoundOwl layout';
   const updateInstructions = REFERENCE_ROOT
     ? 'Recreate these images with the temporary v3 capture workflow and review them before adoption.'
