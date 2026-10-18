@@ -21,6 +21,10 @@ export class SoundSculptEffectComponent extends AudioComponent {
 
     this.voiceMetrics = { 'sum': 0, 'count': 0, 'avg': 0, 'previousAvg': 0, 'normalizedAvg': 0, 'minHz': 300, 'maxHz': 3400 };
     this.animationFrame = new BaseFrameWork.AnimationFrame();
+    // setInterval 用タイマーID
+    this._effectInterval = null;
+    // ループ間隔（ミリ秒） — 必要に応じて変更してください
+    this.effectIntervalMs = 1000/60;
 
     /**
      * 前回のゲイン値を保存するオブジェクト
@@ -31,19 +35,19 @@ export class SoundSculptEffectComponent extends AudioComponent {
      * 周波数帯ごとの強調レベルを設定するオブジェクト
      */
     this.emphasisLevels = {
-      '8': 1.9,
-      '16': 1.9,
-      '32': 1.9,
-      '64': 1.9,
-      '125': 2.5,
-      '250': 1.5,
-      '500': 1.5,
-      '1000': 2.5,
-      '2000': 2.5,
-      '4000': 4.5,
-      '8000': 4.5,
-      '16000': 4.5,
-      '24000': 4.5
+      '8': 2.0,
+      '16': 2.0,
+      '32': 2.0,
+      '64': 1.7,
+      '125': 1.7,
+      '250': 1.4,
+      '500': 1.4,
+      '1000': 1.7,
+      '2000': 1.7,
+      '4000': 1.7,
+      '8000': 2.0,
+      '16000': 2.0,
+      '24000': 2.5
     };
 
     /**
@@ -80,7 +84,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
     if (this.isUse) {
       this.startEffectLoop();
     } else {
-      this.animationFrame.stopAnimation();
+      this.stopEffectLoop();
       this.resetDefaultGains();
     }
   }
@@ -91,7 +95,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
     if (this.isUse) {
       this.startEffectLoop();
     } else {
-      this.animationFrame.stopAnimation();
+      this.stopEffectLoop();
       this.resetDefaultGains();
     }
   }
@@ -109,7 +113,7 @@ export class SoundSculptEffectComponent extends AudioComponent {
   startEffectLoop() {
     const loop = () => {
       if (!this.isUse) {
-        this.animationFrame.stopAnimation();
+        this.stopEffectLoop();
         this.resetDefaultGains();
         return;
       }
@@ -157,7 +161,26 @@ export class SoundSculptEffectComponent extends AudioComponent {
       });
 
     };
-    this.animationFrame.startAnimation(loop);
+    // 既存のタイマーがあればクリア
+    if (this._effectInterval) {
+      clearInterval(this._effectInterval);
+      this._effectInterval = null;
+    }
+    this._effectInterval = setInterval(loop, this.effectIntervalMs);
+  }
+
+  stopEffectLoop() {
+    if (this._effectInterval) {
+      clearInterval(this._effectInterval);
+      this._effectInterval = null;
+    }
+    try {
+      if (this.animationFrame && this.animationFrame.stopAnimation) {
+        this.animationFrame.stopAnimation();
+      }
+    } catch (e) {
+      // noop
+    }
   }
   
 
@@ -393,19 +416,19 @@ export class SoundSculptEffectComponent extends AudioComponent {
      * @type {Object.<string, {hz: number, count: number, sum: number, avg: number, previousAvg: number, smoothing: number, normalizedAvg: number, multiplier: number, order: number}>}
      */
     let frequencyBands = {
-      '8': { 'hz': 8, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 0.01, "order": 0 },
-      '16': { 'hz': 16, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 0.01, "order": 0 },
-      '32': { 'hz': 32, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 0.01, "order": 0 },
-      '64': { 'hz': 64, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 0.01, "order": 0 },
-      '125': { 'hz': 125, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.3, "order": 0 },
-      '250': { 'hz': 250, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.8, "order": 0 },
-      '500': { 'hz': 500, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.0, "order": 0 },
-      '1000': { 'hz': 1000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.2, "order": 0 },
-      '2000': { 'hz': 2000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.5, "order": 0 },
-      '4000': { 'hz': 4000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.8, "order": 0 },
-      '8000': { 'hz': 8000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 3.0, "order": 0 },
-      '16000': { 'hz': 16000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 3.2, "order": 0 },
-      '24000': { 'hz': 24000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 3.5, "order": 0 }
+      '8': { 'hz': 8, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2, "order": 0 },
+      '16': { 'hz': 16, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2, "order": 0 },
+      '32': { 'hz': 32, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2, "order": 0 },
+      '64': { 'hz': 64, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.7, "order": 0 },
+      '125': { 'hz': 125, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.7, "order": 0 },
+      '250': { 'hz': 250, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.4, "order": 0 },
+      '500': { 'hz': 500, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.4, "order": 0 },
+      '1000': { 'hz': 1000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.7, "order": 0 },
+      '2000': { 'hz': 2000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.7, "order": 0 },
+      '4000': { 'hz': 4000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 1.7, "order": 0 },
+      '8000': { 'hz': 8000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2, "order": 0 },
+      '16000': { 'hz': 16000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2, "order": 0 },
+      '24000': { 'hz': 24000, 'count': 0, 'sum': 0, 'avg': 0, 'previousAvg': 0, 'smoothing': 0, 'normalizedAvg': 0, 'multiplier': 2.5, "order": 0 }
     };
     this.voiceMetrics = { 'hz': 'voiceRange', 'sum': 0, 'count': 0, 'avg': 0, 'previousAvg': 0, 'normalizedAvg': 0, 'minHz': 300, 'maxHz': 3400 };
     let total = { 'count': 0, 'sum': 0 };

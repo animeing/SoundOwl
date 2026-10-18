@@ -4,8 +4,7 @@ permissions:
   contents: read
 
 on:
-  push:
-  pull_request:
+  workflow_call:
 
 jobs:
   test-mariadb:
@@ -30,7 +29,7 @@ jobs:
       MYSQLADM: mysqladmin -h 127.0.0.1 -P 3306 -uroot -proot_password
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v7
 
     - name: Wait until MariaDB responds
       run: |

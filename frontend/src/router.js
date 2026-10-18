@@ -20,7 +20,8 @@ const router = createRouter({
       name: 'home',
       component: Home,
       meta:{
-        title:'Home'
+        title:'Home',
+        fullBleed: true
       }
     },
     {
@@ -28,7 +29,8 @@ const router = createRouter({
       name: 'album_list',
       component: AlbumList,
       meta:{
-        title:'Album List'
+        title:'Album List',
+        fullBleed: true
       }
     },
     {
@@ -36,7 +38,8 @@ const router = createRouter({
       name:'artist_list',
       component: ArtistList,
       meta:{
-        title:'Artist List'
+        title:'Artist List',
+        fullBleed: true
       }
     },
     {
@@ -44,7 +47,8 @@ const router = createRouter({
       name:'history_list',
       component:HistoryList,
       meta:{
-        title:'History List'
+        title:'History List',
+        fullBleed: true
       }
     },
     {
@@ -52,7 +56,8 @@ const router = createRouter({
       name:'album',
       component: AlbumSoundList,
       meta:{
-        title:'Album'
+        title:'Album',
+        fullBleed: true
       }
     },
     {
@@ -60,7 +65,8 @@ const router = createRouter({
       name:'artist',
       component:ArtistSoundList,
       meta:{
-        title:'Artist'
+        title:'Artist',
+        fullBleed: true
       }
     },
     {
@@ -68,7 +74,8 @@ const router = createRouter({
       name:'search',
       component: ()=>import('./layout/search/Search.vue'),
       meta:{
-        title:'Search'
+        title:'Search',
+        fullBleed: true
       }
     },
     {
@@ -76,7 +83,8 @@ const router = createRouter({
       name: 'playlists',
       component: PlayListNames,
       meta:{
-        title: 'Play List'
+        title: 'Play List',
+        fullBleed: true
       }
     },
     {
@@ -84,7 +92,8 @@ const router = createRouter({
       name: 'playlist_sounds',
       component: PlaylistSoundList,
       meta:{
-        title: 'Playlist Sounds'
+        title: 'Playlist Sounds',
+        fullBleed: true
       }
     },
     {
@@ -92,7 +101,8 @@ const router = createRouter({
       name: 'setting',
       component: SettingVue,
       meta:{
-        title:'Server'
+        title:'Server',
+        fullBleed: true
       }
     },
     {
@@ -100,7 +110,8 @@ const router = createRouter({
       name: 'equalizer',
       component: SettingVue,
       meta:{
-        title:'Equalizer'
+        title:'Equalizer',
+        fullBleed: true
       }
     },
     {
@@ -108,7 +119,8 @@ const router = createRouter({
       name: 'effect',
       component: SettingVue,
       meta: {
-        title: 'Effect'
+        title: 'Effect',
+        fullBleed: true
       }
     },
     {
@@ -116,7 +128,8 @@ const router = createRouter({
       name: 'soundSculptDebug',
       component: SettingVue,
       meta:{
-        title:'Sound Sculpt Debug'
+        title:'Sound Sculpt Debug',
+        fullBleed: true
       }
     },
     {
