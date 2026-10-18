@@ -7,6 +7,7 @@ const configPath = process.env.FRONTEND_CONFIG_PATH || path.join(__dirname, 'con
 const host = process.env.FRONTEND_HOST || process.env.HOST || '0.0.0.0';
 const port = Number(process.env.FRONTEND_PORT || process.env.PORT || 8081);
 const defaultBackendServer = process.env.FRONTEND_BACKEND_SERVER_DEFAULT || 'http://127.0.0.1:3000/';
+const defaultWebSocketServer = process.env.FRONTEND_WEBSOCKET_SERVER_DEFAULT || '';
 
 /**
  * URL 末尾に `/` を付け、プロトコル省略時は `http://` として扱います。
@@ -25,6 +26,27 @@ function normalizeUrl(value, fallback) {
   } catch (_error) {
     return fallback.endsWith('/') ? fallback : `${fallback}/`;
   }
+}
+
+function normalizeWebSocketUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) {
+    return '';
+  }
+  const withProtocol = /^wss?:\/\//i.test(raw) ? raw : `ws://${raw}`;
+  try {
+    const url = new URL(withProtocol);
+    return ['ws:', 'wss:'].includes(url.protocol) ? url.href.replace(/\/$/, '') : '';
+  } catch (_error) {
+    return '';
+  }
+}
+
+function withRuntimeConfig(config, websocketServer = defaultWebSocketServer) {
+  const normalizedWebSocketServer = normalizeWebSocketUrl(websocketServer);
+  return normalizedWebSocketServer
+    ? { ...config, websocketServer: normalizedWebSocketServer }
+    : config;
 }
 
 /**
@@ -92,11 +114,13 @@ function buildBackendProxyUrl(backendServer, safePath, search) {
 async function readConfig() {
   try {
     const parsed = JSON.parse(await fs.readFile(configPath, 'utf8'));
-    return {
+    return withRuntimeConfig({
       backendServer: normalizeUrl(parsed.backendServer, defaultBackendServer),
-    };
+    });
   } catch (_error) {
-    return { backendServer: normalizeUrl(defaultBackendServer, 'http://127.0.0.1:3000/') };
+    return withRuntimeConfig({
+      backendServer: normalizeUrl(defaultBackendServer, 'http://127.0.0.1:3000/'),
+    });
   }
 }
 
@@ -139,7 +163,7 @@ function createApp() {
         backendServer,
       };
       await writeConfig(config);
-      res.json(config);
+      res.json(withRuntimeConfig(config));
     } catch (error) {
       next(error);
     }
@@ -208,7 +232,9 @@ module.exports = {
   buildBackendProxyUrl,
   isAllowedBackendUrl,
   normalizeUrl,
+  normalizeWebSocketUrl,
   parseAllowedBackendUrl,
   readConfig,
+  withRuntimeConfig,
   writeConfig,
 };

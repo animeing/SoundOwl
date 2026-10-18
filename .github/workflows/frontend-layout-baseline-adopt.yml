@@ -1,0 +1,171 @@
+name: Adopt Frontend Layout Baselines
+
+on:
+  workflow_run:
+    workflows: [Capture Frontend Layout Baselines]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  adopt:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: write
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Download Windows Chromium baselines
+        uses: actions/download-artifact@v7
+        with:
+          name: frontend-layout-baselines-windows-chromium
+          path: .layout-baselines/windows
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download Ubuntu Firefox baselines
+        uses: actions/download-artifact@v7
+        with:
+          name: frontend-layout-baselines-ubuntu-firefox
+          path: .layout-baselines/ubuntu
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate, commit, and report baselines
+        uses: actions/github-script@v8
+        env:
+          WINDOWS_BASELINES: ${{ github.workspace }}/.layout-baselines/windows
+          UBUNTU_BASELINES: ${{ github.workspace }}/.layout-baselines/ubuntu
+        with:
+          script: |
+            const crypto = require('crypto');
+            const fs = require('fs');
+            const path = require('path');
+            const { owner, repo } = context.repo;
+            const run = context.payload.workflow_run;
+            const pullNumber = run.pull_requests?.[0]?.number;
+            if (!pullNumber) {
+              core.setFailed('The capture run is not associated with a pull request.');
+              return;
+            }
+
+            const pull = await github.rest.pulls.get({ owner, repo, pull_number: pullNumber });
+            const capturedSha = run.pull_requests[0].head?.sha || run.head_sha;
+            if (pull.data.state !== 'open' || pull.data.head.repo.full_name !== `${owner}/${repo}`) {
+              core.setFailed('The pull request is closed or uses a fork branch.');
+              return;
+            }
+            if (pull.data.head.sha !== capturedSha) {
+              core.setFailed('The pull request changed after baseline capture; run the command again.');
+              return;
+            }
+
+            const pngSignature = Buffer.from('89504e470d0a1a0a', 'hex');
+            const collect = (root, browser, expectedCount, destinationRoot) => {
+              const files = [];
+              const visit = (directory) => {
+                for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+                  const fullPath = path.join(directory, entry.name);
+                  if (entry.isSymbolicLink()) throw new Error('Symbolic links are not allowed.');
+                  if (entry.isDirectory()) visit(fullPath);
+                  else if (entry.isFile()) files.push(fullPath);
+                  else throw new Error('Unsupported artifact entry.');
+                }
+              };
+              visit(root);
+
+              const pngFiles = files.filter((file) => file.endsWith('.png'));
+              const auxiliary = files.filter((file) => !file.endsWith('.png'));
+              const hasExpectedReadme = auxiliary.length === 1 && path.relative(root, auxiliary[0]) === 'README.md';
+              if (!hasExpectedReadme || pngFiles.length !== expectedCount) {
+                throw new Error(`Unexpected artifact contents for ${browser}.`);
+              }
+
+              return pngFiles.map((file) => {
+                const relative = path.relative(root, file).split(path.sep).join('/');
+                const pattern = new RegExp(`^${browser}-dark-(1920x1080|768x1024|390x844|320x667)/[a-z0-9-]+/(default|full-layout)\\.png$`);
+                if (!pattern.test(relative)) throw new Error(`Unexpected baseline path: ${relative}`);
+                const content = fs.readFileSync(file);
+                if (content.length < 24 || content.length > 10 * 1024 * 1024 || !content.subarray(0, 8).equals(pngSignature)) {
+                  throw new Error(`Invalid PNG artifact: ${relative}`);
+                }
+                return { path: `${destinationRoot}/${relative}`, content };
+              });
+            };
+
+            const files = [
+              ...collect(process.env.WINDOWS_BASELINES, 'chromium', 112, 'frontend/tests/layout-baselines'),
+              ...collect(process.env.UBUNTU_BASELINES, 'firefox', 104, 'frontend/tests/layout-baselines/ubuntu-firefox'),
+            ];
+            const readme = (ubuntu) => Buffer.from(`# Layout Baselines\n\nThese PNG files are generated in dark mode with synthetic test data only.\nSource revision: \`${capturedSha}\`.\nThe update script routes API, media, and WebSocket requests to synthetic test data.\nEach route stores default.png and full-layout.png so the fullscreen/full layout control is also covered.\n${ubuntu ? 'Omitted routes: sound-sculpt-debug.\n' : ''}\nDo not capture or commit screenshots that contain real song titles, lyrics, artwork, or audio-related user data.\n\nRefresh the baselines on a pull request by posting the exact comment \`/update-layout-baselines\`.\nRun the committed comparison locally with \`npm run test:layout:local --prefix frontend\`.\n`);
+            files.push(
+              { path: 'frontend/tests/layout-baselines/README.md', content: readme(false) },
+              { path: 'frontend/tests/layout-baselines/ubuntu-firefox/README.md', content: readme(true) },
+            );
+
+            const baseCommit = await github.rest.git.getCommit({ owner, repo, commit_sha: capturedSha });
+            const baseTree = await github.rest.git.getTree({
+              owner,
+              repo,
+              tree_sha: baseCommit.data.tree.sha,
+              recursive: 'true',
+            });
+            if (baseTree.data.truncated) throw new Error('Repository tree is too large to update safely.');
+
+            const prefix = 'frontend/tests/layout-baselines/';
+            const nextPaths = new Set(files.map((file) => file.path));
+            const entries = baseTree.data.tree
+              .filter((entry) => entry.type === 'blob' && entry.path.startsWith(prefix) && !nextPaths.has(entry.path))
+              .map((entry) => ({ path: entry.path, mode: '100644', type: 'blob', sha: null }));
+
+            for (const file of files) {
+              const blob = await github.rest.git.createBlob({
+                owner,
+                repo,
+                content: file.content.toString('base64'),
+                encoding: 'base64',
+              });
+              entries.push({ path: file.path, mode: '100644', type: 'blob', sha: blob.data.sha });
+            }
+
+            const tree = await github.rest.git.createTree({
+              owner,
+              repo,
+              base_tree: baseCommit.data.tree.sha,
+              tree: entries,
+            });
+            const commit = await github.rest.git.createCommit({
+              owner,
+              repo,
+              message: 'PRコメントによりレイアウト基準画像を更新',
+              tree: tree.data.sha,
+              parents: [capturedSha],
+            });
+
+            const latestPull = await github.rest.pulls.get({ owner, repo, pull_number: pullNumber });
+            if (latestPull.data.head.sha !== capturedSha) {
+              core.setFailed('The pull request changed while adopting baselines; no branch update was made.');
+              return;
+            }
+            await github.rest.git.updateRef({
+              owner,
+              repo,
+              ref: `heads/${pull.data.head.ref}`,
+              sha: commit.data.sha,
+              force: false,
+            });
+            await github.rest.issues.removeLabel({
+              owner,
+              repo,
+              issue_number: pullNumber,
+              name: 'layout-baseline-update',
+            });
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pullNumber,
+              body: `PRのcommit \`${capturedSha}\` からWindows Chromium 112枚、Ubuntu Firefox 104枚を取得し、commit \`${commit.data.sha}\` としてpushしました。\n\n実行: ${context.serverUrl}/${owner}/${repo}/actions/runs/${run.id}`,
+            });
