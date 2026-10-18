@@ -85,9 +85,7 @@ async function main() {
         viewport: { width: viewport.width, height: viewport.height },
       });
       const page = await context.newPage();
-      if (referenceServer) {
-        await installSyntheticWebSocketMock(page);
-      }
+      await installSyntheticWebSocketMock(page);
       await installSyntheticFrontendConfigMock(page, referenceUrl, REFERENCE_BACKEND_URL);
       await installSyntheticNetworkMocks(page, REFERENCE_BACKEND_URL);
       await installSyntheticNetworkMocks(page, new URL(referenceUrl).origin + '/', { includeApi: false });
@@ -198,11 +196,16 @@ async function readReferenceIndex(root) {
 }
 
 async function writeBaselineReadme(targetDir) {
-  const sourceDescription = REFERENCE_ROOT
-    ? 'the reviewed frontend build in SOUNDOWL_LAYOUT_REFERENCE_ROOT'
-    : 'the completed SoundOwl layout';
+  const sourceDescription = process.env.SOUNDOWL_LAYOUT_SOURCE_REVISION
+    ? `reviewed frontend commit \`${process.env.SOUNDOWL_LAYOUT_SOURCE_REVISION}\``
+    : REFERENCE_ROOT
+      ? 'the reviewed frontend build in SOUNDOWL_LAYOUT_REFERENCE_ROOT'
+      : 'the completed SoundOwl layout';
+  const sourceRun = process.env.SOUNDOWL_LAYOUT_SOURCE_RUN
+    ? ` (GitHub Actions run \`${process.env.SOUNDOWL_LAYOUT_SOURCE_RUN}\`)`
+    : '';
   const updateInstructions = REFERENCE_ROOT
-    ? 'Recreate these images with the temporary baseline capture workflow and review them before adoption.'
+    ? 'On a pull request, comment `/update-layout-baselines` to regenerate, commit, and push both OS baseline sets from that PR head.'
     : `Update them from a machine that can access the completed local domain:
 
 \`\`\`sh
@@ -211,7 +214,7 @@ npm run test:layout:update-baseline --prefix frontend
   const omittedRoutes = process.env.SOUNDOWL_LAYOUT_EXCLUDE_ROUTES;
   await fs.writeFile(path.join(targetDir, 'README.md'), `# Layout Baselines
 
-These PNG files are generated from ${sourceDescription} in dark mode with synthetic test data only.
+These PNG files are generated from ${sourceDescription}${sourceRun} in dark mode with synthetic test data only.
 The update script routes API and media requests to synthetic test data.
 Each route stores default.png and full-layout.png so the fullscreen/full layout control is also covered.
 ${omittedRoutes ? `Omitted routes: ${omittedRoutes}.\n` : ''}

@@ -53,9 +53,11 @@ const DEFAULT_ACTUAL_BACKEND_URL = SYNTHETIC_BACKEND_URL;
 const LAYOUT_COLOR_SCHEME = 'dark';
 
 function selectRoutes(filter) {
+  const filters = String(filter || '').split(',').map((value) => value.trim()).filter(Boolean);
   return ROUTES
     .filter((route) => !EXCLUDED_ROUTE_NAMES.has(route.name))
-    .filter((route) => !filter || route.name.includes(filter) || route.path.includes(filter));
+    .filter((route) => filters.length === 0
+      || filters.some((value) => route.name.includes(value) || route.path.includes(value)));
 }
 
 function selectViewports(filter) {

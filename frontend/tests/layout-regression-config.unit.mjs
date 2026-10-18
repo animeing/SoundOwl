@@ -1,7 +1,7 @@
 // レイアウト比較設定とURL生成の契約を検証する。
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ROUTES, buildRouteUrl } from './layout-regression-config.mjs';
+import { ROUTES, buildRouteUrl, selectRoutes } from './layout-regression-config.mjs';
 import { assertSyntheticRoute } from './layout-page-actions.mjs';
 import { buildSyntheticFrontendConfigScript } from './layout-synthetic-mocks.mjs';
 import { normalizeListenHost } from './scripts/run-layout-regression.mjs';
@@ -23,6 +23,13 @@ test('every configured route rejects a NotFound baseline', async () => {
   for (const route of ROUTES) {
     await assert.rejects(assertSyntheticRoute(notFoundPage, route.name), /unexpected page title/, route.name);
   }
+});
+
+test('route filters accept multiple comma-separated route names', () => {
+  assert.deepEqual(
+    selectRoutes('setting-server, setup').map((route) => route.name),
+    ['setting-server', 'setup'],
+  );
 });
 
 test('custom local URL selects the Playwright base URL', async () => {
