@@ -21,6 +21,7 @@ import {
   installSyntheticFrontendConfigMock,
   installSyntheticNetworkMocks,
 } from '../layout-synthetic-mocks.mjs';
+import { LAYOUT_WEBSOCKET_STATUS } from '../mocks/layout-websocket/status.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -126,7 +127,7 @@ async function main() {
 }
 
 async function installSyntheticWebSocketMock(page) {
-  await page.addInitScript(() => {
+  await page.addInitScript((initialStatus) => {
     class SyntheticWebSocket extends EventTarget {
       constructor(url) {
         super();
@@ -137,6 +138,11 @@ async function installSyntheticWebSocketMock(page) {
           const event = new Event('open');
           this.onopen?.(event);
           this.dispatchEvent(event);
+          const messageEvent = new MessageEvent('message', {
+            data: JSON.stringify(initialStatus),
+          });
+          this.onmessage?.(messageEvent);
+          this.dispatchEvent(messageEvent);
         });
       }
 
@@ -150,7 +156,7 @@ async function installSyntheticWebSocketMock(page) {
     SyntheticWebSocket.CLOSING = 2;
     SyntheticWebSocket.CLOSED = 3;
     window.WebSocket = SyntheticWebSocket;
-  });
+  }, LAYOUT_WEBSOCKET_STATUS);
 }
 
 async function startReferenceServer(root) {

@@ -9,6 +9,7 @@ import {
   buildServiceUrl,
   normalizeHost,
 } from './config.mjs';
+import { LAYOUT_WEBSOCKET_STATUS } from './status.mjs';
 
 async function startLayoutWebSocketMock(options = {}) {
   const host = normalizeHost(options.host || MOCK_HOST);
@@ -23,6 +24,9 @@ async function startLayoutWebSocketMock(options = {}) {
     response.end();
   });
   const websocketServer = new WebSocketServer({ noServer: true });
+  websocketServer.on('connection', (websocket) => {
+    websocket.send(JSON.stringify(LAYOUT_WEBSOCKET_STATUS));
+  });
   let closed = false;
 
   httpServer.on('upgrade', (request, socket, head) => {

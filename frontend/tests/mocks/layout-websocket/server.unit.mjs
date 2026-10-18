@@ -6,6 +6,7 @@ import WebSocket from 'ws';
 import serverModule from '../../../server.js';
 import { buildServiceUrl, normalizeHost } from './config.mjs';
 import { startLayoutWebSocketMock } from './server.mjs';
+import { LAYOUT_WEBSOCKET_STATUS } from './status.mjs';
 
 const { normalizeWebSocketUrl, withRuntimeConfig } = serverModule;
 
@@ -39,8 +40,11 @@ test('layout WebSocket mock accepts a connection and exposes health status', asy
 
   const websocket = new WebSocket(mock.websocketUrl);
   context.after(() => websocket.terminate());
+  const messagePromise = once(websocket, 'message');
   await once(websocket, 'open');
   assert.equal(websocket.readyState, WebSocket.OPEN);
+  const [message] = await messagePromise;
+  assert.deepEqual(JSON.parse(message.toString()), LAYOUT_WEBSOCKET_STATUS);
 });
 
 test('layout WebSocket mock can be closed more than once', async () => {
