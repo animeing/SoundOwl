@@ -1,18 +1,14 @@
-name: Temporary Connected Layout Baseline Capture
+name: Capture Frontend Layout Baselines
 
 on:
   pull_request:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/frontend-layout-baseline-capture.yml"
-      - "frontend/tests/layout-regression-config.mjs"
-      - "frontend/tests/scripts/update-layout-baselines.mjs"
+    types: [labeled]
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
-  capture-layout-baselines:
+  capture:
+    if: github.event.label.name == 'layout-baseline-update'
     strategy:
       fail-fast: false
       matrix:
@@ -26,7 +22,9 @@ jobs:
             label: ubuntu-firefox
             exclude_routes: sound-sculpt-debug
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 60
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: frontend
@@ -35,13 +33,15 @@ jobs:
       SOUNDOWL_LAYOUT_BASELINE_DIR: ${{ github.workspace }}/frontend/tests/layout-baselines/capture-${{ matrix.label }}
       SOUNDOWL_LAYOUT_EXCLUDE_ROUTES: ${{ matrix.exclude_routes }}
       SOUNDOWL_LAYOUT_REFERENCE_ROOT: ${{ github.workspace }}
-      SOUNDOWL_LAYOUT_ROUTE_FILTER: setting-server,setup
       SOUNDOWL_LAYOUT_SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
       SOUNDOWL_LAYOUT_SOURCE_RUN: ${{ github.run_id }}
       SOUNDOWL_LAYOUT_BACKEND_URL: http://127.0.0.1:18081/
       SOUNDOWL_LAYOUT_NETWORK_IDLE_TIMEOUT_MS: '3000'
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
@@ -63,12 +63,12 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Capture connected layout baselines
+      - name: Capture synthetic layout baselines
         run: npm run test:layout:update-baseline
 
       - name: Upload captured baselines
         uses: actions/upload-artifact@v7
         with:
-          name: frontend-layout-baselines-${{ matrix.label }}-connected
+          name: frontend-layout-baselines-${{ matrix.label }}
           path: frontend/tests/layout-baselines/capture-${{ matrix.label }}
           retention-days: 3

@@ -1,7 +1,7 @@
 # Layout Baselines
 
-These PNG files are generated in dark mode with synthetic test data only. Most images come from reviewed frontend commit `10cd736d56ff6d161f85f90665561fcfd77880ce` (GitHub Actions run `39074375597`). The Windows Chromium `sound-sculpt-debug` images were updated from commit `869a05cde3da13e9bc4c55a3f18cc338dc7f8808` (GitHub Actions run `39116244525`). The `setting-server` images were updated from commit `3816976f4da886ba26b209a281120a4208d40dee` (GitHub Actions run `39118142027`).
-The update script routes API and media requests to synthetic test data.
+These PNG files are generated in dark mode with synthetic test data only. Most images come from reviewed frontend commit `10cd736d56ff6d161f85f90665561fcfd77880ce` (GitHub Actions run `39074375597`). The Windows Chromium `sound-sculpt-debug` images were updated from commit `869a05cde3da13e9bc4c55a3f18cc338dc7f8808` (GitHub Actions run `39116244525`). The `setting-server` and `setup` images were updated from commit `658ccf66e77644cb5182334db3ea8c2b77ce8ad9` (GitHub Actions run `39134413105`).
+The update script routes API, media, and WebSocket requests to synthetic test data.
 Each route stores default.png and full-layout.png so the fullscreen/full layout control is also covered.
 
 Do not capture or commit screenshots that contain real song titles, lyrics, artwork, or audio-related user data.

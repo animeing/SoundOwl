@@ -215,7 +215,7 @@ npm run test:layout:update-baseline --prefix frontend
   await fs.writeFile(path.join(targetDir, 'README.md'), `# Layout Baselines
 
 These PNG files are generated from ${sourceDescription}${sourceRun} in dark mode with synthetic test data only.
-The update script routes API and media requests to synthetic test data.
+The update script routes API, media, and WebSocket requests to synthetic test data.
 Each route stores default.png and full-layout.png so the fullscreen/full layout control is also covered.
 ${omittedRoutes ? `Omitted routes: ${omittedRoutes}.\n` : ''}
 Do not capture or commit screenshots that contain real song titles, lyrics, artwork, or audio-related user data.
