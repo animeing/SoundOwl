@@ -15,7 +15,7 @@
     "encoding-japanese": "^2.2.0",
     "express": "^5.2.1",
     "iconv-lite": "^0.7.2",
-    "music-metadata": "^11.12.3",
+    "music-metadata": "^11.16.0",
     "mysql2": "^3.11.5",
     "redis": "^4.7.0",
     "ws": "^8.21.0"
