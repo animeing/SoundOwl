@@ -3,7 +3,7 @@
         <v-card outlined style="background: inherit;">
           <v-card-title class="text-h6 font-weight-medium">Effect Settings</v-card-title>
           <v-divider></v-divider>
-          <v-expansion-panels multiple style="background: inherit;">
+          <v-expansion-panels multiple rounded="md" style="background: inherit;">
             <!-- SoundSculpt -->
             <v-expansion-panel style="background: inherit;">
               <v-expansion-panel-title style="background: inherit;">
@@ -11,7 +11,7 @@
                   <span>SoundSculpt</span>
                   <v-switch
                     v-model="isUseSoundSculpt"
-                    class="ms-4 flex-shrink-0"
+                    class="effect-toggle ms-4 flex-shrink-0"
                     color="primary"
                     hide-details
                     @update:modelValue="toggleEffect"
@@ -30,7 +30,7 @@
                   <span>Loudness Normalization</span>
                   <v-switch
                     v-model="isUseLoudnessNormalization"
-                    class="ms-4 flex-shrink-0"
+                    class="effect-toggle ms-4 flex-shrink-0"
                     color="primary"
                     hide-details
                     @update:modelValue="toggleLoudnessNormalization"
@@ -180,3 +180,10 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.effect-toggle :deep(.v-selection-control__input) {
+  width: var(--v-selection-control-size);
+  height: var(--v-selection-control-size);
+}
+</style>
