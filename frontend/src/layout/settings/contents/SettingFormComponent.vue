@@ -29,7 +29,7 @@
               Regist Status
             </v-card-title>
             <v-card-text>
-              <v-expansion-panels>
+              <v-expansion-panels rounded="md">
                 <v-expansion-panel>
                   <v-expansion-panel-title>Detail</v-expansion-panel-title>
                   <v-expansion-panel-text>
