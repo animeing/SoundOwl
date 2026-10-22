@@ -3,7 +3,7 @@
         <v-card outlined style="background: inherit;">
           <v-card-title class="text-h6 font-weight-medium">Effect Settings</v-card-title>
           <v-divider></v-divider>
-          <v-expansion-panels multiple style="background: inherit;">
+          <v-expansion-panels multiple rounded="md" style="background: inherit;">
             <!-- SoundSculpt -->
             <v-expansion-panel style="background: inherit;">
               <v-expansion-panel-title style="background: inherit;">
