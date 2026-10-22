@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <Header></Header>
-    <v-main id="base" class="layout-base" :style="{ marginTop: '5px', paddingBottom: `${controllerHeight}px` }">
+    <v-main id="base" class="layout-base" :style="{ marginTop: '5px', paddingBottom: `${controllerHeight}px`, paddingInline: $route.meta.fullBleed ? 0 : undefined }">
       <!-- AudioControllerの高さを考慮してpadding-bottomを動的に設定 -->
       <router-view></router-view>
     </v-main>

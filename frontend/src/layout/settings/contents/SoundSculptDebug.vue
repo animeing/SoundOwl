@@ -48,6 +48,36 @@
               </div>
             </v-card-text>
           </v-card>
+          <v-card class="mb-4" outlined style="background: inherit;">
+            <v-card-title>Sculpt multiplier (L ch)</v-card-title>
+            <v-card-text>
+              <v-text-field
+                v-for="item in lmultiplierArray"
+                :key="item.hz"
+                class="w-50 mx-auto"
+                :label="String(item.hz)"
+                :model-value="item.multiplier"
+                type="number"
+                variant="filled"
+                @update:model-value="updateMultiplier(leftSoundSculpt, item, $event)"
+              />
+            </v-card-text>
+          </v-card>
+          <v-card class="mb-4" outlined style="background: inherit;">
+            <v-card-title>Sculpt multiplier (R ch)</v-card-title>
+            <v-card-text>
+              <v-text-field
+                v-for="item in rmultiplierArray"
+                :key="item.hz"
+                class="w-50 mx-auto"
+                :label="String(item.hz)"
+                :model-value="item.multiplier"
+                type="number"
+                variant="filled"
+                @update:model-value="updateMultiplier(rightSoundSculpt, item, $event)"
+              />
+            </v-card-text>
+          </v-card>
         </div>
       </v-card-text>
     </v-card>
@@ -60,8 +90,26 @@ import { BaseFrameWork } from '../../../base';
 import audio from '../../../audio/AudioPlayer';
 
 const equalizer = audio.equalizer;
+const leftSoundSculpt = audio.exAudioEffect.leftSoundSculptEffect;
+const rightSoundSculpt = audio.exAudioEffect.rightSoundSculptEffect;
 const lhzArray = ref([]);
 const rhzArray = ref([]);
+const lmultiplierArray = ref(createMultiplierArray(leftSoundSculpt));
+const rmultiplierArray = ref(createMultiplierArray(rightSoundSculpt));
+
+function createMultiplierArray(effect) {
+  return Object.entries(effect.emphasisLevels)
+    .map(([hz, multiplier]) => ({ hz: Number(hz), multiplier }));
+}
+
+function updateMultiplier(effect, item, value) {
+  const multiplier = Number(value);
+  if (!Number.isFinite(multiplier)) {
+    return;
+  }
+  item.multiplier = multiplier;
+  effect.setEmphasisLevel(item.hz, multiplier);
+}
 
 
 /* ----- アニメーション更新 ----- */

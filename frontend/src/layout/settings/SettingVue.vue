@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="settings-page">
       <SettingTab />
       <component :is="component" />
     </div>
@@ -60,3 +60,14 @@ export default {
   }
 };
 </script>
+<style>
+.settings-page > .v-container {
+  padding: 16px;
+}
+
+.settings-page > .v-container > .v-card > .v-card-title {
+  padding: 8px 16px;
+  font-size: 20px;
+  line-height: 32px;
+}
+</style>
