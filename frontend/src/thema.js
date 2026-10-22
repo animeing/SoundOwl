@@ -20,6 +20,8 @@ export const colorThema = {
   'on-surface': thema === 'dark' ? '#c7c7c7' : '#000000',
   'on-surface-bright': thema === 'dark' ? '#FFFFFF' : '#000000',
   'on-surface-variant': thema === 'dark' ? '#000000' : '#EEEEEE',
+  'fixed-dark-surface': '#212121',
+  'on-fixed-dark-surface': '#c7c7c7',
 };
 
 const vuetify = createVuetify({

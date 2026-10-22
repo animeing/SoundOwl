@@ -8,7 +8,7 @@
     <v-card
       color="grey-darken-3"
     >
-      <v-row :class="['sound-clip-container', { 'small-height': isSmallHeight }]" align="center" justify="start">
+      <v-row :class="['sound-clip-container', { 'small-height': isSmallHeight }]" align="center" justify="start" no-gutters>
         <v-col cols="auto" class="album">
           <v-img
             :src="createImageSrc(soundClip.albumKey)"
@@ -148,10 +148,12 @@ export default defineComponent({
 
 <style scoped>
 .sound-clip-container {
+  --sound-clip-gutter: 12px;
   border-bottom: 1px solid var(--subcoloraccentcolor);
   transition: 0.8s;
   background: var(--basecolor);
   height: 100%; 
+  margin: calc(-1 * var(--sound-clip-gutter));
   padding: 8px 16px;
   box-sizing: border-box;
   display: flex;
@@ -169,6 +171,7 @@ export default defineComponent({
   justify-content: center;
   flex-shrink: 0;
   margin-bottom: 8px;
+  padding: var(--sound-clip-gutter);
 }
 
 .album-image {
@@ -182,7 +185,7 @@ export default defineComponent({
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  padding-left: 16px;
+  padding: var(--sound-clip-gutter) var(--sound-clip-gutter) var(--sound-clip-gutter) 16px;
   height: 100%;
   flex: 1;
   gap: 4px;

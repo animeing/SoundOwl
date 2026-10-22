@@ -1,0 +1,66 @@
+name: Request Frontend Layout Baseline Update
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+jobs:
+  request:
+    if: github.event.issue.pull_request && github.event.comment.body == '/update-layout-baselines'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Authorize request and start capture
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const permission = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner,
+              repo,
+              username: context.payload.comment.user.login,
+            });
+            if (!['admin', 'maintain', 'write'].includes(permission.data.permission)) {
+              core.setFailed('This command requires write permission to the repository.');
+              return;
+            }
+
+            const pullNumber = context.issue.number;
+            const pull = await github.rest.pulls.get({ owner, repo, pull_number: pullNumber });
+            if (pull.data.head.repo.full_name !== `${owner}/${repo}`) {
+              core.setFailed('Baseline updates are supported only for branches in this repository.');
+              return;
+            }
+
+            try {
+              await github.rest.issues.createLabel({
+                owner,
+                repo,
+                name: 'layout-baseline-update',
+                color: '1d76db',
+                description: 'Capture layout baselines from this pull request',
+              });
+            } catch (error) {
+              if (error.status !== 422) throw error;
+            }
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number: pullNumber,
+                name: 'layout-baseline-update',
+              });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: pullNumber,
+              labels: ['layout-baseline-update'],
+            });

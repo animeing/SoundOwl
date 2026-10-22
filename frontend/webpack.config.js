@@ -3,7 +3,24 @@ const fs = require('fs');
 const { DefinePlugin } = require('webpack');
 const { VueLoaderPlugin } = require('vue-loader');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
+
+const STATIC_ASSETS = [
+  ['node_modules/@ffmpeg/core/dist/umd/ffmpeg-core.wasm', '../js/ffmpeg-core.wasm'],
+  ['node_modules/@ffmpeg/core/dist/umd/ffmpeg-core.js', '../js/ffmpeg-core.js'],
+  ['node_modules/fontisto/fonts/fontisto/fontisto.ttf', '../fonts/fontisto.ttf']
+];
+
+class CopyStaticAssetsPlugin {
+  apply(compiler) {
+    compiler.hooks.afterEmit.tapPromise('CopyStaticAssetsPlugin', async () => {
+      await Promise.all(STATIC_ASSETS.map(async ([source, destination]) => {
+        const target = path.resolve(__dirname, destination);
+        await fs.promises.mkdir(path.dirname(target), { recursive: true });
+        await fs.promises.copyFile(path.resolve(__dirname, source), target);
+      }));
+    });
+  }
+}
 
 function safePackageVersion(packageName) {
   try {
@@ -112,12 +129,6 @@ module.exports = {
       exclude: /node_modules/,
       failOnError: true
     }),
-    new CopyWebpackPlugin({
-      patterns: [
-        { from: 'node_modules/@ffmpeg/core/dist/umd/ffmpeg-core.wasm', to: './' },
-        { from: 'node_modules/@ffmpeg/core/dist/umd/ffmpeg-core.js', to:'./'},
-        { from: 'node_modules/fontisto/fonts/fontisto/fontisto.ttf', to: '../fonts/fontisto.ttf' }
-      ]
-    })
+    new CopyStaticAssetsPlugin()
   ]
 };
