@@ -194,7 +194,7 @@ export default {
 
 .play-list-title {
   background: transparent;
-  color: var(--fontcolor);
+  color: rgb(var(--v-theme-on-fixed-dark-surface));
   font-size: 1.35rem;
   line-height: 1.4;
   padding: 2px 8px;
@@ -202,7 +202,7 @@ export default {
 
 .menu-icon {
   background: transparent;
-  color: var(--fontcolor);
+  color: rgb(var(--v-theme-on-fixed-dark-surface));
 }
 
 .menu-icon-frame {
