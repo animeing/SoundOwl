@@ -27,7 +27,7 @@
     "express": "^5.1.0",
     "ffmpeg-wasm": "^1.0.1",
     "fontisto": "^3.0.4",
-    "jschardet": "^3.1.4",
+    "jschardet": "^4.0.0",
     "uglify-js": "^3.19.3",
     "vue": "^3.3.8",
     "vue-router": "^5.0.4",
