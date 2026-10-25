@@ -10,7 +10,7 @@
     "update:fontisto": "npm update fontisto && npm run sync:fontisto",
     "build": "npx webpack --config webpack.config.js",
     "start": "node server.js",
-    "test:unit": "node --experimental-vm-modules --test tests/impulse-response-effect.test.cjs",
+    "test:ir": "node --experimental-vm-modules --test tests/impulse-response-effect.test.cjs",
     "test:layout": "playwright test --config playwright.config.mjs",
     "test:layout:ci": "node tests/scripts/run-layout-regression.mjs --artifact-dir test-results/layout-regression",
     "test:layout:update-baseline": "node tests/scripts/update-layout-baselines.mjs",

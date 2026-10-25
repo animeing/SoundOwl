@@ -38,7 +38,7 @@ jobs:
       run: node --test tests/server-public-assets.unit.mjs
 
     - name: Test audio effects
-      run: npm run test:unit --prefix frontend
+      run: npm run test:ir --prefix frontend
 
     - name : build
       run :  |

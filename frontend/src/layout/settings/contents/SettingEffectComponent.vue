@@ -155,9 +155,8 @@ export default {
           this.presetNames = data.data;
         })
         .finally(() => {
-          this.selectPreset = this.presetNames.includes(audio.inpulseResponseEffect.fileName)
-            ? audio.inpulseResponseEffect.fileName
-            : 'OFF';
+          const selected = audio.inpulseResponseEffect.pendingLoad?.fileName ?? audio.inpulseResponseEffect.fileName;
+          this.selectPreset = this.presetNames.includes(selected) ? selected : 'OFF';
         });
     },
     toggleEffect(value) {
@@ -176,10 +175,17 @@ export default {
       if (this.selectPreset == null) this.selectPreset = '';
       const requestedPreset = this.selectPreset;
       const requestId = ++this.reverbRequestId;
-      const applied = await audio.inpulseResponseEffect.applyEffect(requestedPreset);
+      const pending = !!requestedPreset && !audio.inpulseResponseEffect.reverbNode;
+      const applying = audio.inpulseResponseEffect.applyEffect(requestedPreset);
+      if (pending) {
+        audioParamSave();
+        new MessageWindow({ value: 'Impulse response will load when playback starts.' }).open(3000);
+      }
+      const applied = await applying;
       if (requestId !== this.reverbRequestId) return;
       if (!applied) {
         this.selectPreset = audio.inpulseResponseEffect.fileName || 'OFF';
+        if (pending) audioParamSave();
         new MessageWindow({ value: 'Failed to load impulse response.' }).open(3000);
         return;
       }
