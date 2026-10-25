@@ -20,10 +20,12 @@ test('a saved IR selected before audio initialization reports a visible load fai
   await page.goto(buildRouteUrl(testInfo.project.use.baseURL, '/history_list'));
   const track = page.locator('#base button.audio-item').first();
   await expect(track).toBeVisible();
-  await track.click();
+  const failedRequest = page.waitForResponse(response =>
+    new URL(response.url()).pathname.endsWith('/audio_pulse/missing.wav') && response.status() === 404);
+  await track.locator('.audio-title').click();
+  await failedRequest;
 
   await expect(page.locator('sw-message-box p').filter({
     hasText: 'Failed to load saved impulse response.',
   })).toBeVisible({ timeout: 10000 });
 });
-
