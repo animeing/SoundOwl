@@ -3,6 +3,7 @@ const { readFileSync } = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
+const { parse: parseVueSfc } = require('@vue/compiler-sfc');
 
 const effectSource = readFileSync(
   path.join(__dirname, '../src/audio/effect/effect3d/ImpulseResponseEffect.js'),
@@ -179,10 +180,12 @@ async function createSettings(effect, savedNames, messages, storedSettings = nul
     volume: 0.5,
     loadGiveUpTime: 1000
   };
-  const componentSource = readFileSync(
-    path.join(__dirname, '../src/layout/settings/contents/SettingEffectComponent.vue'),
-    'utf8'
-  ).match(/<script>([\s\S]*?)<\/script>/)[1];
+  const componentFile = path.join(__dirname, '../src/layout/settings/contents/SettingEffectComponent.vue');
+  const { descriptor, errors } = parseVueSfc(readFileSync(componentFile, 'utf8'), {
+    filename: componentFile
+  });
+  assert.deepEqual(errors, []);
+  const componentSource = descriptor.script.content;
   const registerSource = readFileSync(
     path.join(__dirname, '../src/utilization/register.js'),
     'utf8'
