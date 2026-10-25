@@ -107,6 +107,7 @@ export default {
       presetNames: [],
       selectPreset: 'OFF',
       selectDelete: '',
+      reverbRequestId: 0,
       file: null
     };
   },
@@ -171,10 +172,18 @@ export default {
       audio.loudnessNormalize.isUse = enabled;
       audioParamSave();
     },
-    changeReverbEffect() {
+    async changeReverbEffect() {
       if (this.selectPreset == null) this.selectPreset = '';
-      audio.inpulseResponseEffect.applyEffect(this.selectPreset);
-      if (this.selectPreset === '') this.selectPreset = 'OFF';
+      const requestedPreset = this.selectPreset;
+      const requestId = ++this.reverbRequestId;
+      const applied = await audio.inpulseResponseEffect.applyEffect(requestedPreset);
+      if (requestId !== this.reverbRequestId) return;
+      if (!applied) {
+        this.selectPreset = audio.inpulseResponseEffect.fileName || 'OFF';
+        new MessageWindow({ value: 'Failed to load impulse response.' }).open(3000);
+        return;
+      }
+      if (requestedPreset === '') this.selectPreset = 'OFF';
       audioParamSave();
     }
   }

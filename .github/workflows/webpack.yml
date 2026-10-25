@@ -33,6 +33,9 @@ jobs:
         cd frontend
         npm install
       
+    - name: Test audio effects
+      run: npm run test:unit --prefix frontend
+
     - name : build
       run :  |
         cd frontend
