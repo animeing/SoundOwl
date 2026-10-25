@@ -33,7 +33,9 @@ export const audioParamLoad=()=>{
   audio.equalizer.applyEffect(audioParams.equalizerGains);
   audio.inpulseResponseEffect.applyEffect(audioParams.audioIREffect).then(applied => {
     if (applied === false) {
-      new MessageWindow({ value: 'Failed to load saved impulse response.' }).open(3000);
+      const message = new MessageWindow();
+      message.value = 'Failed to load saved impulse response.';
+      message.open(3000);
     }
   });
 };

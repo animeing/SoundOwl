@@ -196,7 +196,10 @@ async function createSettings(effect, savedNames, messages, storedSettings = nul
   const dummyAction = class {};
   const base = {
     MessageWindow: class {
-      constructor({ value }) { this.value = value; }
+      constructor(...args) {
+        assert.equal(args.length, 0, 'MessageWindow constructor does not accept a message');
+        this.value = '';
+      }
       open() { messages.push(this.value); }
     },
     BaseFrameWork: {
