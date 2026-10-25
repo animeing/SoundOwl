@@ -138,9 +138,10 @@ async function writeConfig(config) {
 /**
  * Express FrontServer を作成します。
  *
+ * @param {{publicRoot?:string}} options 公開アセットのルート。
  * @returns {import('express').Express} Express app。
  */
-function createApp() {
+function createApp({ publicRoot = projectRoot } = {}) {
   const app = express();
   app.use(express.json());
 
@@ -212,10 +213,20 @@ function createApp() {
     }
   });
 
-  app.use(express.static(projectRoot, {
-    extensions: ['html'],
-    index: 'index.html',
-  }));
+  // Only these directories contain public assets. Never mount the repository root:
+  // it also contains backend sources, persisted settings, and deployment files.
+  for (const directory of ['css', 'js', 'fonts', 'audio_pulse']) {
+    app.use(`/${directory}`, express.static(path.join(publicRoot, directory), {
+      index: false,
+      dotfiles: 'ignore',
+    }));
+  }
+  const publicFiles = ['index.html', 'manifest.json', 'favicon.ico', 'favicon.svg',
+    ...[16, 32, 64, 128, 256].map(size => `favicon_${size}x${size}.png`)];
+  for (const filename of publicFiles) {
+    const routes = filename === 'index.html' ? ['/', '/index', '/index.html'] : [`/${filename}`];
+    app.get(routes, (_req, res) => res.sendFile(filename, { root: publicRoot }));
+  }
 
   return app;
 }
