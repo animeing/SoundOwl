@@ -60,3 +60,42 @@ test('frontend serves only public assets and never internal repository files', a
   assert.equal(runtime.status, 200);
   assert.match(await runtime.text(), /window.SoundOwlFrontendConfig/);
 });
+
+test('root files share a rate limit across aliases and GET/HEAD, without blocking JS', async (t) => {
+  const publicRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'soundowl-public-limit-'));
+  t.after(() => fs.rm(publicRoot, { recursive: true, force: true }));
+  await fs.mkdir(path.join(publicRoot, 'js'));
+  await fs.writeFile(path.join(publicRoot, 'index.html'), 'public HTML');
+  await fs.writeFile(path.join(publicRoot, 'manifest.json'), '{}');
+  await fs.writeFile(path.join(publicRoot, 'js/main.bundle.js'), 'public JS');
+  const server = serverModule.createApp({ publicRoot }).listen(0, '127.0.0.1');
+  t.after(() => new Promise((resolve, reject) => {
+    server.close(error => error ? reject(error) : resolve());
+    server.closeAllConnections();
+  }));
+  await new Promise((resolve, reject) => {
+    server.once('listening', resolve);
+    server.once('error', reject);
+  });
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const routes = ['/', '/index', '/index.html', '/manifest.json'];
+  for (let index = 0; index < 600; index++) {
+    const response = await fetch(`${base}${routes[index % routes.length]}`, {
+      method: index % 2 === 0 ? 'GET' : 'HEAD',
+    });
+    assert.equal(response.status, 200, `request ${index + 1}`);
+    await response.arrayBuffer();
+  }
+  for (const route of routes) {
+    const response = await fetch(`${base}${route}?cache=1`);
+    assert.equal(response.status, 429, route);
+    assert.ok(Number(response.headers.get('retry-after')) > 0);
+    assert.ok(response.headers.has('ratelimit'));
+    assert.doesNotMatch(await response.text(), /public HTML/);
+  }
+  const asset = await fetch(`${base}/js/main.bundle.js`);
+  assert.equal(asset.status, 200);
+  assert.equal(await asset.text(), 'public JS');
+  const privateFile = await fetch(`${base}/frontend/server.js`);
+  assert.equal(privateFile.status, 404);
+});
