@@ -1,4 +1,4 @@
-import { AudioComponent } from '../AudioComponent';
+import { AudioComponent } from '../AudioComponent.js';
 
 export class AudioEqualizerComponent extends AudioComponent {
 
@@ -10,20 +10,17 @@ export class AudioEqualizerComponent extends AudioComponent {
      */
     this._currentGains = JSON.parse(JSON.stringify(this._gainFlat));
     /**
-     * @type {[BiquadFilterNode]}
+     * @type {Object<number, BiquadFilterNode>}
      */
     this.filters = {};
   }
 
   _setUse(isUse) {
     super._setUse(isUse);
-    if(isUse) {
-      for (const filter of this.filters) {
-        filter.gain.value = 0;
-      }
-    } else {
-      for (const currentGain of this._currentGains) {
-        this.setGain(currentGain.hz, currentGain.gain);
+    for (const currentGain of this._currentGains) {
+      const filter = this.filters[currentGain.hz];
+      if (filter) {
+        filter.gain.value = isUse ? currentGain.gain : 0;
       }
     }
   }
@@ -35,7 +32,7 @@ export class AudioEqualizerComponent extends AudioComponent {
       filter.type = element === this._currentGains[0] ? 'lowshelf' : element === this._currentGains[this._currentGains.length - 1] ? 'highshelf' : 'peaking';
       filter.frequency.value = element.hz;
       filter.Q.value = QUALITY_FACTOR[element.hz].q;
-      filter.gain.value = element.gain;
+      filter.gain.value = this.isUse === false ? 0 : element.gain;
       this.filters[element.hz] = filter;
     });
     this.connectFilters();
@@ -67,7 +64,7 @@ export class AudioEqualizerComponent extends AudioComponent {
     if (gainParam) {
       gainParam.gain = gain;
       if (this.filters[hz]) {
-        this.filters[hz].gain.value = gain;
+        this.filters[hz].gain.value = this.isUse === false ? 0 : gain;
       }
     }
   }
