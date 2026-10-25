@@ -64,6 +64,9 @@ jobs:
       - name: Test layout configuration and mocks
         run: node --test tests/layout-regression-config.unit.mjs tests/layout-synthetic-mocks.unit.mjs tests/mocks/layout-websocket/server.unit.mjs
 
+      - name: Test equalizer state and gain restoration
+        run: node --test tests/equalizer.unit.mjs
+
       - name: Install Firefox and Linux dependencies
         if: runner.os == 'Linux'
         run: npx playwright install --with-deps firefox

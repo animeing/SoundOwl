@@ -1,5 +1,5 @@
-import { AudioComponent } from '../AudioComponent';
-import { AudioEqualizerComponent } from './AudioEqualizerComponent';
+import { AudioComponent } from '../AudioComponent.js';
+import { AudioEqualizerComponent } from './AudioEqualizerComponent.js';
 
 export class StereoAudioEqualizerComposite extends AudioComponent {
 
@@ -10,6 +10,7 @@ export class StereoAudioEqualizerComposite extends AudioComponent {
   }
 
   _setUse(isUse) {
+    super._setUse(isUse);
     this.leftEqualizer.isUse = isUse;
     this.rightEqualizer.isUse = isUse;
   }

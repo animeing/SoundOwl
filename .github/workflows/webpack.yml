@@ -33,6 +33,10 @@ jobs:
         cd frontend
         npm install
       
+    - name: Test public asset boundaries
+      working-directory: frontend
+      run: node --test tests/server-public-assets.unit.mjs
+
     - name: Test audio effects
       run: npm run test:unit --prefix frontend
 
