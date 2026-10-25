@@ -15,6 +15,7 @@ if (localAddress.protocol !== 'http:') {
 
 export default defineConfig({
   testDir: './tests',
+  testMatch: '**/*.spec.mjs',
   globalSetup: fileURLToPath(new URL('./tests/layout-global-setup.mjs', import.meta.url)),
   outputDir: './test-results/playwright',
   timeout: 600000,
