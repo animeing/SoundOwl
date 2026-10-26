@@ -4,7 +4,8 @@ import path from 'node:path';
 
 const PULSE_EXTENSIONS = /\.(wav|mp3)$/i;
 const PULSE_MIME = /^(audio\/wav|audio\/wave|audio\/x-wav|audio\/mpeg)$/i;
-const INVALID_PULSE_FILENAME = /[\\/\x00-\x1f\x7f<>:"|?*]/;
+const INVALID_PULSE_FILENAME = /[\\/\x00-\x1f\x7f]/;
+const INVALID_WINDOWS_PULSE_FILENAME = /[<>:"|?*]/;
 
 /**
  * @typedef {{filename:string,mime:string,buffer:Buffer}} UploadedPulseFile
@@ -121,7 +122,8 @@ function isSupportedPulse(filename, mime) {
 function isSafePulseFilename(filename) {
   return typeof filename === 'string'
     && PULSE_EXTENSIONS.test(filename)
-    && !INVALID_PULSE_FILENAME.test(filename);
+    && !INVALID_PULSE_FILENAME.test(filename)
+    && !(process.platform === 'win32' && INVALID_WINDOWS_PULSE_FILENAME.test(filename));
 }
 
 export {

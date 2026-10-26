@@ -46,14 +46,17 @@ test('PulseStore reads only regular wav/mp3 files directly inside its directory'
     assert.equal(await store.read(null), null);
     assert.equal(isSafePulseFilename('room #1.wav'), true);
     assert.equal(isSafePulseFilename('private.txt'), false);
-    assert.equal(isSafePulseFilename('stream:private.wav'), false);
+    assert.equal(isSafePulseFilename('stream:private.wav'), process.platform !== 'win32');
+    assert.equal(isSafePulseFilename('old?room.wav'), process.platform !== 'win32');
     assert.equal((await store.upload({ filename: '../outside.wav', mime: 'audio/wav', buffer: wav })).status, 'error');
-    assert.equal((await store.upload({ filename: 'stream:private.wav', mime: 'audio/wav', buffer: wav })).status, 'error');
     assert.equal((await store.delete('../room #1.wav')).status, 'error');
     assert.deepEqual((await store.list()).sort(), ['room #1.wav', 'music.MP3'].sort());
     assert.deepEqual((await store.read('room #1.wav')).buffer, wav);
 
     if (process.platform !== 'win32') {
+      await fs.writeFile(path.join(directory, 'old?room:1.wav'), wav);
+      assert.deepEqual((await store.read('old?room:1.wav')).buffer, wav);
+      assert.ok((await store.list()).includes('old?room:1.wav'));
       await fs.symlink('private.txt', path.join(directory, 'linked.wav'));
       assert.equal(await store.read('linked.wav'), null);
     }
