@@ -555,4 +555,3 @@ test('integration: replacing a pending saved IR does not show a false failure', 
   assert.equal(effect.pendingLoad, null);
   assert.deepEqual(messages, []);
 });
-
