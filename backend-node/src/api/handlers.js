@@ -182,6 +182,14 @@ function createApiHandlers(deps) {
       return json(await pulseStore.delete(form.preset));
     },
 
+    async audioPulseFile({ fileName }) {
+      const file = await pulseStore.read(fileName);
+      const headers = { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
+      return file
+        ? binary(file.buffer, file.mime, 200, headers)
+        : binary(null, 'text/plain', 404, headers);
+    },
+
     async soundEqualizerPreset() {
       return json(JSON.parse(await fs.readFile(equalizerPresetPath, 'utf8')));
     },

@@ -65,7 +65,17 @@ function createHttpApp(handlers, options = {}) {
         return;
       }
       const request = await toApiRequest(req);
-      const handlerName = ROUTES[request.path];
+      const pulseFileMatch = request.method === 'GET'
+        ? /^\/audio_pulse\/([^/]+)$/.exec(request.path)
+        : null;
+      const handlerName = pulseFileMatch ? 'audioPulseFile' : ROUTES[request.path];
+      if (pulseFileMatch) {
+        try {
+          request.fileName = decodeURIComponent(pulseFileMatch[1]);
+        } catch {
+          request.fileName = '';
+        }
+      }
       const response = handlerName && handlers[handlerName]
         ? await handlers[handlerName](request)
         : { status: 404, headers: { 'content-type': 'text/plain' }, body: 'not found' };
