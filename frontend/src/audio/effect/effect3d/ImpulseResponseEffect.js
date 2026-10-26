@@ -7,6 +7,14 @@ export class ImpulseResponseEffect extends AudioComponent {
     this.reverbNode = null;
     this.impulseResponseBuffer = null;
     this.fileName = null;
+    // Newer selections and audio graphs invalidate earlier IR loads.
+    this.irLoadGeneration = 0;
+    this.pendingLoad = null;
+    this.loadingFileName = null;
+  }
+
+  get selectedFileName() {
+    return this.pendingLoad?.fileName ?? this.loadingFileName ?? this.fileName;
   }
 
   setAudioContext(audioContext) {
@@ -18,6 +26,9 @@ export class ImpulseResponseEffect extends AudioComponent {
     if (!this.audioContext) {
       throw new Error('AudioContext is not set.');
     }
+
+    this.irLoadGeneration++;
+    this.loadingFileName = null;
 
     this.preGainNode = this.audioContext.createGain();
     this.postGainNode = this.audioContext.createGain();
@@ -35,9 +46,16 @@ export class ImpulseResponseEffect extends AudioComponent {
     this.reverbNode.connect(this.postGainNode);
     this.postGainNode.connect(this.outputNode);
 
-    if (this.fileName == null) {
-      this.reverbNode.buffer = this.generateImpulseResponse(this.audioContext);
-    } else {
+    this.reverbNode.buffer = this.impulseResponseBuffer || this.generateImpulseResponse(this.audioContext);
+    this.impulseResponseBuffer = this.reverbNode.buffer;
+    if (this.fileName) {
+      this.adjustGainForImpulseResponse(this.impulseResponseBuffer);
+    }
+    const pendingLoad = this.pendingLoad;
+    this.pendingLoad = null;
+    if (pendingLoad) {
+      this.loadImpulseResponseFromUrl(pendingLoad.fileName).then(pendingLoad.resolve);
+    } else if (this.fileName) {
       this.applyEffect(this.fileName);
     }
   }
@@ -56,22 +74,23 @@ export class ImpulseResponseEffect extends AudioComponent {
    * @param {ArrayBuffer} impulseResponseData
    */
   loadImpulseResponse(impulseResponseData) {
-    this.audioContext.decodeAudioData(impulseResponseData, (buffer) => {
-      this.impulseResponseBuffer = buffer;
-      this.adjustGainForImpulseResponse(buffer);
-      this.reverbNode.buffer = buffer;
-    }, (error) => {
-      console.error('Error decoding impulse response data:', error);
-    });
+    return this.audioContext.decodeAudioData(impulseResponseData);
   }
 
   adjustGainForImpulseResponse(buffer) {
     const channelData = buffer.getChannelData(0);
+    if (!channelData.length) {
+      throw new Error('Impulse response has no samples.');
+    }
     const rms = Math.sqrt(channelData.reduce((sum, sample) => sum + sample * sample, 0) / channelData.length);
+    if (!Number.isFinite(rms) || rms <= 0) {
+      throw new Error('Impulse response has no usable audio.');
+    }
 
-    const targetRMS = 0.1;
-    const gainValue = targetRMS / rms;
-
+    const gainValue = 0.1 / rms;
+    if (!Number.isFinite(gainValue) || gainValue <= 0) {
+      throw new Error('Impulse response gain is invalid.');
+    }
     this.preGainNode.gain.value = gainValue;
     this.postGainNode.gain.value = 1.0 / gainValue;
   }
@@ -95,25 +114,63 @@ export class ImpulseResponseEffect extends AudioComponent {
    */
   applyEffect(fileName) {
     if(this.reverbNode == null) {
-      this.fileName = fileName;
-      return;
+      if (this.pendingLoad) {
+        this.pendingLoad.resolve(null);
+        this.pendingLoad = null;
+      }
+      if (!fileName) {
+        this.fileName = '';
+        return Promise.resolve(true);
+      }
+      return new Promise(resolve => {
+        this.pendingLoad = { fileName, resolve };
+      });
     }
     if(fileName == "") {
+      this.irLoadGeneration++;
+      this.loadingFileName = null;
       this.fileName = fileName;
-      this.reverbNode.buffer = this.generateImpulseResponse(this.audioContext);
-      return;
+      this.impulseResponseBuffer = this.generateImpulseResponse(this.audioContext);
+      this.reverbNode.buffer = this.impulseResponseBuffer;
+      this.preGainNode.gain.value = 1;
+      this.postGainNode.gain.value = 1;
+      return Promise.resolve(true);
     }
     if (fileName) {
-      this.loadImpulseResponseFromUrl(fileName);
+      return this.loadImpulseResponseFromUrl(fileName);
     }
+    return Promise.resolve(true);
   }
 
-  loadImpulseResponseFromUrl(fileName) {
-    fetch(BASE.HOME+'audio_pulse/'+fileName)
-      .then(response => response.arrayBuffer())
-      .then(data => this.loadImpulseResponse(data))
-      .then(this.fileName = fileName)
-      .catch(this.reverbNode.buffer = this.generateImpulseResponse(this.audioContext));
+  async loadImpulseResponseFromUrl(fileName) {
+    const loadGeneration = ++this.irLoadGeneration;
+    this.loadingFileName = fileName;
+    try {
+      const response = await fetch(BASE.HOME+'audio_pulse/'+encodeURIComponent(fileName));
+      if (!response.ok) {
+        throw new Error(`Failed to load impulse response: HTTP ${response.status}`);
+      }
+      const data = await response.arrayBuffer();
+      const buffer = await this.loadImpulseResponse(data);
+      if (loadGeneration !== this.irLoadGeneration) return null;
+
+      this.adjustGainForImpulseResponse(buffer);
+      this.impulseResponseBuffer = buffer;
+      this.reverbNode.buffer = buffer;
+      this.fileName = fileName;
+      return true;
+    } catch (error) {
+      if (loadGeneration !== this.irLoadGeneration) return null;
+      console.error('Error loading impulse response:', error);
+      if (!this.reverbNode.buffer) {
+        this.reverbNode.buffer = this.impulseResponseBuffer || this.generateImpulseResponse(this.audioContext);
+      }
+      return false;
+    } finally {
+      if (loadGeneration === this.irLoadGeneration) {
+        this.loadingFileName = null;
+      }
+    }
   }
 
   /**

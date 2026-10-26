@@ -37,6 +37,9 @@ jobs:
       working-directory: frontend
       run: node --test tests/server-public-assets.unit.mjs
 
+    - name: Test audio effects
+      run: npm run test:ir --prefix frontend
+
     - name : build
       run :  |
         cd frontend

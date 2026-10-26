@@ -98,6 +98,12 @@ import { audioParamSave } from '../../../utilization/register';
 
 const toBoolean = value => value === true || value === 1 || value === '1' || value === 'true';
 
+const showMessage = value => {
+  const message = new MessageWindow();
+  message.value = value;
+  message.open(3000);
+};
+
 export default {
   name: 'EffectSettings',
   data() {
@@ -107,6 +113,7 @@ export default {
       presetNames: [],
       selectPreset: 'OFF',
       selectDelete: '',
+      reverbSelectionGeneration: 0,
       file: null
     };
   },
@@ -124,10 +131,10 @@ export default {
         new PulseDataUploadAction()
           .execute(formData)
           .then(() => {
-            new MessageWindow({ value: 'File has been uploaded.' }).open(3000);
+            showMessage('File has been uploaded.');
           })
           .catch(() => {
-            new MessageWindow({ value: 'File upload failed.' }).open(3000);
+            showMessage('File upload failed.');
           })
           .finally(() => {
             setTimeout(this.updatePresetList, 500);
@@ -138,10 +145,10 @@ export default {
       new PulseDataDeleteAction()
         .execute(this.selectDelete)
         .then(() => {
-          new MessageWindow({ value: 'The file has been deleted.' }).open(3000);
+          showMessage('The file has been deleted.');
         })
         .catch(() => {
-          new MessageWindow({ value: 'Failed to delete file.' }).open(3000);
+          showMessage('Failed to delete file.');
         })
         .finally(() => {
           setTimeout(this.updatePresetList, 500);
@@ -154,9 +161,8 @@ export default {
           this.presetNames = data.data;
         })
         .finally(() => {
-          this.selectPreset = this.presetNames.includes(audio.inpulseResponseEffect.fileName)
-            ? audio.inpulseResponseEffect.fileName
-            : 'OFF';
+          const selected = audio.inpulseResponseEffect.selectedFileName;
+          this.selectPreset = this.presetNames.includes(selected) ? selected : 'OFF';
         });
     },
     toggleEffect(value) {
@@ -171,10 +177,25 @@ export default {
       audio.loudnessNormalize.isUse = enabled;
       audioParamSave();
     },
-    changeReverbEffect() {
+    async changeReverbEffect() {
       if (this.selectPreset == null) this.selectPreset = '';
-      audio.inpulseResponseEffect.applyEffect(this.selectPreset);
-      if (this.selectPreset === '') this.selectPreset = 'OFF';
+      const requestedPreset = this.selectPreset;
+      const selectionGeneration = ++this.reverbSelectionGeneration;
+      const isDeferredUntilPlayback = !!requestedPreset && !audio.inpulseResponseEffect.reverbNode;
+      const applying = audio.inpulseResponseEffect.applyEffect(requestedPreset);
+      if (isDeferredUntilPlayback) {
+        audioParamSave();
+        showMessage('Impulse response will load when playback starts.');
+      }
+      const applied = await applying;
+      if (selectionGeneration !== this.reverbSelectionGeneration) return;
+      if (!applied) {
+        this.selectPreset = audio.inpulseResponseEffect.fileName || 'OFF';
+        audioParamSave();
+        showMessage('Failed to load impulse response.');
+        return;
+      }
+      if (requestedPreset === '') this.selectPreset = 'OFF';
       audioParamSave();
     }
   }

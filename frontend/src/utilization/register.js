@@ -1,5 +1,5 @@
 import audio from '../audio/AudioPlayer';
-import { BaseFrameWork } from '../base';
+import { BaseFrameWork, MessageWindow } from '../base';
 
 const toBoolean = value => value === true || value === 1 || value === '1' || value === 'true';
 
@@ -13,7 +13,7 @@ export const audioParamSave=()=>{
       'equalizerGains':audio.equalizer.getGains(),
       'soundSculpt':audio.exAudioEffect.isUse,
       'audioLondnessNormalize':audio.loudnessNormalize.isUse,
-      'audioIREffect':audio.inpulseResponseEffect.fileName
+      'audioIREffect':audio.inpulseResponseEffect.selectedFileName
     });
   localStorageMap.set('audioParam', saveParams);
 };
@@ -31,5 +31,11 @@ export const audioParamLoad=()=>{
   audio.exAudioEffect.isUse = toBoolean(audioParams.soundSculpt);
   audio.loudnessNormalize.isUse = toBoolean(audioParams.audioLondnessNormalize);
   audio.equalizer.applyEffect(audioParams.equalizerGains);
-  audio.inpulseResponseEffect.applyEffect(audioParams.audioIREffect);
+  audio.inpulseResponseEffect.applyEffect(audioParams.audioIREffect).then(applied => {
+    if (applied === false) {
+      const message = new MessageWindow();
+      message.value = 'Failed to load saved impulse response.';
+      message.open(3000);
+    }
+  });
 };
