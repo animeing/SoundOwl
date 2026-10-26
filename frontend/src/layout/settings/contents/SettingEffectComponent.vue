@@ -113,7 +113,7 @@ export default {
       presetNames: [],
       selectPreset: 'OFF',
       selectDelete: '',
-      reverbRequestId: 0,
+      reverbSelectionGeneration: 0,
       file: null
     };
   },
@@ -161,7 +161,7 @@ export default {
           this.presetNames = data.data;
         })
         .finally(() => {
-          const selected = audio.inpulseResponseEffect.pendingLoad?.fileName ?? audio.inpulseResponseEffect.fileName;
+          const selected = audio.inpulseResponseEffect.selectedFileName;
           this.selectPreset = this.presetNames.includes(selected) ? selected : 'OFF';
         });
     },
@@ -180,18 +180,18 @@ export default {
     async changeReverbEffect() {
       if (this.selectPreset == null) this.selectPreset = '';
       const requestedPreset = this.selectPreset;
-      const requestId = ++this.reverbRequestId;
-      const pending = !!requestedPreset && !audio.inpulseResponseEffect.reverbNode;
+      const selectionGeneration = ++this.reverbSelectionGeneration;
+      const isDeferredUntilPlayback = !!requestedPreset && !audio.inpulseResponseEffect.reverbNode;
       const applying = audio.inpulseResponseEffect.applyEffect(requestedPreset);
-      if (pending) {
+      if (isDeferredUntilPlayback) {
         audioParamSave();
         showMessage('Impulse response will load when playback starts.');
       }
       const applied = await applying;
-      if (requestId !== this.reverbRequestId) return;
+      if (selectionGeneration !== this.reverbSelectionGeneration) return;
       if (!applied) {
         this.selectPreset = audio.inpulseResponseEffect.fileName || 'OFF';
-        if (pending) audioParamSave();
+        audioParamSave();
         showMessage('Failed to load impulse response.');
         return;
       }

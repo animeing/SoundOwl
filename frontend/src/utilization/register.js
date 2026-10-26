@@ -13,7 +13,7 @@ export const audioParamSave=()=>{
       'equalizerGains':audio.equalizer.getGains(),
       'soundSculpt':audio.exAudioEffect.isUse,
       'audioLondnessNormalize':audio.loudnessNormalize.isUse,
-      'audioIREffect':audio.inpulseResponseEffect.pendingLoad?.fileName ?? audio.inpulseResponseEffect.fileName
+      'audioIREffect':audio.inpulseResponseEffect.selectedFileName
     });
   localStorageMap.set('audioParam', saveParams);
 };

@@ -242,6 +242,7 @@ async function createSettings(effect, savedNames, messages, storedSettings = nul
   const view = component.data();
   view.changeReverbEffect = component.methods.changeReverbEffect.bind(view);
   view.audioParamLoad = registerModule.namespace.audioParamLoad;
+  view.audioParamSave = registerModule.namespace.audioParamSave;
   return view;
 }
 
@@ -309,10 +310,12 @@ test('integration: settings restores the previous selection and reports a 404', 
   view.selectPreset = 'missing.wav';
   status = 404;
 
-  await view.changeReverbEffect();
+  const applying = view.changeReverbEffect();
+  view.audioParamSave(); // An unrelated setting save occurs while the failed IR is in flight.
+  await applying;
   assert.equal(view.selectPreset, 'old.wav');
   assert.equal(effect.reverbNode.buffer, previous);
-  assert.deepEqual(savedNames, []);
+  assert.deepEqual(savedNames, ['missing.wav', 'old.wav']);
   assert.deepEqual(messages, ['Failed to load impulse response.']);
 });
 
@@ -554,4 +557,39 @@ test('integration: replacing a pending saved IR does not show a false failure', 
   assert.equal(effect.fileName, '');
   assert.equal(effect.pendingLoad, null);
   assert.deepEqual(messages, []);
+});
+
+test('integration: saving other settings during startup IR loading retains the preset', async () => {
+  const pendingResponse = deferred();
+  const { effect, audioContext } = await createEffect(
+    () => pendingResponse.promise,
+    async () => audioBuffer(),
+    'https://example.test/',
+    false
+  );
+  const storedSettings = JSON.stringify({
+    volume: 0.5,
+    loopMode: 'off',
+    loadGiveUpTime: 1000,
+    equalizerGains: { left: [], right: [] },
+    soundSculpt: false,
+    audioLondnessNormalize: false,
+    audioIREffect: 'room.wav'
+  });
+  const savedNames = [];
+  const view = await createSettings(effect, savedNames, [], storedSettings);
+
+  view.audioParamLoad();
+  effect.setAudioContext(audioContext);
+  assert.equal(effect.pendingLoad, null);
+  assert.equal(effect.fileName, null);
+
+  view.audioParamSave();
+  assert.deepEqual(savedNames, ['room.wav']);
+
+  pendingResponse.resolve(response());
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(effect.fileName, 'room.wav');
+  view.audioParamSave();
+  assert.deepEqual(savedNames, ['room.wav', 'room.wav']);
 });

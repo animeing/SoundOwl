@@ -7,8 +7,14 @@ export class ImpulseResponseEffect extends AudioComponent {
     this.reverbNode = null;
     this.impulseResponseBuffer = null;
     this.fileName = null;
-    this.loadId = 0;
+    // Newer selections and audio graphs invalidate earlier IR loads.
+    this.irLoadGeneration = 0;
     this.pendingLoad = null;
+    this.loadingFileName = null;
+  }
+
+  get selectedFileName() {
+    return this.pendingLoad?.fileName ?? this.loadingFileName ?? this.fileName;
   }
 
   setAudioContext(audioContext) {
@@ -21,7 +27,8 @@ export class ImpulseResponseEffect extends AudioComponent {
       throw new Error('AudioContext is not set.');
     }
 
-    this.loadId++;
+    this.irLoadGeneration++;
+    this.loadingFileName = null;
 
     this.preGainNode = this.audioContext.createGain();
     this.postGainNode = this.audioContext.createGain();
@@ -120,7 +127,8 @@ export class ImpulseResponseEffect extends AudioComponent {
       });
     }
     if(fileName == "") {
-      this.loadId++;
+      this.irLoadGeneration++;
+      this.loadingFileName = null;
       this.fileName = fileName;
       this.impulseResponseBuffer = this.generateImpulseResponse(this.audioContext);
       this.reverbNode.buffer = this.impulseResponseBuffer;
@@ -135,7 +143,8 @@ export class ImpulseResponseEffect extends AudioComponent {
   }
 
   async loadImpulseResponseFromUrl(fileName) {
-    const loadId = ++this.loadId;
+    const loadGeneration = ++this.irLoadGeneration;
+    this.loadingFileName = fileName;
     try {
       const response = await fetch(BASE.HOME+'audio_pulse/'+encodeURIComponent(fileName));
       if (!response.ok) {
@@ -143,7 +152,7 @@ export class ImpulseResponseEffect extends AudioComponent {
       }
       const data = await response.arrayBuffer();
       const buffer = await this.loadImpulseResponse(data);
-      if (loadId !== this.loadId) return null;
+      if (loadGeneration !== this.irLoadGeneration) return null;
 
       this.adjustGainForImpulseResponse(buffer);
       this.impulseResponseBuffer = buffer;
@@ -151,12 +160,16 @@ export class ImpulseResponseEffect extends AudioComponent {
       this.fileName = fileName;
       return true;
     } catch (error) {
-      if (loadId !== this.loadId) return null;
+      if (loadGeneration !== this.irLoadGeneration) return null;
       console.error('Error loading impulse response:', error);
       if (!this.reverbNode.buffer) {
         this.reverbNode.buffer = this.impulseResponseBuffer || this.generateImpulseResponse(this.audioContext);
       }
       return false;
+    } finally {
+      if (loadGeneration === this.irLoadGeneration) {
+        this.loadingFileName = null;
+      }
     }
   }
 
