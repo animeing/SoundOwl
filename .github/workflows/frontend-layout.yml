@@ -25,7 +25,7 @@ jobs:
             label: windows-chromium
             baseline_dir: frontend/tests/layout-baselines
             exclude_routes: ""
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             browser: firefox
             label: ubuntu-firefox
             baseline_dir: frontend/tests/layout-baselines/ubuntu-firefox
