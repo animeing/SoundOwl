@@ -34,10 +34,16 @@ async function savePlaylist(page, response, {
   });
 
   if (addSong) {
-    await page.locator('.history-list > button').first().click();
+    // 履歴行の中央にはリンクもあるため、明示的な曲追加メニューを操作する。
+    await page.locator('.history-list > button').first().click({ button: 'right' });
+    await page.getByText('Add to PlayList', { exact: true }).hover();
+    await page.getByText('Add to Last', { exact: true }).click();
   }
 
   await page.locator('.secondary-controls .control-button').first().click();
+  if (addSong) {
+    await expect(page.locator('.audio-list-overlay .draggable-item')).toHaveCount(1);
+  }
   if (viaContextMenu) {
     await page.locator('.audio-list-overlay .menu-icon').click({ button: 'right' });
     await page.locator('.custom-context-menu').getByText('Save playlist').click();
