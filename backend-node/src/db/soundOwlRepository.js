@@ -17,7 +17,7 @@ import { MetricsRepository } from './repositories/metricsRepository.js';
 class SoundOwlRepository {
   /**
    * DB クライアントを各 Repository に渡して Facade を初期化します。
-   * @param {{query:(sql:string, params?:Array<any>)=>Promise<[Array<Record<string, any>>, any]>|Promise<Array<Record<string, any>>>}} db mysql2 互換の query 関数を持つ DB クライアント。
+   * @param {import('mysql2/promise').Pool} db query と getConnection を持つ mysql2 Pool。
    */
   constructor(db) {
     this.soundCatalog = new SoundCatalogRepository(db);
