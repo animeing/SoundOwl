@@ -7,14 +7,13 @@ import {
 } from './layout-synthetic-mocks.mjs';
 
 test.beforeEach(async ({ page }, testInfo) => {
-  test.skip(testInfo.project.use.viewport.width !== 390, 'Playlist save feedback is checked at 390px.');
   const frontendUrl = testInfo.project.use.baseURL;
   await installSyntheticNetworkMocks(page, DEFAULT_SYNTHETIC_BACKEND_URL);
   await installSyntheticFrontendConfigMock(page, frontendUrl, DEFAULT_SYNTHETIC_BACKEND_URL);
   await page.goto(buildRouteUrl(frontendUrl, '/history_list'), { waitUntil: 'domcontentloaded' });
 });
 
-async function savePlaylist(page, response) {
+async function savePlaylist(page, response, { addSong = true, playlistName = 'Review queue' } = {}) {
   await page.route('**/api/playlist_action.php', async (route) => {
     if (response === null) {
       await route.abort('failed');
@@ -30,12 +29,26 @@ async function savePlaylist(page, response) {
     });
   });
 
+  if (addSong) {
+    await page.locator('.history-list > button').first().click();
+  }
+
   await page.locator('.secondary-controls .control-button').first().click();
   await page.locator('.audio-list-overlay .play-list-title').click();
   const prompt = page.locator('sw-save-message');
   await expect(prompt).toBeVisible();
-  await prompt.locator('input[type="text"]').fill('Review queue');
+  await prompt.locator('input[type="text"]').fill(playlistName);
+  const submittedRequest = page.waitForRequest((request) =>
+    request.url().endsWith('/api/playlist_action.php') && request.method() === 'POST');
   await prompt.locator('input[type="button"]').first().click();
+  const requestBody = (await submittedRequest).postData() ?? '';
+  expect(requestBody).toContain('name="playlist_name"');
+  if (playlistName) {
+    expect(requestBody).toContain(playlistName);
+  } else {
+    expect(requestBody).not.toContain('Review queue');
+  }
+  expect(requestBody.includes('synthetic-sound-01')).toBe(addSong);
   return page.locator('sw-message-button').last();
 }
 
@@ -57,11 +70,22 @@ test('playlist save explains when a song is no longer available', async ({ page 
   await expect(message.locator('p')).toHaveText('A song is no longer available. Refresh the playlist and try again.');
 });
 
-test('playlist save explains missing name or songs', async ({ page }) => {
+test('playlist save explains when the song list is empty', async ({ page }) => {
   const message = await savePlaylist(page, {
     status: 400,
     body: { status: 'error', detail: 'Enter a playlist name and add at least one song.' },
-  });
+  }, { addSong: false });
+  await expect(message).toBeVisible();
+  await expect(message.locator('p')).toHaveText('Enter a playlist name and add at least one song.');
+  await message.locator('input[type="button"]').click();
+  await expect(message).toBeHidden();
+});
+
+test('playlist save explains when the name is empty', async ({ page }) => {
+  const message = await savePlaylist(page, {
+    status: 400,
+    body: { status: 'error', detail: 'Enter a playlist name and add at least one song.' },
+  }, { playlistName: '' });
   await expect(message).toBeVisible();
   await expect(message.locator('p')).toHaveText('Enter a playlist name and add at least one song.');
 });
@@ -77,7 +101,7 @@ test('playlist save reports an error returned in an HTTP success response', asyn
 test('playlist save hides internal SQL details on unexpected server failure', async ({ page }) => {
   const message = await savePlaylist(page, {
     status: 500,
-    body: { status: 'error', message: 'private SQL table and key details' },
+    body: { status: 'error', detail: 'private SQL table and key details' },
   });
   await expect(message).toBeVisible();
   await expect(message.locator('p')).toHaveText('Could not save the playlist. Please try again.');

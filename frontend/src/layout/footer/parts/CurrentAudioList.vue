@@ -112,12 +112,15 @@ export default {
           }
         });
         action.httpRequestor.addEventListener('error', event=>{
-          const detail = event.detail?.response?.detail;
-          let failureMessage = action.httpRequestor.status === 0
+          const responseStatus = action.httpRequestor.status;
+          const responseDetail = event.detail?.response?.detail;
+          let failureMessage = responseStatus === 0
             ? 'Cannot reach the server. Check the connection and try again.'
             : 'Could not save the playlist. Please try again.';
-          if (typeof detail === 'string' && detail.trim()) {
-            failureMessage = detail;
+          // 利用者向けと定義した応答だけを表示し、未知のサーバーエラー詳細は伏せる。
+          if ([400, 409, 422].includes(responseStatus)
+            && typeof responseDetail === 'string' && responseDetail.trim()) {
+            failureMessage = responseDetail;
           }
           this.showPlaylistSaveMessage(failureMessage);
         });

@@ -593,6 +593,20 @@ test('playlist_action covers names, sounds, create, validation, and delete', asy
     playlist_name: 'contract-created',
   }));
   assert.equal(createMissingSounds.status, 400);
+  assert.deepEqual(await createMissingSounds.json(), {
+    status: 'error',
+    detail: 'Enter a playlist name and add at least one song.',
+  });
+
+  const createMissingName = await fetch(`${BASE_URL}/api/playlist_action.php`, playlistCreateRequest(
+    '',
+    [fixtureHash('h01')],
+  ));
+  assert.equal(createMissingName.status, 400);
+  assert.deepEqual(await createMissingName.json(), {
+    status: 'error',
+    detail: 'Enter a playlist name and add at least one song.',
+  });
 
   const created = await fetchJson('/api/playlist_action.php', playlistCreateRequest(
     'contract-created',
