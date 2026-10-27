@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
 const PULSE_EXTENSIONS = /\.(wav|mp3)$/i;
@@ -46,14 +47,21 @@ class PulseStore {
       return { status: 'error', message: 'unsupported pulse file.' };
     }
     await fs.mkdir(this.directory, { recursive: true });
-    await fs.writeFile(path.join(this.directory, file.filename), file.buffer);
+    const target = path.join(this.directory, file.filename);
+    const temporary = path.join(this.directory, '.' + randomUUID() + '.upload');
+    try {
+      await fs.writeFile(temporary, file.buffer, { flag: 'wx' });
+      await fs.rename(temporary, target);
+    } finally {
+      await fs.rm(temporary, { force: true });
+    }
     return { status: 'success', message: 'pulse file uploaded.' };
   }
 
   /**
    * 保存済みの音声ファイルだけを取得します。シンボリックリンクは配信しません。
    * @param {string} filename URL デコード後のファイル名。
-   * @returns {Promise<{buffer:Buffer,mime:string}|null>} 存在しない場合は null。
+   * @returns {Promise<{stream:import('node:stream').Readable,size:number,mime:string}|null>} 存在しない場合は null。
    */
   async read(filename) {
     if (!isSafePulseFilename(filename)) {
@@ -67,15 +75,19 @@ class PulseStore {
       }
       const file = await fs.open(target, fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW || 0));
       try {
-        if (!(await file.stat()).isFile()) {
+        const stat = await file.stat();
+        if (!stat.isFile()) {
+          await file.close();
           return null;
         }
         return {
-          buffer: await file.readFile(),
+          stream: file.createReadStream({ autoClose: true }),
+          size: stat.size,
           mime: /\.mp3$/i.test(filename) ? 'audio/mpeg' : 'audio/wav',
         };
-      } finally {
+      } catch (error) {
         await file.close();
+        throw error;
       }
     } catch (error) {
       if (['ENOENT', 'ENOTDIR', 'ELOOP'].includes(error.code)) {

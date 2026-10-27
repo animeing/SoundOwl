@@ -186,7 +186,7 @@ function createApiHandlers(deps) {
       const file = await pulseStore.read(fileName);
       const headers = { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
       return file
-        ? binary(file.buffer, file.mime, 200, headers)
+        ? binary({ stream: file.stream }, file.mime, 200, { ...headers, 'content-length': file.size })
         : binary(null, 'text/plain', 404, headers);
     },
 

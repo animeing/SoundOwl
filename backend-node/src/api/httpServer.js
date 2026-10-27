@@ -1,5 +1,6 @@
 import http from 'node:http';
 import fs from 'node:fs';
+import { pipeline } from 'node:stream/promises';
 import { URL } from 'node:url';
 import express from 'express';
 
@@ -81,7 +82,11 @@ function createHttpApp(handlers, options = {}) {
         : { status: 404, headers: { 'content-type': 'text/plain' }, body: 'not found' };
       await writeResponse(res, withCors(response, req, options.cors));
     } catch (error) {
-      await writeResponse(res, errorResponse(error, req, options.cors));
+      if (res.headersSent) {
+        res.destroy(error);
+      } else {
+        await writeResponse(res, errorResponse(error, req, options.cors));
+      }
     }
   });
   app.use(async (error, req, res, _next) => {
@@ -211,6 +216,10 @@ async function writeResponse(res, response) {
   res.writeHead(response.status, response.headers);
   if (response.body === null || response.body === undefined) {
     res.end();
+    return;
+  }
+  if (response.body && typeof response.body === 'object' && response.body.stream) {
+    await pipeline(response.body.stream, res);
     return;
   }
   if (response.body && typeof response.body === 'object' && response.body.streamPath) {
