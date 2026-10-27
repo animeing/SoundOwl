@@ -13,7 +13,11 @@ test.beforeEach(async ({ page }, testInfo) => {
   await page.goto(buildRouteUrl(frontendUrl, '/history_list'), { waitUntil: 'domcontentloaded' });
 });
 
-async function savePlaylist(page, response, { addSong = true, playlistName = 'Review queue' } = {}) {
+async function savePlaylist(page, response, {
+  addSong = true,
+  playlistName = 'Review queue',
+  viaContextMenu = false,
+} = {}) {
   await page.route('**/api/playlist_action.php', async (route) => {
     if (response === null) {
       await route.abort('failed');
@@ -34,7 +38,12 @@ async function savePlaylist(page, response, { addSong = true, playlistName = 'Re
   }
 
   await page.locator('.secondary-controls .control-button').first().click();
-  await page.locator('.audio-list-overlay .play-list-title').click();
+  if (viaContextMenu) {
+    await page.locator('.audio-list-overlay .menu-icon').click({ button: 'right' });
+    await page.locator('.custom-context-menu').getByText('Save playlist').click();
+  } else {
+    await page.locator('.audio-list-overlay .play-list-title').click();
+  }
   const prompt = page.locator('sw-save-message');
   await expect(prompt).toBeVisible();
   await prompt.locator('input[type="text"]').fill(playlistName);
@@ -120,4 +129,13 @@ test('playlist save visibly confirms success', async ({ page }) => {
   });
   await expect(message).toBeVisible();
   await expect(message.locator('p')).toHaveText('Playlist saved.');
+});
+
+test('playlist save through the context menu reports failure', async ({ page }) => {
+  const message = await savePlaylist(page, {
+    status: 409,
+    body: { status: 'error', detail: 'This playlist name is already in use. Choose another name.' },
+  }, { viaContextMenu: true });
+  await expect(message).toBeVisible();
+  await expect(message.locator('p')).toHaveText('This playlist name is already in use. Choose another name.');
 });
