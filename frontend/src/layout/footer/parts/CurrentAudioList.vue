@@ -101,22 +101,25 @@ export default {
           action.formDataMap.append('sounds[]', soundClip.soundHash);
         }
         action.httpRequestor.addEventListener('success', event=>{
-          let message = document.createElement('sw-message-button');
-          message.addItem('OK', ()=>{
-            message.close();
-          });
-          message.value = event.detail.response.detail;
-          if(event.detail.response.status == 'success'){
-            message.close(6000);
+          const result = event.detail?.response;
+          if (result?.status === 'success') {
+            this.showPlaylistSaveMessage('Playlist saved.', 6000);
+          } else {
+            const detail = result?.detail;
+            this.showPlaylistSaveMessage(
+              typeof detail === 'string' && detail.trim() ? detail : 'Could not save the playlist. Please try again.',
+            );
           }
         });
-        action.httpRequestor.addEventListener('error', ()=>{
-          let message = document.createElement('sw-message-button');
-          message.addItem('OK', ()=>{
-            message.close();
-          });
-          message.value = `Action error ${action.httpRequestor.status}`;
-          message.open();
+        action.httpRequestor.addEventListener('error', event=>{
+          const detail = event.detail?.response?.detail;
+          let failureMessage = action.httpRequestor.status === 0
+            ? 'Cannot reach the server. Check the connection and try again.'
+            : 'Could not save the playlist. Please try again.';
+          if (typeof detail === 'string' && detail.trim()) {
+            failureMessage = detail;
+          }
+          this.showPlaylistSaveMessage(failureMessage);
         });
         action.execute();
       });
@@ -124,6 +127,20 @@ export default {
         messageWindow.close();
       });
       messageWindow.open();
+    },
+    /**
+     * 保存結果を画面へ表示する。失敗は利用者が閉じるまで残す。
+     * @param {string} text 利用者向けの結果または対処方法。
+     * @param {number} closeAfterMs 成功通知を自動で閉じるまでの時間。0なら自動では閉じない。
+     */
+    showPlaylistSaveMessage(text, closeAfterMs = 0) {
+      const message = document.createElement('sw-message-button');
+      message.addItem('OK', () => message.close());
+      message.value = text;
+      message.open();
+      if (closeAfterMs > 0) {
+        message.close(closeAfterMs);
+      }
     },
     click(soundClip) {
       if (!soundClip) return; // soundClip が未定義の場合は何もしない

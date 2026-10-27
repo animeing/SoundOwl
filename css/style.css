@@ -168,7 +168,8 @@ input[type="button"] {
 
 .fixed-window {
   position: fixed;
-  z-index: 1109;
+  /* 保存ダイアログと結果通知をプレイリストやメニューより前面に表示する。 */
+  z-index: 6000;
   min-width: 100vw;
   width: 100vw;
   top: 0em;
