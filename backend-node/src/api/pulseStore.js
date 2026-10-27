@@ -17,6 +17,13 @@ const INVALID_WINDOWS_PULSE_FILENAME = /[<>:"|?*]/;
  */
 
 /**
+ * @typedef {Object} StoredImpulseResponse
+ * @property {import('node:stream').Readable} audioStream 開いたファイルから音声バイトを読むストリーム。
+ * @property {number} byteLength HTTP Content-Length に使う音声ファイルのバイト数。
+ * @property {string} contentType 拡張子に対応する audio/wav または audio/mpeg。
+ */
+
+/**
  * 音声波形プリセット用ファイルを保存・一覧・削除するストアです。
  */
 class PulseStore {
@@ -64,32 +71,37 @@ class PulseStore {
   /**
    * 保存済みの音声ファイルだけを取得します。シンボリックリンクは配信しません。
    * @param {string} filename URL デコード後のファイル名。
-   * @returns {Promise<{stream:import('node:stream').Readable,size:number,mime:string}|null>} 存在しない場合は null。
+   * @returns {Promise<StoredImpulseResponse|null>} 存在しない場合は null。
    */
   async read(filename) {
     if (!isSafePulseFilename(filename)) {
       return null;
     }
-    const target = path.join(this.directory, filename);
+    const requestedAudioFilePath = path.join(this.directory, filename);
     try {
-      const pathMetadata = await fs.lstat(target);
-      if (!pathMetadata.isFile()) {
+      // lstat はリンクを辿らず指定パス自体を調べ、シンボリックリンクを除外します。
+      const requestedPathEntryStats = await fs.lstat(requestedAudioFilePath);
+      if (!requestedPathEntryStats.isFile()) {
         return null;
       }
-      const file = await fs.open(target, fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW || 0));
+      const openedAudioFileHandle = await fs.open(
+        requestedAudioFilePath,
+        fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW || 0),
+      );
       try {
-        const openedFileMetadata = await file.stat();
-        if (!openedFileMetadata.isFile()) {
-          await file.close();
+        // 開いたファイル記述子を再確認し、lstat から open までの差し替えにも備えます。
+        const openedAudioFileStats = await openedAudioFileHandle.stat();
+        if (!openedAudioFileStats.isFile()) {
+          await openedAudioFileHandle.close();
           return null;
         }
         return {
-          stream: file.createReadStream({ autoClose: true }),
-          size: openedFileMetadata.size,
-          mime: pulseFormat(filename).contentType,
+          audioStream: openedAudioFileHandle.createReadStream({ autoClose: true }),
+          byteLength: openedAudioFileStats.size,
+          contentType: pulseFormat(filename).contentType,
         };
       } catch (error) {
-        await file.close();
+        await openedAudioFileHandle.close();
         throw error;
       }
     } catch (error) {

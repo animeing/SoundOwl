@@ -37,14 +37,14 @@ test('PulseStore reads only regular wav/mp3 files directly inside its directory'
     await fs.writeFile(path.join(directory, 'private.txt'), 'private');
     await fs.mkdir(path.join(directory, 'directory.wav'));
 
-    const room = await store.read('room #1.wav');
-    assert.equal(room.mime, 'audio/wav');
-    assert.equal(room.size, wav.length);
-    assert.deepEqual(await consumeStream(room.stream), wav);
-    const music = await store.read('music.MP3');
-    assert.equal(music.mime, 'audio/mpeg');
-    assert.equal(music.size, 3);
-    assert.deepEqual(await consumeStream(music.stream), Buffer.from([1, 2, 3]));
+    const roomImpulseResponse = await store.read('room #1.wav');
+    assert.equal(roomImpulseResponse.contentType, 'audio/wav');
+    assert.equal(roomImpulseResponse.byteLength, wav.length);
+    assert.deepEqual(await consumeStream(roomImpulseResponse.audioStream), wav);
+    const musicImpulseResponse = await store.read('music.MP3');
+    assert.equal(musicImpulseResponse.contentType, 'audio/mpeg');
+    assert.equal(musicImpulseResponse.byteLength, 3);
+    assert.deepEqual(await consumeStream(musicImpulseResponse.audioStream), Buffer.from([1, 2, 3]));
     assert.equal(await store.read('missing.wav'), null);
     assert.equal(await store.read('directory.wav'), null);
     assert.equal(await store.read('private.txt'), null);
@@ -59,27 +59,27 @@ test('PulseStore reads only regular wav/mp3 files directly inside its directory'
     assert.equal((await store.upload({ filename: '../outside.wav', mime: 'audio/wav', buffer: wav })).status, 'error');
     assert.equal((await store.delete('../room #1.wav')).status, 'error');
     assert.deepEqual((await store.list()).sort(), ['room #1.wav', 'music.MP3'].sort());
-    assert.deepEqual(await consumeStream((await store.read('room #1.wav')).stream), wav);
+    assert.deepEqual(await consumeStream((await store.read('room #1.wav')).audioStream), wav);
 
     if (process.platform !== 'win32') {
       await fs.writeFile(path.join(directory, 'old?room:1.wav'), wav);
-      assert.deepEqual(await consumeStream((await store.read('old?room:1.wav')).stream), wav);
+      assert.deepEqual(await consumeStream((await store.read('old?room:1.wav')).audioStream), wav);
       assert.ok((await store.list()).includes('old?room:1.wav'));
       await fs.symlink('private.txt', path.join(directory, 'linked.wav'));
       assert.equal(await store.read('linked.wav'), null);
       assert.equal((await store.upload({ filename: 'linked.wav', mime: 'audio/wav', buffer: wav })).status, 'success');
       assert.equal(await fs.readFile(path.join(directory, 'private.txt'), 'utf8'), 'private');
-      assert.deepEqual(await consumeStream((await store.read('linked.wav')).stream), wav);
+      assert.deepEqual(await consumeStream((await store.read('linked.wav')).audioStream), wav);
     }
 
-    const oldRead = process.platform === 'win32' ? null : await store.read('room #1.wav');
+    const previouslyOpenedImpulseResponse = process.platform === 'win32' ? null : await store.read('room #1.wav');
     const replacement = Buffer.from(wav);
     replacement.writeInt16LE(1234, 44);
     assert.equal((await store.upload({ filename: 'room #1.wav', mime: 'audio/wav', buffer: replacement })).status, 'success');
-    if (oldRead) {
-      assert.deepEqual(await consumeStream(oldRead.stream), wav);
+    if (previouslyOpenedImpulseResponse) {
+      assert.deepEqual(await consumeStream(previouslyOpenedImpulseResponse.audioStream), wav);
     }
-    assert.deepEqual(await consumeStream((await store.read('room #1.wav')).stream), replacement);
+    assert.deepEqual(await consumeStream((await store.read('room #1.wav')).audioStream), replacement);
     assert.equal((await store.list()).filter((name) => name === 'room #1.wav').length, 1);
   } finally {
     await fs.rm(directory, { recursive: true, force: true });

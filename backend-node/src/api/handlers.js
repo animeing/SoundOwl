@@ -183,14 +183,24 @@ function createApiHandlers(deps) {
     },
 
     /**
-     * IR 取得用。存在しない名前も後からアップロードされ得るため、404 を含めてキャッシュさせません。
+     * URL で指定された IR 音声の GET 応答を作ります。
+     * 通常ファイルなら音声ストリームを返し、存在しない名前や不正な名前なら空の 404 を返します。
+     * @param {{fileName:string}} request URL デコード後の IR ファイル名を含むリクエスト。
+     * @returns {Promise<ApiResponse>} 音声または 404 の HTTP 応答。
      */
     async audioPulseFile({ fileName }) {
-      const pulseFile = await pulseStore.read(fileName);
-      const headers = { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
-      return pulseFile
-        ? binary({ stream: pulseFile.stream }, pulseFile.mime, 200, { ...headers, 'content-length': pulseFile.size })
-        : binary(null, 'text/plain', 404, headers);
+      const storedImpulseResponse = await pulseStore.read(fileName);
+      // no-store: 同名 IR の上書きや、404 の後の新規アップロードを次の取得へ反映するため、応答を保存させません。
+      // nosniff: ブラウザーの MIME 形式推測を抑え、指定した音声または 404 の Content-Type で扱わせます。
+      const audioResponseHeaders = { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
+      return storedImpulseResponse
+        ? binary(
+          { stream: storedImpulseResponse.audioStream },
+          storedImpulseResponse.contentType,
+          200,
+          { ...audioResponseHeaders, 'content-length': storedImpulseResponse.byteLength },
+        )
+        : binary(null, 'text/plain', 404, audioResponseHeaders);
     },
 
     async soundEqualizerPreset() {
