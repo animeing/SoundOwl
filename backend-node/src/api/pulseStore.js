@@ -3,8 +3,11 @@ import { constants as fsConstants } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
-const PULSE_EXTENSIONS = /\.(wav|mp3)$/i;
-const PULSE_MIME = /^(audio\/wav|audio\/wave|audio\/x-wav|audio\/mpeg)$/i;
+// アップロード・一覧・配信で同じ形式定義を使い、未対応形式への暗黙のフォールバックを防ぎます。
+const PULSE_FORMATS = new Map([
+  ['.wav', { contentType: 'audio/wav', uploadMimes: ['audio/wav', 'audio/wave', 'audio/x-wav'] }],
+  ['.mp3', { contentType: 'audio/mpeg', uploadMimes: ['audio/mpeg'] }],
+]);
 const INVALID_PULSE_FILENAME = /[\\/\x00-\x1f\x7f]/;
 const INVALID_WINDOWS_PULSE_FILENAME = /[<>:"|?*]/;
 
@@ -69,21 +72,21 @@ class PulseStore {
     }
     const target = path.join(this.directory, filename);
     try {
-      const entry = await fs.lstat(target);
-      if (!entry.isFile()) {
+      const pathMetadata = await fs.lstat(target);
+      if (!pathMetadata.isFile()) {
         return null;
       }
       const file = await fs.open(target, fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW || 0));
       try {
-        const stat = await file.stat();
-        if (!stat.isFile()) {
+        const openedFileMetadata = await file.stat();
+        if (!openedFileMetadata.isFile()) {
           await file.close();
           return null;
         }
         return {
           stream: file.createReadStream({ autoClose: true }),
-          size: stat.size,
-          mime: /\.mp3$/i.test(filename) ? 'audio/mpeg' : 'audio/wav',
+          size: openedFileMetadata.size,
+          mime: pulseFormat(filename).contentType,
         };
       } catch (error) {
         await file.close();
@@ -123,7 +126,8 @@ class PulseStore {
  * @returns {boolean} wav/mp3 として許可する場合は true。
  */
 function isSupportedPulse(filename, mime) {
-  return isSafePulseFilename(filename) && PULSE_MIME.test(mime || '');
+  return isSafePulseFilename(filename)
+    && pulseFormat(filename).uploadMimes.includes(String(mime || '').toLowerCase());
 }
 
 /**
@@ -133,14 +137,21 @@ function isSupportedPulse(filename, mime) {
  */
 function isSafePulseFilename(filename) {
   return typeof filename === 'string'
-    && PULSE_EXTENSIONS.test(filename)
+    && pulseFormat(filename) !== undefined
     && !INVALID_PULSE_FILENAME.test(filename)
     && !(process.platform === 'win32' && INVALID_WINDOWS_PULSE_FILENAME.test(filename));
 }
 
+/**
+ * 許可した拡張子に対応する配信形式とアップロード MIME を返します。
+ * @param {string} filename IR ファイル名。
+ * @returns {{contentType:string,uploadMimes:string[]}|undefined} wav/mp3 以外は undefined。
+ */
+function pulseFormat(filename) {
+  return PULSE_FORMATS.get(path.extname(filename).toLowerCase());
+}
+
 export {
-  PULSE_EXTENSIONS,
-  PULSE_MIME,
   PulseStore,
   isSafePulseFilename,
   isSupportedPulse,

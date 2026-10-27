@@ -44,6 +44,13 @@ test('PulseStore lists, uploads, rejects, and deletes supported pulse files', as
 
   assert.deepEqual(await store.list(), ['a.wav']);
   assert.equal(isSupportedPulse('a.wav', 'audio/wav'), true);
+  assert.equal(isSupportedPulse('a.wav', 'audio/wave'), true);
+  assert.equal(isSupportedPulse('a.wav', 'audio/x-wav'), true);
+  assert.equal(isSupportedPulse('A.WAV', 'AUDIO/WAV'), true);
+  assert.equal(isSupportedPulse('a.mp3', 'audio/mpeg'), true);
+  assert.equal(isSupportedPulse('a.mp3', 'audio/wav'), false);
+  assert.equal(isSupportedPulse('a.wav', 'audio/mpeg'), false);
+  assert.equal(isSupportedPulse('a.flac', 'audio/flac'), false);
   assert.equal(isSupportedPulse('a.txt', 'text/plain'), false);
   assert.equal(isSupportedPulse(null, null), false);
   assert.equal(isSupportedPulse('a.wav', null), false);

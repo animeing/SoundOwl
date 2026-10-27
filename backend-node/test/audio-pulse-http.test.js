@@ -194,6 +194,12 @@ test('uploaded IR can be listed and fetched across frontend/backend ports withou
         headers: { origin: frontendOrigin },
       });
       assert.equal(response.status, 404, suffix);
+      if (suffix === 'missing.wav') {
+        assert.equal(response.headers.get('content-type'), 'text/plain');
+        assert.equal(response.headers.get('cache-control'), 'no-store');
+        assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+        assert.equal((await response.arrayBuffer()).byteLength, 0);
+      }
     }
     const post = await fetch(backendUrl + '/audio_pulse/' + encodeURIComponent(fileName), {
       method: 'POST',

@@ -182,11 +182,14 @@ function createApiHandlers(deps) {
       return json(await pulseStore.delete(form.preset));
     },
 
+    /**
+     * IR 取得用。存在しない名前も後からアップロードされ得るため、404 を含めてキャッシュさせません。
+     */
     async audioPulseFile({ fileName }) {
-      const file = await pulseStore.read(fileName);
+      const pulseFile = await pulseStore.read(fileName);
       const headers = { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
-      return file
-        ? binary({ stream: file.stream }, file.mime, 200, { ...headers, 'content-length': file.size })
+      return pulseFile
+        ? binary({ stream: pulseFile.stream }, pulseFile.mime, 200, { ...headers, 'content-length': pulseFile.size })
         : binary(null, 'text/plain', 404, headers);
     },
 
