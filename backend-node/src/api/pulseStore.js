@@ -1,12 +1,26 @@
 import fs from 'node:fs/promises';
+import { constants as fsConstants } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
-const PULSE_EXTENSIONS = /\.(wav|mp3)$/i;
-const PULSE_MIME = /^(audio\/wav|audio\/wave|audio\/x-wav|audio\/mpeg)$/i;
+// アップロード・一覧・配信で同じ形式定義を使い、未対応形式への暗黙のフォールバックを防ぎます。
+const PULSE_FORMATS = new Map([
+  ['.wav', { contentType: 'audio/wav', uploadMimes: ['audio/wav', 'audio/wave', 'audio/x-wav'] }],
+  ['.mp3', { contentType: 'audio/mpeg', uploadMimes: ['audio/mpeg'] }],
+]);
+const INVALID_PULSE_FILENAME = /[\\/\x00-\x1f\x7f]/;
+const INVALID_WINDOWS_PULSE_FILENAME = /[<>:"|?*]/;
 
 /**
  * @typedef {{filename:string,mime:string,buffer:Buffer}} UploadedPulseFile
  * audio_pulse_data_upload.php 相当 API で受け取るアップロード済み音声ファイルです。
+ */
+
+/**
+ * @typedef {Object} StoredImpulseResponse
+ * @property {import('node:stream').Readable} audioStream 開いたファイルから音声バイトを読むストリーム。
+ * @property {number} byteLength HTTP Content-Length に使う音声ファイルのバイト数。
+ * @property {string} contentType 拡張子に対応する audio/wav または audio/mpeg。
  */
 
 /**
@@ -29,7 +43,7 @@ class PulseStore {
     await fs.mkdir(this.directory, { recursive: true });
     const entries = await fs.readdir(this.directory, { withFileTypes: true });
     return entries
-      .filter((entry) => entry.isFile() && PULSE_EXTENSIONS.test(entry.name))
+      .filter((entry) => entry.isFile() && isSafePulseFilename(entry.name))
       .map((entry) => entry.name);
   }
 
@@ -43,8 +57,59 @@ class PulseStore {
       return { status: 'error', message: 'unsupported pulse file.' };
     }
     await fs.mkdir(this.directory, { recursive: true });
-    await fs.writeFile(path.join(this.directory, path.basename(file.filename)), file.buffer);
+    const target = path.join(this.directory, file.filename);
+    const temporary = path.join(this.directory, '.' + randomUUID() + '.upload');
+    try {
+      await fs.writeFile(temporary, file.buffer, { flag: 'wx' });
+      await fs.rename(temporary, target);
+    } finally {
+      await fs.rm(temporary, { force: true });
+    }
     return { status: 'success', message: 'pulse file uploaded.' };
+  }
+
+  /**
+   * 保存済みの音声ファイルだけを取得します。シンボリックリンクは配信しません。
+   * @param {string} filename URL デコード後のファイル名。
+   * @returns {Promise<StoredImpulseResponse|null>} 存在しない場合は null。
+   */
+  async read(filename) {
+    if (!isSafePulseFilename(filename)) {
+      return null;
+    }
+    const requestedAudioFilePath = path.join(this.directory, filename);
+    try {
+      // lstat はリンクを辿らず指定パス自体を調べ、シンボリックリンクを除外します。
+      const requestedPathEntryStats = await fs.lstat(requestedAudioFilePath);
+      if (!requestedPathEntryStats.isFile()) {
+        return null;
+      }
+      const openedAudioFileHandle = await fs.open(
+        requestedAudioFilePath,
+        fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW || 0),
+      );
+      try {
+        // 開いたファイル記述子を再確認し、lstat から open までの差し替えにも備えます。
+        const openedAudioFileStats = await openedAudioFileHandle.stat();
+        if (!openedAudioFileStats.isFile()) {
+          await openedAudioFileHandle.close();
+          return null;
+        }
+        return {
+          audioStream: openedAudioFileHandle.createReadStream({ autoClose: true }),
+          byteLength: openedAudioFileStats.size,
+          contentType: pulseFormat(filename).contentType,
+        };
+      } catch (error) {
+        await openedAudioFileHandle.close();
+        throw error;
+      }
+    } catch (error) {
+      if (['ENOENT', 'ENOTDIR', 'ELOOP'].includes(error.code)) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
@@ -53,7 +118,10 @@ class PulseStore {
    * @returns {Promise<{status:'success'|'error',message:string}>} 削除結果を表す API 応答。
    */
   async delete(preset) {
-    const target = path.join(this.directory, path.basename(preset));
+    if (!isSafePulseFilename(preset)) {
+      return { status: 'error', message: 'pulse file not found.' };
+    }
+    const target = path.join(this.directory, preset);
     try {
       await fs.unlink(target);
       return { status: 'success', message: 'pulse file deleted.' };
@@ -70,12 +138,33 @@ class PulseStore {
  * @returns {boolean} wav/mp3 として許可する場合は true。
  */
 function isSupportedPulse(filename, mime) {
-  return PULSE_EXTENSIONS.test(filename || '') && PULSE_MIME.test(mime || '');
+  return isSafePulseFilename(filename)
+    && pulseFormat(filename).uploadMimes.includes(String(mime || '').toLowerCase());
+}
+
+/**
+ * URL 上の1セグメントと保存ディレクトリ直下のファイル名として安全か判定します。
+ * @param {string} filename URL デコード後のファイル名。
+ * @returns {boolean} wav/mp3 ファイル名の場合は true。
+ */
+function isSafePulseFilename(filename) {
+  return typeof filename === 'string'
+    && pulseFormat(filename) !== undefined
+    && !INVALID_PULSE_FILENAME.test(filename)
+    && !(process.platform === 'win32' && INVALID_WINDOWS_PULSE_FILENAME.test(filename));
+}
+
+/**
+ * 許可した拡張子に対応する配信形式とアップロード MIME を返します。
+ * @param {string} filename IR ファイル名。
+ * @returns {{contentType:string,uploadMimes:string[]}|undefined} wav/mp3 以外は undefined。
+ */
+function pulseFormat(filename) {
+  return PULSE_FORMATS.get(path.extname(filename).toLowerCase());
 }
 
 export {
-  PULSE_EXTENSIONS,
-  PULSE_MIME,
   PulseStore,
+  isSafePulseFilename,
   isSupportedPulse,
 };

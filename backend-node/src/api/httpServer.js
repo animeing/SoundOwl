@@ -1,5 +1,6 @@
 import http from 'node:http';
 import fs from 'node:fs';
+import { pipeline } from 'node:stream/promises';
 import { URL } from 'node:url';
 import express from 'express';
 
@@ -65,13 +66,27 @@ function createHttpApp(handlers, options = {}) {
         return;
       }
       const request = await toApiRequest(req);
-      const handlerName = ROUTES[request.path];
+      const pulseFileMatch = request.method === 'GET'
+        ? /^\/audio_pulse\/([^/]+)$/.exec(request.path)
+        : null;
+      const handlerName = pulseFileMatch ? 'audioPulseFile' : ROUTES[request.path];
+      if (pulseFileMatch) {
+        try {
+          request.fileName = decodeURIComponent(pulseFileMatch[1]);
+        } catch {
+          request.fileName = '';
+        }
+      }
       const response = handlerName && handlers[handlerName]
         ? await handlers[handlerName](request)
         : { status: 404, headers: { 'content-type': 'text/plain' }, body: 'not found' };
       await writeResponse(res, withCors(response, req, options.cors));
     } catch (error) {
-      await writeResponse(res, errorResponse(error, req, options.cors));
+      if (res.headersSent) {
+        res.destroy(error);
+      } else {
+        await writeResponse(res, errorResponse(error, req, options.cors));
+      }
     }
   });
   app.use(async (error, req, res, _next) => {
@@ -201,6 +216,10 @@ async function writeResponse(res, response) {
   res.writeHead(response.status, response.headers);
   if (response.body === null || response.body === undefined) {
     res.end();
+    return;
+  }
+  if (response.body && typeof response.body === 'object' && response.body.stream) {
+    await pipeline(response.body.stream, res);
     return;
   }
   if (response.body && typeof response.body === 'object' && response.body.streamPath) {

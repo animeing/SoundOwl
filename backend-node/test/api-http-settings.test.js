@@ -20,6 +20,7 @@ test('settingsStore reads and writes JSON settings while preserving Japanese arr
   assert.deepEqual(normalizeSettings({ customList: ['a', 'b', null, ''] }), { customList: ['a', 'b'] });
   assert.equal(repairLatin1Mojibake(mojibakeSample), '譁・ｭ怜喧縺大ｾｩ蜈ア');
   assert.equal(repairLatin1Mojibake('plain ascii'), 'plain ascii');
+  assert.equal(repairLatin1Mojibake('\xff'), '\xff');
   assert.equal(repairLatin1Mojibake('ﾃｿ'), 'ﾃｿ');
   assert.deepEqual(normalizeStringArray(`ignored-dir-a|${mojibakeSample}`), ['ignored-dir-a', '譁・ｭ怜喧縺大ｾｩ蜈ア']);
   assert.deepEqual(normalizeStringArray(null), []);
@@ -43,6 +44,13 @@ test('PulseStore lists, uploads, rejects, and deletes supported pulse files', as
 
   assert.deepEqual(await store.list(), ['a.wav']);
   assert.equal(isSupportedPulse('a.wav', 'audio/wav'), true);
+  assert.equal(isSupportedPulse('a.wav', 'audio/wave'), true);
+  assert.equal(isSupportedPulse('a.wav', 'audio/x-wav'), true);
+  assert.equal(isSupportedPulse('A.WAV', 'AUDIO/WAV'), true);
+  assert.equal(isSupportedPulse('a.mp3', 'audio/mpeg'), true);
+  assert.equal(isSupportedPulse('a.mp3', 'audio/wav'), false);
+  assert.equal(isSupportedPulse('a.wav', 'audio/mpeg'), false);
+  assert.equal(isSupportedPulse('a.flac', 'audio/flac'), false);
   assert.equal(isSupportedPulse('a.txt', 'text/plain'), false);
   assert.equal(isSupportedPulse(null, null), false);
   assert.equal(isSupportedPulse('a.wav', null), false);
