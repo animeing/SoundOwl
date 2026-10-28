@@ -440,6 +440,15 @@ test('sound_played missing SoundHash returns an empty array without failing', as
   assert.deepEqual(json, []);
 });
 
+test('sound_played unknown SoundHash returns 404 instead of an orphaned history row', async () => {
+  const missingSoundHash = compressedHash('f'.repeat(40));
+  const { response, text } = await fetchText(
+    '/api/action/sound_played.php?SoundHash=' + encodeHash(missingSoundHash),
+  );
+  assert.equal(response.status, 404);
+  assert.deepEqual(JSON.parse(text), { status: 'error', detail: 'Sound not found.' });
+});
+
 test('album_sounds returns sounds for an album discovered from the current list', async () => {
   const { albumSound } = await getFixture();
   const { json } = await fetchJson(`/api/album_sounds.php?AlbumHash=${encodeHash(albumSound.album_hash)}`);

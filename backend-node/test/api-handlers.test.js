@@ -231,6 +231,24 @@ test('playlist create returns actionable constraint errors and propagates unexpe
   await assert.rejects(playlistAction({ form }), (error) => error === unexpected);
 });
 
+test('sound played reports an unknown sound without exposing other DB failures', async () => {
+  const repository = { incrementPlayCount: vi.fn() };
+  const { soundPlayed } = createApiHandlers({ repository });
+  const query = { SoundHash: compressHash('f'.repeat(40)) };
+
+  repository.incrementPlayCount.mockRejectedValueOnce(
+    Object.assign(new Error('Sound not found.'), { code: 'SOUND_NOT_FOUND' }),
+  );
+  assert.deepEqual(await soundPlayed({ query }), json({
+    status: 'error',
+    detail: 'Sound not found.',
+  }, 404));
+
+  const databaseError = new Error('history write failed');
+  repository.incrementPlayCount.mockRejectedValueOnce(databaseError);
+  await assert.rejects(soundPlayed({ query }), (error) => error === databaseError);
+});
+
 function fullRepositoryMock() {
   return {
     countSounds: vi.fn(async () => 8),
