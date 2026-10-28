@@ -259,9 +259,16 @@ export class AudioPlayStateAction extends EventTarget{
    * 再生完了時のアクションを処理し、次のクリップの再生やWebSocket通知を行います。
    */
   handlePlayedAction(){
-    let playedAction = new SoundPlayedAction;
-    playedAction.formDataMap.append('SoundHash', this.playList.currentAudioClip.soundHash);
-    playedAction.execute();
+    const playHistoryRequest = new SoundPlayedAction;
+    playHistoryRequest.formDataMap.append('SoundHash', this.playList.currentAudioClip.soundHash);
+    playHistoryRequest.httpRequestor.addEventListener('error', () => {
+      const failureNotice = new MessageWindow;
+      failureNotice.value = 'Could not confirm play history was saved. Retrying may count twice.';
+      failureNotice.setAttribute('role', 'alert');
+      failureNotice.open();
+      failureNotice.close(4500);
+    });
+    playHistoryRequest.execute();
     SoundOwlProperty.WebSocket.Socket.send(JSON.stringify(
       {
         'eventType':'played',

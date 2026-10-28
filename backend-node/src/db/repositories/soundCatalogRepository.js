@@ -5,7 +5,7 @@ import { formatDateTime, mapSoundRecord, mimeFromPath, queryRows } from './commo
  */
 class SoundCatalogRepository {
   /**
-   * @param {{query(sql:string, params?:unknown[]): Promise<[unknown[], unknown]|unknown[]>}} db mysql2 Pool/Connection。
+   * @param {import('mysql2/promise').Pool} db トランザクション用の接続を取得できるmysql2 Pool。
    */
   constructor(db) {
     this.db = db;
@@ -84,15 +84,58 @@ class SoundCatalogRepository {
   }
 
   /**
-   * 再生回数を増やし、再生履歴を追加する。
+   * 同じ接続のトランザクションで再生回数と履歴を一括確定する。
+   * 更新対象がなければ履歴を作らず、途中失敗時は両方の変更を戻す。
    *
    * @param {string} soundHash 音源hash。
    * @param {Date} playedAt 再生日時。
-   * @returns {Promise<void>} 更新完了時にresolve。
+   * @returns {Promise<void>} 両方の書込みが確定したときにresolve。
+   * @throws {Error & {code?:string}} 曲がない場合はSOUND_NOT_FOUND、DB失敗時は元のエラー。
    */
   async incrementPlayCount(soundHash, playedAt) {
-    await queryRows(this.db, 'UPDATE sound_link SET play_count = play_count + 1 WHERE sound_hash = ?', [soundHash]);
-    await queryRows(this.db, 'INSERT INTO sound_play_history (sound_hash, play_date) VALUES (?, ?)', [soundHash, formatDateTime(playedAt)]);
+    const playConnection = await this.db.getConnection();
+    let connectionReusable = true;
+    try {
+      try {
+        await playConnection.beginTransaction();
+      } catch (beginError) {
+        // BEGIN may have reached the server even if its response was lost.
+        connectionReusable = false;
+        throw beginError;
+      }
+      try {
+        const [updateResult] = await playConnection.query(
+          'UPDATE sound_link SET play_count = play_count + 1 WHERE sound_hash = ?',
+          [soundHash],
+        );
+        if (updateResult.affectedRows === 0) {
+          throw Object.assign(new Error('Sound not found.'), { code: 'SOUND_NOT_FOUND' });
+        }
+        if (updateResult.affectedRows !== 1) {
+          throw new Error('Unexpected number of updated sounds.');
+        }
+        await playConnection.query(
+          'INSERT INTO sound_play_history (sound_hash, play_date) VALUES (?, ?)',
+          [soundHash, formatDateTime(playedAt)],
+        );
+        await playConnection.commit();
+      } catch (playError) {
+        try {
+          await playConnection.rollback();
+        } catch (rollbackError) {
+          // A failed rollback can leave an open transaction on this connection.
+          connectionReusable = false;
+          throw new AggregateError([playError, rollbackError], 'play recording and rollback failed');
+        }
+        throw playError;
+      }
+    } finally {
+      if (connectionReusable) {
+        playConnection.release();
+      } else {
+        playConnection.destroy();
+      }
+    }
   }
 
   /**
