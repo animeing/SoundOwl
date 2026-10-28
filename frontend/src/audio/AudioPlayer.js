@@ -1,6 +1,6 @@
-import { WakeLockManager } from '../base';
+import { MessageWindow, WakeLockManager } from '../base';
 import { SoundInfomation } from '../page';
-import { conversionToWav, ffmpegInitalize } from './conversionToWav';
+import { conversionToWav } from './conversionToWav';
 import { AudioPlayStateEnum } from './enum/AudioPlayStateEnum';
 import { Playlist } from './Playlist';
 import { AudioClip } from './type/AudioClip';
@@ -18,6 +18,8 @@ class AudioPlayer{
     this.eventSupport = new EventTarget;
 
     this.audio = new Audio;
+    this.audioSourceRequestId = 0;
+    this.audioSourceHasFailed = false;
     // Web Audio API でクロスオリジン音源を解析できるよう、src 設定前に CORS モードへ切り替える。
     this.audio.crossOrigin = 'anonymous';
     /**
@@ -47,21 +49,8 @@ class AudioPlayer{
     this.eventSupport.addEventListener('pause', ()=>{wakeLockManager.releaseWakeLock();});
     this.eventSupport.addEventListener('stop', ()=>{wakeLockManager.releaseWakeLock();});
 
-    ffmpegInitalize();
-    this.audio.addEventListener('error', async ()=>{
-      console.log('Error ' + this.audio.error.code + '; details: ' + audio.audio.error.message);
-      
-      if(audio.audio.error.code == 4 && audio.audio.src.includes('sound_create')) {
-        //MEDIA_ERR_SRC_NOT_SUPPORTED && defaultlink
-        let audiosrc = audio.audio.src;
-        let wavBlob = await conversionToWav(audiosrc);
-        if(audio.audioPlayStateAction.currentPlayState == AudioPlayStateEnum.PLAY && decodeURI(audiosrc) == audio.playList.currentAudioClip.src) {
-          audio.audio.src = wavBlob;
-          audio.audio.play();
-        }
-        console.log(audiosrc+'    '+audio.playList.currentAudioClip.src);
-        console.log(audio.audioPlayStateAction.currentPlayState);
-      }
+    this.audio.addEventListener('error', () => {
+      void this.handleUnsupportedAudio();
     });
     this.eventSupport.addEventListener('audioSet', ()=>{
       let request = new SoundInfomation();
@@ -78,6 +67,49 @@ class AudioPlayer{
     this.playbackController = new AudioPlaybackController(this);
 
     this.audioPlayStateAction.lockEventTarget.action('setUpdate');
+  }
+
+  /**
+   * ブラウザが再生できない音源をWAVへ変換し、失敗時は利用者に再試行を促す。
+   * 別の曲へ切り替わった後に完了した変換結果やエラーは現在の再生を変更しない。
+   */
+  async handleUnsupportedAudio() {
+    const mediaError = this.audio.error;
+    const sourceUrl = this.audio.src;
+    const sourceRequestId = this.audioSourceRequestId;
+    if (mediaError?.code !== MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED || !sourceUrl.includes('sound_create')) {
+      return;
+    }
+
+    let convertedSourceUrl;
+    try {
+      const wavUrl = await conversionToWav(sourceUrl);
+      if (this.audioSourceRequestId !== sourceRequestId || this.audio.src !== sourceUrl ||
+          decodeURI(sourceUrl) !== this.playList.currentAudioClip?.src) {
+        return;
+      }
+      this.audio.src = wavUrl;
+      convertedSourceUrl = this.audio.src;
+      if (this.audioPlayStateAction.currentPlayState === AudioPlayStateEnum.PLAY) {
+        await this.audio.play();
+      }
+    } catch (error) {
+      console.error('Audio conversion or playback failed', error);
+      if (this.audioSourceRequestId !== sourceRequestId ||
+          this.audioPlayStateAction.currentPlayState === AudioPlayStateEnum.PAUSE ||
+          (this.audio.src !== sourceUrl && this.audio.src !== convertedSourceUrl)) {
+        return;
+      }
+      this.audio.pause();
+      this.audioSourceHasFailed = true;
+      this.audioPlayStateAction.currentPlayState = AudioPlayStateEnum.STOP;
+      this.eventSupport.dispatchEvent(new CustomEvent('stop'));
+      const notice = new MessageWindow();
+      notice.value = 'Could not play this audio. Check the connection and retry playback.';
+      notice.setAttribute('role', 'alert');
+      notice.open();
+      notice.close(5000);
+    }
   }
 
   initalize() {
