@@ -104,6 +104,14 @@ jobs:
         run: node --test test_scripts/backend_contract.test.js
 
       # The contract suite exercises setup_database_table, which recreates the schema and removes the seed rows.
+      - name: Restore fixture data for play history transaction tests
+        run: docker compose exec -T db mariadb -h127.0.0.1 -uroot -psound sound < test_scripts/fixtures/backend_contract_seed.sql
+
+      - name: Verify play count and history transaction in MariaDB
+        env:
+          SOUNDOWL_CONTRACT_MODE: fixture
+        run: node --test backend-node/integration/play-history.test.mjs
+
       - name: Restore fixture data for playlist browser-to-database tests
         run: docker compose exec -T db mariadb -h127.0.0.1 -uroot -psound sound < test_scripts/fixtures/backend_contract_seed.sql
 

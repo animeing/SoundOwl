@@ -75,12 +75,24 @@ function createApiHandlers(deps) {
       return json(await repository.searchSounds(form.SearchWord));
     },
 
+    /**
+     * 曲の再生通知を記録する。存在しない曲は404とし、DBの書込み失敗はHTTP層へ伝える。
+     * @param {{query:Record<string, string>}} request 圧縮済みSoundHashを含むリクエスト。
+     * @returns {Promise<ApiResponse>} 成功時は空本文、曲がない場合は404。
+     */
     async soundPlayed({ query }) {
       if (!query.SoundHash) {
         return json([]);
       }
       const hash = decompressHash(decodeURIComponent(query.SoundHash));
-      await repository.incrementPlayCount(hash, new Date());
+      try {
+        await repository.incrementPlayCount(hash, new Date());
+      } catch (error) {
+        if (error.code === 'SOUND_NOT_FOUND') {
+          return json({ status: 'error', detail: 'Sound not found.' }, 404);
+        }
+        throw error;
+      }
       return text('');
     },
 
