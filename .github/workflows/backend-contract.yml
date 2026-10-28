@@ -5,6 +5,9 @@ on:
   push:
     paths:
       - "backend-node/**"
+      - "frontend/**"
+      - "css/**"
+      - "index.html"
       - "parts/**"
       - "test_scripts/**"
       - ".github/workflows/backend-contract.yml"
@@ -13,6 +16,9 @@ on:
   pull_request:
     paths:
       - "backend-node/**"
+      - "frontend/**"
+      - "css/**"
+      - "index.html"
       - "parts/**"
       - "test_scripts/**"
       - ".github/workflows/backend-contract.yml"
@@ -96,6 +102,26 @@ jobs:
           SOUNDOWL_BASE_URL: http://127.0.0.1:3000
           SOUNDOWL_WS_URL: ws://127.0.0.1:8080/
         run: node --test test_scripts/backend_contract.test.js
+
+      - name: Build frontend for playlist browser-to-database tests
+        run: npm run build --prefix frontend
+
+      - name: Install Chromium for playlist browser-to-database tests
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run playlist browser-to-database tests
+        working-directory: frontend
+        run: npx playwright test --config playwright.real-db.config.mjs
+
+      - name: Upload playlist browser-to-database failures
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playlist-real-db-failure
+          path: frontend/test-results/playlist-real-db
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Dump logs on failure
         if: failure()
