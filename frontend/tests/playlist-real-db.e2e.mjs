@@ -48,10 +48,12 @@ async function playlistExists(request, playlistName) {
 test('browser creates a playlist in MariaDB and reports a duplicate without replacing it', async ({ page, request }) => {
   const playlistName = `e2e-created-${Date.now()}`;
   const historyResponse = await request.post(`${backendUrl}/api/history_range_list.php`, {
-    form: { start: '0', end: '50' },
+    data: { start: 0, end: 50 },
   });
   expect(historyResponse.status()).toBe(200);
-  const expectedSoundHash = (await historyResponse.json())[0].sound_hash;
+  const history = await historyResponse.json();
+  expect(history.length).toBeGreaterThan(0);
+  const expectedSoundHash = history[0].sound_hash;
 
   await page.goto('/#/history_list');
   await addHistoryTrackToOpenPlaylist(page);
@@ -87,12 +89,16 @@ test('browser reports empty queue validation and creates no MariaDB row', async 
 test('browser reports a deleted song and the MariaDB transaction rolls back', async ({ page, request }) => {
   const playlistName = `e2e-missing-song-${Date.now()}`;
   const missingSoundHash = compressHash('f'.repeat(40));
+  const historyResponse = await request.post(backendUrl + '/api/history_range_list.php', {
+    data: { start: 0, end: 50 },
+  });
+  expect(historyResponse.status()).toBe(200);
+  const staleHistory = await historyResponse.json();
+  expect(staleHistory.length).toBeGreaterThan(0);
+  staleHistory[0].sound_hash = missingSoundHash;
   // A stale history response represents a track removed from the database after the page learned of it.
   await page.route('**/api/history_range_list.php', async (route) => {
-    const response = await route.fetch();
-    const history = await response.json();
-    history[0].sound_hash = missingSoundHash;
-    await route.fulfill({ response, json: history });
+    await route.fulfill({ status: 200, contentType: 'application/json', json: staleHistory });
   });
 
   await page.goto('/#/history_list');
