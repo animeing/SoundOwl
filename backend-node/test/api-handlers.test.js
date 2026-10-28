@@ -205,6 +205,32 @@ test('handlers cover artist album history playlist pulse media and binary paths'
   assert.equal((await notFoundHandlers.soundStream({ query: { media_hash: compressHash(h01) }, headers: {} })).status, 404);
 });
 
+test('playlist create returns actionable constraint errors and propagates unexpected failures', async () => {
+  const repository = { createPlaylist: vi.fn() };
+  const { playlistAction } = createApiHandlers({ repository });
+  const form = {
+    method: 'create',
+    playlist_name: 'Review queue',
+    sounds: [compressHash('a'.repeat(40))],
+  };
+
+  repository.createPlaylist.mockRejectedValueOnce(Object.assign(new Error('private duplicate SQL'), { code: 'ER_DUP_ENTRY' }));
+  assert.deepEqual(await playlistAction({ form }), json({
+    status: 'error',
+    detail: 'This playlist name is already in use. Choose another name.',
+  }, 409));
+
+  repository.createPlaylist.mockRejectedValueOnce(Object.assign(new Error('private foreign key SQL'), { code: 'ER_NO_REFERENCED_ROW_2' }));
+  assert.deepEqual(await playlistAction({ form }), json({
+    status: 'error',
+    detail: 'A song is no longer available. Refresh the playlist and try again.',
+  }, 422));
+
+  const unexpected = new Error('database unavailable');
+  repository.createPlaylist.mockRejectedValueOnce(unexpected);
+  await assert.rejects(playlistAction({ form }), (error) => error === unexpected);
+});
+
 function fullRepositoryMock() {
   return {
     countSounds: vi.fn(async () => 8),

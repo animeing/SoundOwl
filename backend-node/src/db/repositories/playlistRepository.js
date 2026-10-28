@@ -5,7 +5,7 @@ import { mapHashFields, queryRows } from './common.js';
  */
 class PlaylistRepository {
   /**
-   * @param {{query(sql:string, params?:unknown[]): Promise<[unknown[], unknown]|unknown[]>}} db mysql2 Pool/Connection。
+   * @param {import('mysql2/promise').Pool} db トランザクション用の接続を取得できる mysql2 Pool。
    */
   constructor(db) {
     this.db = db;
@@ -43,16 +43,37 @@ class PlaylistRepository {
   }
 
   /**
-   * playlistを作成する。
+   * 親playlist_dataと順序付きの全曲明細を、同じDB接続上でまとめて作成する。
+   * INSERTや確定に失敗した場合はrollbackを試み、元のエラーを呼び出し側へ返す。
    *
    * @param {string} name playlist名。
-   * @param {string[]} soundHashes sound_hash配列。
-   * @returns {Promise<void>} 作成完了時にresolve。
+   * @param {string[]} soundHashes sound_hash配列。配列内の順序をsound_pointに保存する。
+   * @returns {Promise<void>} 全行の確定完了時にresolve。
    */
   async createPlaylist(name, soundHashes) {
-    await queryRows(this.db, 'INSERT INTO playlist_data (play_list) VALUES (?)', [name]);
-    for (const [index, soundHash] of soundHashes.entries()) {
-      await queryRows(this.db, 'INSERT INTO playlist (play_list, sound_point, sound_hash) VALUES (?, ?, ?)', [name, index, soundHash]);
+    const playlistConnection = await this.db.getConnection();
+    try {
+      await playlistConnection.beginTransaction();
+      try {
+        await queryRows(playlistConnection, 'INSERT INTO playlist_data (play_list) VALUES (?)', [name]);
+        for (const [index, soundHash] of soundHashes.entries()) {
+          await queryRows(
+            playlistConnection,
+            'INSERT INTO playlist (play_list, sound_point, sound_hash) VALUES (?, ?, ?)',
+            [name, index, soundHash],
+          );
+        }
+        await playlistConnection.commit();
+      } catch (createError) {
+        try {
+          await playlistConnection.rollback();
+        } catch (rollbackError) {
+          throw new AggregateError([createError, rollbackError], 'playlist creation and rollback failed');
+        }
+        throw createError;
+      }
+    } finally {
+      playlistConnection.release();
     }
   }
 

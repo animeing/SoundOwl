@@ -117,6 +117,18 @@ function formRequest(data) {
   };
 }
 
+function playlistCreateRequest(name, soundHashes) {
+  const body = new URLSearchParams({ method: 'create', playlist_name: name });
+  for (const soundHash of soundHashes) {
+    body.append('sounds[]', soundHash);
+  }
+  return {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body,
+  };
+}
+
 function assertJsonContentType(response) {
   assert.match(response.headers.get('content-type') || '', /json/i);
 }
@@ -581,21 +593,58 @@ test('playlist_action covers names, sounds, create, validation, and delete', asy
     playlist_name: 'contract-created',
   }));
   assert.equal(createMissingSounds.status, 400);
-
-  const createBody = new URLSearchParams();
-  createBody.set('method', 'create');
-  createBody.set('playlist_name', 'contract-created');
-  createBody.append('sounds[]', fixtureHash('h01'));
-  createBody.append('sounds[]', fixtureHash('h05'));
-  const created = await fetchJson('/api/playlist_action.php', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: createBody,
+  assert.deepEqual(await createMissingSounds.json(), {
+    status: 'error',
+    detail: 'Enter a playlist name and add at least one song.',
   });
+
+  const createMissingName = await fetch(`${BASE_URL}/api/playlist_action.php`, playlistCreateRequest(
+    '',
+    [fixtureHash('h01')],
+  ));
+  assert.equal(createMissingName.status, 400);
+  assert.deepEqual(await createMissingName.json(), {
+    status: 'error',
+    detail: 'Enter a playlist name and add at least one song.',
+  });
+
+  const created = await fetchJson('/api/playlist_action.php', playlistCreateRequest(
+    'contract-created',
+    [fixtureHash('h01'), fixtureHash('h05')],
+  ));
   assert.deepEqual(created.json, { status: 'success', detail: 'playlist created.' });
 
   const createdSounds = await fetchJson('/api/playlist_action.php', formRequest({ method: 'sounds', name: 'contract-created' }));
   assert.deepEqual(createdSounds.json.map((record) => record.sound_hash), [fixtureHash('h01'), fixtureHash('h05')]);
+
+  const duplicate = await fetchText('/api/playlist_action.php', playlistCreateRequest(
+    'contract-created',
+    [fixtureHash('h02')],
+  ));
+  assert.equal(duplicate.response.status, 409, 'same-name creation should fail without replacing the existing playlist');
+  assert.deepEqual(JSON.parse(duplicate.text), {
+    status: 'error',
+    detail: 'This playlist name is already in use. Choose another name.',
+  });
+  const soundsAfterDuplicate = await fetchJson('/api/playlist_action.php', formRequest({ method: 'sounds', name: 'contract-created' }));
+  assert.deepEqual(soundsAfterDuplicate.json.map((record) => record.sound_hash), [fixtureHash('h01'), fixtureHash('h05')]);
+
+  const missingSoundHash = compressedHash('f'.repeat(40));
+  for (const [name, hashes] of [
+    ['contract-invalid-first', [missingSoundHash]],
+    ['contract-invalid-later', [fixtureHash('h01'), missingSoundHash]],
+  ]) {
+    const failed = await fetchText('/api/playlist_action.php', playlistCreateRequest(name, hashes));
+    assert.equal(failed.response.status, 422, name + ' should fail on the sound foreign key');
+    assert.deepEqual(JSON.parse(failed.text), {
+      status: 'error',
+      detail: 'A song is no longer available. Refresh the playlist and try again.',
+    });
+    const namesAfterFailure = await fetchJson('/api/playlist_action.php', formRequest({ method: 'names' }));
+    assert.ok(!namesAfterFailure.json.some((item) => item.play_list === name), name + ' parent must roll back');
+    const soundsAfterFailure = await fetchJson('/api/playlist_action.php', formRequest({ method: 'sounds', name }));
+    assert.deepEqual(soundsAfterFailure.json, [], name + ' details must roll back');
+  }
 
   const deleteResponse = await fetchText('/api/playlist_action.php', formRequest({ method: 'delete', name: 'contract-created' }));
   assert.equal(deleteResponse.response.status, 200);

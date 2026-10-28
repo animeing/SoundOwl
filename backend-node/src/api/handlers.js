@@ -137,6 +137,11 @@ function createApiHandlers(deps) {
       return json(await repository.listHistory(Number(body.start), Number(body.end)));
     },
 
+    /**
+     * プレイリスト操作のAPI応答を作り、作成時の既知のDB制約違反を利用者向けの結果へ変換する。
+     * @param {{form:Record<string, unknown>}} request フォームのmethod、名前、曲hashを含むリクエスト。
+     * @returns {Promise<ApiResponse>} 操作結果または理由を含むHTTP応答。
+     */
     async playlistAction({ form }) {
       switch (form.method) {
         case 'names':
@@ -148,9 +153,20 @@ function createApiHandlers(deps) {
           return json(await repository.listPlaylistSounds(form.name));
         case 'create':
           if (!form.playlist_name || !Array.isArray(form.sounds) || form.sounds.length === 0) {
-            return json({ status: 'error', detail: 'playlist_name and sounds are required.' }, 400);
+            return json({ status: 'error', detail: 'Enter a playlist name and add at least one song.' }, 400);
           }
-          await repository.createPlaylist(form.playlist_name, form.sounds.map((hash) => decompressHash(hash)));
+          try {
+            await repository.createPlaylist(form.playlist_name, form.sounds.map((hash) => decompressHash(hash)));
+          } catch (error) {
+            // SQLの詳細は表示せず、利用者が対処できる制約違反だけ公開する。
+            if (error.code === 'ER_DUP_ENTRY') {
+              return json({ status: 'error', detail: 'This playlist name is already in use. Choose another name.' }, 409);
+            }
+            if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+              return json({ status: 'error', detail: 'A song is no longer available. Refresh the playlist and try again.' }, 422);
+            }
+            throw error;
+          }
           return json({ status: 'success', detail: 'playlist created.' });
         case 'delete':
           if (!form.name) {
