@@ -9,7 +9,8 @@ const __dirname = path.dirname(__filename);
  * バックエンド起動時に参照する接続先、ファイル配置、常駐処理の設定です。
  * @property {{host:string,database:string,user:string,password:string,retry:{attempts:number,delayMs:number}}} db MariaDB 接続情報と起動待ちリトライ設定。
  * @property {{socket:{host:string,port:number}}} redis Redis 接続情報。
- * @property {string} soundDirectory 登録対象の音楽ファイルを走査するディレクトリ。
+ * @property {string|null} soundDirectoryOverride 環境変数で固定する走査ディレクトリ。未指定ならnull。
+ * @property {string|null} defaultSoundDirectory 保存値が空のときの既定ディレクトリ。
  * @property {string} blankImagePath アルバムアートがない場合に返す PNG 画像のパス。
  * @property {string} placeholderImagePath フロントから直接取得する代替 WebP 画像のパス。
  * @property {string} settingsPath JSON 設定ファイルのパス。
@@ -41,7 +42,8 @@ function loadConfig(env = process.env) {
         port: Number(env.REDIS_PORT || 6379),
       },
     },
-    soundDirectory: env.SOUND_PATH || env.SOUND_DIRECTORY || '/',
+    soundDirectoryOverride: env.SOUND_PATH?.trim() || env.SOUND_DIRECTORY?.trim() || null,
+    defaultSoundDirectory: env.SOUND_DIRECTORY_DEFAULT?.trim() || null,
     blankImagePath: env.BLANK_IMAGE_PATH || path.resolve(__dirname, '../assets/blank-image.png'),
     placeholderImagePath: env.PLACEHOLDER_IMAGE_PATH || path.resolve(__dirname, '../assets/placeholder-image.webp'),
     settingsPath: env.SETTINGS_PATH || path.resolve(__dirname, '../config/settings.json'),

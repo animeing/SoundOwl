@@ -12,6 +12,7 @@
 import { MessageButtonWindow, toBoolean } from '../../base';
 import { LockStatus, SetupDataBase, SoundRegistAction, UpdateSetting } from '../../page';
 import SettingFormComponent from './contents/SettingFormComponent.vue';
+import { showSoundRegistrationError } from './registrationFeedback.js';
 
 export default {
   name:'SetupVue',
@@ -109,22 +110,22 @@ export default {
       }).then(()=>{
         //即座にデータを入れようとすると失敗するので1秒後に実行する
         setTimeout(()=>{
-          let soundRegistAction = new SoundRegistAction;
-          soundRegistAction.httpRequestor.addEventListener('success', _event=>{
-            let messageButtonWindow = new MessageButtonWindow();
-            messageButtonWindow.value = 'Sound Registed.';
-            messageButtonWindow.addItem('Close', ()=>{
-              messageButtonWindow.close();
-            });
-            messageButtonWindow.open();
-            return;
+          const registrationProgress = new MessageButtonWindow();
+          registrationProgress.value = 'Sound Registing.';
+          registrationProgress.addItem('Close', () => registrationProgress.close());
+          registrationProgress.open();
+          const soundRegistAction = new SoundRegistAction();
+          soundRegistAction.httpRequestor.addEventListener('success', () => {
+            registrationProgress.close();
+            const completedMessage = new MessageButtonWindow();
+            completedMessage.value = 'Sound Registed.';
+            completedMessage.addItem('Close', () => completedMessage.close());
+            completedMessage.open();
           });
-          let messageButtonWindow = new MessageButtonWindow();
-          messageButtonWindow.value = 'Sound Registing.';
-          messageButtonWindow.addItem('Close', ()=>{
-            messageButtonWindow.close();
+          soundRegistAction.httpRequestor.addEventListener('error', event => {
+            registrationProgress.close();
+            showSoundRegistrationError(event.detail?.response);
           });
-          messageButtonWindow.open();
           soundRegistAction.execute();
         }, 1000);
       }).catch(()=>{});

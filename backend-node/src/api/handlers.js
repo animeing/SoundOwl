@@ -27,6 +27,7 @@ function createApiHandlers(deps) {
     placeholderImagePath,
     equalizerPresetPath,
     soundDirectoryOverride,
+    defaultSoundDirectory,
   } = deps;
 
   return {
@@ -38,8 +39,18 @@ function createApiHandlers(deps) {
       return json(await statusPayload(repository, deps.lockService, false, settingsStore));
     },
 
+    /**
+     * 保存設定に、実際に走査する音楽ディレクトリと設定元を加えて返す。
+     * @returns {Promise<ApiResponse>} 保存値と有効値を含む設定応答。
+     */
     async getSetting() {
-      return json(await settingsStore.read());
+      const settings = await settingsStore.read();
+      const resolvedSoundDirectory = resolveSoundDirectory(settings.sound_directory, soundDirectoryOverride, defaultSoundDirectory);
+      return json({
+        ...settings,
+        effective_sound_directory: resolvedSoundDirectory.path,
+        sound_directory_source: resolvedSoundDirectory.source,
+      });
     },
 
     async updateSetting({ form }) {
@@ -84,6 +95,11 @@ function createApiHandlers(deps) {
       return text('');
     },
 
+    /**
+     * 保存値と環境変数から走査先を決め、安全でないパスでは登録を始めない。
+     * @param {{query:Record<string,string>}} request 個別更新する曲の hash を指定できるリクエスト。
+     * @returns {Promise<ApiResponse>} 登録数、または走査先不正時の400応答。
+     */
     async soundRegist({ query }) {
       const release = deps.lockService?.beginStep1 ? deps.lockService.beginStep1() : () => {};
       try {
@@ -92,7 +108,14 @@ function createApiHandlers(deps) {
         }
         const settings = await settingsStore.read();
         const exclusions = normalizeExclusionPaths(settings.exclusionPaths);
-        return json(await registrar.registerDirectory(soundDirectoryOverride || settings.sound_directory, exclusions));
+        const resolvedSoundDirectory = resolveSoundDirectory(settings.sound_directory, soundDirectoryOverride, defaultSoundDirectory);
+        if (!resolvedSoundDirectory.path || !path.isAbsolute(resolvedSoundDirectory.path) || isFileSystemRoot(resolvedSoundDirectory.path)) {
+          return json({
+            status: 'error',
+            detail: 'Set an absolute Sound Directory other than the filesystem root inside the backend container.',
+          }, 400);
+        }
+        return json(await registrar.registerDirectory(resolvedSoundDirectory.path, exclusions));
       } finally {
         release();
       }
@@ -306,6 +329,37 @@ function hasRange(form) {
     && Number.isFinite(Number(form.end))
     && Number(form.start) >= 0
     && Number(form.end) >= 0;
+}
+
+/**
+ * 環境変数、保存設定、既定値の順に実際の走査先とその出所を決める。
+ * @param {string|undefined} savedDirectory 画面から保存したパス。
+ * @param {string|null|undefined} overrideDirectory 環境変数で固定したパス。
+ * @param {string|null|undefined} defaultDirectory 保存値が空のときの既定パス。
+ * @returns {{path:string,source:'environment'|'settings'|'default'|'unconfigured'}} 有効なパスと設定元。
+ */
+function resolveSoundDirectory(savedDirectory, overrideDirectory, defaultDirectory) {
+  const candidates = [
+    { path: overrideDirectory, source: 'environment' },
+    { path: savedDirectory, source: 'settings' },
+    { path: defaultDirectory, source: 'default' },
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate.path === 'string' && candidate.path.trim()) {
+      return { path: candidate.path.trim(), source: candidate.source };
+    }
+  }
+  return { path: '', source: 'unconfigured' };
+}
+
+/**
+ * 音楽ディレクトリとして誤指定しやすいファイルシステムのルートか判定する。
+ * @param {string} directory 走査候補の絶対パス。
+ * @returns {boolean} ルート自体の場合はtrue。
+ */
+function isFileSystemRoot(directory) {
+  const resolvedDirectory = path.resolve(directory);
+  return resolvedDirectory === path.parse(resolvedDirectory).root;
 }
 
 /**

@@ -35,7 +35,8 @@ services:
       DB_USER: root
       DB_PASSWORD: sound
       REDIS_SERVER: soundowl-redis
-      SOUND_PATH: /music
+      SOUND_PATH: ${SOUND_PATH:-}
+      SOUND_DIRECTORY_DEFAULT: /music
       SETTINGS_PATH: /app/backend-node/config/settings.json
       CORS_ALLOW_ORIGINS: "*"
     ports:

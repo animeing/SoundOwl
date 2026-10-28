@@ -1,4 +1,4 @@
-﻿const test = require('node:test');
+const test = require('node:test');
 const assert = require('node:assert/strict');
 const WebSocket = require('../frontend/node_modules/ws');
 
@@ -674,6 +674,8 @@ test('get_setting returns required runtime configuration keys', async () => {
   assert.ok(json.db_user.length > 0);
   assert.ok(json.redis_ip_address.length > 0);
   if (IS_FIXTURE) {
+    assert.equal(json.effective_sound_directory, FIXTURE.settings.sound_directory);
+    assert.equal(json.sound_directory_source, 'settings');
     for (const [key, value] of Object.entries(FIXTURE.settings)) {
       assert.deepEqual(json[key], value, `setting ${key} should match CI fixture`);
     }
@@ -923,6 +925,8 @@ test('update_setting rewrites settings.json with posted values', async () => {
   const setting = await fetchJson('/api/get_setting.php');
   assert.equal(setting.json.websocket_retry_count, '9');
   assert.equal(setting.json.websocket_retry_interval, '4321');
+  assert.equal(setting.json.effective_sound_directory, '/music');
+  assert.equal(setting.json.sound_directory_source, 'settings');
   assert.deepEqual(setting.json.exclusionPaths, ['NONE']);
 });
 

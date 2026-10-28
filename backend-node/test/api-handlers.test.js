@@ -83,7 +83,7 @@ test('handlers cover status settings setup sound list detail search play and reg
 
   assert.equal((await handlers.siteStatus()).body.regist_data_count.sound, 8);
   assert.equal((await handlers.lockStatus()).body.regist_status, false);
-  assert.deepEqual((await handlers.getSetting()).body, { sound_directory: '/fixture/library', exclusionPaths: ['skip', '髯､螟悶ヱ繧ｹC', 'ignored-dir-a'] });
+  assert.deepEqual((await handlers.getSetting()).body, { sound_directory: '/fixture/library', exclusionPaths: ['skip', '髯､螟悶ヱ繧ｹC', 'ignored-dir-a'], effective_sound_directory: '/fixture/library', sound_directory_source: 'settings' });
   assert.equal((await handlers.updateSetting({ form: { a: 'b' } })).body, '');
   assert.equal(settingsStore.write.mock.calls[0][0].a, 'b');
   assert.deepEqual((await handlers.setupDatabaseTable()).body, { status: 'success' });

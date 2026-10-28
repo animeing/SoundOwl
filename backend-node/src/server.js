@@ -66,7 +66,8 @@ async function buildRuntime(env = process.env) {
     fontPath: path.resolve(__dirname, '../assets/fontisto.ttf'),
     placeholderImagePath: config.placeholderImagePath,
     equalizerPresetPath: path.resolve(__dirname, '../assets/sound_equalizer_preset.json'),
-    soundDirectoryOverride: config.soundDirectory,
+    soundDirectoryOverride: config.soundDirectoryOverride,
+    defaultSoundDirectory: config.defaultSoundDirectory,
   });
   const httpServer = createHttpServer(handlers, { cors: config.cors });
   const websocket = config.websocket.enabled ? createStatusWebSocket({
