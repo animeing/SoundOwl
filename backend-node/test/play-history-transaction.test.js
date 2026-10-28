@@ -27,6 +27,9 @@ function transactionPool({ affectedRows = 1, queryErrorAt, beginError, commitErr
     release() {
       operations.push(['release']);
     },
+    destroy() {
+      operations.push(['destroy']);
+    },
   };
   const pool = {
     getConnection: vi.fn(async () => connection),
@@ -79,14 +82,14 @@ test('update failure rolls back without adding history', async () => {
   assert.deepEqual(operations.map(([operation]) => operation), ['begin', 'update', 'rollback', 'release']);
 });
 
-test('transaction start failure releases the connection', async () => {
+test('transaction start failure destroys a possibly active connection', async () => {
   const beginError = new Error('transaction unavailable');
   const { pool, operations } = transactionPool({ beginError });
   await assert.rejects(
     new SoundCatalogRepository(pool).incrementPlayCount('sound-a', new Date()),
     (error) => error === beginError,
   );
-  assert.deepEqual(operations.map(([operation]) => operation), ['begin', 'release']);
+  assert.deepEqual(operations.map(([operation]) => operation), ['begin', 'destroy']);
 });
 
 test('commit failure attempts rollback and releases the connection', async () => {
@@ -108,5 +111,5 @@ test('rollback failure reports both the write and rollback errors', async () => 
       && error.errors[0] === queryError
       && error.errors[1] === rollbackError,
   );
-  assert.deepEqual(operations.map(([operation]) => operation), ['begin', 'update', 'insert', 'rollback', 'release']);
+  assert.deepEqual(operations.map(([operation]) => operation), ['begin', 'update', 'insert', 'rollback', 'destroy']);
 });

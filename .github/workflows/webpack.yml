@@ -40,6 +40,9 @@ jobs:
     - name: Test audio effects
       run: npm run test:ir --prefix frontend
 
+    - name: Test play history failure notice
+      run: npm run test:play-history --prefix frontend
+
     - name : build
       run :  |
         cd frontend

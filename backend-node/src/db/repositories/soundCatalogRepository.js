@@ -94,8 +94,15 @@ class SoundCatalogRepository {
    */
   async incrementPlayCount(soundHash, playedAt) {
     const playConnection = await this.db.getConnection();
+    let connectionReusable = true;
     try {
-      await playConnection.beginTransaction();
+      try {
+        await playConnection.beginTransaction();
+      } catch (beginError) {
+        // BEGIN may have reached the server even if its response was lost.
+        connectionReusable = false;
+        throw beginError;
+      }
       try {
         const [updateResult] = await playConnection.query(
           'UPDATE sound_link SET play_count = play_count + 1 WHERE sound_hash = ?',
@@ -116,12 +123,18 @@ class SoundCatalogRepository {
         try {
           await playConnection.rollback();
         } catch (rollbackError) {
+          // A failed rollback can leave an open transaction on this connection.
+          connectionReusable = false;
           throw new AggregateError([playError, rollbackError], 'play recording and rollback failed');
         }
         throw playError;
       }
     } finally {
-      playConnection.release();
+      if (connectionReusable) {
+        playConnection.release();
+      } else {
+        playConnection.destroy();
+      }
     }
   }
 
