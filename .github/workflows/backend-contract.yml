@@ -66,6 +66,12 @@ jobs:
           }
           JSON
 
+      - name: Verify explicit Compose Sound Directory override
+        env:
+          SOUND_PATH: /music/contract-fixture
+        run: |
+          docker compose config | grep -F 'SOUND_PATH: /music/contract-fixture'
+
       - name: Start Node backend stack
         env:
           MUSIC_DIR: ${{ github.workspace }}/test_scripts/fixtures/music

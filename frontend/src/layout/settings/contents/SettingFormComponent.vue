@@ -99,7 +99,10 @@
           <v-card-title>Sound</v-card-title>
           <v-card-text>
             <v-divider></v-divider>
-            <v-text-field class="settings-field" label="Sound Directory" v-model="sound" name="sound_directory" variant="filled" :disabled="settingsLocked" />
+            <v-text-field class="settings-field" label="Sound Directory" v-model="sound" name="sound_directory" variant="filled" :disabled="settingsLocked || soundDirectorySource === 'environment'" />
+            <p v-if="soundDirectorySource === 'environment'" class="text-caption">SOUND_PATH or SOUND_DIRECTORY fixes this path in the backend. Change that environment variable to use another directory.</p>
+            <p v-else-if="soundDirectorySource === 'default'" class="text-caption">Using the backend default. Save another directory here to change the scan path.</p>
+            <p v-else-if="soundDirectorySource === 'unconfigured'" class="text-caption">Set an absolute directory inside the backend container before registering sounds.</p>
             <v-textarea class="settings-field" label="Exclusion Paths" v-model="exclusionPaths" name="exclusionPaths" rows="2" auto-grow variant="filled" :disabled="settingsLocked" />
           </v-card-text>
         </v-card>
@@ -141,6 +144,8 @@ export default {
       user:'',
       pass:'',
       sound:'',
+      savedSoundDirectory:'',
+      soundDirectorySource:'unconfigured',
       exclusionPaths: '',
       websocketRetryCount:0,
       websocketRetryIntervalMs:10000,
@@ -173,13 +178,20 @@ export default {
         getSettingAction.execute();
       });
     },
+    /**
+     * バックエンドが返した保存値と実際の走査先を別々に保持する。
+     * @param {Record<string, unknown>} settings 設定 API の応答。
+     * @returns {void} 入力欄と保存用状態を更新する。
+     */
     applyBackendSettings(settings) {
       this.ip = settings.db_ip_address;
       this.backendServer = getBackendServer();
       this.dbName = settings.db_name;
       this.user = settings.db_user;
       this.pass = settings.db_pass;
-      this.sound = settings.sound_directory;
+      this.savedSoundDirectory = settings.sound_directory || '';
+      this.soundDirectorySource = settings.sound_directory_source || 'settings';
+      this.sound = settings.effective_sound_directory ?? this.savedSoundDirectory;
       this.exclusionPaths = this.toExclusionText(settings.exclusionPaths);
       this.websocketRetryCount = settings.websocket_retry_count;
       this.websocketRetryIntervalMs = settings.websocket_retry_interval;
@@ -187,13 +199,17 @@ export default {
     getBackendServer() {
       return this.backendServer;
     },
+    /**
+     * 環境変数で固定中は表示用パスを保存値へ上書きせず、他の設定を送る。
+     * @returns {Record<string, unknown>} 設定保存 API へ送るフォーム値。
+     */
     getFormData() {
       return {
         db_ip_address: this.ip,
         db_name: this.dbName,
         db_user: this.user,
         db_pass: this.pass,
-        sound_directory: this.sound,
+        sound_directory: this.soundDirectorySource === 'environment' ? this.savedSoundDirectory : this.sound,
         exclusionPaths: this.toExclusionArray(this.exclusionPaths),
         websocket_retry_count: this.websocketRetryCount,
         websocket_retry_interval: this.websocketRetryIntervalMs

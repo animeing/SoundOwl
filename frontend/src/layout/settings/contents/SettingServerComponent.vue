@@ -38,6 +38,7 @@ import SettingFormComponent from './SettingFormComponent.vue';
 import { SiteStatus, SoundRegistAction, UpdateSetting } from '../../../page';
 import { reconnectWebSocket, SoundOwlProperty } from '../../../websocket';
 import { saveBackendServer } from '../../../utilization/path';
+import { showSoundRegistrationError } from '../registrationFeedback.js';
 
 export default {
   name:'SettingServerComponent',
@@ -113,31 +114,33 @@ export default {
         siteStatus.httpRequestor.addEventListener('success', event=>{
           let data = event.detail.response;
           if(toBoolean(data['regist_status'])) {
-            reject();
+            reject(new Error('Sound registration is already running.'));
             return;
           } else {
             resolve();
           }
         });
+        siteStatus.httpRequestor.addEventListener('error', () => reject(new Error('Could not check registration status.')));
         siteStatus.execute();
       }).then(()=>{
-        let soundRegistAction = new SoundRegistAction;
-        soundRegistAction.httpRequestor.addEventListener('success', _event=>{
-          let messageButtonWindow = new MessageButtonWindow;
-          messageButtonWindow.value = 'Sound Registed.';
-          messageButtonWindow.addItem('Close', ()=>{
-            messageButtonWindow.close();
-          });
-          messageButtonWindow.open();
+        const registrationProgress = new MessageButtonWindow();
+        registrationProgress.value = 'Sound Registing.';
+        registrationProgress.addItem('Close', () => registrationProgress.close());
+        registrationProgress.open();
+        const soundRegistAction = new SoundRegistAction();
+        soundRegistAction.httpRequestor.addEventListener('success', () => {
+          registrationProgress.close();
+          const completedMessage = new MessageButtonWindow();
+          completedMessage.value = 'Sound Registed.';
+          completedMessage.addItem('Close', () => completedMessage.close());
+          completedMessage.open();
+        });
+        soundRegistAction.httpRequestor.addEventListener('error', event => {
+          registrationProgress.close();
+          showSoundRegistrationError(event.detail?.response);
         });
         soundRegistAction.execute();
-        let messageButtonWindow = new MessageButtonWindow;
-        messageButtonWindow.value = 'Sound Registing.';
-        messageButtonWindow.addItem('Close', ()=>{
-          messageButtonWindow.close();
-        });
-        messageButtonWindow.open();
-      });
+      }).catch(error => showSoundRegistrationError({ detail: error.message }));
     }
   }
 }

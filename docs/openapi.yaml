@@ -1,4 +1,4 @@
-﻿openapi: 3.1.0
+openapi: 3.1.0
 info:
   title: SoundOwl Backend API
   version: 0.1.0
@@ -65,14 +65,20 @@ paths:
   /api/get_setting.php:
     get:
       tags: [Settings]
-      summary: Return parsed settings.json values.
+      summary: Return saved settings and the effective Sound Directory.
       responses:
         "200":
-          description: INI key/value object.
+          description: Saved settings plus the scan path and its source.
           content:
             application/json:
               schema:
                 type: object
+                properties:
+                  effective_sound_directory:
+                    type: string
+                  sound_directory_source:
+                    type: string
+                    enum: [environment, settings, default, unconfigured]
                 additionalProperties: true
   /api/update_setting.php:
     post:
@@ -188,7 +194,7 @@ paths:
           required: false
           schema:
             type: string
-          description: Optional compressed sound hash. When omitted, scans SOUND_DIRECTORY.
+          description: Optional compressed sound hash. When omitted, scans the configured sound directory (SOUND_PATH/SOUND_DIRECTORY, saved setting, then SOUND_DIRECTORY_DEFAULT).
       responses:
         "200":
           description: Registered sound count.
