@@ -63,5 +63,47 @@
       "reference": "frontend/src/layout/settings/contents/SettingServerComponent.vue、SetupVue.vue、page.js @ 2903036",
       "finding": "HTTP成功の登録・個別更新は失敗件数を見ず成功表示する。"
     }
-  ]
+  ],
+  "completion": {
+    "criteria": [
+      {
+        "requested": "見直されたIssueから、判断待ちでなく対処すべき具体的な不具合を選ぶ",
+        "delivered": "公開Issue 26件の判定と現行コードを照合し、残存不具合が具体的な #463 を採用した。#481 の現状維持判断と Draft PR #498 は変更しない。",
+        "evidence": "#463 の再評価と SoundRegistrar / soundRegist / 画面呼出元で、失敗が件数だけの成功応答になる経路を確認した。",
+        "status": "met"
+      },
+      {
+        "requested": "登録走査の成功を保持しつつ、ファイル単位の失敗件数・対象・理由を利用者に知らせる",
+        "delivered": "走査で失敗を収集して結果に含め、設定画面と初期設定画面に表示した。読取・保存・解析投入を公開可能な処理段階の理由で区別する。",
+        "evidence": "backend-node/test/registrar.test.js と api-handlers.test.js の正常・混在・全失敗・DBモック結合、frontend/tests/sound-directory-setting.spec.mjs の正常・部分失敗・異常応答、390px画面の実スクリーンショット。",
+        "status": "met"
+      },
+      {
+        "requested": "個別更新の失敗を成功として通知せず、対象と理由を示す",
+        "delivered": "対象不在を404、更新失敗を500で返し、個別更新メニューから失敗通知を表示する。成功時だけ完了通知を出す。",
+        "evidence": "registrar.test.js の対象不在・読取失敗・非対応拡張子、api-handlers.test.js のAPI分類、frontend/tests/sound-update-feedback.spec.mjs の成功・失敗・予期しない失敗の操作確認。",
+        "status": "met"
+      },
+      {
+        "requested": "実装とテストを別視点で自己レビューし、単体・結合・画面表示を確認する",
+        "delivered": "既存count契約、走査継続、内部例外非公開、既存メニューの表示経路、画面幅ごとの表示を確認し、発見したメニュー未表示と契約テスト不一致を修正した。",
+        "evidence": "バックエンド14ファイル74テスト、Playwright Chromium 4画面幅44テスト、webpack build、登録と更新の失敗通知スクリーンショットを確認。",
+        "status": "met"
+      },
+      {
+        "requested": "PRを作り、CIとコミット後のレビューコメントを確認して対処する",
+        "delivered": "PR #500を作成し、契約テストのCI失敗を修正。Backend Contract、Docker、NodeJS、判断記録チェック、Windows/ChromiumとUbuntu/Firefoxの画面比較はすべて通過した。コミット後2分以上経ってからレビュー指摘を確認し、完了記録を追加した。",
+        "evidence": "PR https://github.com/animeing/SoundOwl/pull/500、Backend Contract run 40956044958、Docker run 40956044901、NodeJS run 40956045062、Frontend Layout Regression run 40956044729、判断記録 run 40956044879。レビューコメント https://github.com/animeing/SoundOwl/pull/500#discussion_r4417949151 と完了記録の照合。",
+        "status": "met"
+      }
+    ],
+    "review": {
+      "challenge": "失敗を収集することで既存の継続走査・成功応答・再試行・画面表示を悪化させないか、DB保存後の解析投入失敗や個別更新の画面入口でも失敗が隠れないかを反証として確認した。",
+      "finding": "従来の個別更新メニューは共通曲メニューに表示されず、実操作できなかった。契約テストは正常な走査応答をcountだけと固定していた。自動レビューは完了記録不足を指摘した。解析投入失敗後の永続的な再試行は #462 の未解決範囲。",
+      "response": "共通曲メニューに個別更新を追加し、成功と失敗を操作テストで確認した。契約テストに新応答と対象不在404を追加した。完了条件と反証確認をこの記録に追加した。今回の解析投入失敗は利用者へ通知し、永続回復は #462 と区別した。",
+      "verified_against_source": "backend-node/src/services/soundRegistrar.js、backend-node/src/api/handlers.js、frontend/src/layout/common/SoundClipComponent.vue、frontend/src/layout/settings/registrationFeedback.js、test_scripts/backend_contract.test.js の変更行、バックエンド74件・Playwright44件の結果、CI run 40956044958 / 40956044901 / 40956045062 / 40956044729 / 40956044879 の結果を照合した。"
+    },
+    "remaining": [],
+    "application": "applied"
+  }
 }
