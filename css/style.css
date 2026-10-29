@@ -422,6 +422,24 @@ sw-save-message > div > input[type="text"] {
   margin: 0;
 }
 
+/* 登録失敗が多数でも、共通通知の500px上限内で対象と閉じるボタンを確認できるようにする。 */
+sw-message-button.sound-registration-failures {
+  display: flex;
+  flex-direction: column;
+  max-height: min(70vh, 500px);
+}
+
+sw-message-button.sound-registration-failures > p {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+
+sw-message-button.sound-registration-failures.height-hide {
+  max-height: 0;
+  overflow: hidden;
+}
+
 .hide {
   display: none;
   visibility: hidden;

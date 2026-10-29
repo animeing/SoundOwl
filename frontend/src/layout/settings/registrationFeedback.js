@@ -14,9 +14,7 @@ export function showSoundRegistrationResult(response) {
     : 'Sound Registed.';
   if (failedCount > 0) {
     notification.setAttribute('role', 'alert');
-    notification.style.maxHeight = '70vh';
-    notification.style.overflowY = 'auto';
-    notification.style.overflowWrap = 'anywhere';
+    notification.classList.add('sound-registration-failures');
   }
   notification.addItem('Close', () => notification.close());
   notification.open();

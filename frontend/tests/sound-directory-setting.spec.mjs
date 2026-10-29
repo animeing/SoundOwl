@@ -128,6 +128,39 @@ test('partial registration shows every incomplete file instead of a success mess
   await expect(page.getByText('Sound Registed.')).toHaveCount(0);
   await expect(page.getByText('Sound Registing.')).toBeHidden();
 });
+
+test('long failure lists remain readable and the notification can be closed', async ({ page }, testInfo) => {
+  await openSettings(page, testInfo, {
+    effective_sound_directory: '/music/saved',
+    sound_directory_source: 'settings',
+  });
+  const failures = Array.from({ length: 30 }, (_, index) => ({
+    target: `/music/nested/a-very-long-audio-filename-for-registration-${index}.wav`,
+    reason: 'Could not read audio metadata.',
+  }));
+  await page.route('**/api/sound_regist.php', async (route) => {
+    await route.fulfill({
+      status: 200,
+      headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+      body: JSON.stringify({ count: 0, failedCount: failures.length, failures }),
+    });
+  });
+  await page.getByRole('button', { name: 'sound regist' }).click();
+  const notification = page.locator('sw-message-button.sound-registration-failures');
+  await expect(notification.locator('p')).toContainText(failures.at(-1).target);
+  const dimensions = await notification.locator('p').evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(dimensions.scrollHeight).toBeGreaterThan(dimensions.clientHeight);
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
+  await expect(notification.locator('input[type="button"]')).toBeInViewport();
+  await expect(page.getByText('Sound Registing.')).toBeHidden();
+  await notification.locator('input[type="button"]').click();
+  await expect(notification).toHaveCount(0);
+});
 test('status check failures and an active scan are reported before registration starts', async ({ page }, testInfo) => {
   await openSettings(page, testInfo, {
     effective_sound_directory: '/music/saved',
