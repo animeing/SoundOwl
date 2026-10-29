@@ -38,7 +38,7 @@ import SettingFormComponent from './SettingFormComponent.vue';
 import { SiteStatus, SoundRegistAction, UpdateSetting } from '../../../page';
 import { reconnectWebSocket, SoundOwlProperty } from '../../../websocket';
 import { saveBackendServer } from '../../../utilization/path';
-import { showSoundRegistrationError } from '../registrationFeedback.js';
+import { showSoundRegistrationError, showSoundRegistrationResult } from '../registrationFeedback.js';
 
 export default {
   name:'SettingServerComponent',
@@ -128,12 +128,9 @@ export default {
         registrationProgress.addItem('Close', () => registrationProgress.close());
         registrationProgress.open();
         const soundRegistAction = new SoundRegistAction();
-        soundRegistAction.httpRequestor.addEventListener('success', () => {
+        soundRegistAction.httpRequestor.addEventListener('success', event => {
           registrationProgress.close();
-          const completedMessage = new MessageButtonWindow();
-          completedMessage.value = 'Sound Registed.';
-          completedMessage.addItem('Close', () => completedMessage.close());
-          completedMessage.open();
+          showSoundRegistrationResult(event.detail?.response);
         });
         soundRegistAction.httpRequestor.addEventListener('error', event => {
           registrationProgress.close();

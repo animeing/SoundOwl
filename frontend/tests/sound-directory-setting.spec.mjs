@@ -100,6 +100,34 @@ test('successful registration still confirms completion', async ({ page }, testI
   await expect(page.locator('sw-message-button').last().locator('p')).toHaveText('Sound Registed.');
   await expect(page.getByText('Sound Registing.')).toBeHidden();
 });
+
+test('partial registration shows every incomplete file instead of a success message', async ({ page }, testInfo) => {
+  await openSettings(page, testInfo, {
+    effective_sound_directory: '/music/saved',
+    sound_directory_source: 'settings',
+  });
+  await page.route('**/api/sound_regist.php', async (route) => {
+    await route.fulfill({
+      status: 200,
+      headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        count: 1,
+        failedCount: 2,
+        failures: [
+          { target: '/music/bad.wav', reason: 'Could not read audio metadata.' },
+          { target: '/music/queue.wav', reason: 'Sound saved, but audio analysis could not be queued.' },
+        ],
+      }),
+    });
+  });
+  await page.getByRole('button', { name: 'sound regist' }).click();
+  const notification = page.locator('sw-message-button[role="alert"]').last();
+  await expect(notification.locator('p')).toContainText('2 incomplete file(s)');
+  await expect(notification.locator('p')).toContainText('/music/bad.wav: Could not read audio metadata.');
+  await expect(notification.locator('p')).toContainText('/music/queue.wav: Sound saved, but audio analysis could not be queued.');
+  await expect(page.getByText('Sound Registed.')).toHaveCount(0);
+  await expect(page.getByText('Sound Registing.')).toBeHidden();
+});
 test('status check failures and an active scan are reported before registration starts', async ({ page }, testInfo) => {
   await openSettings(page, testInfo, {
     effective_sound_directory: '/music/saved',
@@ -149,5 +177,28 @@ test('setup registration failure closes progress and displays the API reason', a
   await page.goto(buildRouteUrl(frontendUrl, '/setup'), { waitUntil: 'domcontentloaded' });
   await page.locator('input[value="SetUp"]').click();
   await expect(page.locator('sw-message-button').last().locator('p')).toHaveText(reason);
+  await expect(page.getByText('Sound Registing.')).toBeHidden();
+});
+
+test('setup reports partial registration instead of completion', async ({ page }, testInfo) => {
+  const frontendUrl = testInfo.project.use.baseURL;
+  await installSyntheticNetworkMocks(page, DEFAULT_SYNTHETIC_BACKEND_URL);
+  await installSyntheticFrontendConfigMock(page, frontendUrl, DEFAULT_SYNTHETIC_BACKEND_URL);
+  await page.route('**/api/sound_regist.php', async (route) => {
+    await route.fulfill({
+      status: 200,
+      headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        count: 0,
+        failedCount: 1,
+        failures: [{ target: '/music/bad.wav', reason: 'Could not read audio metadata.' }],
+      }),
+    });
+  });
+  await page.goto(buildRouteUrl(frontendUrl, '/setup'), { waitUntil: 'domcontentloaded' });
+  await page.locator('input[value="SetUp"]').click();
+  const notification = page.locator('sw-message-button[role="alert"]').last();
+  await expect(notification.locator('p')).toContainText('/music/bad.wav: Could not read audio metadata.');
+  await expect(page.getByText('Sound Registed.')).toHaveCount(0);
   await expect(page.getByText('Sound Registing.')).toBeHidden();
 });

@@ -5,6 +5,18 @@ import { sha1 } from '../utils/hash.js';
 
 const SOUND_EXTENSIONS = /\.(mp3|m4a|wav|ogg|flac|ape)$/i;
 
+/** Public stage description; the original exception remains available as cause for server logs. */
+class RegistrationFailure extends Error {
+  constructor(reason, cause) {
+    super(reason, { cause });
+  }
+}
+
+/** Return a safe reason without exposing database or parser exception details to clients. */
+function registrationFailureReason(error) {
+  return error instanceof RegistrationFailure ? error.message : 'Could not process this sound.';
+}
+
 /**
  * 音楽ディレクトリの走査、タグ読み込み、アーティスト・アルバム・曲データ登録を担当するサービスです。
  */
@@ -37,38 +49,49 @@ class SoundRegistrar {
    * 音楽ディレクトリを再帰走査し、未登録の音源ファイルを登録します。
    * @param {string} rootDirectory 走査を開始する音楽ディレクトリ。
    * @param {string[]} [exclusionPaths=[]] 走査対象から除外するパス正規表現文字列。
-   * @returns {Promise<{count:number}>} 登録処理後の曲総数。
+   * @returns {Promise<{count:number,failedCount:number,failures:Array<{target:string,reason:string}>}> 曲総数と今回処理できなかった音源。
    */
   async registerDirectory(rootDirectory, exclusionPaths = []) {
     const files = await listSoundFiles(rootDirectory, exclusionPaths);
-    let count = 0;
+    const failures = [];
     for (const file of files) {
       if (!(await this.repository.findSoundByPath(file))) {
         try {
           await this.registerFile(file);
-        } catch {
-          // Keep directory scans resilient: one unreadable or unanalyzable file must not fail the whole registration.
+        } catch (error) {
+          // Continue the scan, but report each incomplete file instead of presenting the whole run as successful.
+          console.error('Sound registration failed:', file, error);
+          failures.push({ target: file, reason: registrationFailureReason(error) });
         }
       }
     }
-    count = await this.repository.countSounds();
-    return { count };
+    return { count: await this.repository.countSounds(), failedCount: failures.length, failures };
   }
 
   /**
    * 既存曲のファイルパスを使ってメタデータを再読み込みし、曲情報を再登録します。
    * @param {string} soundHash 再登録対象の sound_hash。
-   * @returns {Promise<{count:number}>} 再登録後の曲総数。対象が無い、または再登録失敗時も現在の総数を返します。
+   * @returns {Promise<{count:number,error?:{target:string,reason:string,code?:string}}>} 成功時の曲総数、または対象と公開用の失敗理由。
    */
   async refreshByHash(soundHash) {
     const sound = await this.repository.findSoundByHash(soundHash);
     if (!sound) {
-      return { count: await this.repository.countSounds() };
+      return {
+        count: await this.repository.countSounds(),
+        error: { target: soundHash, reason: 'Sound not found.', code: 'SOUND_NOT_FOUND' },
+      };
     }
     try {
-      await this.registerFile(sound.data_link, sound.sound_hash);
-    } catch {
-      return { count: await this.repository.countSounds() };
+      const updatedSound = await this.registerFile(sound.data_link, sound.sound_hash);
+      if (updatedSound === null) {
+        throw new RegistrationFailure('Unsupported audio format.');
+      }
+    } catch (error) {
+      console.error('Sound update failed:', sound.data_link, error);
+      return {
+        count: await this.repository.countSounds(),
+        error: { target: sound.data_link, reason: registrationFailureReason(error) },
+      };
     }
     return { count: await this.repository.countSounds() };
   }
@@ -84,12 +107,26 @@ class SoundRegistrar {
       return null;
     }
 
-    const metadata = await this.metadataReader(filePath);
+    let metadata;
+    try {
+      metadata = await this.metadataReader(filePath);
+    } catch (error) {
+      throw new RegistrationFailure('Could not read audio metadata.', error);
+    }
     const soundHash = soundHashOverride || sha1(filePath);
-    const existing = await this.repository.findSoundByHash(soundHash);
-    const sound = await this.buildSoundRecord(filePath, soundHash, metadata, existing);
-    const result = await this.repository.upsertSound(sound);
-    await this.redis.enqueueAudioProcessing({ file_path: filePath, hash: soundHash });
+    let result;
+    try {
+      const existing = await this.repository.findSoundByHash(soundHash);
+      const sound = await this.buildSoundRecord(filePath, soundHash, metadata, existing);
+      result = await this.repository.upsertSound(sound);
+    } catch (error) {
+      throw new RegistrationFailure('Could not save sound information.', error);
+    }
+    try {
+      await this.redis.enqueueAudioProcessing({ file_path: filePath, hash: soundHash });
+    } catch (error) {
+      throw new RegistrationFailure('Sound saved, but audio analysis could not be queued.', error);
+    }
     return result;
   }
 

@@ -12,7 +12,7 @@
 import { MessageButtonWindow, toBoolean } from '../../base';
 import { LockStatus, SetupDataBase, SoundRegistAction, UpdateSetting } from '../../page';
 import SettingFormComponent from './contents/SettingFormComponent.vue';
-import { showSoundRegistrationError } from './registrationFeedback.js';
+import { showSoundRegistrationError, showSoundRegistrationResult } from './registrationFeedback.js';
 
 export default {
   name:'SetupVue',
@@ -115,12 +115,9 @@ export default {
           registrationProgress.addItem('Close', () => registrationProgress.close());
           registrationProgress.open();
           const soundRegistAction = new SoundRegistAction();
-          soundRegistAction.httpRequestor.addEventListener('success', () => {
+          soundRegistAction.httpRequestor.addEventListener('success', event => {
             registrationProgress.close();
-            const completedMessage = new MessageButtonWindow();
-            completedMessage.value = 'Sound Registed.';
-            completedMessage.addItem('Close', () => completedMessage.close());
-            completedMessage.open();
+            showSoundRegistrationResult(event.detail?.response);
           });
           soundRegistAction.httpRequestor.addEventListener('error', event => {
             registrationProgress.close();

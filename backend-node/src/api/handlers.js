@@ -116,7 +116,16 @@ function createApiHandlers(deps) {
       const release = deps.lockService?.beginStep1 ? deps.lockService.beginStep1() : () => {};
       try {
         if (query.soundhash) {
-          return json(await registrar.refreshByHash(decompressHash(decodeURIComponent(query.soundhash))));
+          const result = await registrar.refreshByHash(decompressHash(decodeURIComponent(query.soundhash)));
+          if (result.error) {
+            return json({
+              status: 'error',
+              count: result.count,
+              failure: result.error,
+              detail: `Could not update ${result.error.target}: ${result.error.reason}`,
+            }, result.error.code === 'SOUND_NOT_FOUND' ? 404 : 500);
+          }
+          return json(result);
         }
         const settings = await settingsStore.read();
         const exclusions = normalizeExclusionPaths(settings.exclusionPaths);

@@ -112,7 +112,7 @@ test('SoundRegistrar refreshes fixture-seeded sounds with the existing hash inst
   assert.deepEqual(jobs, [{ file_path: '/fixture/library/plain.wav', hash: 'fixture-existing-hash' }]);
 });
 
-test('SoundRegistrar ignores unsupported extensions and handles missing refresh hash', async () => {
+test('SoundRegistrar ignores unsupported extensions and reports missing refresh hash', async () => {
   const repo = fakeRepository();
   const registrar = new SoundRegistrar({
     repository: repo,
@@ -121,7 +121,100 @@ test('SoundRegistrar ignores unsupported extensions and handles missing refresh 
   });
 
   assert.equal(await registrar.registerFile('/fixture/library/readme.txt'), null);
-  assert.deepEqual(await registrar.refreshByHash('missing'), { count: 0 });
+  assert.deepEqual(await registrar.refreshByHash('missing'), {
+    count: 0,
+    error: { target: 'missing', reason: 'Sound not found.', code: 'SOUND_NOT_FOUND' },
+  });
+});
+
+test('directory scan keeps successful files and reports metadata failures with their target', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'soundowl-register-result-'));
+  const goodFile = path.join(root, 'good.wav').replaceAll('\\', '/');
+  const badFile = path.join(root, 'bad.wav').replaceAll('\\', '/');
+  await Promise.all([fs.writeFile(goodFile, ''), fs.writeFile(badFile, '')]);
+  const repo = fakeRepository();
+  const jobs = [];
+  const registrar = new SoundRegistrar({
+    repository: repo,
+    redis: { enqueueAudioProcessing: async (job) => jobs.push(job) },
+    metadataReader: async (file) => {
+      if (file === badFile) throw new Error('private parser detail');
+      return plainMetadata(file);
+    },
+  });
+  const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const result = await registrar.registerDirectory(root);
+    assert.deepEqual(result, {
+      count: 1,
+      failedCount: 1,
+      failures: [{ target: badFile, reason: 'Could not read audio metadata.' }],
+    });
+    assert.equal(repo.sounds.get(sha1(goodFile)).title, 'good.wav');
+    assert.deepEqual(jobs, [{ file_path: goodFile, hash: sha1(goodFile) }]);
+    assert.equal(errorLog.mock.calls.length, 1);
+  } finally {
+    errorLog.mockRestore();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('directory scan reports save and analysis queue failures without leaking internal errors', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'soundowl-register-stages-'));
+  const saveFile = path.join(root, 'save.wav').replaceAll('\\', '/');
+  const queueFile = path.join(root, 'queue.wav').replaceAll('\\', '/');
+  await Promise.all([fs.writeFile(saveFile, ''), fs.writeFile(queueFile, '')]);
+  const repo = fakeRepository();
+  const originalUpsert = repo.upsertSound;
+  repo.upsertSound = async function (sound) {
+    if (sound.data_link === saveFile) throw new Error('private database detail');
+    return originalUpsert.call(this, sound);
+  };
+  const registrar = new SoundRegistrar({
+    repository: repo,
+    redis: { enqueueAudioProcessing: async () => { throw new Error('private redis detail'); } },
+    metadataReader: plainMetadata,
+  });
+  const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const result = await registrar.registerDirectory(root);
+    assert.equal(result.count, 1);
+    assert.equal(result.failedCount, 2);
+    assert.deepEqual(result.failures, [
+      { target: queueFile, reason: 'Sound saved, but audio analysis could not be queued.' },
+      { target: saveFile, reason: 'Could not save sound information.' },
+    ]);
+    assert.equal(repo.sounds.has(sha1(saveFile)), false);
+    assert.equal(repo.sounds.has(sha1(queueFile)), true);
+    assert.equal(JSON.stringify(result).includes('private'), false);
+  } finally {
+    errorLog.mockRestore();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('individual refresh reports file failures rather than a successful count', async () => {
+  const repo = fakeRepository();
+  repo.sounds.set('broken', { sound_hash: 'broken', data_link: '/music/broken.wav' });
+  repo.sounds.set('unsupported', { sound_hash: 'unsupported', data_link: '/music/unsupported.txt' });
+  const registrar = new SoundRegistrar({
+    repository: repo,
+    redis: { enqueueAudioProcessing: async () => {} },
+    metadataReader: async () => { throw new Error('private parser detail'); },
+  });
+  const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    assert.deepEqual(await registrar.refreshByHash('broken'), {
+      count: 2,
+      error: { target: '/music/broken.wav', reason: 'Could not read audio metadata.' },
+    });
+    assert.deepEqual(await registrar.refreshByHash('unsupported'), {
+      count: 2,
+      error: { target: '/music/unsupported.txt', reason: 'Unsupported audio format.' },
+    });
+  } finally {
+    errorLog.mockRestore();
+  }
 });
 
 test('album matching follows artist, artwork, and year compatibility rules', () => {
@@ -182,6 +275,13 @@ function fakeRepository() {
     async countSounds() {
       return this.sounds.size;
     },
+  };
+}
+
+function plainMetadata(file) {
+  return {
+    title: path.basename(file), artist: false, album: false, genre: false,
+    lyrics: false, track: false, year: false, picture: null,
   };
 }
 

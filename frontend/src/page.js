@@ -1,5 +1,5 @@
 'use strict';
-import { BaseFrameWork } from './base';
+import { BaseFrameWork, MessageButtonWindow } from './base';
 import { BASE } from './utilization/path';
 
 
@@ -129,6 +129,17 @@ export class SoundRegistAction extends BaseFrameWork.Network.RequestServerBase {
 export class UpdateSoundInfomationAction extends BaseFrameWork.Network.RequestServerBase {
   constructor() {
     super(null, BASE.API+'sound_regist.php', BaseFrameWork.Network.HttpResponseType.JSON, BaseFrameWork.Network.HttpRequestType.GET);
+    // 各曲一覧の成功通知は呼出元に任せ、失敗通知を全ての個別更新で共有する。
+    this.httpRequestor.addEventListener('error', event => {
+      const detail = event.detail?.response?.detail;
+      const notification = new MessageButtonWindow();
+      notification.value = typeof detail === 'string' && detail.trim()
+        ? detail
+        : 'Could not update this sound. Try again.';
+      notification.setAttribute('role', 'alert');
+      notification.addItem('Close', () => notification.close());
+      notification.open();
+    });
   }
 }
 

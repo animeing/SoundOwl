@@ -1,0 +1,67 @@
+{
+  "title": "音源登録・個別更新のファイル単位失敗を通知する",
+  "baseline": "main / 290303662c6822d4f1f70f7e262b9465f7cf93e9",
+  "concern": "音源1件のメタデータ読取・保存・解析投入が失敗しても件数だけが返り、設定画面と個別更新画面が成功を表示する。利用者は失敗した曲を特定できない。",
+  "existing": {
+    "behavior": "registerDirectoryはregisterFileの失敗を握りつぶし、refreshByHashも失敗時にcountのみ返す。設定画面はHTTP成功ならSound Registedを表示し、個別更新はHTTP成功で更新完了を表示する。",
+    "reason_checked": "README、backend-node/README、soundRegistrar.js、handlers.js、設定画面と個別更新の呼出元、既存テストを確認した。#497の走査先不正と走査全体の通知は別経路として維持する。",
+    "intent": "1ファイルの失敗で全走査を中断しない目的はcatch内のコメントで確認できる。失敗を利用者に隠すことを意図した根拠は確認できない。"
+  },
+  "keep_current": "読めない1曲があっても残りの曲を登録でき、保存済みの成功応答と既存クライアントのcount項目を維持できる。",
+  "scenarios": {
+    "used": {
+      "current": "登録・個別更新の失敗が成功表示と区別できない。",
+      "proposed": "失敗件数、対象ファイル、公開用の処理段階理由を返し、画面で表示する。",
+      "tradeoff": "追加の応答と通知処理が必要だが、失敗曲の特定と再試行が可能になる。"
+    },
+    "unused": {
+      "current": "通常の再生・検索では登録APIを呼ばない。",
+      "proposed": "登録APIに限る応答と画面処理を変更する。",
+      "tradeoff": "通常再生の処理・通信を増やさず、登録時の応答だけが失敗件数に応じて増える。"
+    },
+    "first": {
+      "current": "初回走査で一部失敗しても全件成功のように表示する。",
+      "proposed": "成功曲は残して走査を続け、終了時に一部失敗を通知する。",
+      "tradeoff": "既存の継続処理を保ちつつ、失敗対象の再確認が必要になる。"
+    },
+    "reuse": {
+      "current": "既存曲はパスでスキップし、失敗の有無は件数から判別できない。",
+      "proposed": "再走査でも今回失敗した未登録曲を報告し、個別更新の失敗も報告する。",
+      "tradeoff": "成功済み曲を無用に解析し直さないが、失敗した解析投入を含む再試行方法は別Issue #462の範囲とする。"
+    },
+    "failure": {
+      "current": "個別更新失敗と対象不在がcount応答に隠れ、成功通知される。",
+      "proposed": "更新失敗を非2xx応答にし、画面の成功通知を抑えて対象・理由を示す。",
+      "tradeoff": "公開応答には内部例外を直接含めず、失敗段階を説明するための分類が必要になる。"
+    },
+    "concurrent": {
+      "current": "走査のロックと残りの曲を続行する動作がある。",
+      "proposed": "同じロックを維持し、1要求の終了時にその要求だけの失敗情報を返す。",
+      "tradeoff": "永続失敗キューを追加せず並行要求間の共有状態を増やさないが、応答後の履歴照会は提供しない。"
+    }
+  },
+  "costs": "失敗結果のDTO、登録画面と個別更新の通知、正常・部分失敗・全失敗のテストが増える。永続ログや専用再試行画面は増やさない。",
+  "decision": "adopt",
+  "performance_claim": false,
+  "rationale": "実コードで成功と失敗が区別できない故障経路がある。ファイル単位の継続登録を維持し、利用者に必要な今回の結果だけを返す修正は現状維持より明確に有益で、運用負担を限定できる。",
+  "comparison_result": "現状は失敗した曲を特定できないが、変更後はその要求の失敗対象と段階理由を確認できる。成功時の件数と登録継続は維持する。",
+  "unresolved": [],
+  "next_check": "実装後にバックエンドのファイル別失敗、API応答、設定・個別更新画面の正常系と異常系を確認し、CIとレビューコメントを確認する。",
+  "evidence": [
+    {
+      "kind": "code",
+      "reference": "backend-node/src/services/soundRegistrar.js @ 2903036",
+      "finding": "registerDirectoryとrefreshByHashのcatchが例外を捨ててcountのみ返す。"
+    },
+    {
+      "kind": "code",
+      "reference": "backend-node/src/api/handlers.js @ 2903036",
+      "finding": "soundRegistはregistrar応答をそのままHTTP 200で返す。"
+    },
+    {
+      "kind": "code",
+      "reference": "frontend/src/layout/settings/contents/SettingServerComponent.vue、SetupVue.vue、page.js @ 2903036",
+      "finding": "HTTP成功の登録・個別更新は失敗件数を見ず成功表示する。"
+    }
+  ]
+}
