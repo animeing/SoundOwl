@@ -16,7 +16,7 @@ const text = value => typeof value === 'string' && value.trim().length > 0
 
 export function validate(record, action) {
   const errors = [];
-  if (!['investigate', 'recommend', 'implement'].includes(action)) errors.push('actionが不正');
+  if (!['investigate', 'recommend', 'implement', 'complete'].includes(action)) errors.push('actionが不正');
   for (const key of requiredText) if (!text(get(record, key))) errors.push(`${key}: 検討内容が必要`);
   if (!['investigate', 'adopt', 'retain'].includes(record?.decision)) errors.push('decisionが不正');
   if (!Array.isArray(record?.evidence) || !record.evidence.length) errors.push('evidenceが必要');
@@ -35,8 +35,26 @@ export function validate(record, action) {
     }
   }
   if (typeof record?.performance_claim !== 'boolean') errors.push('performance_claimは真偽値が必要');
-  if (action !== 'investigate' && record?.decision !== 'adopt') {
+  if (['recommend', 'implement'].includes(action) && record?.decision !== 'adopt') {
     errors.push('採用判断のない記録では推奨・実装へ進めない');
+  }
+  if (action === 'complete') {
+    const completion = record?.completion;
+    if (!Array.isArray(completion?.criteria) || !completion.criteria.length) {
+      errors.push('完了には依頼の達成条件と結果の照合が必要');
+    } else for (const [i, criterion] of completion.criteria.entries()) {
+      if (!text(criterion?.requested) || !text(criterion?.delivered)
+        || !text(criterion?.evidence) || criterion?.status !== 'met') {
+        errors.push(`completion.criteria[${i}]: 要求・実施結果・根拠・達成の確認が必要`);
+      }
+    }
+    for (const key of ['challenge', 'finding', 'response', 'verified_against_source']) {
+      if (!text(completion?.review?.[key])) errors.push(`completion.review.${key}: 反証確認が必要`);
+    }
+    if (!Array.isArray(completion?.remaining) || completion.remaining.length) {
+      errors.push('未完了の要求があるため完了不可');
+    }
+    if (completion?.application !== 'applied') errors.push('適用待ちを完了扱いにできない');
   }
   return errors;
 }
@@ -56,6 +74,13 @@ export function render(record, digest) {
   }
   lines.push('## 増える負担', record.costs, '', '## 採否', record.rationale);
   if (record.comparison_result) lines.push(record.comparison_result);
+  if (record.completion) {
+    lines.push('', '## 依頼の達成条件との照合');
+    for (const item of record.completion.criteria ?? []) {
+      lines.push(`- 要求: ${item.requested}`, `  実施結果: ${item.delivered}`, `  根拠: ${item.evidence}`, `  状態: ${item.status}`);
+    }
+    lines.push('', '## 反証確認', JSON.stringify(record.completion.review, null, 2));
+  }
   lines.push('', '## 未解決事項', ...record.unresolved.map(v => `- ${v}`), '', '## 次の確認', record.next_check,
     '', '## 根拠', ...record.evidence.map(v => `- [${v.kind}] ${v.reference}: ${v.finding}`),
     '', `検討記録 SHA-256: ${digest}`, '', 'Created by chatgpt 6.1', '');
