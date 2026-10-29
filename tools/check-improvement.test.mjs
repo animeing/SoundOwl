@@ -6,6 +6,11 @@ import { validate, render } from './check-improvement.mjs';
 
 const example = JSON.parse(readFileSync(new URL('../docs/improvement-decisions/481.json', import.meta.url)));
 const copy = () => structuredClone(example);
+const completion = () => ({
+  criteria: [{ requested: '依頼された条件', delivered: '確認した実施結果', evidence: '結果を確認した参照', status: 'met' }],
+  review: { challenge: '変更が不要な場合を検討', finding: '現状維持の利点を確認', response: '変更せず維持', verified_against_source: '呼出元と処理を照合' },
+  remaining: [], application: 'applied',
+});
 
 test('未解決事項があっても検討候補のIssueにはできる', () => {
   const record = copy();
@@ -63,4 +68,32 @@ test('CLIも候補の実装を非ゼロ終了で拒否する', () => {
   assert.equal(result.status, 1);
   assert.equal(result.stdout, '');
   assert.match(result.stderr, /推奨・実装へ進めない/);
+});
+test('検討記録が有効でも、完了条件の照合なしでは完了不可', () => {
+  assert.deepEqual(validate(example, 'investigate'), []);
+  assert.ok(validate(example, 'complete').some(v => v.includes('達成条件')));
+});
+test('要求の未達・根拠の欠落・適用待ちを一つずつ拒否する', () => {
+  for (const mutate of [
+    v => { v.criteria[0].status = 'unmet'; },
+    v => { v.criteria[0].evidence = ''; },
+    v => { v.remaining.push('mainへの反映が未完了'); },
+    v => { v.application = 'proposed'; },
+  ]) {
+    const record = copy();
+    record.completion = completion();
+    mutate(record.completion);
+    assert.ok(validate(record, 'complete').length > 0);
+  }
+});
+test('反証確認を省いて完了にできない', () => {
+  const record = copy();
+  record.completion = completion();
+  delete record.completion.review;
+  assert.ok(validate(record, 'complete').some(v => v.includes('反証確認')));
+});
+test('現状維持の判断も、要求の照合と反証確認があれば完了できる', () => {
+  const record = copy();
+  record.completion = completion();
+  assert.deepEqual(validate(record, 'complete'), []);
 });
