@@ -836,16 +836,25 @@ test('sound stream malformed media_hash preserves the current API fatal-error re
   assert.ok([200, 500].includes(response.status));
 });
 
-test('sound_regist returns current count for full scan and single-sound refresh', async () => {
+test('sound_regist reports scan failures and returns current count for successful single-sound refresh', async () => {
   if (!IS_FIXTURE) {
     return;
   }
 
   const fullScan = await fetchJson('/api/sound_regist.php');
-  assert.deepEqual(fullScan.json, { count: 8 });
+  assert.deepEqual(fullScan.json, { count: 8, failedCount: 0, failures: [] });
 
   const single = await fetchJson(`/api/sound_regist.php?soundhash=${encodeHash(fixtureHash('h01'))}`);
   assert.deepEqual(single.json, { count: 8 });
+
+  const missingHash = 'f'.repeat(40);
+  const missing = await fetchText(`/api/sound_regist.php?soundhash=${encodeURIComponent(compressedHash(missingHash))}`);
+  assert.equal(missing.response.status, 404);
+  assert.deepEqual(JSON.parse(missing.text).failure, {
+    target: missingHash,
+    reason: 'Sound not found.',
+    code: 'SOUND_NOT_FOUND',
+  });
 });
 
 test('websocket sends status on open and broadcasts client messages', { timeout: 10000 }, async () => {
