@@ -1,0 +1,36 @@
+name: Improvement decision checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'AGENTS.md'
+      - 'tools/check-improvement*'
+      - 'docs/improvement-decisions/**'
+      - '.github/ISSUE_TEMPLATE/improvement.md'
+      - '.github/workflows/improvement-decision.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/check-improvement*'
+      - 'docs/improvement-decisions/**'
+      - '.github/workflows/improvement-decision.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+      - name: Missing consideration must fail
+        run: node --test tools/check-improvement.test.mjs
+      - name: Validate recorded decisions
+        run: |
+          for record in docs/improvement-decisions/*.json; do
+            node tools/check-improvement.mjs investigate "$record" > /dev/null
+          done
