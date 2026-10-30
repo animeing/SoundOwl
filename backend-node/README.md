@@ -8,6 +8,8 @@ API の URL には互換性のため `.php` 名が残っていますが、実行
 
 設定画面は `GET /api/registration_failures.php?step=all|step1|step2&limit=25&offset=0` を使います。応答は `counts`、`total`、`failures`、`limit`、`offset` です。`failures` の各要素は `step`、`target`、公開用の `reason`、`updatedAt` を含み、最大50件を返します。DBに接続できない場合は503を返すため、画面には失敗状態を取得できないことが表示されます。
 
+登録走査中に履歴DBへの書込みが失敗しても、後続ファイルの登録は続けます。`/api/sound_regist.php` は今回の失敗を `failures` で返すほか、履歴へ保存できなかった場合に `historyUnavailable: true` を付け、画面で保存失敗を通知します。個別更新では履歴DB障害を安全な503として返します。
+
 ## テスト
 
 ```bash

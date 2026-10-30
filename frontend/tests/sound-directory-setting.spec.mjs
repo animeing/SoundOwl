@@ -188,6 +188,43 @@ test('successful registration still confirms completion', async ({ page }, testI
   await expect(page.getByText('Sound Registing.')).toBeHidden();
 });
 
+test('failure-history outage is visible after a scan that continues past a failed file', async ({ page }, testInfo) => {
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' });
+  await page.route('**/api/sound_regist.php', async (route) => {
+    await route.fulfill({
+      status: 200,
+      headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        count: 1,
+        failedCount: 1,
+        failures: [{ target: '/music/bad.wav', reason: 'Could not read audio metadata.' }],
+        historyUnavailable: true,
+      }),
+    });
+  });
+  await page.getByRole('button', { name: 'sound regist' }).click();
+  const notification = page.locator('sw-message-button[role="alert"]').last();
+  await expect(notification.locator('p')).toContainText('Failure history could not be saved');
+  await notification.locator('input[value="Details"]').click();
+  await expect(page.getByRole('dialog', { name: 'Incomplete sound files' }).getByText('/music/bad.wav')).toBeVisible();
+});
+
+test('history update failure is visible even when all files were registered', async ({ page }, testInfo) => {
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' });
+  await page.route('**/api/sound_regist.php', async (route) => {
+    await route.fulfill({
+      status: 200,
+      headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+      body: JSON.stringify({ count: 2, failedCount: 0, failures: [], historyUnavailable: true }),
+    });
+  });
+  await page.getByRole('button', { name: 'sound regist' }).click();
+  const notification = page.locator('sw-message-button[role="alert"]').last();
+  await expect(notification.locator('p')).toContainText('Failure history could not be saved');
+  await expect(notification.locator('input[value="Details"]')).toHaveCount(0);
+  await expect(page.getByText('Sound Registed.')).toHaveCount(0);
+});
+
 test('partial registration shows every incomplete file instead of a success message', async ({ page }, testInfo) => {
   await openSettings(page, testInfo, {
     effective_sound_directory: '/music/saved',

@@ -197,6 +197,71 @@ test('directory scan reports save and analysis queue failures without leaking in
   }
 });
 
+test('directory scan continues after a failure-history write error and reports missing persistence', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'soundowl-history-error-'));
+  const badFile = path.join(root, 'a-bad.wav').replaceAll('\\', '/');
+  const goodFile = path.join(root, 'z-good.wav').replaceAll('\\', '/');
+  await Promise.all([fs.writeFile(badFile, ''), fs.writeFile(goodFile, '')]);
+  const repo = fakeRepository();
+  const attempted = [];
+  const registrar = new SoundRegistrar({
+    repository: repo,
+    redis: { enqueueAudioProcessing: async () => {} },
+    metadataReader: async (file) => {
+      attempted.push(file);
+      if (file === badFile) throw new Error('parser detail');
+      return plainMetadata(file);
+    },
+    failureStore: {
+      record: async () => { throw new Error('database detail'); },
+      resolve: async () => {},
+    },
+  });
+  const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    assert.deepEqual(await registrar.registerDirectory(root), {
+      count: 1,
+      failedCount: 1,
+      failures: [{ target: badFile, reason: 'Could not read audio metadata.' }],
+      historyUnavailable: true,
+    });
+    assert.deepEqual(attempted.sort(), [badFile, goodFile].sort());
+  } finally {
+    errorLog.mockRestore();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('directory scan does not misclassify registered files when clearing old history fails', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'soundowl-history-resolve-'));
+  const firstFile = path.join(root, 'first.wav').replaceAll('\\', '/');
+  const secondFile = path.join(root, 'second.wav').replaceAll('\\', '/');
+  await Promise.all([fs.writeFile(firstFile, ''), fs.writeFile(secondFile, '')]);
+  const repo = fakeRepository();
+  const registrar = new SoundRegistrar({
+    repository: repo,
+    redis: { enqueueAudioProcessing: async () => {} },
+    metadataReader: plainMetadata,
+    failureStore: {
+      record: async () => assert.fail('successful files must not be recorded as failed'),
+      resolve: async () => { throw Object.assign(new Error('history unavailable'), { code: 'FAILURE_HISTORY_UNAVAILABLE' }); },
+    },
+  });
+  const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    assert.deepEqual(await registrar.registerDirectory(root), {
+      count: 2,
+      failedCount: 0,
+      failures: [],
+      historyUnavailable: true,
+    });
+    assert.equal(repo.sounds.size, 2);
+  } finally {
+    errorLog.mockRestore();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
 test('individual refresh reports file failures rather than a successful count', async () => {
   const repo = fakeRepository();
   repo.sounds.set('broken', { sound_hash: 'broken', data_link: '/music/broken.wav' });

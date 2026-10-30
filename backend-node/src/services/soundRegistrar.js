@@ -56,6 +56,7 @@ class SoundRegistrar {
   async registerDirectory(rootDirectory, exclusionPaths = []) {
     const files = await listSoundFiles(rootDirectory, exclusionPaths);
     const failures = [];
+    let historyUnavailable = false;
     for (const file of files) {
       if (!(await this.repository.findSoundByPath(file))) {
         try {
@@ -63,13 +64,27 @@ class SoundRegistrar {
         } catch (error) {
           // Continue the scan, but report each incomplete file instead of presenting the whole run as successful.
           console.error('Sound registration failed:', file, error);
+          if (error.code === 'FAILURE_HISTORY_UNAVAILABLE') {
+            historyUnavailable = true;
+            continue;
+          }
           const reason = registrationFailureReason(error);
-          await this.failureStore?.record(1, file, reason);
+          try {
+            await this.failureStore?.record(1, file, reason);
+          } catch (historyError) {
+            console.error('Could not save registration failure history:', file, historyError);
+            historyUnavailable = true;
+          }
           failures.push({ target: file, reason });
         }
       }
     }
-    return { count: await this.repository.countSounds(), failedCount: failures.length, failures };
+    return {
+      count: await this.repository.countSounds(),
+      failedCount: failures.length,
+      failures,
+      ...(historyUnavailable ? { historyUnavailable: true } : {}),
+    };
   }
 
   /**
@@ -92,6 +107,7 @@ class SoundRegistrar {
       }
     } catch (error) {
       console.error('Sound update failed:', existingSoundRecord.data_link, error);
+      if (error.code === 'FAILURE_HISTORY_UNAVAILABLE') throw error;
       const reason = registrationFailureReason(error);
       await this.failureStore?.record(1, existingSoundRecord.data_link, reason);
       return {

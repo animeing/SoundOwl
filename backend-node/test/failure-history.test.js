@@ -146,3 +146,34 @@ test('failure API reports database read errors without exposing their details', 
     errorLog.mockRestore();
   }
 });
+
+test('failure history database outage stops registration with a safe 503 instead of reporting a false file failure', async () => {
+  const database = fakeDatabase();
+  const originalQuery = database.query.bind(database);
+  database.query = async (sql, params) => {
+    if (sql.startsWith('DELETE FROM registration_failures WHERE')) throw new Error('private database detail');
+    return originalQuery(sql, params);
+  };
+  const registrar = new SoundRegistrar({
+    repository: {
+      findSoundByHash: async () => ({ sound_hash: 'hash', data_link: '/music/good.wav' }),
+      upsertSound: async (sound) => ({ action: 'updated', sound }),
+      countSounds: async () => 1,
+    },
+    redis: { enqueueAudioProcessing: async () => {} },
+    metadataReader: async () => ({ title: 'Good', artist: false, album: false, genre: false, lyrics: false, track: false, year: false, picture: null }),
+    failureStore: new RegistrationFailureStore(database),
+  });
+  const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    await assert.rejects(registrar.refreshByHash('hash'), (error) => {
+      assert.equal(error.status, 503);
+      assert.equal(error.code, 'FAILURE_HISTORY_UNAVAILABLE');
+      assert.equal(error.message.includes('private'), false);
+      return true;
+    });
+    assert.equal(database.records.size, 0);
+  } finally {
+    errorLog.mockRestore();
+  }
+});

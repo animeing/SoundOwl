@@ -100,15 +100,15 @@
       {
         "requested": "登録後にも設定画面のDetailでStep1/Step2別の失敗対象と理由を確認でき、一覧APIと画面を検証する",
         "delivered": "MariaDBにファイル・Step別の未解決失敗を保存し、同段階の成功で削除する。件数と50件以下のページ一覧を返すAPIを追加し、Current Statusの件数から独立コンポーネントのDetailへ誘導する。取得失敗は明示し、古い一覧を消す。",
-        "evidence": "backend-node/test/failure-history.test.js でStep1/Step2の失敗・再取得・再試行後の削除・例外・DB読取失敗を確認。backend-node/test 全78件、frontend/tests/sound-directory-setting.spec.mjs 全52件（4画面幅）と320px実スクリーンショット。test_scripts/backend_contract.test.js に実DB API契約を追加。",
+        "evidence": "backend-node/test/failure-history.test.js と registrar.test.js でStep1/Step2の失敗・再取得・再試行後の削除・例外・DB障害時の走査継続と安全な503を確認。backend-node/test 全81件、frontend/tests/sound-directory-setting.spec.mjs 全60件（4画面幅）と320px実スクリーンショット。test_scripts/backend_contract.test.js に実DB API契約を追加。",
         "status": "met"
       }
     ],
     "review": {
       "challenge": "登録直後の通知だけに依存せず後から確認できるか、Step1/Step2を混同しないか、同じ失敗の重複や成功後の残存がないか、DB障害時に古い一覧を成功状態と見せないかを反証した。長い一覧と320px画面で読めるか、通常再生に取得負担を載せないかも確認した。",
-      "finding": "前回の通知詳細は閉じると消え、Step2の後続失敗は拾えない。新画面の初版は小画面でDetail見出しが詰まり、既存レイアウト比較にも差分が出た。後者は変更前コンポーネントでも同じ87,434ピクセルの差分で再現し、手元環境と基準画像の差と判定した。DB停止時は同じDBへ失敗を記録できず、導入前の失敗も復元できない。",
-      "response": "未解決失敗のみをファイル・Step単位で更新し、同じStepの成功で消す。設定画面のCurrent Statusに件数、Detailに対象・理由・時刻・Stepフィルター・ページ操作と再試行方法を置く。取得失敗は不明と表示して古い結果を消す。Detail見出しを短くし、小画面は通常のページスクロールで末尾を読めるようにした。DB初期化時には失敗行も消す。",
-      "verified_against_source": "SoundRegistrar、AudioWorker、RegistrationFailureStore、registrationFailures APIとVue部品の呼出経路を照合。バックエンド全78件、設定画面Chromium 4幅の全52件、320px画面の実スクリーンショットとwebpack buildを確認した。実DBでのAPI形状はbackend_contract.test.jsをCIに追加した。ローカルの画面比較差分は変更前の同一画像差分との照合で原因を切り分けた。"
+      "finding": "前回の通知詳細は閉じると消え、Step2の後続失敗は拾えない。新画面の初版は小画面でDetail見出しが詰まり、既存レイアウト比較にも差分が出た。後者は変更前コンポーネントでも同じ87,434ピクセルの差分で再現し、手元環境と基準画像の差と判定した。PRレビューで履歴書込みエラーが走査全体を止める問題を指摘され、2ファイルの再現テストで確認した。DB停止時は同じDBへ失敗を記録できず、導入前の失敗も復元できない。",
+      "response": "未解決失敗のみをファイル・Step単位で更新し、同じStepの成功で消す。設定画面のCurrent Statusに件数、Detailに対象・理由・時刻・Stepフィルター・ページ操作と再試行方法を置く。取得失敗は不明と表示して古い結果を消す。履歴DB障害時は失敗情報を今回の応答に残して走査を続け、履歴保存失敗を画面へ通知する。個別更新では内部情報を出さない503にする。Detail見出しを短くし、小画面は通常のページスクロールで末尾を読めるようにした。DB初期化時には失敗行も消す。",
+      "verified_against_source": "SoundRegistrar、AudioWorker、RegistrationFailureStore、registrationFailures APIとVue部品の呼出経路を照合。バックエンド全81件、設定画面Chromium 4幅の全60件、320px画面の実スクリーンショットとwebpack buildを確認した。実DBでのAPI形状はbackend_contract.test.jsをCIに追加した。ローカルの画面比較差分は変更前の同一画像差分との照合で原因を切り分けた。"
     },
     "remaining": [],
     "application": "applied"

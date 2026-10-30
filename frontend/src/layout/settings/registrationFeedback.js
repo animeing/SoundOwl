@@ -2,19 +2,25 @@ import { MessageButtonWindow } from '../../base';
 
 /**
  * 登録結果を短く通知し、失敗ファイルの詳細は操作したときだけ表示する。
- * @param {{failedCount?:number,failures?:Array<{target:string,reason:string}>}|null|undefined} response 登録 API の応答。
+ * @param {{failedCount?:number,failures?:Array<{target:string,reason:string}>,historyUnavailable?:boolean}|null|undefined} response 登録 API の応答。
  * @returns {void} 完了または部分失敗の通知を表示する。
  */
 export function showSoundRegistrationResult(response) {
   const failedCount = Number(response?.failedCount) || 0;
   const failures = Array.isArray(response?.failures) ? response.failures : [];
+  const historyUnavailable = response?.historyUnavailable === true;
   const notification = new MessageButtonWindow();
-  notification.value = failedCount > 0
+  const resultText = failedCount > 0
     ? `Sound registration finished with ${failedCount} incomplete ${failedCount === 1 ? 'file' : 'files'}.`
     : 'Sound Registed.';
-  if (failedCount > 0) {
-    // HTTP 200 でも一部のファイルが失敗し得る。通知には件数だけを置く。
+  notification.value = historyUnavailable
+    ? `${failedCount > 0 ? resultText : 'Sound registration finished.'} Failure history could not be saved; keep this result and retry later.`
+    : resultText;
+  if (failedCount > 0 || historyUnavailable) {
+    // HTTP 200 でも一部のファイル失敗や履歴保存失敗があり得る。
     notification.setAttribute('role', 'alert');
+  }
+  if (failedCount > 0) {
     notification.classList.add('sound-registration-summary');
     notification.addItem('Details', () => showSoundRegistrationFailures(failures, failedCount));
   }
