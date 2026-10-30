@@ -134,6 +134,7 @@ test('directory scan keeps successful files and reports metadata failures with t
   await Promise.all([fs.writeFile(goodFile, ''), fs.writeFile(badFile, '')]);
   const repo = fakeRepository();
   const jobs = [];
+  const failureStore = { record: vi.fn(async () => {}), resolve: vi.fn(async () => {}) };
   const registrar = new SoundRegistrar({
     repository: repo,
     redis: { enqueueAudioProcessing: async (job) => jobs.push(job) },
@@ -141,6 +142,7 @@ test('directory scan keeps successful files and reports metadata failures with t
       if (file === badFile) throw new Error('private parser detail');
       return plainMetadata(file);
     },
+    failureStore,
   });
   const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
   try {
@@ -152,6 +154,8 @@ test('directory scan keeps successful files and reports metadata failures with t
     });
     assert.equal(repo.sounds.get(sha1(goodFile)).title, 'good.wav');
     assert.deepEqual(jobs, [{ file_path: goodFile, hash: sha1(goodFile) }]);
+    assert.deepEqual(failureStore.record.mock.calls, [[1, badFile, 'Could not read audio metadata.']]);
+    assert.deepEqual(failureStore.resolve.mock.calls, [[1, goodFile]]);
     assert.equal(errorLog.mock.calls.length, 1);
   } finally {
     errorLog.mockRestore();

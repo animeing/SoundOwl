@@ -17,7 +17,7 @@ const baseSettings = {
   websocket_retry_interval: 2500,
 };
 
-async function openSettings(page, testInfo, directorySettings) {
+async function openSettings(page, testInfo, directorySettings, failureResponse = null) {
   const frontendUrl = testInfo.project.use.baseURL;
   await installSyntheticNetworkMocks(page, DEFAULT_SYNTHETIC_BACKEND_URL);
   await installSyntheticFrontendConfigMock(page, frontendUrl, DEFAULT_SYNTHETIC_BACKEND_URL);
@@ -28,8 +28,92 @@ async function openSettings(page, testInfo, directorySettings) {
       body: JSON.stringify({ ...baseSettings, ...directorySettings }),
     });
   });
+  if (failureResponse) {
+    await page.route('**/api/registration_failures.php*', async (route) => {
+      const result = failureResponse(new URL(route.request().url()));
+      await route.fulfill({
+        status: result.status || 200,
+        headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+        body: JSON.stringify(result.body || result),
+      });
+    });
+  }
   await page.goto(buildRouteUrl(frontendUrl, '/setting'), { waitUntil: 'domcontentloaded' });
 }
+
+test('Current Status leads to persisted Step1 and Step2 failures after revisiting Settings', async ({ page }, testInfo) => {
+  let failures = [
+    { step: 1, target: '/music/unreadable.wav', reason: 'Could not read audio metadata.', updatedAt: '2026-10-31T00:00:00Z' },
+    { step: 2, target: '/music/quiet.wav', reason: 'Could not analyze audio loudness.', updatedAt: '2026-10-31T00:01:00Z' },
+  ];
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, (url) => {
+    const step = url.searchParams.get('step');
+    const matching = failures.filter((failure) => step === 'all' || `step${failure.step}` === step);
+    return {
+      counts: { step1: failures.filter((failure) => failure.step === 1).length, step2: failures.filter((failure) => failure.step === 2).length },
+      total: matching.length,
+      failures: matching,
+    };
+  });
+  await expect(page.getByText('2 failures · See Detail')).toBeVisible();
+  await expect(page.getByText('Needs attention')).toBeVisible();
+  await page.getByRole('button', { name: /Detail/ }).click();
+  await expect(page.getByText('/music/unreadable.wav')).toBeVisible();
+  await expect(page.getByText('/music/quiet.wav')).toBeVisible();
+  if (testInfo.project.name.includes('320x667')) {
+    await page.getByText('/music/quiet.wav').scrollIntoViewIfNeeded();
+    await page.mouse.wheel(0, 400);
+    await page.waitForTimeout(200);
+    await testInfo.attach('persistent-failures-detail', { body: await page.screenshot(), contentType: 'image/png' });
+  }
+  await page.getByRole('button', { name: 'Step2 (1)' }).click();
+  await expect(page.getByText('/music/quiet.wav')).toBeVisible();
+  await expect(page.getByText('/music/unreadable.wav')).toHaveCount(0);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByText('2 failures · See Detail')).toBeVisible();
+  await page.getByRole('button', { name: /Detail/ }).click();
+  await expect(page.getByText('/music/unreadable.wav')).toBeVisible();
+  failures = failures.filter((failure) => failure.step === 2);
+  await page.getByRole('button', { name: 'Refresh' }).click();
+  await expect(page.getByText('1 failure · See Detail')).toBeVisible();
+  await expect(page.getByText('/music/unreadable.wav')).toHaveCount(0);
+});
+
+test('failure list API errors are shown in Detail and the status cue recovers on retry', async ({ page }, testInfo) => {
+  let available = false;
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, () => available
+    ? { counts: { step1: 0, step2: 0 }, total: 0, failures: [] }
+    : { status: 503, body: { status: 'error' } });
+  await expect(page.getByText('Failure status unavailable · See Detail')).toBeVisible();
+  await page.getByRole('button', { name: /Detail/ }).click();
+  await expect(page.getByRole('alert').getByText('Could not load failure details.')).toBeVisible();
+  available = true;
+  await page.getByRole('button', { name: 'Refresh' }).click();
+  await expect(page.getByText('No unresolved failures recorded.')).toBeVisible();
+  await expect(page.getByText('Failure status unavailable · See Detail')).toHaveCount(0);
+});
+
+test('long failure lists can be browsed in bounded pages on Settings', async ({ page }, testInfo) => {
+  const failures = Array.from({ length: 30 }, (_, index) => ({
+    step: 1,
+    target: `/music/failed-${String(index).padStart(2, '0')}.wav`,
+    reason: 'Could not read audio metadata.',
+    updatedAt: '2026-10-31T00:00:00Z',
+  }));
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, (url) => {
+    const offset = Number(url.searchParams.get('offset'));
+    const limit = Number(url.searchParams.get('limit'));
+    return { counts: { step1: 30, step2: 0 }, total: 30, failures: failures.slice(offset, offset + limit) };
+  });
+  await page.getByRole('button', { name: /Detail/ }).click();
+  await expect(page.getByText('/music/failed-00.wav')).toBeVisible();
+  await expect(page.getByText('/music/failed-29.wav')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('/music/failed-29.wav')).toBeVisible();
+  await expect(page.getByText('26–30 / 30')).toBeVisible();
+  await page.getByRole('button', { name: 'Previous' }).click();
+  await expect(page.getByText('/music/failed-00.wav')).toBeVisible();
+});
 
 test('explicit environment directory is visible, locked, and does not replace the saved value', async ({ page }, testInfo) => {
   await openSettings(page, testInfo, {

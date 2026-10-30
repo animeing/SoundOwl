@@ -131,6 +131,8 @@ async function responseForApi(pathname, request) {
       return { regist_status: false };
     case 'lock_status.php':
       return { lock: false };
+    case 'registration_failures.php':
+      return { counts: { step1: 0, step2: 0 }, total: 0, failures: [], limit: 25, offset: 0 };
     case 'sound_equalizer_preset.json':
       return equalizerPresets();
     case 'audio_pulse_data_list.php':

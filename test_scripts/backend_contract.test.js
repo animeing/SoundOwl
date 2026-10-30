@@ -857,6 +857,25 @@ test('sound_regist reports scan failures and returns current count for successfu
   });
 });
 
+test('registration failure API serves bounded Step1 and Step2 pages from the deployed database', async () => {
+  const { json: all } = await fetchJson('/api/registration_failures.php?step=all&limit=2&offset=0');
+  assert.equal(Number.isInteger(all.counts.step1), true);
+  assert.equal(Number.isInteger(all.counts.step2), true);
+  assert.equal(all.total, all.counts.step1 + all.counts.step2);
+  assert.ok(Array.isArray(all.failures));
+  assert.ok(all.failures.length <= 2);
+  for (const failure of all.failures) {
+    assert.ok([1, 2].includes(failure.step));
+    assert.equal(typeof failure.target, 'string');
+    assert.equal(typeof failure.reason, 'string');
+  }
+  const { json: step1 } = await fetchJson('/api/registration_failures.php?step=step1&limit=2&offset=0');
+  assert.equal(step1.total, step1.counts.step1);
+  assert.ok(step1.failures.every((failure) => failure.step === 1));
+  const invalid = await fetch(`${BASE_URL}/api/registration_failures.php?limit=51`);
+  assert.equal(invalid.status, 400);
+});
+
 test('websocket sends status on open and broadcasts client messages', { timeout: 10000 }, async () => {
   const first = new WebSocket(WS_URL);
   const second = new WebSocket(WS_URL);

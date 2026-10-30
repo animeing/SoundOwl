@@ -19,39 +19,28 @@
     </v-card>
 
     <v-card class="box mb-12" style="background: inherit;">
-      <v-card-title>Current Status</v-card-title>
+      <v-card-title :class="failureCount > 0 || failureLoadError ? 'd-flex flex-wrap align-center ga-2' : ''">
+        Current Status
+        <v-chip v-if="failureCount > 0" color="error" size="small">{{ failureCount }} {{ failureCount === 1 ? 'failure' : 'failures' }} · See Detail</v-chip>
+        <v-chip v-else-if="failureLoadError" color="warning" size="small">Failure status unavailable · See Detail</v-chip>
+      </v-card-title>
         <v-divider></v-divider>
         <div>
           <v-card style="background: inherit;">
-            <v-card-title>
+            <v-card-title :class="{ 'status-heading': failureCount > 0 || failureLoadError }">
               <v-chip class="status-chip" color="red" v-if="registStatus">Action</v-chip>
+              <v-chip class="status-chip" color="red" v-else-if="failureCount > 0">Needs attention</v-chip>
+              <v-chip class="status-chip" color="warning" v-else-if="failureLoadError">Unknown</v-chip>
               <v-chip class="status-chip" color="green" v-else>Finished</v-chip>
               Regist Status
             </v-card-title>
             <v-card-text>
-              <v-expansion-panels rounded="md">
-                <v-expansion-panel>
-                  <v-expansion-panel-title>Detail</v-expansion-panel-title>
-                  <v-expansion-panel-text>
-                    <p>Regist Step1: 
-                      <v-chip color="red" v-if="registStatusStep1">
-                        Action
-                      </v-chip>
-                      <v-chip color="green" v-else>
-                        Finished
-                      </v-chip>
-                    </p>
-                    <p>Regist Step2: 
-                      <v-chip color="red" v-if="registStatusStep2">
-                        Action
-                      </v-chip>
-                      <v-chip color="green" v-else>
-                        Finished
-                      </v-chip>
-                    </p>
-                  </v-expansion-panel-text>
-                </v-expansion-panel>
-              </v-expansion-panels>
+              <RegistrationFailurePanel
+                ref="failurePanel"
+                :step1-running="registStatusStep1"
+                :step2-running="registStatusStep2"
+                @count-change="updateFailureCount"
+              />
             </v-card-text>
           </v-card>
           <v-card style="background: inherit;">
@@ -123,7 +112,9 @@ import { SoundOwlProperty } from '../../../websocket';
 import { GetSetting } from '../../../page';
 import { BaseFrameWork } from '../../../base';
 import { getBackendServer } from '../../../utilization/path';
+import RegistrationFailurePanel from './RegistrationFailurePanel.vue';
 export default {
+  components: { RegistrationFailurePanel },
   emits: ['backend-update'],
   props: {
     backendSaving: {
@@ -157,7 +148,9 @@ export default {
       registSoundCount:SoundOwlProperty.SoundRegist.RegistDataCount.sound,
       analysisSoundCount:SoundOwlProperty.SoundRegist.RegistDataCount.analysisSound,
       albumCount:SoundOwlProperty.SoundRegist.RegistDataCount.album,
-      artistCount: SoundOwlProperty.SoundRegist.RegistDataCount.artist
+      artistCount: SoundOwlProperty.SoundRegist.RegistDataCount.artist,
+      failureCount: 0,
+      failureLoadError: false
     };
   },
   mounted() {
@@ -168,6 +161,15 @@ export default {
     SoundOwlProperty.WebSocket.EventTarget.removeEventListener('update', this.updateCurrentStatus);
   },
   methods:{
+    /** Update the Current Status cue from the failure list API result. */
+    updateFailureCount({ count, error }) {
+      this.failureCount = count;
+      this.failureLoadError = error;
+    },
+    /** Reload failures after an explicit registration action finishes. */
+    refreshRegistrationFailures() {
+      return this.$refs.failurePanel?.refresh();
+    },
     reloadBackendSettings() {
       return new Promise((resolve) => {
         let getSettingAction = new GetSetting;
@@ -228,10 +230,13 @@ export default {
         .filter(Boolean);
     },
     updateCurrentStatus(){
-
+      const wasRegistering = this.registStatusStep1 || this.registStatusStep2;
       this.registStatus=SoundOwlProperty.SoundRegist.registStatus;
       this.registStatusStep1=SoundOwlProperty.SoundRegist.registStatusStep1;
       this.registStatusStep2=SoundOwlProperty.SoundRegist.registStatusStep2;
+      if (wasRegistering && !this.registStatusStep1 && !this.registStatusStep2) {
+        this.refreshRegistrationFailures();
+      }
 
       this.registSoundCount=SoundOwlProperty.SoundRegist.RegistDataCount.sound;
       this.analysisSoundCount=SoundOwlProperty.SoundRegist.RegistDataCount.analysisSound;
@@ -279,6 +284,10 @@ export default {
 
 .status-chip {
   padding-inline: 13px;
+}
+
+.status-heading {
+  white-space: normal;
 }
 
 .settings-panel {

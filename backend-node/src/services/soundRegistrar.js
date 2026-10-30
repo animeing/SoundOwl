@@ -23,7 +23,7 @@ function registrationFailureReason(error) {
 class SoundRegistrar {
   /**
    * SoundRegistrar を初期化します。
-   * @param {{repository:Record<string, Function>,redis:{enqueueAudioProcessing:(job:{file_path:string,hash:string})=>Promise<unknown>},metadataReader:(filePath:string)=>Promise<{hasTags:boolean,title:string|false,artist:string|false,album:string|false,genre:string|false,lyrics:string|false,track:string|false,year:string|false,picture:{data?:Buffer,mime?:string|null,length?:number|null}|null,raw:unknown}>,clock?:()=>Date}} dependencies 曲登録に必要な依存関係。
+   * @param {{repository:Record<string, Function>,redis:{enqueueAudioProcessing:(job:{file_path:string,hash:string})=>Promise<unknown>},metadataReader:(filePath:string)=>Promise<{hasTags:boolean,title:string|false,artist:string|false,album:string|false,genre:string|false,lyrics:string|false,track:string|false,year:string|false,picture:{data?:Buffer,mime?:string|null,length?:number|null}|null,raw:unknown}>,failureStore?:{record:Function,resolve:Function}|null,clock?:()=>Date}} dependencies 曲登録に必要な依存関係。
    * @param {object} dependencies.repository 曲、アーティスト、アルバム、件数を読み書きする repository。
    * @param {Function} dependencies.repository.findSoundByPath data_link から既存曲を検索します。
    * @param {Function} dependencies.repository.findSoundByHash sound_hash から既存曲を検索します。
@@ -36,12 +36,14 @@ class SoundRegistrar {
    * @param {object} dependencies.redis 音量解析キューへ登録ジョブを投入する DAO。
    * @param {Function} dependencies.redis.enqueueAudioProcessing Step2 の音量解析キューへ {file_path, hash} を投入します。
    * @param {Function} dependencies.metadataReader 音声ファイルパスから正規化済みメタデータを読み込む関数。
+   * @param {object|null} [dependencies.failureStore] Step1 の未解決失敗を保存し、成功時に消すストア。
    * @param {Function} [dependencies.clock] add_time を固定したいテストで差し替える現在時刻取得関数。
    */
-  constructor({ repository, redis, metadataReader, clock = () => new Date() }) {
+  constructor({ repository, redis, metadataReader, failureStore = null, clock = () => new Date() }) {
     this.repository = repository;
     this.redis = redis;
     this.metadataReader = metadataReader;
+    this.failureStore = failureStore;
     this.clock = clock;
   }
 
@@ -61,7 +63,9 @@ class SoundRegistrar {
         } catch (error) {
           // Continue the scan, but report each incomplete file instead of presenting the whole run as successful.
           console.error('Sound registration failed:', file, error);
-          failures.push({ target: file, reason: registrationFailureReason(error) });
+          const reason = registrationFailureReason(error);
+          await this.failureStore?.record(1, file, reason);
+          failures.push({ target: file, reason });
         }
       }
     }
@@ -88,9 +92,11 @@ class SoundRegistrar {
       }
     } catch (error) {
       console.error('Sound update failed:', existingSoundRecord.data_link, error);
+      const reason = registrationFailureReason(error);
+      await this.failureStore?.record(1, existingSoundRecord.data_link, reason);
       return {
         count: await this.repository.countSounds(),
-        error: { target: existingSoundRecord.data_link, reason: registrationFailureReason(error) },
+        error: { target: existingSoundRecord.data_link, reason },
       };
     }
     return { count: await this.repository.countSounds() };
@@ -128,6 +134,7 @@ class SoundRegistrar {
     } catch (error) {
       throw new RegistrationFailure('Sound saved, but audio analysis could not be queued.', error);
     }
+    await this.failureStore?.resolve(1, filePath);
     return soundUpsertResult;
   }
 

@@ -69,6 +69,7 @@ export default {
         await saveBackendServer(this.$refs.formRef.getBackendServer());
         const settings = await this.$refs.formRef.reloadBackendSettings();
         this.$refs.formRef.applyBackendSettings(settings);
+        this.$refs.formRef.refreshRegistrationFailures();
         reconnectWebSocket();
         this.isBackendReady = true;
         const message = new MessageWindow();
@@ -131,10 +132,12 @@ export default {
         soundRegistAction.httpRequestor.addEventListener('success', event => {
           registrationProgress.close();
           showSoundRegistrationResult(event.detail?.response);
+          this.$refs.formRef.refreshRegistrationFailures();
         });
         soundRegistAction.httpRequestor.addEventListener('error', event => {
           registrationProgress.close();
           showSoundRegistrationError(event.detail?.response);
+          this.$refs.formRef.refreshRegistrationFailures();
         });
         soundRegistAction.execute();
       }).catch(error => showSoundRegistrationError({ detail: error.message }));

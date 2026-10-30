@@ -21,6 +21,7 @@ function createApiHandlers(deps) {
     settingsStore,
     schemaService,
     registrar,
+    failureStore,
     mediaService,
     pulseStore,
     fontPath,
@@ -61,6 +62,28 @@ function createApiHandlers(deps) {
     async setupDatabaseTable() {
       await schemaService.create();
       return json({ status: 'success' });
+    },
+
+    /** Return a bounded page of unresolved Step1/Step2 failures for Settings Detail. */
+    async registrationFailures({ query }) {
+      const requestedStep = query.step || 'all';
+      const requestedLimit = query.limit === undefined ? 25 : Number(query.limit);
+      const requestedOffset = query.offset === undefined ? 0 : Number(query.offset);
+      if (!['all', 'step1', 'step2'].includes(requestedStep)
+        || !Number.isSafeInteger(requestedLimit) || requestedLimit < 0 || requestedLimit > 50
+        || !Number.isSafeInteger(requestedOffset) || requestedOffset < 0) {
+        return json({ status: 'error', detail: 'Invalid failure list parameters.' }, 400);
+      }
+      try {
+        return json(await failureStore.list({
+          step: requestedStep === 'all' ? null : Number(requestedStep.slice(-1)),
+          limit: requestedLimit,
+          offset: requestedOffset,
+        }));
+      } catch (error) {
+        console.error('Could not load registration failures:', error);
+        return json({ status: 'error', detail: 'Could not load registration failures.' }, 503);
+      }
     },
 
     async soundAddtimeList() {
