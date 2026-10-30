@@ -422,38 +422,80 @@ sw-save-message > div > input[type="text"] {
   margin: 0;
 }
 
-/* 部分失敗時だけ一覧を独立したスクロール領域にし、見出しと閉じるボタンを固定する。 */
-sw-message-button.sound-registration-failure-list {
+/* 上部通知は件数と操作だけにし、ファイルごとの調査情報は要求時に開く。 */
+sw-message-button.sound-registration-summary > div > input[type="button"] {
+  width: auto;
+  min-width: 8em;
+}
+
+dialog.sound-registration-details {
+  box-sizing: border-box;
+  width: min(42rem, calc(100vw - 24px));
+  max-height: 80vh;
+  padding: 16px;
+  overflow: hidden;
+  background: rgb(var(--v-theme-surface));
+  color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.38);
+  border-radius: 8px;
+}
+
+dialog.sound-registration-details[open] {
   display: flex;
   flex-direction: column;
-  max-height: min(70vh, 500px);
+  gap: 12px;
 }
 
-sw-message-button.sound-registration-failure-list > p,
-sw-message-button.sound-registration-failure-list > div {
-  flex: none;
+dialog.sound-registration-details::backdrop {
+  background: rgba(0, 0, 0, 0.6);
 }
 
-sw-message-button.sound-registration-failure-list > .sound-registration-scroll-hint {
+dialog.sound-registration-details > h2,
+dialog.sound-registration-details > p {
+  margin: 0;
+}
+
+dialog.sound-registration-details > h2 {
+  font-size: 1.2em;
+}
+
+dialog.sound-registration-details > .sound-registration-scroll-hint {
   font-size: 0.875em;
-  margin: 4px 12px 0;
 }
 
-sw-message-button.sound-registration-failure-list > ul {
+dialog.sound-registration-details > ol {
   min-height: 0;
+  margin: 0;
+  padding: 0 4px 8px 28px;
   overflow-y: auto;
   overflow-wrap: anywhere;
   scrollbar-gutter: stable;
-  text-align: left;
-  margin: 8px 12px;
-  padding: 6px 8px 6px 28px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.38);
-  border-radius: 4px;
+  user-select: text;
 }
 
-sw-message-button.sound-registration-failure-list.height-hide {
-  max-height: 0;
-  overflow: hidden;
+dialog.sound-registration-details li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.2);
+}
+
+dialog.sound-registration-details li > code,
+dialog.sound-registration-details li > span {
+  display: block;
+}
+
+dialog.sound-registration-details li > code {
+  white-space: normal;
+}
+
+dialog.sound-registration-details > button {
+  align-self: flex-end;
+  min-width: 8em;
+  padding: 4px 12px;
+  background: transparent;
+  color: inherit;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.38);
+  border-radius: 1.5rem;
+  cursor: pointer;
 }
 
 .hide {

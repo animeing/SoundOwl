@@ -82,7 +82,7 @@ test('registration errors are visible, with a safe fallback for unexpected serve
   await page.getByRole('button', { name: 'sound regist' }).click();
   let errorMessage = page.locator('sw-message-button').last();
   await expect(errorMessage.locator('p')).toHaveText(errorResponse.body.detail);
-  await expect(errorMessage).not.toHaveClass(/sound-registration-failure-list/);
+  await expect(errorMessage).not.toHaveClass(/sound-registration-summary/);
   await expect(page.getByText('Sound Registing.')).toBeHidden();
   await errorMessage.locator('input[type="button"]').click();
 
@@ -90,7 +90,7 @@ test('registration errors are visible, with a safe fallback for unexpected serve
   await page.getByRole('button', { name: 'sound regist' }).click();
   errorMessage = page.locator('sw-message-button').last();
   await expect(errorMessage.locator('p')).toHaveText('Could not register sounds. Check the Sound Directory and try again.');
-  await expect(errorMessage).not.toHaveClass(/sound-registration-failure-list/);
+  await expect(errorMessage).not.toHaveClass(/sound-registration-summary/);
   await expect(page.getByText('Sound Registing.')).toBeHidden();
 });
 test('successful registration still confirms completion', async ({ page }, testInfo) => {
@@ -100,7 +100,7 @@ test('successful registration still confirms completion', async ({ page }, testI
   });
   await page.getByRole('button', { name: 'sound regist' }).click();
   await expect(page.locator('sw-message-button').last().locator('p')).toHaveText('Sound Registed.');
-  await expect(page.locator('sw-message-button').last()).not.toHaveClass(/sound-registration-failure-list/);
+  await expect(page.locator('sw-message-button').last()).not.toHaveClass(/sound-registration-summary/);
   await expect(page.getByText('Sound Registing.')).toBeHidden();
 });
 
@@ -125,18 +125,50 @@ test('partial registration shows every incomplete file instead of a success mess
   });
   await page.getByRole('button', { name: 'sound regist' }).click();
   const notification = page.locator('sw-message-button[role="alert"]').last();
-  await expect(notification).toHaveClass(/sound-registration-failure-list/);
-  await expect(notification.locator('p')).toContainText('2 incomplete file(s)');
-  await expect(notification.locator('li')).toHaveText([
-    '/music/bad.wav: Could not read audio metadata.',
-    '/music/queue.wav: Sound saved, but audio analysis could not be queued.',
+  await expect(notification).toHaveClass(/sound-registration-summary/);
+  await expect(notification.locator('p')).toHaveText('Sound registration finished with 2 incomplete files.');
+  await expect(notification.locator('li')).toHaveCount(0);
+  await notification.locator('input[value="Details"]').click();
+  const details = page.getByRole('dialog', { name: 'Incomplete sound files' });
+  await expect(details.locator('li > code')).toHaveText([
+    '/music/bad.wav',
+    '/music/queue.wav',
   ]);
-  await expect(notification.locator('.sound-registration-scroll-hint')).toHaveCount(0);
+  await expect(details.locator('li > span')).toHaveText([
+    'Could not read audio metadata.',
+    'Sound saved, but audio analysis could not be queued.',
+  ]);
+  await expect(details.locator('.sound-registration-scroll-hint')).toHaveCount(0);
+  await details.getByRole('button', { name: 'Close' }).click();
+  await expect(details).toHaveCount(0);
+  await expect(notification).toBeVisible();
   await expect(page.getByText('Sound Registed.')).toHaveCount(0);
   await expect(page.getByText('Sound Registing.')).toBeHidden();
 });
 
-test('long failure lists remain readable and the notification can be closed', async ({ page }, testInfo) => {
+test('missing file details are explained instead of showing an empty dialog', async ({ page }, testInfo) => {
+  await openSettings(page, testInfo, {
+    effective_sound_directory: '/music/saved',
+    sound_directory_source: 'settings',
+  });
+  await page.route('**/api/sound_regist.php', async (route) => {
+    await route.fulfill({
+      status: 200,
+      headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+      body: JSON.stringify({ count: 0, failedCount: 1, failures: [] }),
+    });
+  });
+  await page.getByRole('button', { name: 'sound regist' }).click();
+  const notification = page.locator('sw-message-button.sound-registration-summary');
+  await expect(notification.locator('p')).toHaveText('Sound registration finished with 1 incomplete file.');
+  await notification.locator('input[value="Details"]').click();
+  const details = page.getByRole('dialog', { name: 'Incomplete sound files' });
+  await expect(details.getByText('The server did not provide file details.')).toBeVisible();
+  await expect(details.locator('li')).toHaveCount(0);
+  await details.getByRole('button', { name: 'Close' }).click();
+});
+
+test('long failure lists open on demand and remain readable', async ({ page }, testInfo) => {
   await openSettings(page, testInfo, {
     effective_sound_directory: '/music/saved',
     sound_directory_source: 'settings',
@@ -153,9 +185,17 @@ test('long failure lists remain readable and the notification can be closed', as
     });
   });
   await page.getByRole('button', { name: 'sound regist' }).click();
-  const notification = page.locator('sw-message-button.sound-registration-failure-list');
-  await expect(notification.locator('li').last()).toContainText(failures.at(-1).target);
-  const failureList = notification.locator('ul');
+  const notification = page.locator('sw-message-button.sound-registration-summary');
+  await expect(notification.locator('p')).toHaveText('Sound registration finished with 30 incomplete files.');
+  await expect(notification.locator('li')).toHaveCount(0);
+  await expect(page.getByText('Sound Registing.')).toBeHidden();
+  if (testInfo.project.name.endsWith('320x667')) {
+    await testInfo.attach('failure-summary', { body: await page.screenshot(), contentType: 'image/png' });
+  }
+  await notification.locator('input[value="Details"]').click();
+  const details = page.getByRole('dialog', { name: 'Incomplete sound files' });
+  await expect(details.locator('li').last()).toContainText(failures.at(-1).target);
+  const failureList = details.locator('ol');
   const dimensions = await failureList.evaluate((element) => ({
     clientHeight: element.clientHeight,
     scrollHeight: element.scrollHeight,
@@ -164,24 +204,30 @@ test('long failure lists remain readable and the notification can be closed', as
   }));
   expect(dimensions.scrollHeight).toBeGreaterThan(dimensions.clientHeight);
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
-  await expect(notification.locator('.sound-registration-scroll-hint')).toBeVisible();
-  await expect(page.getByText('Sound Registing.')).toBeHidden();
+  await expect(details.locator('.sound-registration-scroll-hint')).toBeVisible();
+  await expect(details.getByRole('button', { name: 'Close' })).toBeInViewport();
   if (testInfo.project.name.endsWith('320x667')) {
-    await testInfo.attach('long-failure-list-start', { body: await page.screenshot(), contentType: 'image/png' });
+    await testInfo.attach('failure-dialog-start', { body: await page.screenshot(), contentType: 'image/png' });
   }
   await failureList.focus();
   await page.keyboard.press('End');
-  await expect.poll(() => notification.locator('li').last().evaluate((lastFailure) => {
+  await expect.poll(() => details.locator('li').last().evaluate((lastFailure) => {
     const list = lastFailure.parentElement;
     const targetBounds = lastFailure.getBoundingClientRect();
     const listBounds = list.getBoundingClientRect();
     return targetBounds.top >= listBounds.top && targetBounds.bottom <= listBounds.bottom;
   })).toBe(true);
   if (testInfo.project.name.endsWith('320x667')) {
-    await testInfo.attach('long-failure-list-end', { body: await page.screenshot(), contentType: 'image/png' });
+    await testInfo.attach('failure-dialog-end', { body: await page.screenshot(), contentType: 'image/png' });
   }
-  await expect(notification.locator('input[type="button"]')).toBeInViewport();
-  await notification.locator('input[type="button"]').click();
+  await page.keyboard.press('Escape');
+  await expect(details).toHaveCount(0);
+  await expect(notification).toBeVisible();
+  await notification.locator('input[value="Details"]').click();
+  await details.getByRole('button', { name: 'Close' }).click();
+  await expect(details).toHaveCount(0);
+  await expect(notification.locator('input[value="Close"]')).toBeInViewport();
+  await notification.locator('input[value="Close"]').click();
   await expect(notification).toHaveCount(0);
 });
 test('status check failures and an active scan are reported before registration starts', async ({ page }, testInfo) => {
@@ -254,7 +300,11 @@ test('setup reports partial registration instead of completion', async ({ page }
   await page.goto(buildRouteUrl(frontendUrl, '/setup'), { waitUntil: 'domcontentloaded' });
   await page.locator('input[value="SetUp"]').click();
   const notification = page.locator('sw-message-button[role="alert"]').last();
-  await expect(notification.locator('li')).toHaveText('/music/bad.wav: Could not read audio metadata.');
+  await expect(notification.locator('p')).toHaveText('Sound registration finished with 1 incomplete file.');
+  await notification.locator('input[value="Details"]').click();
+  const details = page.getByRole('dialog', { name: 'Incomplete sound files' });
+  await expect(details.locator('li > code')).toHaveText('/music/bad.wav');
+  await expect(details.locator('li > span')).toHaveText('Could not read audio metadata.');
   await expect(page.getByText('Sound Registed.')).toHaveCount(0);
   await expect(page.getByText('Sound Registing.')).toBeHidden();
 });
