@@ -1,7 +1,7 @@
 import { MessageButtonWindow } from '../../base';
 
 /**
- * 登録結果に失敗ファイルが含まれるとき、件数・対象・処理段階を表示する。
+ * 登録完了を通知し、失敗ファイルがあれば件数・対象・処理段階も表示する。
  * @param {{failedCount?:number,failures?:Array<{target:string,reason:string}>}|null|undefined} response 登録 API の応答。
  * @returns {void} 完了または部分失敗の通知を表示する。
  */
@@ -10,14 +10,38 @@ export function showSoundRegistrationResult(response) {
   const failures = Array.isArray(response?.failures) ? response.failures : [];
   const notification = new MessageButtonWindow();
   notification.value = failedCount > 0
-    ? `Sound registration finished with ${failedCount} incomplete file(s).\n${failures.map(({ target, reason }) => `${target}: ${reason}`).join('\n')}`
+    ? `Sound registration finished with ${failedCount} incomplete file(s).`
     : 'Sound Registed.';
+  let failureList;
   if (failedCount > 0) {
+    // HTTP 200 でも一部のファイルが失敗し得る。成功通知には失敗一覧を付けない。
     notification.setAttribute('role', 'alert');
-    notification.classList.add('sound-registration-failures');
+    notification.classList.add('sound-registration-failure-list');
+    failureList = document.createElement('ul');
+    failureList.setAttribute('aria-label', 'Incomplete files');
+    failureList.tabIndex = 0;
+    for (const { target, reason } of failures) {
+      const failureItem = document.createElement('li');
+      failureItem.textContent = `${target}: ${reason}`;
+      failureList.appendChild(failureItem);
+    }
   }
   notification.addItem('Close', () => notification.close());
   notification.open();
+  if (failureList) {
+    // 共通通知の親要素は load 時まで未接続の場合があるため、接続後に本文とボタンの間へ配置する。
+    const attachFailureList = () => {
+      notification.insertBefore(failureList, notification.buttonFrame);
+      if (failureList.scrollHeight > failureList.clientHeight) {
+        const scrollHint = document.createElement('p');
+        scrollHint.className = 'sound-registration-scroll-hint';
+        scrollHint.textContent = 'Scroll the list to view all incomplete files.';
+        notification.insertBefore(scrollHint, failureList);
+      }
+    };
+    if (notification.isConnected) attachFailureList();
+    else window.addEventListener('load', attachFailureList, { once: true });
+  }
 }
 
 /**

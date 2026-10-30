@@ -422,20 +422,36 @@ sw-save-message > div > input[type="text"] {
   margin: 0;
 }
 
-/* 登録失敗が多数でも、共通通知の500px上限内で対象と閉じるボタンを確認できるようにする。 */
-sw-message-button.sound-registration-failures {
+/* 部分失敗時だけ一覧を独立したスクロール領域にし、見出しと閉じるボタンを固定する。 */
+sw-message-button.sound-registration-failure-list {
   display: flex;
   flex-direction: column;
   max-height: min(70vh, 500px);
 }
 
-sw-message-button.sound-registration-failures > p {
+sw-message-button.sound-registration-failure-list > p,
+sw-message-button.sound-registration-failure-list > div {
+  flex: none;
+}
+
+sw-message-button.sound-registration-failure-list > .sound-registration-scroll-hint {
+  font-size: 0.875em;
+  margin: 4px 12px 0;
+}
+
+sw-message-button.sound-registration-failure-list > ul {
   min-height: 0;
   overflow-y: auto;
   overflow-wrap: anywhere;
+  scrollbar-gutter: stable;
+  text-align: left;
+  margin: 8px 12px;
+  padding: 6px 8px 6px 28px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.38);
+  border-radius: 4px;
 }
 
-sw-message-button.sound-registration-failures.height-hide {
+sw-message-button.sound-registration-failure-list.height-hide {
   max-height: 0;
   overflow: hidden;
 }
