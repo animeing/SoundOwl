@@ -90,15 +90,17 @@ export default {
     openPanel(value) {
       if (value === 0) {
         this.refresh();
-        if (this.$refs.analysisList && !this.$refs.analysisList.loading) this.$refs.analysisList.refresh();
+        if (this.$refs.analysisList && !this.$refs.analysisList.loading) this.refreshAnalysisList();
       }
     },
     analysisGap(value, previous) {
-      if (value > 0 && previous > 0 && value !== previous) this.$refs.analysisList?.refresh();
+      if (value > 0 && previous > 0 && value !== previous) this.refreshAnalysisList();
     }
   },
   mounted() { this.refresh(); },
   methods: {
+    /** Reload the analysis list after the backend or registration state changes. */
+    refreshAnalysisList() { return this.$refs.analysisList?.refresh(); },
     /** Reload the current page and notify the parent of the total for its status cue. */
     async refresh() {
       const currentRequest = ++this.requestNumber;

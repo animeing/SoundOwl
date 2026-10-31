@@ -187,6 +187,32 @@ test('analysis list load error is visible and Refresh recovers', async ({ page }
   await expect(page.getByRole('alert').getByText('Could not load sounds without an analysis count.')).toHaveCount(0);
 });
 
+test('switching backends refreshes the analysis list even when both gaps are equal', async ({ page }, testInfo) => {
+  const nextBackend = 'http://127.0.0.2:18081/';
+  await page.route('**/front-api/settings', async (route) => {
+    await route.fulfill({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ backendServer: nextBackend, websocketServer: 'ws://127.0.0.1:8080' }),
+    });
+  });
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, null, (url) => ({
+    total: 2,
+    sounds: [{
+      hash: url.hostname === '127.0.0.2' ? 'new-library' : 'old-library',
+      title: url.hostname === '127.0.0.2' ? 'New library track' : 'Old library track',
+      path: url.hostname === '127.0.0.2' ? '/new/track.wav' : '/old/track.wav',
+    }],
+  }));
+  await page.getByRole('button', { name: /Detail/ }).click();
+  await expect(page.getByText('Old library track')).toBeVisible();
+  await page.getByRole('textbox', { name: 'Backend Server' }).fill(nextBackend);
+  await page.getByRole('button', { name: 'backend update' }).click();
+  await expect(page.getByText('New library track')).toBeVisible();
+  await expect(page.getByText('Old library track')).toHaveCount(0);
+  await expect(page.getByText('2 not counted as analyzed · See Detail')).toBeVisible();
+});
+
 test('analysis gap list pages through more than 25 sounds', async ({ page }, testInfo) => {
   const sounds = Array.from({ length: 30 }, (_, index) => ({
     hash: `sound-${index}`,

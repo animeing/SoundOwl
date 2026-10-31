@@ -174,9 +174,10 @@ export default {
       this.failureCount = count;
       this.failureLoadError = error;
     },
-    /** Reload failures after an explicit registration action finishes. */
-    refreshRegistrationFailures() {
-      return this.$refs.failurePanel?.refresh();
+    /** Reload both detail lists after a backend change or registration action. */
+    refreshRegistrationDetails() {
+      const panel = this.$refs.failurePanel;
+      return Promise.all([panel?.refresh(), panel?.refreshAnalysisList()]);
     },
     reloadBackendSettings() {
       return new Promise((resolve) => {
@@ -243,7 +244,7 @@ export default {
       this.registStatusStep1=SoundOwlProperty.SoundRegist.registStatusStep1;
       this.registStatusStep2=SoundOwlProperty.SoundRegist.registStatusStep2;
       if (wasRegistering && !this.registStatusStep1 && !this.registStatusStep2) {
-        this.refreshRegistrationFailures();
+        this.refreshRegistrationDetails();
       }
 
       this.registSoundCount=SoundOwlProperty.SoundRegist.RegistDataCount.sound;
