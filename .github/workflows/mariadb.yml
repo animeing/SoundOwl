@@ -40,7 +40,11 @@ jobs:
         echo "MariaDB not ready" && exit 1
 
     - name: Apply initial SQL
-      run: $MYSQL test_db < parts/setup/db/soundowl_table_mysql.sql
+      run: |
+        set -o pipefail
+        # Keep the event disabled until the explicit schema and procedure checks finish.
+        # The production setup SQL still enables it during a real installation.
+        sed '/^SET GLOBAL event_scheduler = ON;$/d' parts/setup/db/soundowl_table_mysql.sql | $MYSQL test_db
 
     # ───────── オブジェクト検証 ─────────
     - name: Verify objects
