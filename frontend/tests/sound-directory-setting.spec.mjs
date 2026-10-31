@@ -60,10 +60,21 @@ test('Current Status leads to persisted Step1 and Step2 failures after revisitin
   await page.getByRole('button', { name: /Detail/ }).click();
   await expect(page.getByText('/music/unreadable.wav')).toBeVisible();
   await expect(page.getByText('/music/quiet.wav')).toBeVisible();
+  await expect.poll(async () => {
+    const panel = await page.locator('.v-expansion-panel-text').boundingBox();
+    const lastFailure = await page.locator('.failure-row').last().boundingBox();
+    return Boolean(panel && lastFailure && lastFailure.y + lastFailure.height <= panel.y + panel.height + 1);
+  }).toBe(true);
+  const failureDetailsWidth = await page.locator('.registration-details').evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(failureDetailsWidth.scrollWidth).toBeLessThanOrEqual(failureDetailsWidth.clientWidth);
+  if (testInfo.project.name.includes('1920x1080')) {
+    await testInfo.attach('persistent-failures-detail', { body: await page.screenshot(), contentType: 'image/png' });
+  }
   if (testInfo.project.name.includes('320x667')) {
     await page.getByText('/music/quiet.wav').scrollIntoViewIfNeeded();
-    await page.mouse.wheel(0, 400);
-    await page.waitForTimeout(200);
     await testInfo.attach('persistent-failures-detail', { body: await page.screenshot(), contentType: 'image/png' });
   }
   await page.getByRole('button', { name: 'Step2 (1)' }).click();
@@ -77,6 +88,11 @@ test('Current Status leads to persisted Step1 and Step2 failures after revisitin
   await page.getByRole('button', { name: 'Refresh' }).click();
   await expect(page.getByText('1 failure · See Detail')).toBeVisible();
   await expect(page.getByText('/music/unreadable.wav')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Step2 (1)' }).click();
+  failures = [];
+  await page.getByRole('button', { name: 'Refresh' }).click();
+  await expect(page.getByText('No unresolved failures recorded.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Filter failures by step' })).toHaveCount(0);
 });
 
 test('failure list API errors are shown in Detail and the status cue recovers on retry', async ({ page }, testInfo) => {
@@ -91,6 +107,29 @@ test('failure list API errors are shown in Detail and the status cue recovers on
   await page.getByRole('button', { name: 'Refresh' }).click();
   await expect(page.getByText('No unresolved failures recorded.')).toBeVisible();
   await expect(page.getByText('Failure status unavailable · See Detail')).toHaveCount(0);
+});
+
+test('empty registration details show a compact result without irrelevant filters', async ({ page }, testInfo) => {
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, () => ({
+    counts: { step1: 0, step2: 0 }, total: 0, failures: [],
+  }));
+  await page.getByRole('button', { name: /Detail/ }).click();
+  await expect(page.getByText('No unresolved failures recorded.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Refresh' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Filter failures by step' })).toHaveCount(0);
+  await expect(page.getByText('After fixing a file')).toHaveCount(0);
+  const details = page.locator('.registration-details');
+  const dimensions = await details.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
+  if (testInfo.project.name.includes('1920x1080') || testInfo.project.name.includes('320x667')) {
+    if (testInfo.project.name.includes('320x667')) {
+      await page.getByText('No unresolved failures recorded.').scrollIntoViewIfNeeded();
+    }
+    await testInfo.attach('empty-registration-detail', { body: await page.screenshot(), contentType: 'image/png' });
+  }
 });
 
 test('long failure lists can be browsed in bounded pages on Settings', async ({ page }, testInfo) => {
