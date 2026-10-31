@@ -891,6 +891,12 @@ test('unanalysed sound API explains the Analysis/Sound Count gap with bounded DB
     assert.equal(firstPage.total, 2);
     const { json: secondPage } = await fetchJson('/api/unanalysed_sounds.php?limit=1&offset=1');
     assert.deepEqual([firstPage.sounds[0].title, secondPage.sounds[0].title], ['No Album Song', 'Alpha Track Ten']);
+    const { json: byTitle } = await fetchJson('/api/unanalysed_sounds.php?search=No%20Album');
+    assert.deepEqual(byTitle.sounds.map((sound) => sound.title), ['No Album Song']);
+    const { json: byPath } = await fetchJson('/api/unanalysed_sounds.php?search=track-03');
+    assert.deepEqual(byPath.sounds.map((sound) => sound.title), ['Alpha Track Ten']);
+    const { json: literalPercent } = await fetchJson('/api/unanalysed_sounds.php?search=%25');
+    assert.equal(literalPercent.total, 0);
   }
   const { json: countOnly } = await fetchJson('/api/unanalysed_sounds.php?limit=0');
   assert.equal(countOnly.total, firstPage.total);

@@ -28,6 +28,11 @@ test('analysis gap list returns the same zero-value sounds excluded from Analysi
   assert.equal(queries[1].sql.includes('ORDER BY add_time DESC, sound_hash ASC LIMIT ? OFFSET ?'), true);
   assert.deepEqual(queries[1].parameters, [25, 0]);
   queries.length = 0;
+  await metrics.listSoundsWithoutAnalysis({ limit: 1, offset: 2, searchTerm: '100%_song' });
+  assert.match(queries[0].sql, /LOCATE\(\?, title\) > 0 OR LOCATE\(\?, data_link\) > 0/);
+  assert.deepEqual(queries[0].parameters, ['100%_song', '100%_song']);
+  assert.deepEqual(queries[1].parameters, ['100%_song', '100%_song', 1, 2]);
+  queries.length = 0;
   assert.deepEqual((await metrics.listSoundsWithoutAnalysis({ limit: 0, offset: 0 })).sounds, []);
   assert.equal(queries.length, 1);
 });
@@ -43,8 +48,10 @@ test('analysis gap API validates bounds and hides database error details', async
     limit: 1,
     offset: 0,
   });
-  assert.deepEqual(repository.listSoundsWithoutAnalysis.mock.calls[0][0], { limit: 1, offset: 0 });
-  for (const query of [{ limit: '51' }, { limit: '-1' }, { offset: '-1' }, { offset: '1.5' }]) {
+  assert.deepEqual(repository.listSoundsWithoutAnalysis.mock.calls[0][0], { limit: 1, offset: 0, searchTerm: '' });
+  await handlers.unanalysedSounds({ query: { search: '  Track  ' } });
+  assert.deepEqual(repository.listSoundsWithoutAnalysis.mock.calls[1][0], { limit: 25, offset: 0, searchTerm: 'Track' });
+  for (const query of [{ limit: '51' }, { limit: '-1' }, { offset: '-1' }, { offset: '1.5' }, { search: 'x'.repeat(201) }, { search: 123 }]) {
     assert.equal((await handlers.unanalysedSounds({ query })).status, 400);
   }
   repository.listSoundsWithoutAnalysis.mockRejectedValueOnce(new Error('private database detail'));

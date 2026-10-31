@@ -12,8 +12,9 @@
           <section class="failure-section" aria-labelledby="failure-heading">
             <div class="failure-heading">
               <h3 id="failure-heading" class="text-subtitle-1 font-weight-medium">Unresolved failures</h3>
-              <v-btn size="small" color="primary" variant="tonal" :loading="loading" @click="refresh">Refresh failures</v-btn>
+              <v-btn size="small" color="primary" variant="tonal" :loading="loading" @click="refresh">Reload failure records</v-btn>
             </div>
+            <p class="text-caption failure-help">Reload failure records only checks saved history; it does not retry registration.</p>
             <template v-if="!loadError && failureCount > 0">
               <p class="text-body-2 failure-help">Step1 reads and saves files; Step2 analyzes their volume. A successful retry clears the matching failure.</p>
               <p class="text-body-2 failure-help">After fixing a file, run Sound Regist again. For a file already in the library, use its Update action.</p>
@@ -24,7 +25,7 @@
               </div>
             </template>
             <p v-if="loading" role="status" class="failure-message text-body-2">Loading failure details…</p>
-            <p v-else-if="loadError" role="alert" class="failure-message text-error">Could not load failure details. Check the backend connection and press Refresh failures.</p>
+            <p v-else-if="loadError" role="alert" class="failure-message text-error">Could not load failure details. Check the backend connection and press Reload failure records.</p>
             <p v-else-if="total === 0" role="status" class="failure-message text-body-2">No unresolved failures {{ selectedStep === 'all' ? 'recorded' : `recorded for ${selectedStep === 'step1' ? 'Step1' : 'Step2'}` }}.</p>
             <div v-else class="failure-list">
               <div v-for="failure in failures" :key="`${failure.step}:${failure.target}`" class="failure-row py-3">

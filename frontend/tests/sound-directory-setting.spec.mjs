@@ -96,12 +96,12 @@ test('Current Status leads to persisted Step1 and Step2 failures after revisitin
   await page.getByRole('button', { name: /Detail/ }).click();
   await expect(page.getByText('/music/unreadable.wav')).toBeVisible();
   failures = failures.filter((failure) => failure.step === 2);
-  await page.getByRole('button', { name: 'Refresh failures' }).click();
+  await page.getByRole('button', { name: 'Reload failure records' }).click();
   await expect(page.getByText('1 failure · See Detail')).toBeVisible();
   await expect(page.getByText('/music/unreadable.wav')).toHaveCount(0);
   await page.getByRole('button', { name: 'Step2 (1)' }).click();
   failures = [];
-  await page.getByRole('button', { name: 'Refresh failures' }).click();
+  await page.getByRole('button', { name: 'Reload failure records' }).click();
   await expect(page.getByText('No unresolved failures recorded.', { exact: true })).toBeVisible();
   await expect(page.getByRole('group', { name: 'Filter failures by step' })).toHaveCount(0);
 });
@@ -115,7 +115,7 @@ test('failure list API errors are shown in Detail and the status cue recovers on
   await page.getByRole('button', { name: /Detail/ }).click();
   await expect(page.getByRole('alert').getByText('Could not load failure details.')).toBeVisible();
   available = true;
-  await page.getByRole('button', { name: 'Refresh failures' }).click();
+  await page.getByRole('button', { name: 'Reload failure records' }).click();
   await expect(page.getByText('No unresolved failures recorded.')).toBeVisible();
   await expect(page.getByText('Failure status unavailable · See Detail')).toHaveCount(0);
 });
@@ -126,7 +126,8 @@ test('empty failure history omits its guidance and filters even when analysis di
   }));
   await page.getByRole('button', { name: /Detail/ }).click();
   await expect(page.getByText('No unresolved failures recorded.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Refresh failures' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reload failure records' })).toBeVisible();
+  await expect(page.getByText('Reload failure records only checks saved history; it does not retry registration.')).toBeVisible();
   await expect(page.getByRole('group', { name: 'Filter failures by step' })).toHaveCount(0);
   await expect(page.getByText('After fixing a file')).toHaveCount(0);
   const details = page.locator('.registration-details');
@@ -171,7 +172,7 @@ test('Analysis/Sound Count gap identifies older sounds even when failure history
   }
 });
 
-test('analysis list load error is visible and Refresh recovers', async ({ page }, testInfo) => {
+test('analysis list load error is visible and Reload list recovers', async ({ page }, testInfo) => {
   let available = false;
   await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, null, () => available
     ? { total: 2, sounds: [
@@ -180,11 +181,11 @@ test('analysis list load error is visible and Refresh recovers', async ({ page }
     ] }
     : { status: 503, body: { status: 'error' } });
   await page.getByRole('button', { name: /Detail/ }).click();
-  await expect(page.getByRole('alert').getByText('Could not load sounds without an analysis count.')).toBeVisible();
+  await expect(page.getByRole('alert').getByText('Could not load this list.')).toBeVisible();
   available = true;
-  await page.getByRole('button', { name: 'Refresh analysis list' }).click();
+  await page.getByRole('button', { name: 'Reload list' }).click();
   await expect(page.getByText('Recovered track')).toBeVisible();
-  await expect(page.getByRole('alert').getByText('Could not load sounds without an analysis count.')).toHaveCount(0);
+  await expect(page.getByRole('alert').getByText('Could not load this list.')).toHaveCount(0);
 });
 
 test('switching backends refreshes the analysis list even when both gaps are equal', async ({ page }, testInfo) => {
@@ -213,25 +214,52 @@ test('switching backends refreshes the analysis list even when both gaps are equ
   await expect(page.getByText('2 not counted as analyzed · See Detail')).toBeVisible();
 });
 
-test('analysis gap list pages through more than 25 sounds', async ({ page }, testInfo) => {
-  const sounds = Array.from({ length: 30 }, (_, index) => ({
+test('large analysis list keeps short pages and searches titles and paths across all records', async ({ page }, testInfo) => {
+  const sounds = Array.from({ length: 1000 }, (_, index) => ({
     hash: `sound-${index}`,
     title: `Unanalysed sound ${index}`,
-    path: `/music/sound-${index}.wav`,
+    path: `/music/sound-${index === 999 ? 'late-result' : index}.wav`,
   }));
   await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, null, (url) => {
     const offset = Number(url.searchParams.get('offset'));
     const limit = Number(url.searchParams.get('limit'));
-    return { total: sounds.length, sounds: sounds.slice(offset, offset + limit), limit, offset };
+    const search = url.searchParams.get('search') || '';
+    const matching = search ? sounds.filter((sound) => sound.title.includes(search) || sound.path.includes(search)) : sounds;
+    return { total: matching.length, sounds: matching.slice(offset, offset + limit), limit, offset };
   });
   await page.getByRole('button', { name: /Detail/ }).click();
+  await expect(page.getByRole('heading', { name: 'Not counted as analyzed (1000)' })).toBeVisible();
+  await expect(page.locator('.analysis-row')).toHaveCount(10);
+  await expect(page.getByText('Showing 1–10 of 1000')).toBeVisible();
+  const searchFieldWidth = await page.locator('.analysis-search-input').evaluate((container) => ({
+    container: container.getBoundingClientRect().width,
+    input: container.querySelector('input').getBoundingClientRect().width,
+  }));
+  expect(searchFieldWidth.input).toBeGreaterThan(searchFieldWidth.container * 0.8);
   await expect(page.getByText('Unanalysed sound 0', { exact: true })).toBeVisible();
-  await expect(page.getByText('Unanalysed sound 29', { exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Next' }).click();
-  await expect(page.getByText('Unanalysed sound 29', { exact: true })).toBeVisible();
-  await expect(page.getByText('26–30 / 30')).toBeVisible();
-  await page.getByRole('button', { name: 'Previous' }).click();
+  await expect(page.getByText('Unanalysed sound 999', { exact: true })).toHaveCount(0);
+  if (testInfo.project.name.includes('1920x1080') || testInfo.project.name.includes('320x667')) {
+    await page.locator('.analysis-search').scrollIntoViewIfNeeded();
+    await testInfo.attach('analysis-search-many-results', { body: await page.screenshot(), contentType: 'image/png' });
+  }
+  await page.getByRole('button', { name: 'Next page' }).click();
+  await expect(page.getByText('Unanalysed sound 10', { exact: true })).toBeVisible();
+  await expect(page.getByText('Page 2 of 100')).toBeVisible();
+  await page.getByRole('button', { name: 'Previous page' }).click();
   await expect(page.getByText('Unanalysed sound 0', { exact: true })).toBeVisible();
+  await page.getByRole('textbox', { name: 'Search title or file path' }).fill('late-result');
+  await page.getByRole('button', { name: 'Search all pages' }).click();
+  await expect(page.getByRole('heading', { name: 'Not counted as analyzed (1 match)' })).toBeVisible();
+  await expect(page.getByText('Unanalysed sound 999', { exact: true })).toBeVisible();
+  await expect(page.locator('.analysis-row')).toHaveCount(1);
+  await page.getByRole('textbox', { name: 'Search title or file path' }).fill('%');
+  await page.getByRole('textbox', { name: 'Search title or file path' }).press('Enter');
+  await expect(page.getByText('No songs match this search.')).toBeVisible();
+  await page.getByRole('button', { name: 'Clear search' }).click();
+  await expect(page.getByRole('heading', { name: 'Not counted as analyzed (1000)' })).toBeVisible();
+  await expect(page.locator('.analysis-row')).toHaveCount(10);
+  const pageWidth = await page.locator('.analysis-gap').evaluate((element) => ({ clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }));
+  expect(pageWidth.scrollWidth).toBeLessThanOrEqual(pageWidth.clientWidth);
 });
 
 test('a matching Analysis and Sound Count keeps the normal Detail compact', async ({ page }, testInfo) => {

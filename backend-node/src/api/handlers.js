@@ -90,12 +90,14 @@ function createApiHandlers(deps) {
     async unanalysedSounds({ query }) {
       const limit = query.limit === undefined ? 25 : Number(query.limit);
       const offset = query.offset === undefined ? 0 : Number(query.offset);
+      const rawSearchTerm = query.search === undefined ? '' : query.search;
       if (!Number.isSafeInteger(limit) || limit < 0 || limit > 50
-        || !Number.isSafeInteger(offset) || offset < 0) {
+        || !Number.isSafeInteger(offset) || offset < 0
+        || typeof rawSearchTerm !== 'string' || rawSearchTerm.length > 200) {
         return json({ status: 'error', detail: 'Invalid analysis list parameters.' }, 400);
       }
       try {
-        return json(await repository.listSoundsWithoutAnalysis({ limit, offset }));
+        return json(await repository.listSoundsWithoutAnalysis({ limit, offset, searchTerm: rawSearchTerm.trim() }));
       } catch (error) {
         console.error('Could not load sounds without analysis:', error);
         return json({ status: 'error', detail: 'Could not load sounds without analysis.' }, 503);

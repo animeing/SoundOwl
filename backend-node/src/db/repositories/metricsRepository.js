@@ -47,15 +47,19 @@ class MetricsRepository {
   /**
    * Analysis/Sound Count の差分に含まれる音源を、安定した順序で取得します。
    * 0 dB は成功した解析値の場合もあるため、失敗と決めつけずに返します。
-   * @param {{limit:number,offset:number}} page 一度に返す最大件数と開始位置。
+   * @param {{limit:number,offset:number,searchTerm?:string}} page 一度に返す最大件数、開始位置、タイトル・パスの部分一致検索語。
    * @returns {Promise<{total:number,sounds:Array<{hash:string,title:string,path:string}>,limit:number,offset:number}>} 差分の件数と音源一覧。
    */
-  async listSoundsWithoutAnalysis({ limit, offset }) {
-    const where = 'loudness_target = 0 OR loudness_target IS NULL';
-    const total = countFromRows(await queryRows(this.db, `SELECT COUNT(*) AS count FROM sound_link WHERE ${where}`));
+  async listSoundsWithoutAnalysis({ limit, offset, searchTerm = '' }) {
+    const analysisCondition = '(loudness_target = 0 OR loudness_target IS NULL)';
+    // LOCATE は % や _ をワイルドカードにせず、入力を文字列として検索する。
+    const searchCondition = searchTerm ? ' AND (LOCATE(?, title) > 0 OR LOCATE(?, data_link) > 0)' : '';
+    const where = `${analysisCondition}${searchCondition}`;
+    const searchParameters = searchTerm ? [searchTerm, searchTerm] : [];
+    const total = countFromRows(await queryRows(this.db, `SELECT COUNT(*) AS count FROM sound_link WHERE ${where}`, searchParameters));
     const rows = limit > 0 ? await queryRows(this.db,
       `SELECT sound_hash, title, data_link FROM sound_link WHERE ${where} ORDER BY add_time DESC, sound_hash ASC LIMIT ? OFFSET ?`,
-      [limit, offset]) : [];
+      [...searchParameters, limit, offset]) : [];
     return {
       total,
       sounds: rows.map((row) => ({ hash: row.sound_hash, title: row.title, path: row.data_link })),
