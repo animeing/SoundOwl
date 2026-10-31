@@ -836,16 +836,72 @@ test('sound stream malformed media_hash preserves the current API fatal-error re
   assert.ok([200, 500].includes(response.status));
 });
 
-test('sound_regist returns current count for full scan and single-sound refresh', async () => {
+test('sound_regist reports scan failures and returns current count for successful single-sound refresh', async () => {
   if (!IS_FIXTURE) {
     return;
   }
 
   const fullScan = await fetchJson('/api/sound_regist.php');
-  assert.deepEqual(fullScan.json, { count: 8 });
+  assert.deepEqual(fullScan.json, { count: 8, failedCount: 0, failures: [] });
 
   const single = await fetchJson(`/api/sound_regist.php?soundhash=${encodeHash(fixtureHash('h01'))}`);
   assert.deepEqual(single.json, { count: 8 });
+
+  const missingHash = 'f'.repeat(40);
+  const missing = await fetchText(`/api/sound_regist.php?soundhash=${encodeURIComponent(compressedHash(missingHash))}`);
+  assert.equal(missing.response.status, 404);
+  assert.deepEqual(JSON.parse(missing.text).failure, {
+    target: missingHash,
+    reason: 'Sound not found.',
+    code: 'SOUND_NOT_FOUND',
+  });
+});
+
+test('registration failure API serves bounded Step1 and Step2 pages from the deployed database', async () => {
+  const { json: all } = await fetchJson('/api/registration_failures.php?step=all&limit=2&offset=0');
+  assert.equal(Number.isInteger(all.counts.step1), true);
+  assert.equal(Number.isInteger(all.counts.step2), true);
+  assert.equal(all.total, all.counts.step1 + all.counts.step2);
+  assert.ok(Array.isArray(all.failures));
+  assert.ok(all.failures.length <= 2);
+  for (const failure of all.failures) {
+    assert.ok([1, 2].includes(failure.step));
+    assert.equal(typeof failure.target, 'string');
+    assert.equal(typeof failure.reason, 'string');
+  }
+  const { json: step1 } = await fetchJson('/api/registration_failures.php?step=step1&limit=2&offset=0');
+  assert.equal(step1.total, step1.counts.step1);
+  assert.ok(step1.failures.every((failure) => failure.step === 1));
+  const invalid = await fetch(`${BASE_URL}/api/registration_failures.php?limit=51`);
+  assert.equal(invalid.status, 400);
+});
+
+test('unanalysed sound API explains the Analysis/Sound Count gap with bounded DB rows', async () => {
+  const { json: site } = await fetchJson('/api/site_status.php');
+  const { json: firstPage } = await fetchJson('/api/unanalysed_sounds.php?limit=1&offset=0');
+  assert.ok(Number.isInteger(firstPage.total) && firstPage.total >= 0);
+  assert.equal(firstPage.sounds.length, Math.min(1, firstPage.total));
+  for (const sound of firstPage.sounds) {
+    assert.equal(typeof sound.hash, 'string');
+    assert.equal(typeof sound.title, 'string');
+    assert.equal(typeof sound.path, 'string');
+  }
+  if (IS_FIXTURE) {
+    assert.equal(firstPage.total, site.regist_data_count.sound - site.regist_data_count.analysis_sound);
+    assert.equal(firstPage.total, 2);
+    const { json: secondPage } = await fetchJson('/api/unanalysed_sounds.php?limit=1&offset=1');
+    assert.deepEqual([firstPage.sounds[0].title, secondPage.sounds[0].title], ['No Album Song', 'Alpha Track Ten']);
+    const { json: byTitle } = await fetchJson('/api/unanalysed_sounds.php?search=No%20Album');
+    assert.deepEqual(byTitle.sounds.map((sound) => sound.title), ['No Album Song']);
+    const { json: byPath } = await fetchJson('/api/unanalysed_sounds.php?search=track-03');
+    assert.deepEqual(byPath.sounds.map((sound) => sound.title), ['Alpha Track Ten']);
+    const { json: literalPercent } = await fetchJson('/api/unanalysed_sounds.php?search=%25');
+    assert.equal(literalPercent.total, 0);
+  }
+  const { json: countOnly } = await fetchJson('/api/unanalysed_sounds.php?limit=0');
+  assert.equal(countOnly.total, firstPage.total);
+  assert.deepEqual(countOnly.sounds, []);
+  assert.equal((await fetch(`${BASE_URL}/api/unanalysed_sounds.php?limit=51`)).status, 400);
 });
 
 test('websocket sends status on open and broadcasts client messages', { timeout: 10000 }, async () => {

@@ -114,6 +114,9 @@ class SoundOwlRepository {
 
   /** @returns {Promise<number>} 音量解析済み楽曲数。 */
   countAnalysisSounds() { return this.metrics.countAnalysisSounds(); }
+
+  /** @param {{limit:number,offset:number,searchTerm?:string}} page ページ指定と検索語。 @returns {Promise<{total:number,sounds:Array<{hash:string,title:string,path:string}>,limit:number,offset:number}>} Analysis 件数に含まれない音源。 */
+  listSoundsWithoutAnalysis(page) { return this.metrics.listSoundsWithoutAnalysis(page); }
 }
 
 export { SoundOwlRepository };

@@ -5,13 +5,25 @@ import { sha1 } from '../utils/hash.js';
 
 const SOUND_EXTENSIONS = /\.(mp3|m4a|wav|ogg|flac|ape)$/i;
 
+/** Public stage description; the original exception remains available as cause for server logs. */
+class RegistrationFailure extends Error {
+  constructor(reason, cause) {
+    super(reason, { cause });
+  }
+}
+
+/** Return a safe reason without exposing database or parser exception details to clients. */
+function registrationFailureReason(error) {
+  return error instanceof RegistrationFailure ? error.message : 'Could not process this sound.';
+}
+
 /**
  * 音楽ディレクトリの走査、タグ読み込み、アーティスト・アルバム・曲データ登録を担当するサービスです。
  */
 class SoundRegistrar {
   /**
    * SoundRegistrar を初期化します。
-   * @param {{repository:Record<string, Function>,redis:{enqueueAudioProcessing:(job:{file_path:string,hash:string})=>Promise<unknown>},metadataReader:(filePath:string)=>Promise<{hasTags:boolean,title:string|false,artist:string|false,album:string|false,genre:string|false,lyrics:string|false,track:string|false,year:string|false,picture:{data?:Buffer,mime?:string|null,length?:number|null}|null,raw:unknown}>,clock?:()=>Date}} dependencies 曲登録に必要な依存関係。
+   * @param {{repository:Record<string, Function>,redis:{enqueueAudioProcessing:(job:{file_path:string,hash:string})=>Promise<unknown>},metadataReader:(filePath:string)=>Promise<{hasTags:boolean,title:string|false,artist:string|false,album:string|false,genre:string|false,lyrics:string|false,track:string|false,year:string|false,picture:{data?:Buffer,mime?:string|null,length?:number|null}|null,raw:unknown}>,failureStore?:{record:Function,resolve:Function}|null,clock?:()=>Date}} dependencies 曲登録に必要な依存関係。
    * @param {object} dependencies.repository 曲、アーティスト、アルバム、件数を読み書きする repository。
    * @param {Function} dependencies.repository.findSoundByPath data_link から既存曲を検索します。
    * @param {Function} dependencies.repository.findSoundByHash sound_hash から既存曲を検索します。
@@ -24,12 +36,14 @@ class SoundRegistrar {
    * @param {object} dependencies.redis 音量解析キューへ登録ジョブを投入する DAO。
    * @param {Function} dependencies.redis.enqueueAudioProcessing Step2 の音量解析キューへ {file_path, hash} を投入します。
    * @param {Function} dependencies.metadataReader 音声ファイルパスから正規化済みメタデータを読み込む関数。
+   * @param {object|null} [dependencies.failureStore] Step1 の未解決失敗を保存し、成功時に消すストア。
    * @param {Function} [dependencies.clock] add_time を固定したいテストで差し替える現在時刻取得関数。
    */
-  constructor({ repository, redis, metadataReader, clock = () => new Date() }) {
+  constructor({ repository, redis, metadataReader, failureStore = null, clock = () => new Date() }) {
     this.repository = repository;
     this.redis = redis;
     this.metadataReader = metadataReader;
+    this.failureStore = failureStore;
     this.clock = clock;
   }
 
@@ -37,38 +51,69 @@ class SoundRegistrar {
    * 音楽ディレクトリを再帰走査し、未登録の音源ファイルを登録します。
    * @param {string} rootDirectory 走査を開始する音楽ディレクトリ。
    * @param {string[]} [exclusionPaths=[]] 走査対象から除外するパス正規表現文字列。
-   * @returns {Promise<{count:number}>} 登録処理後の曲総数。
+   * @returns {Promise<{count:number,failedCount:number,failures:Array<{target:string,reason:string}>}> 曲総数と今回処理できなかった音源。
    */
   async registerDirectory(rootDirectory, exclusionPaths = []) {
     const files = await listSoundFiles(rootDirectory, exclusionPaths);
-    let count = 0;
+    const failures = [];
+    let historyUnavailable = false;
     for (const file of files) {
       if (!(await this.repository.findSoundByPath(file))) {
         try {
           await this.registerFile(file);
-        } catch {
-          // Keep directory scans resilient: one unreadable or unanalyzable file must not fail the whole registration.
+        } catch (error) {
+          // Continue the scan, but report each incomplete file instead of presenting the whole run as successful.
+          console.error('Sound registration failed:', file, error);
+          if (error.code === 'FAILURE_HISTORY_UNAVAILABLE') {
+            historyUnavailable = true;
+            continue;
+          }
+          const reason = registrationFailureReason(error);
+          try {
+            await this.failureStore?.record(1, file, reason);
+          } catch (historyError) {
+            console.error('Could not save registration failure history:', file, historyError);
+            historyUnavailable = true;
+          }
+          failures.push({ target: file, reason });
         }
       }
     }
-    count = await this.repository.countSounds();
-    return { count };
+    return {
+      count: await this.repository.countSounds(),
+      failedCount: failures.length,
+      failures,
+      ...(historyUnavailable ? { historyUnavailable: true } : {}),
+    };
   }
 
   /**
    * 既存曲のファイルパスを使ってメタデータを再読み込みし、曲情報を再登録します。
    * @param {string} soundHash 再登録対象の sound_hash。
-   * @returns {Promise<{count:number}>} 再登録後の曲総数。対象が無い、または再登録失敗時も現在の総数を返します。
+   * @returns {Promise<{count:number,error?:{target:string,reason:string,code?:string}}>} 成功時の曲総数、または対象と公開用の失敗理由。
    */
   async refreshByHash(soundHash) {
-    const sound = await this.repository.findSoundByHash(soundHash);
-    if (!sound) {
-      return { count: await this.repository.countSounds() };
+    const existingSoundRecord = await this.repository.findSoundByHash(soundHash);
+    if (!existingSoundRecord) {
+      return {
+        count: await this.repository.countSounds(),
+        error: { target: soundHash, reason: 'Sound not found.', code: 'SOUND_NOT_FOUND' },
+      };
     }
     try {
-      await this.registerFile(sound.data_link, sound.sound_hash);
-    } catch {
-      return { count: await this.repository.countSounds() };
+      const soundUpsertResult = await this.registerFile(existingSoundRecord.data_link, existingSoundRecord.sound_hash);
+      if (soundUpsertResult === null) {
+        throw new RegistrationFailure('Unsupported audio format.');
+      }
+    } catch (error) {
+      console.error('Sound update failed:', existingSoundRecord.data_link, error);
+      if (error.code === 'FAILURE_HISTORY_UNAVAILABLE') throw error;
+      const reason = registrationFailureReason(error);
+      await this.failureStore?.record(1, existingSoundRecord.data_link, reason);
+      return {
+        count: await this.repository.countSounds(),
+        error: { target: existingSoundRecord.data_link, reason },
+      };
     }
     return { count: await this.repository.countSounds() };
   }
@@ -77,62 +122,78 @@ class SoundRegistrar {
    * 1つの音声ファイルを読み込み、曲・アーティスト・アルバムを DB へ保存し、音量解析キューへ投入します。
    * @param {string} filePath 登録対象の音声ファイルパス。
    * @param {string|null} [soundHashOverride=null] 既存曲更新時に使用する sound_hash。未指定時はファイルパスから生成します。
-   * @returns {Promise<unknown|null>} repository.upsertSound の結果。対応拡張子でない場合は null。
+   * @returns {Promise<{action:'inserted'|'updated',sound:Record<string,unknown>}|null>} 保存の種別と保存後の曲レコード。対応拡張子でない場合は null。
    */
   async registerFile(filePath, soundHashOverride = null) {
     if (!SOUND_EXTENSIONS.test(filePath)) {
       return null;
     }
 
-    const metadata = await this.metadataReader(filePath);
+    let soundMetadata;
+    try {
+      soundMetadata = await this.metadataReader(filePath);
+    } catch (error) {
+      throw new RegistrationFailure('Could not read audio metadata.', error);
+    }
     const soundHash = soundHashOverride || sha1(filePath);
-    const existing = await this.repository.findSoundByHash(soundHash);
-    const sound = await this.buildSoundRecord(filePath, soundHash, metadata, existing);
-    const result = await this.repository.upsertSound(sound);
-    await this.redis.enqueueAudioProcessing({ file_path: filePath, hash: soundHash });
-    return result;
+    /** @type {{action:'inserted'|'updated',sound:Record<string,unknown>}} */
+    let soundUpsertResult;
+    try {
+      const existingSoundRecord = await this.repository.findSoundByHash(soundHash);
+      const soundRecordToSave = await this.buildSoundRecord(filePath, soundHash, soundMetadata, existingSoundRecord);
+      soundUpsertResult = await this.repository.upsertSound(soundRecordToSave);
+    } catch (error) {
+      throw new RegistrationFailure('Could not save sound information.', error);
+    }
+    try {
+      await this.redis.enqueueAudioProcessing({ file_path: filePath, hash: soundHash });
+    } catch (error) {
+      throw new RegistrationFailure('Sound saved, but audio analysis could not be queued.', error);
+    }
+    await this.failureStore?.resolve(1, filePath);
+    return soundUpsertResult;
   }
 
   /**
    * 正規化済みメタデータと既存曲情報から sound_data 保存用レコードを作成します。
    * @param {string} filePath 登録対象ファイルパス。
    * @param {string} soundHash 保存する sound_hash。
-   * @param {{title:string|false,artist:string|false,album:string|false,genre:string|false,lyrics:string|false,track:string|false,year:string|false,picture?:{data?:Buffer,mime?:string|null,length?:number|null}|null}} metadata 正規化済みタグ情報。
-   * @param {{play_count?:number,loudness_target?:number}|null|undefined} existing 既存登録済み曲。再登録時に再生回数と音量解析値を引き継ぎます。
-   * @returns {Promise<Record<string, unknown>>} sound_data へ保存する曲レコード。
+   * @param {{title:string|false,artist:string|false,album:string|false,genre:string|false,lyrics:string|false,track:string|false,year:string|false,picture?:{data?:Buffer,mime?:string|null,length?:number|null}|null}} soundMetadata 正規化済みタグ情報。
+   * @param {{play_count?:number,loudness_target?:number}|null|undefined} existingSoundRecord 既存登録済み曲。再登録時に再生回数と音量解析値を引き継ぎます。
+   * @returns {Promise<Record<string, unknown>>} sound_link へ保存する曲レコード。
    */
-  async buildSoundRecord(filePath, soundHash, metadata, existing) {
-    const sound = {
+  async buildSoundRecord(filePath, soundHash, soundMetadata, existingSoundRecord) {
+    const soundRecord = {
       sound_hash: soundHash,
       add_time: formatDateTime(this.clock()),
-      title: metadata.title || path.basename(filePath),
-      genre: metadata.genre === false ? '' : metadata.genre,
-      lyrics: metadata.lyrics === false ? null : metadata.lyrics,
+      title: soundMetadata.title || path.basename(filePath),
+      genre: soundMetadata.genre === false ? '' : soundMetadata.genre,
+      lyrics: soundMetadata.lyrics === false ? null : soundMetadata.lyrics,
       album_hash: null,
       album_title: null,
       artist_id: null,
       artist_name: null,
-      track_no: metadata.track === false ? null : metadata.track,
-      play_count: existing?.play_count ?? 0,
+      track_no: soundMetadata.track === false ? null : soundMetadata.track,
+      play_count: existingSoundRecord?.play_count ?? 0,
       data_link: filePath,
-      loudness_target: existing?.loudness_target ?? 0,
+      loudness_target: existingSoundRecord?.loudness_target ?? 0,
     };
 
-    if (metadata.artist) {
-      const artist = await this.findOrCreateArtist(metadata.artist);
-      sound.artist_id = artist.artist_id;
-      sound.artist_name = artist.artist_name;
+    if (soundMetadata.artist) {
+      const artist = await this.findOrCreateArtist(soundMetadata.artist);
+      soundRecord.artist_id = artist.artist_id;
+      soundRecord.artist_name = artist.artist_name;
     }
 
-    if (metadata.album) {
-      const album = await this.findOrCreateAlbum(metadata.album, sound.artist_id, metadata);
-      sound.album_hash = album.album_key;
-      sound.album_title = album.title;
-    } else if (metadata.album === false) {
-      sound.album_hash = '';
+    if (soundMetadata.album) {
+      const album = await this.findOrCreateAlbum(soundMetadata.album, soundRecord.artist_id, soundMetadata);
+      soundRecord.album_hash = album.album_key;
+      soundRecord.album_title = album.title;
+    } else if (soundMetadata.album === false) {
+      soundRecord.album_hash = '';
     }
 
-    return sound;
+    return soundRecord;
   }
 
   /**
