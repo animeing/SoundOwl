@@ -6,14 +6,29 @@ import { createApiHandlers } from '../src/api/handlers.js';
 import { createHttpServer } from '../src/api/httpServer.js';
 
 /** Minimal mysql2 fake that retains rows between store, service, and HTTP API instances. */
-function fakeDatabase() {
+function fakeDatabase({ tableCharset = 'utf8mb4' } = {}) {
   const records = new Map();
+  let charsetMigrationCount = 0;
   return {
     records,
+    get charsetMigrationCount() { return charsetMigrationCount; },
     async query(sql, params = []) {
-      if (sql.startsWith('CREATE TABLE')) return [{ affectedRows: 0 }];
+      if (sql.startsWith('CREATE TABLE')) {
+        assert.match(sql, /DEFAULT CHARSET=utf8mb4/);
+        return [{ affectedRows: 0 }];
+      }
+      if (sql.startsWith('SELECT COLUMN_NAME AS columnName')) return [[
+        { columnName: 'target', charsetName: tableCharset },
+        { columnName: 'reason', charsetName: tableCharset },
+      ]];
+      if (sql.startsWith('ALTER TABLE registration_failures')) {
+        tableCharset = 'utf8mb4';
+        charsetMigrationCount += 1;
+        return [{ affectedRows: 0 }];
+      }
       if (sql.startsWith('INSERT INTO registration_failures')) {
         const [step, targetHash, target, reason] = params;
+        if (tableCharset !== 'utf8mb4' && /[^\x00-\xFF]/u.test(target)) throw new Error('Incorrect string value');
         records.set(`${step}:${targetHash}`, { step, target, reason, updatedAt: new Date('2026-10-31T00:00:00Z') });
         return [{ affectedRows: 1 }];
       }
@@ -115,6 +130,16 @@ test('failure store updates one file and step rather than accumulating retries, 
   assert.equal((await store.list({ step: 1 })).failures[0].reason, 'second');
   await store.clearAll();
   assert.deepEqual((await store.list()).counts, { step1: 0, step2: 0 });
+});
+
+test('failure store upgrades an existing latin1 table before saving Japanese file paths', async () => {
+  const db = fakeDatabase({ tableCharset: 'latin1' });
+  const store = new RegistrationFailureStore(db);
+  await store.record(1, '/music/日本語の曲.wav', 'Could not read audio metadata.');
+  assert.equal(db.charsetMigrationCount, 1);
+  assert.equal((await store.list()).failures[0].target, '/music/日本語の曲.wav');
+  await store.record(2, '/music/別の曲.wav', 'Could not analyze or save audio loudness.');
+  assert.equal(db.charsetMigrationCount, 1);
 });
 
 test('Step2 exceptions are retained with a public reason and the worker lock is released', async () => {

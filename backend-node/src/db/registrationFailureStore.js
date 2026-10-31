@@ -9,7 +9,14 @@ const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS registration_failures (
   updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (step, target_hash),
   KEY registration_failures_updated (updated_at)
-)`;
+) DEFAULT CHARSET=utf8mb4`;
+
+const CHECK_CHARSET = `SELECT COLUMN_NAME AS columnName, CHARACTER_SET_NAME AS charsetName
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'registration_failures' AND COLUMN_NAME IN ('target', 'reason')`;
+const MIGRATE_CHARSET = `ALTER TABLE registration_failures DEFAULT CHARACTER SET utf8mb4,
+  MODIFY target TEXT CHARACTER SET utf8mb4 NOT NULL,
+  MODIFY reason VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL`;
 
 /** Safe failure reported when the history cannot be written or read. */
 class FailureHistoryUnavailableError extends Error {
@@ -31,7 +38,15 @@ class RegistrationFailureStore {
   /** Create only the new table; never run the destructive setup schema during an upgrade. */
   async ensureTable() {
     if (!this.tableReady) {
-      this.tableReady = this.db.query(CREATE_TABLE).catch((error) => {
+      this.tableReady = (async () => {
+        await this.db.query(CREATE_TABLE);
+        // Earlier deployments may have created the table under a latin1 database default.
+        const columns = await queryRows(this.db, CHECK_CHARSET);
+        if (columns.length !== 2) throw new Error('Could not inspect registration failure table charset.');
+        if (columns.some((column) => column.charsetName !== 'utf8mb4')) {
+          await this.db.query(MIGRATE_CHARSET);
+        }
+      })().catch((error) => {
         this.tableReady = null;
         throw error;
       });
