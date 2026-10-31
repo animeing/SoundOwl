@@ -19,10 +19,11 @@
     </v-card>
 
     <v-card class="box mb-12" style="background: inherit;">
-      <v-card-title :class="failureCount > 0 || failureLoadError ? 'd-flex flex-wrap align-center ga-2' : ''">
+      <v-card-title :class="failureCount > 0 || failureLoadError || analysisGap > 0 ? 'd-flex flex-wrap align-center ga-2' : ''">
         Current Status
         <v-chip v-if="failureCount > 0" color="error" size="small">{{ failureCount }} {{ failureCount === 1 ? 'failure' : 'failures' }} · See Detail</v-chip>
         <v-chip v-else-if="failureLoadError" color="warning" size="small">Failure status unavailable · See Detail</v-chip>
+        <v-chip v-if="analysisGap > 0" color="warning" size="small">{{ analysisGap }} not counted as analyzed · See Detail</v-chip>
       </v-card-title>
         <v-divider></v-divider>
         <div>
@@ -31,6 +32,7 @@
               <v-chip class="status-chip" color="red" v-if="registStatus">Action</v-chip>
               <v-chip class="status-chip" color="red" v-else-if="failureCount > 0">Needs attention</v-chip>
               <v-chip class="status-chip" color="warning" v-else-if="failureLoadError">Unknown</v-chip>
+              <v-chip class="status-chip" color="warning" v-else-if="analysisGap > 0">Check analysis</v-chip>
               <v-chip class="status-chip" color="green" v-else>Finished</v-chip>
               Regist Status
             </v-card-title>
@@ -39,6 +41,7 @@
                 ref="failurePanel"
                 :step1-running="registStatusStep1"
                 :step2-running="registStatusStep2"
+                :analysis-gap="analysisGap"
                 @count-change="updateFailureCount"
               />
             </v-card-text>
@@ -152,6 +155,11 @@ export default {
       failureCount: 0,
       failureLoadError: false
     };
+  },
+  computed: {
+    analysisGap() {
+      return Math.max(0, Number(this.registSoundCount || 0) - Number(this.analysisSoundCount || 0));
+    }
   },
   mounted() {
     this.reloadBackendSettings();

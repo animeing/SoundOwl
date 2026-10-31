@@ -86,6 +86,22 @@ function createApiHandlers(deps) {
       }
     },
 
+    /** Return sounds excluded from the Analysis count without labeling them as failures. */
+    async unanalysedSounds({ query }) {
+      const limit = query.limit === undefined ? 25 : Number(query.limit);
+      const offset = query.offset === undefined ? 0 : Number(query.offset);
+      if (!Number.isSafeInteger(limit) || limit < 0 || limit > 50
+        || !Number.isSafeInteger(offset) || offset < 0) {
+        return json({ status: 'error', detail: 'Invalid analysis list parameters.' }, 400);
+      }
+      try {
+        return json(await repository.listSoundsWithoutAnalysis({ limit, offset }));
+      } catch (error) {
+        console.error('Could not load sounds without analysis:', error);
+        return json({ status: 'error', detail: 'Could not load sounds without analysis.' }, 503);
+      }
+    },
+
     async soundAddtimeList() {
       return json(await repository.listSoundsByAddTime());
     },

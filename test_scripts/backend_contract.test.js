@@ -876,6 +876,28 @@ test('registration failure API serves bounded Step1 and Step2 pages from the dep
   assert.equal(invalid.status, 400);
 });
 
+test('unanalysed sound API explains the Analysis/Sound Count gap with bounded DB rows', async () => {
+  const { json: site } = await fetchJson('/api/site_status.php');
+  const { json: firstPage } = await fetchJson('/api/unanalysed_sounds.php?limit=1&offset=0');
+  assert.ok(Number.isInteger(firstPage.total) && firstPage.total >= 0);
+  assert.equal(firstPage.sounds.length, Math.min(1, firstPage.total));
+  for (const sound of firstPage.sounds) {
+    assert.equal(typeof sound.hash, 'string');
+    assert.equal(typeof sound.title, 'string');
+    assert.equal(typeof sound.path, 'string');
+  }
+  if (IS_FIXTURE) {
+    assert.equal(firstPage.total, site.regist_data_count.sound - site.regist_data_count.analysis_sound);
+    assert.equal(firstPage.total, 2);
+    const { json: secondPage } = await fetchJson('/api/unanalysed_sounds.php?limit=1&offset=1');
+    assert.deepEqual([firstPage.sounds[0].title, secondPage.sounds[0].title], ['No Album Song', 'Alpha Track Ten']);
+  }
+  const { json: countOnly } = await fetchJson('/api/unanalysed_sounds.php?limit=0');
+  assert.equal(countOnly.total, firstPage.total);
+  assert.deepEqual(countOnly.sounds, []);
+  assert.equal((await fetch(`${BASE_URL}/api/unanalysed_sounds.php?limit=51`)).status, 400);
+});
+
 test('websocket sends status on open and broadcasts client messages', { timeout: 10000 }, async () => {
   const first = new WebSocket(WS_URL);
   const second = new WebSocket(WS_URL);

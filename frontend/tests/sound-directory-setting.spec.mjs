@@ -5,6 +5,7 @@ import {
   installSyntheticFrontendConfigMock,
   installSyntheticNetworkMocks,
 } from './layout-synthetic-mocks.mjs';
+import { LAYOUT_WEBSOCKET_STATUS } from './mocks/layout-websocket/status.mjs';
 
 const baseSettings = {
   db_ip_address: '127.0.0.1',
@@ -17,7 +18,7 @@ const baseSettings = {
   websocket_retry_interval: 2500,
 };
 
-async function openSettings(page, testInfo, directorySettings, failureResponse = null) {
+async function openSettings(page, testInfo, directorySettings, failureResponse = null, analysisResponse = null) {
   const frontendUrl = testInfo.project.use.baseURL;
   await installSyntheticNetworkMocks(page, DEFAULT_SYNTHETIC_BACKEND_URL);
   await installSyntheticFrontendConfigMock(page, frontendUrl, DEFAULT_SYNTHETIC_BACKEND_URL);
@@ -31,6 +32,16 @@ async function openSettings(page, testInfo, directorySettings, failureResponse =
   if (failureResponse) {
     await page.route('**/api/registration_failures.php*', async (route) => {
       const result = failureResponse(new URL(route.request().url()));
+      await route.fulfill({
+        status: result.status || 200,
+        headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+        body: JSON.stringify(result.body || result),
+      });
+    });
+  }
+  if (analysisResponse) {
+    await page.route('**/api/unanalysed_sounds.php*', async (route) => {
+      const result = analysisResponse(new URL(route.request().url()));
       await route.fulfill({
         status: result.status || 200,
         headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
@@ -85,12 +96,12 @@ test('Current Status leads to persisted Step1 and Step2 failures after revisitin
   await page.getByRole('button', { name: /Detail/ }).click();
   await expect(page.getByText('/music/unreadable.wav')).toBeVisible();
   failures = failures.filter((failure) => failure.step === 2);
-  await page.getByRole('button', { name: 'Refresh' }).click();
+  await page.getByRole('button', { name: 'Refresh failures' }).click();
   await expect(page.getByText('1 failure · See Detail')).toBeVisible();
   await expect(page.getByText('/music/unreadable.wav')).toHaveCount(0);
   await page.getByRole('button', { name: 'Step2 (1)' }).click();
   failures = [];
-  await page.getByRole('button', { name: 'Refresh' }).click();
+  await page.getByRole('button', { name: 'Refresh failures' }).click();
   await expect(page.getByText('No unresolved failures recorded.', { exact: true })).toBeVisible();
   await expect(page.getByRole('group', { name: 'Filter failures by step' })).toHaveCount(0);
 });
@@ -104,18 +115,18 @@ test('failure list API errors are shown in Detail and the status cue recovers on
   await page.getByRole('button', { name: /Detail/ }).click();
   await expect(page.getByRole('alert').getByText('Could not load failure details.')).toBeVisible();
   available = true;
-  await page.getByRole('button', { name: 'Refresh' }).click();
+  await page.getByRole('button', { name: 'Refresh failures' }).click();
   await expect(page.getByText('No unresolved failures recorded.')).toBeVisible();
   await expect(page.getByText('Failure status unavailable · See Detail')).toHaveCount(0);
 });
 
-test('empty registration details show a compact result without irrelevant filters', async ({ page }, testInfo) => {
+test('empty failure history omits its guidance and filters even when analysis differs', async ({ page }, testInfo) => {
   await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, () => ({
     counts: { step1: 0, step2: 0 }, total: 0, failures: [],
   }));
   await page.getByRole('button', { name: /Detail/ }).click();
   await expect(page.getByText('No unresolved failures recorded.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Refresh' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Refresh failures' })).toBeVisible();
   await expect(page.getByRole('group', { name: 'Filter failures by step' })).toHaveCount(0);
   await expect(page.getByText('After fixing a file')).toHaveCount(0);
   const details = page.locator('.registration-details');
@@ -130,6 +141,87 @@ test('empty registration details show a compact result without irrelevant filter
     }
     await testInfo.attach('empty-registration-detail', { body: await page.screenshot(), contentType: 'image/png' });
   }
+});
+
+test('Analysis/Sound Count gap identifies older sounds even when failure history is empty', async ({ page }, testInfo) => {
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, () => ({
+    counts: { step1: 0, step2: 0 }, total: 0, failures: [],
+  }));
+  await expect(page.getByText('2 not counted as analyzed · See Detail')).toBeVisible();
+  await expect(page.getByText('Check analysis', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /Detail/ }).click();
+  await expect(page.getByText('No unresolved failures recorded.')).toBeVisible();
+  await expect(page.getByText('Regist Step2:').getByText('Not counted')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Not counted as analyzed (2)' })).toBeVisible();
+  await expect(page.getByText('Unanalysed track one')).toBeVisible();
+  await expect(page.getByText('/music/unanalysed-2.wav')).toBeVisible();
+  await expect.poll(async () => {
+    const panel = await page.locator('.v-expansion-panel-text').boundingBox();
+    const lastSound = await page.locator('.analysis-row').last().boundingBox();
+    return Boolean(panel && lastSound && lastSound.y + lastSound.height <= panel.y + panel.height + 1);
+  }).toBe(true);
+  const analysisWidth = await page.locator('.analysis-gap').evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(analysisWidth.scrollWidth).toBeLessThanOrEqual(analysisWidth.clientWidth);
+  if (testInfo.project.name.includes('1920x1080') || testInfo.project.name.includes('320x667')) {
+    if (testInfo.project.name.includes('320x667')) await page.getByText('/music/unanalysed-2.wav').scrollIntoViewIfNeeded();
+    await testInfo.attach('analysis-gap-detail', { body: await page.screenshot(), contentType: 'image/png' });
+  }
+});
+
+test('analysis list load error is visible and Refresh recovers', async ({ page }, testInfo) => {
+  let available = false;
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, null, () => available
+    ? { total: 2, sounds: [
+      { hash: 'one', title: 'Recovered track', path: '/music/recovered.wav' },
+      { hash: 'two', title: 'Second track', path: '/music/second.wav' },
+    ] }
+    : { status: 503, body: { status: 'error' } });
+  await page.getByRole('button', { name: /Detail/ }).click();
+  await expect(page.getByRole('alert').getByText('Could not load sounds without an analysis count.')).toBeVisible();
+  available = true;
+  await page.getByRole('button', { name: 'Refresh analysis list' }).click();
+  await expect(page.getByText('Recovered track')).toBeVisible();
+  await expect(page.getByRole('alert').getByText('Could not load sounds without an analysis count.')).toHaveCount(0);
+});
+
+test('analysis gap list pages through more than 25 sounds', async ({ page }, testInfo) => {
+  const sounds = Array.from({ length: 30 }, (_, index) => ({
+    hash: `sound-${index}`,
+    title: `Unanalysed sound ${index}`,
+    path: `/music/sound-${index}.wav`,
+  }));
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, null, (url) => {
+    const offset = Number(url.searchParams.get('offset'));
+    const limit = Number(url.searchParams.get('limit'));
+    return { total: sounds.length, sounds: sounds.slice(offset, offset + limit), limit, offset };
+  });
+  await page.getByRole('button', { name: /Detail/ }).click();
+  await expect(page.getByText('Unanalysed sound 0', { exact: true })).toBeVisible();
+  await expect(page.getByText('Unanalysed sound 29', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('Unanalysed sound 29', { exact: true })).toBeVisible();
+  await expect(page.getByText('26–30 / 30')).toBeVisible();
+  await page.getByRole('button', { name: 'Previous' }).click();
+  await expect(page.getByText('Unanalysed sound 0', { exact: true })).toBeVisible();
+});
+
+test('a matching Analysis and Sound Count keeps the normal Detail compact', async ({ page }, testInfo) => {
+  await page.routeWebSocket(/^ws:\/\/127\.0\.0\.1:8080\//, (webSocket) => {
+    webSocket.send(JSON.stringify({
+      ...LAYOUT_WEBSOCKET_STATUS,
+      context: {
+        ...LAYOUT_WEBSOCKET_STATUS.context,
+        regist_data_count: { ...LAYOUT_WEBSOCKET_STATUS.context.regist_data_count, analysis_sound: 8 },
+      },
+    }));
+  });
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' });
+  await page.getByRole('button', { name: /Detail/ }).click();
+  await expect(page.getByText('No unresolved failures recorded.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Not counted as analyzed/ })).toHaveCount(0);
 });
 
 test('long failure lists can be browsed in bounded pages on Settings', async ({ page }, testInfo) => {

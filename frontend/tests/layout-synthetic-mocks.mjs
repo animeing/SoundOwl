@@ -133,6 +133,16 @@ async function responseForApi(pathname, request) {
       return { lock: false };
     case 'registration_failures.php':
       return { counts: { step1: 0, step2: 0 }, total: 0, failures: [], limit: 25, offset: 0 };
+    case 'unanalysed_sounds.php': {
+      const url = new URL(request.url());
+      const limit = Number(url.searchParams.get('limit') ?? 25);
+      const offset = Number(url.searchParams.get('offset') ?? 0);
+      const sounds = [
+        { hash: 'unanalysed-1', title: 'Unanalysed track one', path: '/music/unanalysed-1.wav' },
+        { hash: 'unanalysed-2', title: 'Unanalysed track two', path: '/music/unanalysed-2.wav' },
+      ];
+      return { total: sounds.length, sounds: sounds.slice(offset, offset + limit), limit, offset };
+    }
     case 'sound_equalizer_preset.json':
       return equalizerPresets();
     case 'audio_pulse_data_list.php':

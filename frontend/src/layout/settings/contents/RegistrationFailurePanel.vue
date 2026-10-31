@@ -6,13 +6,13 @@
         <div class="registration-details">
           <div class="step-status" aria-label="Registration steps">
             <span class="step-status-item">Regist Step1: <v-chip :color="step1Running || counts.step1 ? 'red' : 'green'">{{ step1Running ? 'Action' : counts.step1 ? 'Needs attention' : 'Finished' }}</v-chip></span>
-            <span class="step-status-item">Regist Step2: <v-chip :color="step2Running || counts.step2 ? 'red' : 'green'">{{ step2Running ? 'Action' : counts.step2 ? 'Needs attention' : 'Finished' }}</v-chip></span>
+            <span class="step-status-item">Regist Step2: <v-chip :color="step2Running || counts.step2 ? 'red' : analysisGap > 0 ? 'warning' : 'green'">{{ step2Running ? 'Action' : counts.step2 ? 'Needs attention' : analysisGap > 0 ? 'Not counted' : 'Finished' }}</v-chip></span>
           </div>
           <v-divider />
           <section class="failure-section" aria-labelledby="failure-heading">
             <div class="failure-heading">
               <h3 id="failure-heading" class="text-subtitle-1 font-weight-medium">Unresolved failures</h3>
-              <v-btn size="small" color="primary" variant="tonal" :loading="loading" @click="refresh">Refresh</v-btn>
+              <v-btn size="small" color="primary" variant="tonal" :loading="loading" @click="refresh">Refresh failures</v-btn>
             </div>
             <template v-if="!loadError && failureCount > 0">
               <p class="text-body-2 failure-help">Step1 reads and saves files; Step2 analyzes their volume. A successful retry clears the matching failure.</p>
@@ -24,7 +24,7 @@
               </div>
             </template>
             <p v-if="loading" role="status" class="failure-message text-body-2">Loading failure details…</p>
-            <p v-else-if="loadError" role="alert" class="failure-message text-error">Could not load failure details. Check the backend connection and press Refresh.</p>
+            <p v-else-if="loadError" role="alert" class="failure-message text-error">Could not load failure details. Check the backend connection and press Refresh failures.</p>
             <p v-else-if="total === 0" role="status" class="failure-message text-body-2">No unresolved failures {{ selectedStep === 'all' ? 'recorded' : `recorded for ${selectedStep === 'step1' ? 'Step1' : 'Step2'}` }}.</p>
             <div v-else class="failure-list">
               <div v-for="failure in failures" :key="`${failure.step}:${failure.target}`" class="failure-row py-3">
@@ -42,6 +42,7 @@
               <v-btn size="small" variant="outlined" :disabled="offset + pageSize >= total || loading" @click="changePage(1)">Next</v-btn>
             </div>
           </section>
+          <UnanalysedSoundList v-if="analysisGap > 0" ref="analysisList" />
         </div>
       </v-expansion-panel-text>
     </v-expansion-panel>
@@ -50,12 +51,15 @@
 
 <script>
 import { BASE } from '../../../utilization/path';
+import UnanalysedSoundList from './UnanalysedSoundList.vue';
 
 export default {
   name: 'RegistrationFailurePanel',
+  components: { UnanalysedSoundList },
   props: {
     step1Running: { type: Boolean, default: false },
-    step2Running: { type: Boolean, default: false }
+    step2Running: { type: Boolean, default: false },
+    analysisGap: { type: Number, default: 0 }
   },
   emits: ['count-change'],
   data() {
@@ -83,7 +87,15 @@ export default {
     }
   },
   watch: {
-    openPanel(value) { if (value === 0) this.refresh(); }
+    openPanel(value) {
+      if (value === 0) {
+        this.refresh();
+        if (this.$refs.analysisList && !this.$refs.analysisList.loading) this.$refs.analysisList.refresh();
+      }
+    },
+    analysisGap(value, previous) {
+      if (value > 0 && previous > 0 && value !== previous) this.$refs.analysisList?.refresh();
+    }
   },
   mounted() { this.refresh(); },
   methods: {

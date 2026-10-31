@@ -16,6 +16,7 @@ const ROUTES = {
   '/api/sound_search.php': 'soundSearch',
   '/api/sound_regist.php': 'soundRegist',
   '/api/registration_failures.php': 'registrationFailures',
+  '/api/unanalysed_sounds.php': 'unanalysedSounds',
   '/api/action/sound_played.php': 'soundPlayed',
   '/api/artist_list.php': 'artistList',
   '/api/artist_sounds.php': 'artistSounds',
