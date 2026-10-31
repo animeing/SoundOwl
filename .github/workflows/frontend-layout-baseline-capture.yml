@@ -17,7 +17,7 @@ jobs:
             browser: chromium
             label: windows-chromium
             exclude_routes: ''
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             browser: firefox
             label: ubuntu-firefox
             exclude_routes: sound-sculpt-debug
