@@ -119,12 +119,14 @@ export default {
 .analysis-gap { display: grid; gap: 12px; min-width: 0; }
 .analysis-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .analysis-heading h3, .analysis-help, .analysis-message, .analysis-count { margin: 0; }
+.analysis-help { max-width: 85ch; line-height: 1.5; }
 .analysis-search { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .analysis-search-input { display: grid; gap: 4px; flex: 1 1 280px; width: 100%; max-width: 520px; min-width: 0; }
 .analysis-search-input input { width: 100%; padding: 8px 12px; color: inherit; background: transparent; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); border-radius: 6px; font: inherit; }
 .analysis-search-input input:focus-visible { outline: 2px solid rgb(var(--v-theme-primary)); outline-offset: 2px; }
 .analysis-message { padding: 14px 16px; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); border-radius: 8px; }
 .analysis-row { display: grid; gap: 4px; min-width: 0; padding-block: 12px; border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); overflow-wrap: anywhere; }
-.analysis-row small { opacity: 0.8; }
+.analysis-row strong { font-size: 1rem; }
+.analysis-row small { font-size: 0.875rem; line-height: 1.4; opacity: 0.9; }
 .analysis-pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 </style>

@@ -1,9 +1,11 @@
 <template>
   <v-expansion-panels v-model="openPanel" rounded="md">
-    <v-expansion-panel>
-      <v-expansion-panel-title>Detail</v-expansion-panel-title>
+    <v-expansion-panel class="status-detail-panel">
+      <v-expansion-panel-title class="status-detail-title">
+        <span class="status-detail-label">Detail <small>Registration, failures, analysis<span v-if="analysisGap > 0 || failureCount > 0"> · Scroll inside ↓</span></small></span>
+      </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <div class="registration-details">
+        <div class="registration-details" role="region" aria-label="Registration and analysis details" tabindex="0">
           <div class="step-status" aria-label="Registration steps">
             <span class="step-status-item">Regist Step1: <v-chip :color="step1Running || counts.step1 ? 'red' : 'green'">{{ step1Running ? 'Action' : counts.step1 ? 'Needs attention' : 'Finished' }}</v-chip></span>
             <span class="step-status-item">Regist Step2: <v-chip :color="step2Running || counts.step2 ? 'red' : analysisGap > 0 ? 'warning' : 'green'">{{ step2Running ? 'Action' : counts.step2 ? 'Needs attention' : analysisGap > 0 ? 'Not counted' : 'Finished' }}</v-chip></span>
@@ -14,7 +16,7 @@
               <h3 id="failure-heading" class="text-subtitle-1 font-weight-medium">Unresolved failures</h3>
               <v-btn size="small" color="primary" variant="tonal" :loading="loading" @click="refresh">Reload failure records</v-btn>
             </div>
-            <p class="text-caption failure-help">Reload failure records only checks saved history; it does not retry registration.</p>
+            <p v-if="failureCount > 0 || loadError" class="text-caption failure-help">Reload checks saved history; it does not retry registration.</p>
             <template v-if="!loadError && failureCount > 0">
               <p class="text-body-2 failure-help">Step1 reads and saves files; Step2 analyzes their volume. A successful retry clears the matching failure.</p>
               <p class="text-body-2 failure-help">After fixing a file, run Sound Regist again. For a file already in the library, use its Update action.</p>
@@ -26,7 +28,7 @@
             </template>
             <p v-if="loading" role="status" class="failure-message text-body-2">Loading failure details…</p>
             <p v-else-if="loadError" role="alert" class="failure-message text-error">Could not load failure details. Check the backend connection and press Reload failure records.</p>
-            <p v-else-if="total === 0" role="status" class="failure-message text-body-2">No unresolved failures {{ selectedStep === 'all' ? 'recorded' : `recorded for ${selectedStep === 'step1' ? 'Step1' : 'Step2'}` }}.</p>
+            <p v-else-if="total === 0" role="status" class="failure-empty text-body-2">No unresolved failures {{ selectedStep === 'all' ? 'recorded' : `recorded for ${selectedStep === 'step1' ? 'Step1' : 'Step2'}` }}.</p>
             <div v-else class="failure-list">
               <div v-for="failure in failures" :key="`${failure.step}:${failure.target}`" class="failure-row py-3">
                 <v-chip size="small" color="error">Step{{ failure.step }}</v-chip>
@@ -89,9 +91,10 @@ export default {
   },
   watch: {
     openPanel(value) {
-      if (value === 0) {
+      if (value !== null && value !== undefined) {
         this.refresh();
         if (this.$refs.analysisList && !this.$refs.analysisList.loading) this.refreshAnalysisList();
+        this.$nextTick(() => this.$el.querySelector('.status-detail-panel')?.scrollIntoView({ block: 'start' }));
       }
     },
     analysisGap(value, previous) {
@@ -158,12 +161,20 @@ export default {
 </script>
 
 <style scoped>
-.registration-details { display: grid; gap: 20px; padding-block: 4px 8px; }
+.status-detail-panel { border: 2px solid rgba(var(--v-theme-on-surface), 0.45); border-radius: 8px; overflow: hidden; scroll-margin-top: 64px; }
+.status-detail-title { background: rgba(var(--v-theme-primary), 0.12); border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.3); }
+.status-detail-label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-weight: 600; }
+.status-detail-label small { font-size: 0.8rem; font-weight: 400; opacity: 0.85; }
+:deep(.status-detail-panel .v-expansion-panel-text__wrapper) { padding: 0; }
+.registration-details { display: grid; gap: 14px; max-height: clamp(250px, 48vh, 460px); min-width: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-width: auto; padding: 12px 18px 18px; scrollbar-color: rgb(var(--v-theme-primary)) rgba(var(--v-theme-on-surface), 0.14); }
+.registration-details::-webkit-scrollbar { width: 12px; }
+.registration-details::-webkit-scrollbar-track { background: rgba(var(--v-theme-on-surface), 0.14); }
+.registration-details::-webkit-scrollbar-thumb { background: rgb(var(--v-theme-primary)); border-radius: 6px; }
 .step-status { display: flex; flex-wrap: wrap; gap: 12px 24px; }
 .step-status-item { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .failure-section { display: grid; gap: 12px; min-width: 0; }
 .failure-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-.failure-heading h3, .failure-help, .failure-message { margin: 0; }
+.failure-heading h3, .failure-help, .failure-message, .failure-empty { margin: 0; }
 .failure-filters, .failure-pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .failure-message { padding: 14px 16px; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); border-radius: 8px; }
 .failure-row { display: flex; align-items: flex-start; gap: 12px; border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); }

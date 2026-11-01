@@ -71,10 +71,12 @@ test('Current Status leads to persisted Step1 and Step2 failures after revisitin
   await page.getByRole('button', { name: /Detail/ }).click();
   await expect(page.getByText('/music/unreadable.wav')).toBeVisible();
   await expect(page.getByText('/music/quiet.wav')).toBeVisible();
+  const lastFailure = page.locator('.failure-row').last();
+  await lastFailure.scrollIntoViewIfNeeded();
   await expect.poll(async () => {
-    const panel = await page.locator('.v-expansion-panel-text').boundingBox();
-    const lastFailure = await page.locator('.failure-row').last().boundingBox();
-    return Boolean(panel && lastFailure && lastFailure.y + lastFailure.height <= panel.y + panel.height + 1);
+    const scrollRegion = await page.getByRole('region', { name: 'Registration and analysis details' }).boundingBox();
+    const row = await lastFailure.boundingBox();
+    return Boolean(scrollRegion && row && row.y >= scrollRegion.y - 1 && row.y + row.height <= scrollRegion.y + scrollRegion.height + 1);
   }).toBe(true);
   const failureDetailsWidth = await page.locator('.registration-details').evaluate((element) => ({
     clientWidth: element.clientWidth,
@@ -85,7 +87,6 @@ test('Current Status leads to persisted Step1 and Step2 failures after revisitin
     await testInfo.attach('persistent-failures-detail', { body: await page.screenshot(), contentType: 'image/png' });
   }
   if (testInfo.project.name.includes('320x667')) {
-    await page.getByText('/music/quiet.wav').scrollIntoViewIfNeeded();
     await testInfo.attach('persistent-failures-detail', { body: await page.screenshot(), contentType: 'image/png' });
   }
   await page.getByRole('button', { name: 'Step2 (1)' }).click();
@@ -127,7 +128,7 @@ test('empty failure history omits its guidance and filters even when analysis di
   await page.getByRole('button', { name: /Detail/ }).click();
   await expect(page.getByText('No unresolved failures recorded.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Reload failure records' })).toBeVisible();
-  await expect(page.getByText('Reload failure records only checks saved history; it does not retry registration.')).toBeVisible();
+  await expect(page.getByText('Reload checks saved history; it does not retry registration.')).toHaveCount(0);
   await expect(page.getByRole('group', { name: 'Filter failures by step' })).toHaveCount(0);
   await expect(page.getByText('After fixing a file')).toHaveCount(0);
   const details = page.locator('.registration-details');
@@ -145,30 +146,40 @@ test('empty failure history omits its guidance and filters even when analysis di
 });
 
 test('Analysis/Sound Count gap identifies older sounds even when failure history is empty', async ({ page }, testInfo) => {
+  if (testInfo.project.name.includes('1920x1080')) await page.setViewportSize({ width: 1894, height: 760 });
   await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, () => ({
     counts: { step1: 0, step2: 0 }, total: 0, failures: [],
   }));
   await expect(page.getByText('2 not counted as analyzed · See Detail')).toBeVisible();
   await expect(page.getByText('Check analysis', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Detail/ }).click();
+  await expect.poll(async () => (await page.locator('.status-detail-panel').boundingBox())?.y).toBeGreaterThanOrEqual(48);
+  await expect.poll(async () => (await page.locator('.status-detail-panel').boundingBox())?.y).toBeLessThan(120);
+  await expect(page.getByRole('button', { name: /Detail/ })).toContainText('Scroll inside');
   await expect(page.getByText('No unresolved failures recorded.')).toBeVisible();
   await expect(page.getByText('Regist Step2:').getByText('Not counted')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Not counted as analyzed (2)' })).toBeVisible();
   await expect(page.getByText('Unanalysed track one')).toBeVisible();
   await expect(page.getByText('/music/unanalysed-2.wav')).toBeVisible();
-  await expect.poll(async () => {
-    const panel = await page.locator('.v-expansion-panel-text').boundingBox();
-    const lastSound = await page.locator('.analysis-row').last().boundingBox();
-    return Boolean(panel && lastSound && lastSound.y + lastSound.height <= panel.y + panel.height + 1);
-  }).toBe(true);
+  const details = page.getByRole('region', { name: 'Registration and analysis details' });
+  const detailSize = await details.evaluate((element) => ({ height: element.clientHeight, contentHeight: element.scrollHeight }));
+  if (!testInfo.project.name.includes('768x1024')) expect(detailSize.contentHeight).toBeGreaterThan(detailSize.height);
+  if (testInfo.project.name.includes('1920x1080') || testInfo.project.name.includes('320x667')) {
+    await testInfo.attach('analysis-gap-detail-top', { body: await page.screenshot(), contentType: 'image/png' });
+  }
+  await details.focus();
+  await page.keyboard.press('End');
+  if (detailSize.contentHeight > detailSize.height) {
+    await expect.poll(() => details.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  }
+  await expect(page.locator('.analysis-row').last()).toBeInViewport();
   const analysisWidth = await page.locator('.analysis-gap').evaluate((element) => ({
     clientWidth: element.clientWidth,
     scrollWidth: element.scrollWidth,
   }));
   expect(analysisWidth.scrollWidth).toBeLessThanOrEqual(analysisWidth.clientWidth);
   if (testInfo.project.name.includes('1920x1080') || testInfo.project.name.includes('320x667')) {
-    if (testInfo.project.name.includes('320x667')) await page.getByText('/music/unanalysed-2.wav').scrollIntoViewIfNeeded();
-    await testInfo.attach('analysis-gap-detail', { body: await page.screenshot(), contentType: 'image/png' });
+    await testInfo.attach('analysis-gap-detail-bottom', { body: await page.screenshot(), contentType: 'image/png' });
   }
 });
 
@@ -238,6 +249,11 @@ test('large analysis list keeps short pages and searches titles and paths across
   expect(searchFieldWidth.input).toBeGreaterThan(searchFieldWidth.container * 0.8);
   await expect(page.getByText('Unanalysed sound 0', { exact: true })).toBeVisible();
   await expect(page.getByText('Unanalysed sound 999', { exact: true })).toHaveCount(0);
+  const details = page.getByRole('region', { name: 'Registration and analysis details' });
+  await details.focus();
+  await page.keyboard.press('End');
+  await expect.poll(() => details.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await expect(page.getByRole('button', { name: 'Next page' })).toBeInViewport();
   if (testInfo.project.name.includes('1920x1080') || testInfo.project.name.includes('320x667')) {
     await page.locator('.analysis-search').scrollIntoViewIfNeeded();
     await testInfo.attach('analysis-search-many-results', { body: await page.screenshot(), contentType: 'image/png' });
