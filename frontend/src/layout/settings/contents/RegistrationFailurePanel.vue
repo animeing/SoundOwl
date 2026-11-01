@@ -14,14 +14,14 @@
           <section class="failure-section" aria-labelledby="failure-heading">
             <div class="failure-heading">
               <h3 id="failure-heading" class="text-subtitle-1 font-weight-medium">Unresolved failures</h3>
-              <v-btn size="small" color="primary" variant="tonal" :loading="loading" @click="refresh">Reload failure records</v-btn>
+              <v-btn size="small" variant="tonal" :loading="loading" @click="refresh">Reload failure records</v-btn>
             </div>
             <p v-if="failureCount > 0 || loadError" class="text-caption failure-help">Reload checks saved history; it does not retry registration.</p>
             <template v-if="!loadError && failureCount > 0">
               <p class="text-body-2 failure-help">Step1 reads and saves files; Step2 analyzes their volume. A successful retry clears the matching failure.</p>
               <p class="text-body-2 failure-help">After fixing a file, run Sound Regist again. For a file already in the library, use its Update action.</p>
               <div class="failure-filters" role="group" aria-label="Filter failures by step">
-                <v-btn v-for="option in filters" :key="option.value" size="small" :variant="selectedStep === option.value ? 'flat' : 'outlined'" :color="selectedStep === option.value ? 'primary' : undefined" :aria-pressed="selectedStep === option.value" @click="selectStep(option.value)">
+                <v-btn v-for="option in filters" :key="option.value" size="small" variant="outlined" :class="{ 'failure-filter-selected': selectedStep === option.value }" :aria-pressed="selectedStep === option.value" @click="selectStep(option.value)">
                   {{ option.label }} ({{ option.count }})
                 </v-btn>
               </div>
@@ -162,7 +162,7 @@ export default {
 
 <style scoped>
 .status-detail-panel { border: 2px solid rgba(var(--v-theme-on-surface), 0.45); border-radius: 8px; overflow: hidden; scroll-margin-top: 64px; }
-.status-detail-title { background: rgba(var(--v-theme-primary), 0.12); border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.3); }
+.status-detail-title { background: rgba(var(--v-theme-on-surface), 0.08); border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.3); }
 .status-detail-label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-weight: 600; }
 .status-detail-label small { font-size: 0.8rem; font-weight: 400; opacity: 0.85; }
 :deep(.status-detail-panel .v-expansion-panel-text__wrapper) { padding: 0; }
@@ -173,6 +173,7 @@ export default {
 .failure-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .failure-heading h3, .failure-help, .failure-message, .failure-empty { margin: 0; }
 .failure-filters, .failure-pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.failure-filter-selected { background: rgba(var(--v-theme-on-surface), 0.13); font-weight: 600; }
 .failure-message { padding: 14px 16px; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); border-radius: 8px; }
 .failure-row { display: flex; align-items: flex-start; gap: 12px; border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); }
 .failure-row :deep(.v-chip) { flex-shrink: 0; }
@@ -180,7 +181,7 @@ export default {
 .failure-list::-webkit-scrollbar { width: 8px; }
 .failure-list::-webkit-scrollbar-track { background: transparent; }
 .failure-list::-webkit-scrollbar-thumb { background: rgba(var(--v-theme-on-surface), 0.5); border: 2px solid transparent; border-radius: 8px; background-clip: padding-box; }
-.failure-list:focus-visible { outline: 2px solid rgb(var(--v-theme-primary)); outline-offset: 2px; }
+.failure-list:focus-visible { outline: 2px solid rgba(var(--v-theme-on-surface), 0.85); outline-offset: 2px; }
 .failure-row:first-child { border-top: 0; }
 .failure-details { min-width: 0; overflow-wrap: anywhere; }
 .failure-path { display: block; }

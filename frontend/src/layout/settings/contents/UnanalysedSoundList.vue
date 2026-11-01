@@ -3,7 +3,7 @@
     <v-divider />
     <div class="analysis-heading">
       <h3 id="analysis-gap-heading" class="text-subtitle-1 font-weight-medium">{{ headingText }}</h3>
-      <v-btn size="small" color="primary" variant="tonal" :loading="loading" @click="refresh">Reload list</v-btn>
+      <v-btn size="small" variant="tonal" :loading="loading" @click="refresh">Reload list</v-btn>
     </div>
     <p class="text-body-2 analysis-help">These sounds have no saved non-zero volume value; they may be unfinished, older failures, or valid 0 dB results. Reload only fetches this list; it does not retry analysis.</p>
     <form class="analysis-search" role="search" @submit.prevent="applySearch">
@@ -11,7 +11,7 @@
         <span>Search title or file path</span>
         <input v-model="searchInput" type="text" maxlength="200" autocomplete="off" />
       </label>
-      <v-btn type="submit" color="primary" variant="tonal">Search all pages</v-btn>
+      <v-btn type="submit" color="fixed-dark-surface" class="analysis-search-button">Search all pages</v-btn>
       <v-btn v-if="searchInput || activeSearch" variant="outlined" @click="clearSearch">Clear search</v-btn>
     </form>
     <p v-if="loading" role="status" class="analysis-message text-body-2">Loading sounds…</p>
@@ -123,13 +123,14 @@ export default {
 .analysis-search { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .analysis-search-input { display: grid; gap: 4px; flex: 1 1 280px; width: 100%; max-width: 520px; min-width: 0; }
 .analysis-search-input input { width: 100%; padding: 8px 12px; color: inherit; background: transparent; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); border-radius: 6px; font: inherit; }
-.analysis-search-input input:focus-visible { outline: 2px solid rgb(var(--v-theme-primary)); outline-offset: 2px; }
+.analysis-search-input input:focus-visible { outline: 2px solid rgba(var(--v-theme-on-surface), 0.85); outline-offset: 2px; }
+.analysis-search-button { color: rgb(var(--v-theme-on-fixed-dark-surface)); }
 .analysis-message { padding: 14px 16px; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); border-radius: 8px; }
 .analysis-list { max-height: clamp(180px, 34vh, 360px); overflow-y: auto; overscroll-behavior: contain; scroll-margin-top: 64px; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: rgba(var(--v-theme-on-surface), 0.5) transparent; border: 1px solid rgba(var(--v-theme-on-surface), 0.16); border-radius: 6px; padding: 0 10px; }
 .analysis-list::-webkit-scrollbar { width: 8px; }
 .analysis-list::-webkit-scrollbar-track { background: transparent; }
 .analysis-list::-webkit-scrollbar-thumb { background: rgba(var(--v-theme-on-surface), 0.5); border: 2px solid transparent; border-radius: 8px; background-clip: padding-box; }
-.analysis-list:focus-visible { outline: 2px solid rgb(var(--v-theme-primary)); outline-offset: 2px; }
+.analysis-list:focus-visible { outline: 2px solid rgba(var(--v-theme-on-surface), 0.85); outline-offset: 2px; }
 .analysis-row { display: grid; gap: 4px; min-width: 0; padding-block: 12px; border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); overflow-wrap: anywhere; }
 .analysis-row:first-child { border-top: 0; }
 .analysis-row strong { font-size: 1rem; }
