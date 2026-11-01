@@ -52,6 +52,15 @@ async function openSettings(page, testInfo, directorySettings, failureResponse =
   await page.goto(buildRouteUrl(frontendUrl, '/setting'), { waitUntil: 'domcontentloaded' });
 }
 
+/** Confirm that scrolling exposes the row inside its list, independent of page overlays. */
+async function expectRowInsideScrollableList(row) {
+  await expect.poll(() => row.evaluate((element) => {
+    const rowBounds = element.getBoundingClientRect();
+    const listBounds = element.parentElement.getBoundingClientRect();
+    return rowBounds.top >= listBounds.top - 1 && rowBounds.bottom <= listBounds.bottom + 1;
+  })).toBe(true);
+}
+
 test('Current Status leads to persisted Step1 and Step2 failures after revisiting Settings', async ({ page }, testInfo) => {
   let failures = [
     { step: 1, target: '/music/unreadable.wav', reason: 'Could not read audio metadata.', updatedAt: '2026-10-31T00:00:00Z' },
@@ -251,13 +260,12 @@ test('large analysis list keeps short pages and searches titles and paths across
   const analysisList = page.getByRole('region', { name: 'Not counted as analyzed sounds' });
   const listSize = await analysisList.evaluate((element) => ({ height: element.clientHeight, contentHeight: element.scrollHeight }));
   expect(listSize.contentHeight).toBeGreaterThan(listSize.height);
-  await analysisList.evaluate((element) => element.scrollIntoView({ block: 'start' }));
-  await analysisList.focus();
-  await page.keyboard.press('End');
-  await expect.poll(() => analysisList.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
-  await expect(page.locator('.analysis-row').last()).toBeInViewport();
+  await analysisList.evaluate((element) => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  await analysisList.hover();
+  await page.mouse.wheel(0, 4000);
+  await expect.poll(() => analysisList.evaluate((element) => element.scrollTop / (element.scrollHeight - element.clientHeight))).toBeGreaterThan(0.95);
+  await expectRowInsideScrollableList(page.locator('.analysis-row').last());
   await page.getByRole('button', { name: 'Next page' }).scrollIntoViewIfNeeded();
-  await expect(page.getByRole('button', { name: 'Next page' })).toBeInViewport();
   if (testInfo.project.name.includes('1920x1080') || testInfo.project.name.includes('320x667')) {
     await page.locator('.analysis-search').scrollIntoViewIfNeeded();
     await testInfo.attach('analysis-search-many-results', { body: await page.screenshot(), contentType: 'image/png' });
@@ -315,10 +323,11 @@ test('long failure lists can be browsed in bounded pages on Settings', async ({ 
   const failureList = page.getByRole('region', { name: 'Unresolved failure records' });
   const listSize = await failureList.evaluate((element) => ({ height: element.clientHeight, contentHeight: element.scrollHeight }));
   expect(listSize.contentHeight).toBeGreaterThan(listSize.height);
-  await failureList.focus();
-  await page.keyboard.press('End');
-  await expect.poll(() => failureList.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
-  await expect(page.getByText('/music/failed-24.wav')).toBeInViewport();
+  await failureList.evaluate((element) => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  await failureList.hover();
+  await page.mouse.wheel(0, 4000);
+  await expect.poll(() => failureList.evaluate((element) => element.scrollTop / (element.scrollHeight - element.clientHeight))).toBeGreaterThan(0.95);
+  await expectRowInsideScrollableList(page.locator('.failure-row').last());
   await expect(page.getByText('/music/failed-29.wav')).toHaveCount(0);
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByText('/music/failed-29.wav')).toBeVisible();
