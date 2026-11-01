@@ -71,6 +71,9 @@ test('Current Status leads to persisted Step1 and Step2 failures after revisitin
   await page.getByRole('button', { name: /Detail/ }).click();
   await expect(page.getByText('/music/unreadable.wav')).toBeVisible();
   await expect(page.getByText('/music/quiet.wav')).toBeVisible();
+  const stageChip = page.locator('.failure-row .v-chip').first();
+  const chipWidth = await stageChip.evaluate((element) => ({ visible: element.clientWidth, content: element.scrollWidth }));
+  expect(chipWidth.content).toBeLessThanOrEqual(chipWidth.visible);
   const lastFailure = page.locator('.failure-row').last();
   await lastFailure.scrollIntoViewIfNeeded();
   await expect.poll(async () => {

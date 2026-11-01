@@ -175,6 +175,7 @@ export default {
 .failure-filters, .failure-pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .failure-message { padding: 14px 16px; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); border-radius: 8px; }
 .failure-row { display: flex; align-items: flex-start; gap: 12px; border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); }
+.failure-row :deep(.v-chip) { flex-shrink: 0; }
 .failure-list { max-height: clamp(180px, 34vh, 360px); overflow-y: auto; overscroll-behavior: contain; scroll-margin-top: 64px; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: rgba(var(--v-theme-on-surface), 0.5) transparent; border: 1px solid rgba(var(--v-theme-on-surface), 0.16); border-radius: 6px; padding: 0 10px; }
 .failure-list::-webkit-scrollbar { width: 8px; }
 .failure-list::-webkit-scrollbar-track { background: transparent; }
