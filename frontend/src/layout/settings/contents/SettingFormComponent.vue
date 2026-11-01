@@ -18,60 +18,32 @@
       </div>
     </v-card>
 
-    <v-card class="box mb-12" style="background: inherit;">
-      <v-card-title :class="failureCount > 0 || failureLoadError || analysisGap > 0 ? 'd-flex flex-wrap align-center ga-2' : ''">
-        Current Status
-        <v-chip v-if="failureCount > 0" color="error" size="small">{{ failureCount }} {{ failureCount === 1 ? 'failure' : 'failures' }} · See Detail</v-chip>
-        <v-chip v-else-if="failureLoadError" color="warning" size="small">Failure status unavailable · See Detail</v-chip>
-        <v-chip v-if="analysisGap > 0" color="warning" size="small">{{ analysisGap }} not counted as analyzed · See Detail</v-chip>
-      </v-card-title>
-        <v-divider></v-divider>
-        <div>
-          <v-card style="background: inherit;">
-            <v-card-title :class="{ 'status-heading': failureCount > 0 || failureLoadError }">
-              <v-chip class="status-chip" color="red" v-if="registStatus">Action</v-chip>
-              <v-chip class="status-chip" color="red" v-else-if="failureCount > 0">Needs attention</v-chip>
-              <v-chip class="status-chip" color="warning" v-else-if="failureLoadError">Unknown</v-chip>
-              <v-chip class="status-chip" color="warning" v-else-if="analysisGap > 0">Check analysis</v-chip>
-              <v-chip class="status-chip" color="green" v-else>Finished</v-chip>
-              Regist Status
-            </v-card-title>
-            <v-card-text>
-              <RegistrationFailurePanel
-                ref="failurePanel"
-                :step1-running="registStatusStep1"
-                :step2-running="registStatusStep2"
-                :analysis-gap="analysisGap"
-                @count-change="updateFailureCount"
-              />
-            </v-card-text>
+    <v-card class="box mb-12 current-status-card" style="background: inherit;">
+      <v-card-title class="current-status-title">Current Status</v-card-title>
+      <v-divider />
+      <div class="current-status-body">
+        <RegistrationFailurePanel
+          ref="failurePanel"
+          :running="registStatus"
+          :step1-running="registStatusStep1"
+          :step2-running="registStatusStep2"
+          :analysis-gap="analysisGap"
+        />
+        <div class="status-metrics">
+          <v-card class="status-metric" style="background: inherit;">
+            <v-card-title>Analysis/Sound Count</v-card-title>
+            <v-card-text><v-divider /><span>{{ analysisSoundCount }}</span>/<span>{{ registSoundCount }}</span></v-card-text>
           </v-card>
-          <v-card style="background: inherit;">
-            <div class="d-flex flex-wrap align-content-space-around">
-              <v-card class="flex-grow-1 flex-shrink-1" style="background: inherit;">
-                <v-card-title>Analysis/Sound Count</v-card-title>
-                <v-card-text>
-                  <v-divider></v-divider>
-                  <span>{{ analysisSoundCount }}</span>/<span>{{ registSoundCount }}</span>
-                </v-card-text>
-              </v-card>
-              <v-card class="flex-grow-1 flex-shrink-1" style="background: inherit;">
-                <v-card-title>Album Count</v-card-title>
-                <v-card-text>
-                  <v-divider></v-divider>
-                  {{ albumCount }}
-                </v-card-text>
-              </v-card>
-              <v-card class="flex-grow-1 flex-shrink-1" style="background: inherit;">
-                <v-card-title>Artist Count</v-card-title>
-                <v-card-text>
-                  <v-divider></v-divider>
-                  {{ artistCount }}
-                </v-card-text>
-              </v-card>
-            </div>
+          <v-card class="status-metric" style="background: inherit;">
+            <v-card-title>Album Count</v-card-title>
+            <v-card-text><v-divider />{{ albumCount }}</v-card-text>
+          </v-card>
+          <v-card class="status-metric" style="background: inherit;">
+            <v-card-title>Artist Count</v-card-title>
+            <v-card-text><v-divider />{{ artistCount }}</v-card-text>
           </v-card>
         </div>
+      </div>
     </v-card>
     
     <div class="d-flex flex-wrap align-content-space-around">
@@ -151,9 +123,7 @@ export default {
       registSoundCount:SoundOwlProperty.SoundRegist.RegistDataCount.sound,
       analysisSoundCount:SoundOwlProperty.SoundRegist.RegistDataCount.analysisSound,
       albumCount:SoundOwlProperty.SoundRegist.RegistDataCount.album,
-      artistCount: SoundOwlProperty.SoundRegist.RegistDataCount.artist,
-      failureCount: 0,
-      failureLoadError: false
+      artistCount: SoundOwlProperty.SoundRegist.RegistDataCount.artist
     };
   },
   computed: {
@@ -169,11 +139,6 @@ export default {
     SoundOwlProperty.WebSocket.EventTarget.removeEventListener('update', this.updateCurrentStatus);
   },
   methods:{
-    /** Update the Current Status cue from the failure list API result. */
-    updateFailureCount({ count, error }) {
-      this.failureCount = count;
-      this.failureLoadError = error;
-    },
     /** Reload both detail lists after a backend change or registration action. */
     refreshRegistrationDetails() {
       const panel = this.$refs.failurePanel;
@@ -291,12 +256,30 @@ export default {
   padding-top: 24px;
 }
 
-.status-chip {
-  padding-inline: 13px;
+.current-status-body {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  max-width: 1200px;
+  margin-inline: auto;
 }
 
-.status-heading {
-  white-space: normal;
+.current-status-card { scroll-margin-top: 64px; }
+.current-status-title { max-width: 1200px; margin-inline: auto; }
+
+.status-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.status-metric { min-width: 0; }
+.status-metric :deep(.v-card-title) { white-space: normal; text-overflow: clip; }
+.status-metric :deep(.v-divider) { margin-bottom: 8px; }
+
+@media (max-width: 600px) {
+  .status-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .status-metric:first-child { grid-column: 1 / -1; }
 }
 
 .settings-panel {
