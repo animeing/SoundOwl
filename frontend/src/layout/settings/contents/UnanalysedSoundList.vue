@@ -18,7 +18,7 @@
     <p v-else-if="loadError" role="alert" class="analysis-message text-error">Could not load this list. Check the backend connection and press Reload list.</p>
     <p v-else-if="total === 0" role="status" class="analysis-message text-body-2">{{ activeSearch ? 'No songs match this search. Try another title or path, or clear the search.' : 'All registered sounds are counted as analyzed.' }}</p>
     <p v-if="!loading && !loadError && total > 0" class="analysis-count text-body-2">Showing {{ offset + 1 }}–{{ Math.min(offset + pageSize, total) }} of {{ total }} · newest added first{{ total > pageSize ? ' · page controls below' : '' }}</p>
-    <div v-if="!loading && !loadError && total > 0" class="analysis-list">
+    <div v-if="!loading && !loadError && total > 0" class="analysis-list" role="region" aria-label="Not counted as analyzed sounds" tabindex="0">
       <div v-for="sound in sounds" :key="sound.hash" class="analysis-row">
         <strong>{{ sound.title }}</strong>
         <small>{{ sound.path }}</small>
@@ -125,7 +125,13 @@ export default {
 .analysis-search-input input { width: 100%; padding: 8px 12px; color: inherit; background: transparent; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); border-radius: 6px; font: inherit; }
 .analysis-search-input input:focus-visible { outline: 2px solid rgb(var(--v-theme-primary)); outline-offset: 2px; }
 .analysis-message { padding: 14px 16px; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); border-radius: 8px; }
+.analysis-list { max-height: clamp(180px, 34vh, 360px); overflow-y: auto; overscroll-behavior: contain; scroll-margin-top: 64px; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: rgba(var(--v-theme-on-surface), 0.5) transparent; border: 1px solid rgba(var(--v-theme-on-surface), 0.16); border-radius: 6px; padding: 0 10px; }
+.analysis-list::-webkit-scrollbar { width: 8px; }
+.analysis-list::-webkit-scrollbar-track { background: transparent; }
+.analysis-list::-webkit-scrollbar-thumb { background: rgba(var(--v-theme-on-surface), 0.5); border: 2px solid transparent; border-radius: 8px; background-clip: padding-box; }
+.analysis-list:focus-visible { outline: 2px solid rgb(var(--v-theme-primary)); outline-offset: 2px; }
 .analysis-row { display: grid; gap: 4px; min-width: 0; padding-block: 12px; border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); overflow-wrap: anywhere; }
+.analysis-row:first-child { border-top: 0; }
 .analysis-row strong { font-size: 1rem; }
 .analysis-row small { font-size: 0.875rem; line-height: 1.4; opacity: 0.9; }
 .analysis-pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
