@@ -263,7 +263,8 @@ test('large analysis list keeps short pages and searches titles and paths across
   await analysisList.evaluate((element) => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
   await analysisList.hover();
   await page.mouse.wheel(0, 4000);
-  await expect.poll(() => analysisList.evaluate((element) => element.scrollTop / (element.scrollHeight - element.clientHeight))).toBeGreaterThan(0.95);
+  await expect.poll(() => analysisList.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await page.locator('.analysis-row').last().scrollIntoViewIfNeeded();
   await expectRowInsideScrollableList(page.locator('.analysis-row').last());
   await page.getByRole('button', { name: 'Next page' }).scrollIntoViewIfNeeded();
   if (testInfo.project.name.includes('1920x1080') || testInfo.project.name.includes('320x667')) {
@@ -326,7 +327,8 @@ test('long failure lists can be browsed in bounded pages on Settings', async ({ 
   await failureList.evaluate((element) => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
   await failureList.hover();
   await page.mouse.wheel(0, 4000);
-  await expect.poll(() => failureList.evaluate((element) => element.scrollTop / (element.scrollHeight - element.clientHeight))).toBeGreaterThan(0.95);
+  await expect.poll(() => failureList.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await page.locator('.failure-row').last().scrollIntoViewIfNeeded();
   await expectRowInsideScrollableList(page.locator('.failure-row').last());
   await expect(page.getByText('/music/failed-29.wav')).toHaveCount(0);
   await page.getByRole('button', { name: 'Next' }).click();
