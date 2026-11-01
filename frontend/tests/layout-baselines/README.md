@@ -1,7 +1,7 @@
 # Layout Baselines
 
 These PNG files are generated in dark mode with synthetic test data only.
-Source revision: `4d55f7a620f723db1eb5f1994acffe15383aed12`.
+Source revision: `9c916e6d1c382b29fca33a49c8bc4bcd73a3b8a9`.
 The update script routes API, media, and WebSocket requests to synthetic test data.
 Each route stores default.png and full-layout.png so the fullscreen/full layout control is also covered.
 
