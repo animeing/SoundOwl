@@ -1,6 +1,6 @@
 # Layout Baselines
 
-These PNG files are generated from reviewed frontend commit `40073c913897f66f2ce55aceff367f9fa8276b7f` (GitHub Actions run `41298836131`) in dark mode with synthetic test data only.
+These PNG files are generated from reviewed frontend commit `dbdb367508f3ed6b3ed0da2b30e2f7ddb2ae085b` (GitHub Actions run `41304555106`) in dark mode with synthetic test data only.
 The update script routes API, media, and WebSocket requests to synthetic test data.
 Each route stores default.png and full-layout.png so the fullscreen/full layout control is also covered.
 
