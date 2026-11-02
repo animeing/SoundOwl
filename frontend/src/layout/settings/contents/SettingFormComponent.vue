@@ -210,6 +210,9 @@ export default {
       this.registStatusStep2=SoundOwlProperty.SoundRegist.registStatusStep2;
       if (wasRegistering && !this.registStatusStep1 && !this.registStatusStep2) {
         this.refreshRegistrationDetails();
+      } else if (!this.registStatus) {
+        // A short Step2 job can start and finish between WebSocket broadcasts.
+        this.$refs.failurePanel?.refreshOnStatusUpdate();
       }
 
       this.registSoundCount=SoundOwlProperty.SoundRegist.RegistDataCount.sound;

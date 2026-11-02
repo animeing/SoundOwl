@@ -77,7 +77,8 @@ export default {
       loading: false,
       loadError: false,
       failureStatusReady: false,
-      requestNumber: 0
+      requestNumber: 0,
+      refreshAfterLoad: false
     };
   },
   computed: {
@@ -137,9 +138,18 @@ export default {
     }
   },
   mounted() { this.refresh(); },
+  beforeUnmount() { this.refreshAfterLoad = false; },
   methods: {
     /** Reload the analysis list after the backend or registration state changes. */
     refreshAnalysisList() { return this.$refs.analysisList?.refresh(); },
+    /** Check saved failures on idle status broadcasts, including jobs missed between broadcasts. */
+    refreshOnStatusUpdate() {
+      if (this.loading) {
+        this.refreshAfterLoad = true;
+        return;
+      }
+      return this.refresh();
+    },
     /** Reload the current page and notify the parent of the total for its status cue. */
     async refresh() {
       const currentRequest = ++this.requestNumber;
@@ -172,7 +182,13 @@ export default {
         this.loadError = true;
         this.failureStatusReady = true;
       } finally {
-        if (currentRequest === this.requestNumber) this.loading = false;
+        if (currentRequest === this.requestNumber) {
+          this.loading = false;
+          if (this.refreshAfterLoad) {
+            this.refreshAfterLoad = false;
+            this.refresh();
+          }
+        }
       }
     },
     /** Apply the selected stage and return to the first page. */

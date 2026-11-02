@@ -31,7 +31,7 @@ async function openSettings(page, testInfo, directorySettings, failureResponse =
   });
   if (failureResponse) {
     await page.route('**/api/registration_failures.php*', async (route) => {
-      const result = failureResponse(new URL(route.request().url()));
+      const result = await failureResponse(new URL(route.request().url()));
       await route.fulfill({
         status: result.status || 200,
         headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
@@ -358,6 +358,56 @@ test('an active Step2 names the running work instead of calling the count gap a 
   await expect(page.getByText('In progress', { exact: true })).toBeVisible();
   await expect(page.getByText('Step2 is analyzing volume.')).toBeVisible();
   await expect(page.getByText('Check analysis', { exact: true })).toHaveCount(0);
+});
+
+test('an idle status broadcast reveals a Step2 failure missed between broadcasts', async ({ page }, testInfo) => {
+  let statusSocket;
+  let failures = [];
+  await page.routeWebSocket(/^ws:\/\/127\.0\.0\.1:8080\//, (webSocket) => {
+    statusSocket = webSocket;
+    webSocket.send(JSON.stringify(LAYOUT_WEBSOCKET_STATUS));
+  });
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, () => ({
+    counts: { step1: 0, step2: failures.length }, total: failures.length, failures,
+  }));
+  await page.getByRole('button', { name: /View details/ }).click();
+  await expect(page.getByText(/no failed files recorded/)).toBeVisible();
+  failures = [{ step: 2, target: '/music/late-step2.wav', reason: 'Could not analyze audio loudness.' }];
+  statusSocket.send(JSON.stringify(LAYOUT_WEBSOCKET_STATUS));
+  await expect(page.getByText('/music/late-step2.wav')).toBeVisible();
+  await expect(page.getByText('1 failed file recorded')).toBeVisible();
+});
+
+test('an idle status update waits for an in-flight failure lookup before refreshing', async ({ page }, testInfo) => {
+  let statusSocket;
+  let failures = [];
+  let holdNextLookup = false;
+  let releaseLookup;
+  let signalLookupStarted;
+  const lookupStarted = new Promise((resolve) => { signalLookupStarted = resolve; });
+  await page.routeWebSocket(/^ws:\/\/127\.0\.0\.1:8080\//, (webSocket) => {
+    statusSocket = webSocket;
+    webSocket.send(JSON.stringify(LAYOUT_WEBSOCKET_STATUS));
+  });
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, async () => {
+    const currentFailures = failures.slice();
+    if (holdNextLookup) {
+      holdNextLookup = false;
+      signalLookupStarted();
+      await new Promise((resolve) => { releaseLookup = resolve; });
+    }
+    return { counts: { step1: 0, step2: currentFailures.length }, total: currentFailures.length, failures: currentFailures };
+  });
+  await expect(page.getByText(/no failed files recorded/)).toBeVisible();
+  holdNextLookup = true;
+  statusSocket.send(JSON.stringify(LAYOUT_WEBSOCKET_STATUS));
+  await lookupStarted;
+  failures = [{ step: 2, target: '/music/delayed-step2.wav', reason: 'Could not analyze audio loudness.' }];
+  statusSocket.send(JSON.stringify(LAYOUT_WEBSOCKET_STATUS));
+  releaseLookup();
+  await expect(page.getByText('1 failed file recorded')).toBeVisible();
+  await page.getByRole('button', { name: /View details/ }).click();
+  await expect(page.getByText('/music/delayed-step2.wav')).toBeVisible();
 });
 
 test('long failure lists can be browsed in bounded pages on Settings', async ({ page }, testInfo) => {
