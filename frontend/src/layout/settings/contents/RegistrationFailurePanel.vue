@@ -15,7 +15,8 @@
               <h3 id="failure-heading" class="text-subtitle-1 font-weight-medium">Recorded file failures ({{ failureCount }})</h3>
               <template v-if="!loadError && failureCount > 0">
                 <p class="text-body-2 failure-help">Step1 reads and saves files; Step2 analyzes volume.</p>
-                <p class="text-body-2 failure-help">After fixing a file, run Sound Regist again or use its Update action.</p>
+                <p class="text-body-2 failure-help">Already in the library: open the song's menu and choose Information update.</p>
+                <p class="text-body-2 failure-help">Not in the library: fix the file, then choose Sound Regist.</p>
               </template>
               <div v-if="failureCount > 0 || loadError" class="failure-toolbar">
                 <v-btn size="small" variant="tonal" :loading="loading" @click="refresh">Refresh failure records</v-btn>

@@ -119,6 +119,8 @@ test('Current Status leads to persisted Step1 and Step2 failures after revisitin
   }
   await page.getByRole('button', { name: 'Step2 (1)' }).click();
   await expect(page.getByText('/music/quiet.wav')).toBeVisible();
+  await expect(page.getByText("Already in the library: open the song's menu and choose Information update.")).toBeVisible();
+  await expect(page.getByText('Not in the library: fix the file, then choose Sound Regist.')).toBeVisible();
   await expect(page.getByText('/music/unreadable.wav')).toHaveCount(0);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.getByText(/2 failed files recorded/)).toBeVisible();
