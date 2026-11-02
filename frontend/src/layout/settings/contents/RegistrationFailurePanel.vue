@@ -32,7 +32,8 @@
                 <div v-for="failure in failures" :key="`${failure.step}:${failure.target}`" class="failure-row py-3">
                   <v-chip size="small" color="error">Step{{ failure.step }}</v-chip>
                   <div class="failure-details">
-                    <strong class="failure-path" :title="failure.target">{{ failure.target }}</strong>
+                    <strong class="failure-name" :title="failure.target">{{ fileName(failure.target) }}</strong>
+                    <small class="failure-path" :title="failure.target">{{ failure.target }}</small>
                     <div>{{ failure.reason }}</div>
                     <small v-if="failure.updatedAt">Last failed: {{ formatDate(failure.updatedAt) }}</small>
                   </div>
@@ -213,6 +214,11 @@ export default {
     formatDate(value) {
       const date = new Date(value);
       return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+    },
+    /** Keep the file identifiable when its full directory path is too long for a list row. */
+    fileName(path) {
+      const fullPath = String(path ?? '');
+      return fullPath.split(/[\\/]/).pop() || fullPath;
     }
   }
 };
@@ -245,6 +251,7 @@ export default {
 .failure-row:first-child { border-top: 0; }
 .failure-details { min-width: 0; }
 .failure-details > div { overflow-wrap: anywhere; }
+.failure-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .failure-path { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) {
   .detail-sections.has-two-sections { grid-template-columns: minmax(0, 1fr); }

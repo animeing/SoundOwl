@@ -97,6 +97,7 @@ test('long file paths stay on one line without expanding the Settings page', asy
     () => ({ total: 1, sounds: [{ hash: 'long-path', title: 'Track with a long path', path: longPath }] }),
   );
   await page.locator('.status-detail-title').click();
+  await expect(page.locator('.failure-name')).toHaveText('track.wav');
   for (const path of [page.locator('.failure-path'), page.locator('.analysis-row small')]) {
     await expect(path).toHaveAttribute('title', longPath);
     const appearance = await path.evaluate((element) => ({
