@@ -135,8 +135,7 @@ export default {
 
 <style scoped>
 .setup-actions {
-  max-width: 1232px;
-  margin-inline: auto;
+  width: 100%;
   padding-inline: 16px;
 }
 </style>

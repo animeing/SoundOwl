@@ -5,7 +5,7 @@
     :settings-locked="isBackendSaving || !isBackendReady"
     @backend-update="backendUpdate"
   />
-  <div class="d-flex flex-wrap justify-start mb-6 settings-actions">
+  <div class="d-flex justify-start mb-6 settings-actions">
     <v-btn
       color="fixed-dark-surface"
       :disabled="isBackendSaving || !isBackendReady || (isAction && !isConnectWebSocket)"
@@ -14,21 +14,19 @@
         : 'The operation cannot be performed because the WebSocket connection has not been established.'"
       @click="settingUpdate"
       style="color: rgb(var(--v-theme-on-fixed-dark-surface));"
-      class="ma-2 pa-2 text-uppercase"
+      class="pa-2 text-uppercase"
     >setting update</v-btn>
-    <div style="position: relative; display: inline-block;">
-      <v-btn
-        color="fixed-dark-surface"
-        :disabled="isBackendSaving || !isBackendReady || (isAction && !isConnectWebSocket)"
-        :loading="isAction"
-        style="position: relative; color: rgb(var(--v-theme-on-fixed-dark-surface));"
-        :data-hint="isConnectWebSocket
-          ? undefined
-          : 'The operation cannot be performed because the WebSocket connection has not been established.'"
-        @click="soundRegist"
-        class="ma-2 pa-2 text-uppercase"
-      >sound regist</v-btn>
-    </div>
+    <v-btn
+      color="fixed-dark-surface"
+      :disabled="isBackendSaving || !isBackendReady || (isAction && !isConnectWebSocket)"
+      :loading="isAction"
+      style="position: relative; color: rgb(var(--v-theme-on-fixed-dark-surface));"
+      :data-hint="isConnectWebSocket
+        ? undefined
+        : 'The operation cannot be performed because the WebSocket connection has not been established.'"
+      @click="soundRegist"
+      class="pa-2 text-uppercase"
+    >sound regist</v-btn>
   </div>
 </template>
 
@@ -149,9 +147,14 @@ export default {
 
 <style scoped>
 .settings-actions {
-  max-width: 1232px;
-  margin-inline: auto;
+  width: 100%;
   padding-inline: 16px;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .settings-actions { flex-direction: column; }
+  .settings-actions :deep(.v-btn) { width: 100%; }
 }
 </style>
 

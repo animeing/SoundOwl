@@ -6,7 +6,6 @@
           <span class="status-summary-heading">Registration and analysis <v-chip size="small" :color="summaryColor">{{ summaryStatus }}</v-chip></span>
           <span class="status-summary-description">{{ summaryDescription }}</span>
         </span>
-        <span class="status-summary-action">{{ openPanel === 0 ? 'Hide details' : 'View details' }}</span>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
         <div class="registration-details" role="region" aria-label="Registration and analysis details">
@@ -33,7 +32,7 @@
                 <div v-for="failure in failures" :key="`${failure.step}:${failure.target}`" class="failure-row py-3">
                   <v-chip size="small" color="error">Step{{ failure.step }}</v-chip>
                   <div class="failure-details">
-                    <strong class="failure-path">{{ failure.target }}</strong>
+                    <strong class="failure-path" :title="failure.target">{{ failure.target }}</strong>
                     <div>{{ failure.reason }}</div>
                     <small v-if="failure.updatedAt">Last failed: {{ formatDate(failure.updatedAt) }}</small>
                   </div>
@@ -225,13 +224,11 @@ export default {
 .status-summary { display: grid; gap: 4px; flex: 1 1 auto; min-width: 0; }
 .status-summary-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 1rem; font-weight: 600; }
 .status-summary-description { font-size: 0.875rem; line-height: 1.4; opacity: 0.9; overflow-wrap: anywhere; }
-.status-summary-action { flex-shrink: 0; font-size: 0.875rem; text-decoration: underline; text-underline-offset: 2px; }
 :deep(.status-detail-title .v-expansion-panel-title__icon) { margin-inline-start: 0; }
 :deep(.status-detail-panel .v-expansion-panel-text__wrapper) { padding: 0; }
 .registration-details { min-width: 0; padding: 16px; }
 .detail-sections { display: grid; gap: 16px; }
 .detail-sections.has-two-sections { grid-template-columns: minmax(340px, 0.65fr) minmax(0, 1fr); }
-.detail-sections:not(.has-two-sections) .failure-section { max-width: 600px; }
 .failure-section { display: grid; align-content: start; gap: 12px; min-width: 0; padding: 16px; border: 1px solid rgba(var(--v-theme-on-surface), 0.2); border-radius: 8px; }
 .failure-toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
 .failure-section h3, .failure-help, .failure-message, .failure-empty { margin: 0; }
@@ -246,15 +243,11 @@ export default {
 .failure-list::-webkit-scrollbar-thumb { background: rgba(var(--v-theme-on-surface), 0.5); border: 2px solid transparent; border-radius: 8px; background-clip: padding-box; }
 .failure-list:focus-visible { outline: 2px solid rgba(var(--v-theme-on-surface), 0.85); outline-offset: 2px; }
 .failure-row:first-child { border-top: 0; }
-.failure-details { min-width: 0; overflow-wrap: anywhere; }
-.failure-path { display: block; }
+.failure-details { min-width: 0; }
+.failure-details > div { overflow-wrap: anywhere; }
+.failure-path { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) {
   .detail-sections.has-two-sections { grid-template-columns: minmax(0, 1fr); }
-}
-@media (max-width: 600px) {
-  .status-detail-title { flex-wrap: wrap; }
-  .status-summary { flex-basis: 100%; }
-  .status-summary-action { margin-inline-start: 0; }
 }
 @media (max-width: 360px) {
   .failure-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }

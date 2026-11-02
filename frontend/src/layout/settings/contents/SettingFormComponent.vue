@@ -227,8 +227,7 @@ export default {
 <style scoped>
 .settings-form {
   padding: 16px;
-  max-width: 1232px;
-  margin-inline: auto;
+  width: 100%;
 }
 
 .settings-form :deep(.v-card-title) {
