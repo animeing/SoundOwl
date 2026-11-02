@@ -5,7 +5,7 @@
     :settings-locked="isBackendSaving || !isBackendReady"
     @backend-update="backendUpdate"
   />
-  <div class="d-flex justify-start mb-6 settings-actions">
+  <div class="d-flex flex-wrap justify-start mb-6 settings-actions">
     <v-btn
       color="fixed-dark-surface"
       :disabled="isBackendSaving || !isBackendReady || (isAction && !isConnectWebSocket)"

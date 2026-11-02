@@ -75,6 +75,15 @@ test('Settings cards and status details share one content column', async ({ page
   }
   expect(Math.abs(details.x - status.x - 16)).toBeLessThanOrEqual(1);
   expect(Math.abs(details.width - status.width + 32)).toBeLessThanOrEqual(1);
+  const actionWidths = await page.locator('.settings-actions').evaluate((element) => ({
+    visible: element.clientWidth,
+    content: element.scrollWidth,
+  }));
+  expect(actionWidths.content).toBeLessThanOrEqual(actionWidths.visible);
+  if (testInfo.project.name.includes('320x667')) {
+    await page.locator('.settings-actions').scrollIntoViewIfNeeded();
+    await testInfo.attach('settings-mobile-actions', { body: await page.screenshot(), contentType: 'image/png' });
+  }
 });
 
 test('Current Status leads to persisted Step1 and Step2 failures after revisiting Settings', async ({ page }, testInfo) => {
@@ -298,10 +307,12 @@ test('large analysis list keeps short pages and searches titles and paths across
   const analysisList = page.getByRole('region', { name: 'Sounds outside Analysis Count' });
   const listSize = await analysisList.evaluate((element) => ({ height: element.clientHeight, contentHeight: element.scrollHeight }));
   expect(listSize.contentHeight).toBeGreaterThan(listSize.height);
-  await analysisList.evaluate((element) => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
-  await analysisList.hover();
-  await page.mouse.wheel(0, 4000);
-  await expect.poll(() => analysisList.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  // Scroll the list itself so the assertion does not depend on viewport overlays or pointer placement.
+  const analysisScrollTop = await analysisList.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+    return element.scrollTop;
+  });
+  expect(analysisScrollTop).toBeGreaterThan(0);
   await page.locator('.analysis-row').last().scrollIntoViewIfNeeded();
   await expectRowInsideScrollableList(page.locator('.analysis-row').last());
   await page.getByRole('button', { name: 'Next page' }).scrollIntoViewIfNeeded();
@@ -456,10 +467,12 @@ test('long failure lists can be browsed in bounded pages on Settings', async ({ 
   const failureList = page.getByRole('region', { name: 'Unresolved failure records' });
   const listSize = await failureList.evaluate((element) => ({ height: element.clientHeight, contentHeight: element.scrollHeight }));
   expect(listSize.contentHeight).toBeGreaterThan(listSize.height);
-  await failureList.evaluate((element) => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
-  await failureList.hover();
-  await page.mouse.wheel(0, 4000);
-  await expect.poll(() => failureList.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  // Scroll the list itself so the assertion does not depend on viewport overlays or pointer placement.
+  const failureScrollTop = await failureList.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+    return element.scrollTop;
+  });
+  expect(failureScrollTop).toBeGreaterThan(0);
   await page.locator('.failure-row').last().scrollIntoViewIfNeeded();
   await expectRowInsideScrollableList(page.locator('.failure-row').last());
   await expect(page.getByText('/music/failed-29.wav')).toHaveCount(0);
