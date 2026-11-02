@@ -378,6 +378,26 @@ test('an idle status broadcast reveals a Step2 failure missed between broadcasts
   await expect(page.getByText('1 failed file recorded')).toBeVisible();
 });
 
+test('a successful idle refresh clears a transient failure-history error', async ({ page }, testInfo) => {
+  let statusSocket;
+  let historyAvailable = false;
+  await page.routeWebSocket(/^ws:\/\/127\.0\.0\.1:8080\//, (webSocket) => {
+    statusSocket = webSocket;
+    webSocket.send(JSON.stringify(LAYOUT_WEBSOCKET_STATUS));
+  });
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, () => historyAvailable
+    ? { counts: { step1: 0, step2: 1 }, total: 1, failures: [{ step: 2, target: '/music/recovered-step2.wav', reason: 'Could not analyze audio loudness.' }] }
+    : { status: 503, body: { status: 'error' } });
+  await page.getByRole('button', { name: /View details/ }).click();
+  await expect(page.getByText('Status unavailable')).toBeVisible();
+  await expect(page.getByRole('alert').getByText('Could not load failure records.')).toBeVisible();
+  historyAvailable = true;
+  statusSocket.send(JSON.stringify(LAYOUT_WEBSOCKET_STATUS));
+  await expect(page.getByText('/music/recovered-step2.wav')).toBeVisible();
+  await expect(page.getByText('Needs attention')).toBeVisible();
+  await expect(page.getByText('Status unavailable')).toHaveCount(0);
+});
+
 test('an idle status update waits for an in-flight failure lookup before refreshing', async ({ page }, testInfo) => {
   let statusSocket;
   let failures = [];

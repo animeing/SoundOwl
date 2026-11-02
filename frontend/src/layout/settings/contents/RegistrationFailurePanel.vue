@@ -171,6 +171,7 @@ export default {
           this.offset = Math.floor((result.total - 1) / this.pageSize) * this.pageSize;
           return this.refresh({ silent });
         }
+        this.loadError = false;
         this.counts = result.counts;
         this.total = result.total;
         this.failures = result.failures;
