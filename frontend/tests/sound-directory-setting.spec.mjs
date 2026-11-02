@@ -408,6 +408,13 @@ test('an idle status update waits for an in-flight failure lookup before refresh
   await expect(page.getByText('1 failed file recorded')).toBeVisible();
   await page.getByRole('button', { name: /View details/ }).click();
   await expect(page.getByText('/music/delayed-step2.wav')).toBeVisible();
+  const secondLookupStarted = new Promise((resolve) => { signalLookupStarted = resolve; });
+  holdNextLookup = true;
+  statusSocket.send(JSON.stringify(LAYOUT_WEBSOCKET_STATUS));
+  await secondLookupStarted;
+  await expect(page.getByText('/music/delayed-step2.wav')).toBeVisible();
+  await expect(page.getByText('Loading failure details…')).toHaveCount(0);
+  releaseLookup();
 });
 
 test('long failure lists can be browsed in bounded pages on Settings', async ({ page }, testInfo) => {

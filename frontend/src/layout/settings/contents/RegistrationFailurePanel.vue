@@ -78,7 +78,8 @@ export default {
       loadError: false,
       failureStatusReady: false,
       requestNumber: 0,
-      refreshAfterLoad: false
+      pendingStatusRefresh: false,
+      backgroundRefreshInProgress: false
     };
   },
   computed: {
@@ -138,23 +139,27 @@ export default {
     }
   },
   mounted() { this.refresh(); },
-  beforeUnmount() { this.refreshAfterLoad = false; },
+  beforeUnmount() { this.pendingStatusRefresh = false; },
   methods: {
     /** Reload the analysis list after the backend or registration state changes. */
     refreshAnalysisList() { return this.$refs.analysisList?.refresh(); },
     /** Check saved failures on idle status broadcasts, including jobs missed between broadcasts. */
     refreshOnStatusUpdate() {
-      if (this.loading) {
-        this.refreshAfterLoad = true;
+      if (this.loading || this.backgroundRefreshInProgress) {
+        this.pendingStatusRefresh = true;
         return;
       }
-      return this.refresh();
+      return this.refresh({ silent: true });
     },
     /** Reload the current page and notify the parent of the total for its status cue. */
-    async refresh() {
+    async refresh(options = {}) {
+      const silent = options?.silent === true;
       const currentRequest = ++this.requestNumber;
-      this.loading = true;
-      this.loadError = false;
+      if (silent) this.backgroundRefreshInProgress = true;
+      else {
+        this.loading = true;
+        this.loadError = false;
+      }
       try {
         const parameters = new URLSearchParams({ step: this.selectedStep, limit: String(this.pageSize), offset: String(this.offset) });
         const response = await fetch(`${BASE.API}registration_failures.php?${parameters}`);
@@ -164,7 +169,7 @@ export default {
         if (currentRequest !== this.requestNumber) return;
         if (result.total > 0 && this.offset >= result.total) {
           this.offset = Math.floor((result.total - 1) / this.pageSize) * this.pageSize;
-          return this.refresh();
+          return this.refresh({ silent });
         }
         this.counts = result.counts;
         this.total = result.total;
@@ -182,12 +187,13 @@ export default {
         this.loadError = true;
         this.failureStatusReady = true;
       } finally {
+        if (silent) this.backgroundRefreshInProgress = false;
         if (currentRequest === this.requestNumber) {
-          this.loading = false;
-          if (this.refreshAfterLoad) {
-            this.refreshAfterLoad = false;
-            this.refresh();
-          }
+          if (!silent) this.loading = false;
+        }
+        if (!this.loading && !this.backgroundRefreshInProgress && this.pendingStatusRefresh) {
+          this.pendingStatusRefresh = false;
+          this.refresh({ silent: true });
         }
       }
     },
