@@ -5,7 +5,7 @@
     :settings-locked="isBackendSaving || !isBackendReady"
     @backend-update="backendUpdate"
   />
-  <div class="d-flex justify-start mb-6">
+  <div class="d-flex justify-start mb-6 settings-actions">
     <v-btn
       color="fixed-dark-surface"
       :disabled="isBackendSaving || !isBackendReady || (isAction && !isConnectWebSocket)"
@@ -146,4 +146,12 @@ export default {
 }
 
 </script>
+
+<style scoped>
+.settings-actions {
+  max-width: 1232px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+</style>
 

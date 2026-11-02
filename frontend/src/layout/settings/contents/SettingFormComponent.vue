@@ -46,7 +46,7 @@
       </div>
     </v-card>
     
-    <div class="d-flex flex-wrap align-content-space-around">
+    <div class="settings-columns d-flex flex-wrap align-content-space-around">
       <!-- DB -------------------------------------------------------->
         <v-card class="settings-panel box flex-grow-1 flex-shrink-1" style="background: inherit;">
           <v-card-title>DB</v-card-title>
@@ -224,6 +224,8 @@ export default {
 <style scoped>
 .settings-form {
   padding: 16px;
+  max-width: 1232px;
+  margin-inline: auto;
 }
 
 .settings-form :deep(.v-card-title) {
@@ -260,12 +262,9 @@ export default {
   display: grid;
   gap: 16px;
   padding: 16px;
-  max-width: 1200px;
-  margin-inline: auto;
 }
 
 .current-status-card { scroll-margin-top: 64px; }
-.current-status-title { max-width: 1200px; margin-inline: auto; }
 
 .status-metrics {
   display: grid;

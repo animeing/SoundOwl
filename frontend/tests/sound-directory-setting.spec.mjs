@@ -61,6 +61,22 @@ async function expectRowInsideScrollableList(row) {
   })).toBe(true);
 }
 
+test('Settings cards and status details share one content column', async ({ page }, testInfo) => {
+  await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' });
+  const [backend, status, columns, details] = await Promise.all([
+    page.locator('.backend-card').boundingBox(),
+    page.locator('.current-status-card').boundingBox(),
+    page.locator('.settings-columns').boundingBox(),
+    page.locator('.status-detail-panel').boundingBox(),
+  ]);
+  for (const box of [status, columns]) {
+    expect(Math.abs(box.x - backend.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(box.width - backend.width)).toBeLessThanOrEqual(1);
+  }
+  expect(Math.abs(details.x - status.x - 16)).toBeLessThanOrEqual(1);
+  expect(Math.abs(details.width - status.width + 32)).toBeLessThanOrEqual(1);
+});
+
 test('Current Status leads to persisted Step1 and Step2 failures after revisiting Settings', async ({ page }, testInfo) => {
   let failures = [
     { step: 1, target: '/music/unreadable.wav', reason: 'Could not read audio metadata.', updatedAt: '2026-10-31T00:00:00Z' },
@@ -280,7 +296,7 @@ test('large analysis list keeps short pages and searches titles and paths across
   const analysisList = page.getByRole('region', { name: 'Sounds outside Analysis Count' });
   const listSize = await analysisList.evaluate((element) => ({ height: element.clientHeight, contentHeight: element.scrollHeight }));
   expect(listSize.contentHeight).toBeGreaterThan(listSize.height);
-  await analysisList.evaluate((element) => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  await analysisList.evaluate((element) => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
   await analysisList.hover();
   await page.mouse.wheel(0, 4000);
   await expect.poll(() => analysisList.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
@@ -361,7 +377,7 @@ test('long failure lists can be browsed in bounded pages on Settings', async ({ 
   const failureList = page.getByRole('region', { name: 'Unresolved failure records' });
   const listSize = await failureList.evaluate((element) => ({ height: element.clientHeight, contentHeight: element.scrollHeight }));
   expect(listSize.contentHeight).toBeGreaterThan(listSize.height);
-  await failureList.evaluate((element) => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  await failureList.evaluate((element) => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
   await failureList.hover();
   await page.mouse.wheel(0, 4000);
   await expect.poll(() => failureList.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);

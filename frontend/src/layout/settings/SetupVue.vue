@@ -1,11 +1,13 @@
 <template>
     <div>
         <SettingFormComponent ref="formRef" />
-        <input
-            type="button"
-            class="button"
-            value="SetUp"
-            @click="setUp">
+        <div class="setup-actions">
+            <input
+                type="button"
+                class="button"
+                value="SetUp"
+                @click="setUp">
+        </div>
     </div>
 </template>
 <script>
@@ -130,3 +132,11 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.setup-actions {
+  max-width: 1232px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+</style>
