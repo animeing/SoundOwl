@@ -18,7 +18,7 @@
     <div v-if="!loading && !loadError && total > 0" class="analysis-list" role="region" aria-label="Sounds outside Analysis Count" tabindex="0">
       <div v-for="sound in sounds" :key="sound.hash" class="analysis-row">
         <strong>{{ sound.title }}</strong>
-        <small :title="sound.path">{{ sound.path }}</small>
+        <FilePathDisplay class="analysis-path" :path="sound.path" />
       </div>
     </div>
     <div v-if="!loadError && total > pageSize" class="analysis-pagination">
@@ -31,9 +31,11 @@
 
 <script>
 import { BASE } from '../../../utilization/path';
+import FilePathDisplay from './FilePathDisplay.vue';
 
 export default {
   name: 'UnanalysedSoundList',
+  components: { FilePathDisplay },
   data() {
     return {
       pageSize: 10,
@@ -131,7 +133,6 @@ export default {
 .analysis-row { display: grid; gap: 4px; min-width: 0; padding-block: 12px; border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); overflow-wrap: anywhere; }
 .analysis-row:first-child { border-top: 0; }
 .analysis-row strong { font-size: 1rem; }
-.analysis-row small { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.875rem; line-height: 1.4; opacity: 0.9; }
 .analysis-pagination { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; white-space: nowrap; }
 .analysis-pagination > :last-child { justify-self: end; }
 @media (max-width: 360px) {

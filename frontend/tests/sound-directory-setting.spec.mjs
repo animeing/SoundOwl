@@ -98,7 +98,7 @@ test('long file paths stay on one line without expanding the Settings page', asy
   );
   await page.locator('.status-detail-title').click();
   await expect(page.locator('.failure-name')).toHaveText('track.wav');
-  for (const path of [page.locator('.failure-path'), page.locator('.analysis-row small')]) {
+  for (const path of [page.locator('.failure-path .file-path-preview'), page.locator('.analysis-path .file-path-preview')]) {
     await expect(path).toHaveAttribute('title', longPath);
     const appearance = await path.evaluate((element) => ({
       whiteSpace: getComputedStyle(element).whiteSpace,
@@ -110,6 +110,17 @@ test('long file paths stay on one line without expanding the Settings page', asy
     expect(appearance.textOverflow).toBe('ellipsis');
     expect(appearance.contentWidth).toBeGreaterThan(appearance.visibleWidth);
   }
+  const revealFailurePath = page.locator('.failure-path').getByRole('button', { name: 'Show full path' });
+  await expect(revealFailurePath).toBeVisible();
+  await revealFailurePath.click();
+  const fullPathDialog = page.getByRole('dialog', { name: 'Full file path' });
+  await expect(fullPathDialog.locator('.file-path-full')).toHaveText(longPath);
+  if (testInfo.project.name.includes('320x667')) {
+    await testInfo.attach('full-file-path-dialog-rendered', { body: await page.screenshot(), contentType: 'image/png' });
+  }
+  await fullPathDialog.getByRole('button', { name: 'Close' }).click();
+  await expect(fullPathDialog).toHaveCount(0);
+  await expect(page.locator('.analysis-path').getByRole('button', { name: 'Show full path' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize().width);
 });
 

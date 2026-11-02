@@ -33,7 +33,7 @@
                   <v-chip size="small" color="error">Step{{ failure.step }}</v-chip>
                   <div class="failure-details">
                     <strong class="failure-name" :title="failure.target">{{ fileName(failure.target) }}</strong>
-                    <small class="failure-path" :title="failure.target">{{ failure.target }}</small>
+                    <FilePathDisplay class="failure-path" :path="failure.target" />
                     <div>{{ failure.reason }}</div>
                     <small v-if="failure.updatedAt">Last failed: {{ formatDate(failure.updatedAt) }}</small>
                   </div>
@@ -55,11 +55,12 @@
 
 <script>
 import { BASE } from '../../../utilization/path';
+import FilePathDisplay from './FilePathDisplay.vue';
 import UnanalysedSoundList from './UnanalysedSoundList.vue';
 
 export default {
   name: 'RegistrationFailurePanel',
-  components: { UnanalysedSoundList },
+  components: { FilePathDisplay, UnanalysedSoundList },
   props: {
     running: { type: Boolean, default: false },
     step1Running: { type: Boolean, default: false },
@@ -252,7 +253,6 @@ export default {
 .failure-details { min-width: 0; }
 .failure-details > div { overflow-wrap: anywhere; }
 .failure-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.failure-path { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) {
   .detail-sections.has-two-sections { grid-template-columns: minmax(0, 1fr); }
 }
