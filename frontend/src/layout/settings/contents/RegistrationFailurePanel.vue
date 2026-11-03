@@ -9,15 +9,15 @@
       </v-expansion-panel-title>
       <v-expansion-panel-text>
         <div class="registration-details" role="region" aria-label="Registration and analysis details">
-          <div class="detail-sections" :class="{ 'has-two-sections': analysisGap > 0 && showFailureSection }">
-            <section v-if="showFailureSection" class="failure-section" aria-labelledby="failure-heading">
-              <h3 id="failure-heading" class="text-subtitle-1 font-weight-medium">Recorded file failures ({{ failureCount }})</h3>
+          <div class="detail-sections" :class="{ 'has-two-sections': analysisGap > 0 }">
+            <section class="failure-section" aria-labelledby="failure-heading">
+              <h3 id="failure-heading" class="text-subtitle-1 font-weight-medium">Recorded file failures<span v-if="failureStatusReady && !loadError"> ({{ failureCount }})</span></h3>
               <template v-if="!loadError && failureCount > 0">
                 <p class="text-body-2 failure-help">Step1 reads and saves files; Step2 analyzes volume.</p>
                 <p class="text-body-2 failure-help">Already in the library: open the song's menu and choose Information update.</p>
                 <p class="text-body-2 failure-help">Not in the library: fix the file, then choose Sound Regist.</p>
               </template>
-              <div v-if="failureCount > 0 || loadError" class="failure-toolbar">
+              <div class="failure-toolbar">
                 <v-btn size="small" variant="tonal" :loading="loading" @click="refresh">Refresh failure records</v-btn>
               </div>
               <div v-if="!loadError && failureCount > 0" class="failure-filters" role="group" aria-label="Filter failures by step">
@@ -115,10 +115,6 @@ export default {
       if (this.analysisGap > 0) details.push(`${this.analysisGap} ${this.analysisGap === 1 ? 'sound' : 'sounds'} outside Analysis Count`);
       if (!this.loadError && this.failureCount === 0 && this.analysisGap > 0) details.push('no failed files recorded');
       return details.length ? `${details.join(' · ')}.` : 'No recorded file failures or analysis count differences.';
-    },
-    /** Keep an empty failure card out of the way when analysis is the only issue. */
-    showFailureSection() {
-      return !this.failureStatusReady || this.loadError || this.failureCount > 0 || this.analysisGap === 0;
     },
     filters() {
       return [

@@ -181,7 +181,7 @@ test('Current Status leads to persisted Step1 and Step2 failures after revisitin
   failures = [];
   await page.getByRole('button', { name: 'Refresh failure records' }).click();
   await expect(page.getByText(/no failed files recorded/i)).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Recorded file failures/ })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Recorded file failures (0)' })).toBeVisible();
   await expect(page.getByRole('group', { name: 'Filter failures by step' })).toHaveCount(0);
 });
 
@@ -192,21 +192,33 @@ test('failure list API errors are shown in Detail and the status cue recovers on
     : { status: 503, body: { status: 'error' } });
   await expect(page.getByText(/Failed-file records could not be loaded/)).toBeVisible();
   await page.locator('.status-detail-title').click();
+  await expect(page.getByRole('heading', { name: 'Recorded file failures', exact: true })).toBeVisible();
   await expect(page.getByRole('alert').getByText('Could not load failure records.')).toBeVisible();
   available = true;
   await page.getByRole('button', { name: 'Refresh failure records' }).click();
   await expect(page.getByText(/no failed files recorded/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Recorded file failures (0)' })).toBeVisible();
   await expect(page.getByText(/Failed-file records could not be loaded/)).toHaveCount(0);
 });
 
-test('empty failure history omits its guidance and filters even when analysis differs', async ({ page }, testInfo) => {
+test('empty failure history keeps its card beside analysis without guidance or filters', async ({ page }, testInfo) => {
   await openSettings(page, testInfo, { effective_sound_directory: '/music/saved', sound_directory_source: 'settings' }, () => ({
     counts: { step1: 0, step2: 0 }, total: 0, failures: [],
   }));
   await page.locator('.status-detail-title').click();
   await expect(page.getByText(/no failed files recorded/i)).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Recorded file failures/ })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Refresh failure records' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Recorded file failures (0)' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Refresh failure records' })).toBeVisible();
+  await expect(page.getByText('No unresolved failures recorded.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Outside Analysis Count (2)' })).toBeVisible();
+  const failureCard = await page.locator('.failure-section').boundingBox();
+  const analysisCard = await page.locator('.analysis-gap').boundingBox();
+  expect(failureCard).not.toBeNull();
+  expect(analysisCard).not.toBeNull();
+  if (page.viewportSize().width > 900) {
+    expect(Math.abs(failureCard.y - analysisCard.y)).toBeLessThanOrEqual(1);
+    expect(failureCard.x + failureCard.width).toBeLessThan(analysisCard.x);
+  }
   await expect(page.getByText('Reload checks saved history; it does not retry registration.')).toHaveCount(0);
   await expect(page.getByRole('group', { name: 'Filter failures by step' })).toHaveCount(0);
   await expect(page.getByText('After fixing a file')).toHaveCount(0);
@@ -236,7 +248,7 @@ test('Analysis/Sound Count gap identifies older sounds even when failure history
   await expect.poll(async () => (await page.locator('.status-detail-panel').boundingBox())?.y).toBeGreaterThanOrEqual(80);
   await expect.poll(async () => (await page.locator('.status-detail-panel').boundingBox())?.y).toBeLessThan(200);
   await expect(page.locator('.status-detail-title')).toContainText('Registration and analysis');
-  await expect(page.getByRole('heading', { name: /Recorded file failures/ })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Recorded file failures (0)' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Outside Analysis Count (2)' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Search all' })).toHaveCount(0);
   await expect(page.getByText('Unanalysed track one')).toBeVisible();
