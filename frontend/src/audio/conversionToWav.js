@@ -1,6 +1,5 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { toBlobURL } from '@ffmpeg/util';
-import { fetchFile } from '@ffmpeg/util';
+import { toBlobURL, fetchFile } from '@ffmpeg/util';
 import { BASE } from '../utilization/path';
 import { BaseFrameWork } from '../base';
 
@@ -14,19 +13,35 @@ class CacheStruct{
   }
 }
 
-let isLoaded = false;
-const ffmpeg = new FFmpeg();
-export async function ffmpegInitalize() {
-  await ffmpeg.load({
-    coreURL: await toBlobURL(`${BASE.FRONT_HOME}js/ffmpeg-core.js`, 'text/javascript'),
-    wasmURL: await toBlobURL(`${BASE.FRONT_HOME}js/ffmpeg-core.wasm`, 'application/wasm')
-  });
-  isLoaded = true;
+let ffmpegInitializationPromise;
 
-  cacheList.addEventListener('delete',data=>{
-    ffmpeg.deleteFile(data.detail.value.convert);
-    URL.revokeObjectURL(data.detail.value.objectUrl);
+/**
+ * 変換が必要になった時だけFFmpegを読み込む。同時呼び出しは同じ初期化を待ち、
+ * 失敗時はworkerを破棄して次回の再生操作で再試行できるようにする。
+ * @returns {Promise<FFmpeg>}
+ */
+export function initializeFFmpeg() {
+  if (ffmpegInitializationPromise) {
+    return ffmpegInitializationPromise;
+  }
+
+  const ffmpeg = new FFmpeg();
+  ffmpegInitializationPromise = (async () => {
+    await ffmpeg.load({
+      coreURL: await toBlobURL(`${BASE.FRONT_HOME}js/ffmpeg-core.js`, 'text/javascript'),
+      wasmURL: await toBlobURL(`${BASE.FRONT_HOME}js/ffmpeg-core.wasm`, 'application/wasm')
+    });
+    cacheList.addEventListener('delete', data => {
+      void ffmpeg.deleteFile(data.detail.value.convert).catch(error => console.error('FFmpeg cache cleanup failed', error));
+      URL.revokeObjectURL(data.detail.value.objectUrl);
+    });
+    return ffmpeg;
+  })().catch(error => {
+    ffmpeg.terminate();
+    ffmpegInitializationPromise = undefined;
+    throw error;
   });
+  return ffmpegInitializationPromise;
 }
 
 /**
@@ -54,7 +69,7 @@ export async function conversionToWav(url) {
     return cache.objectUrl;
   }
   let urlFile = await fetchFile(url);
-  await BaseFrameWork.waitForValue(()=>isLoaded, true, 50000);
+  const ffmpeg = await initializeFFmpeg();
   let filename = url.split('/').pop();
   await ffmpeg.writeFile(filename, urlFile);
   let convertFileName = filename+'.wav';
