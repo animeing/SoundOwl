@@ -21,6 +21,7 @@ function createApiHandlers(deps) {
     settingsStore,
     schemaService,
     registrar,
+    failureStore,
     mediaService,
     pulseStore,
     fontPath,
@@ -61,6 +62,46 @@ function createApiHandlers(deps) {
     async setupDatabaseTable() {
       await schemaService.create();
       return json({ status: 'success' });
+    },
+
+    /** Return a bounded page of unresolved Step1/Step2 failures for Settings Detail. */
+    async registrationFailures({ query }) {
+      const requestedStep = query.step || 'all';
+      const requestedLimit = query.limit === undefined ? 25 : Number(query.limit);
+      const requestedOffset = query.offset === undefined ? 0 : Number(query.offset);
+      if (!['all', 'step1', 'step2'].includes(requestedStep)
+        || !Number.isSafeInteger(requestedLimit) || requestedLimit < 0 || requestedLimit > 50
+        || !Number.isSafeInteger(requestedOffset) || requestedOffset < 0) {
+        return json({ status: 'error', detail: 'Invalid failure list parameters.' }, 400);
+      }
+      try {
+        return json(await failureStore.list({
+          step: requestedStep === 'all' ? null : Number(requestedStep.slice(-1)),
+          limit: requestedLimit,
+          offset: requestedOffset,
+        }));
+      } catch (error) {
+        console.error('Could not load registration failures:', error);
+        return json({ status: 'error', detail: 'Could not load registration failures.' }, 503);
+      }
+    },
+
+    /** Return sounds excluded from the Analysis count without labeling them as failures. */
+    async unanalysedSounds({ query }) {
+      const limit = query.limit === undefined ? 25 : Number(query.limit);
+      const offset = query.offset === undefined ? 0 : Number(query.offset);
+      const rawSearchTerm = query.search === undefined ? '' : query.search;
+      if (!Number.isSafeInteger(limit) || limit < 0 || limit > 50
+        || !Number.isSafeInteger(offset) || offset < 0
+        || typeof rawSearchTerm !== 'string' || rawSearchTerm.length > 200) {
+        return json({ status: 'error', detail: 'Invalid analysis list parameters.' }, 400);
+      }
+      try {
+        return json(await repository.listSoundsWithoutAnalysis({ limit, offset, searchTerm: rawSearchTerm.trim() }));
+      } catch (error) {
+        console.error('Could not load sounds without analysis:', error);
+        return json({ status: 'error', detail: 'Could not load sounds without analysis.' }, 503);
+      }
     },
 
     async soundAddtimeList() {
@@ -116,7 +157,19 @@ function createApiHandlers(deps) {
       const release = deps.lockService?.beginStep1 ? deps.lockService.beginStep1() : () => {};
       try {
         if (query.soundhash) {
-          return json(await registrar.refreshByHash(decompressHash(decodeURIComponent(query.soundhash))));
+          const {
+            count: registeredSoundCount,
+            error: soundRefreshFailure,
+          } = await registrar.refreshByHash(decompressHash(decodeURIComponent(query.soundhash)));
+          if (soundRefreshFailure) {
+            return json({
+              status: 'error',
+              count: registeredSoundCount,
+              failure: soundRefreshFailure,
+              detail: `Could not update ${soundRefreshFailure.target}: ${soundRefreshFailure.reason}`,
+            }, soundRefreshFailure.code === 'SOUND_NOT_FOUND' ? 404 : 500);
+          }
+          return json({ count: registeredSoundCount });
         }
         const settings = await settingsStore.read();
         const exclusions = normalizeExclusionPaths(settings.exclusionPaths);

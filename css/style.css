@@ -422,6 +422,82 @@ sw-save-message > div > input[type="text"] {
   margin: 0;
 }
 
+/* 上部通知は件数と操作だけにし、ファイルごとの調査情報は要求時に開く。 */
+sw-message-button.sound-registration-summary > div > input[type="button"] {
+  width: auto;
+  min-width: 8em;
+}
+
+dialog.sound-registration-details {
+  box-sizing: border-box;
+  width: min(42rem, calc(100vw - 24px));
+  max-height: 80vh;
+  padding: 16px;
+  overflow: hidden;
+  background: rgb(var(--v-theme-surface));
+  color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.38);
+  border-radius: 8px;
+}
+
+dialog.sound-registration-details[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+dialog.sound-registration-details::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+dialog.sound-registration-details > h2,
+dialog.sound-registration-details > p {
+  margin: 0;
+}
+
+dialog.sound-registration-details > h2 {
+  font-size: 1.2em;
+}
+
+dialog.sound-registration-details > .sound-registration-scroll-hint {
+  font-size: 0.875em;
+}
+
+dialog.sound-registration-details > ol {
+  min-height: 0;
+  margin: 0;
+  padding: 0 4px 8px 28px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  scrollbar-gutter: stable;
+  user-select: text;
+}
+
+dialog.sound-registration-details li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.2);
+}
+
+dialog.sound-registration-details li > code,
+dialog.sound-registration-details li > span {
+  display: block;
+}
+
+dialog.sound-registration-details li > code {
+  white-space: normal;
+}
+
+dialog.sound-registration-details > button {
+  align-self: flex-end;
+  min-width: 8em;
+  padding: 4px 12px;
+  background: transparent;
+  color: inherit;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.38);
+  border-radius: 1.5rem;
+  cursor: pointer;
+}
+
 .hide {
   display: none;
   visibility: hidden;

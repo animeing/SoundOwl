@@ -78,6 +78,8 @@ import { AudioClip } from '../../audio/type/AudioClip';
 import { BASE } from '../../utilization/path';
 import audio from '../../audio/AudioPlayer';
 import ContextMenu from '../common/ContextMenu.vue';
+import { UpdateSoundInfomationAction } from '../../page';
+import { MessageWindow } from '../../base';
 
 const isMobile = () =>
   typeof window !== 'undefined' &&
@@ -114,6 +116,7 @@ export default defineComponent({
             { label: 'Add to Last', action: () => this.addPlayList(this.soundClip, audio.playList.length) },
           ],
         },
+        { label: 'Information update', action: () => this.updateSoundInformation() },
       ],
     };
   },
@@ -127,6 +130,18 @@ export default defineComponent({
       this.soundClip.albumKey !== undefined && this.soundClip.albumKey !== '';
   },
   methods: {
+    /** 表示中の曲を個別更新し、API が成功したときだけ完了通知を出す。 */
+    updateSoundInformation() {
+      const updateAction = new UpdateSoundInfomationAction();
+      updateAction.formDataMap.append('soundhash', this.soundClip.soundHash);
+      updateAction.httpRequestor.addEventListener('success', () => {
+        const notification = new MessageWindow();
+        notification.value = `Updated sound infomation ${this.soundClip.artist} - ${this.soundClip.title}`;
+        notification.open();
+        notification.close(1000);
+      });
+      updateAction.execute();
+    },
     createImageSrc(albumKey) {
       return `${BASE.HOME}img/album_art.php?media_hash=${albumKey}`;
     },
