@@ -40,12 +40,11 @@ jobs:
         echo "MariaDB not ready" && exit 1
 
     - name: Apply initial SQL
-      run: $MYSQL test_db < parts/setup/db/soundowl_table_mysql.sql
-
-    - name: Enable event scheduler & grant privilege
       run: |
-        $MYSQL    -e "SET GLOBAL event_scheduler = ON;"
-        $MYSQL    -e "GRANT EVENT ON *.* TO 'root'@'%'; FLUSH PRIVILEGES;"
+        set -o pipefail
+        # Keep the event disabled until the explicit schema and procedure checks finish.
+        # The production setup SQL still enables it during a real installation.
+        sed '/^SET GLOBAL event_scheduler = ON;$/d' parts/setup/db/soundowl_table_mysql.sql | $MYSQL test_db
 
     # ───────── オブジェクト検証 ─────────
     - name: Verify objects
@@ -74,3 +73,10 @@ jobs:
         $MYSQL -D test_db -e "CALL manage_partitions_and_compact_ids();"
         $MYSQL -D test_db -e "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA='test_db' AND TABLE_NAME='sound_play_history';"
         $MYSQL -D test_db -e "SELECT COUNT(*) AS rows_after_compaction FROM sound_play_history;"
+
+    # The daily event runs immediately when the scheduler starts and can truncate
+    # sound_play_history while object checks are reading the schema.
+    - name: Enable event scheduler & grant privilege
+      run: |
+        $MYSQL    -e "GRANT EVENT ON *.* TO 'root'@'%'; FLUSH PRIVILEGES;"
+        $MYSQL    -e "SET GLOBAL event_scheduler = ON;"

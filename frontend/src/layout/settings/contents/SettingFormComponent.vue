@@ -18,71 +18,35 @@
       </div>
     </v-card>
 
-    <v-card class="box mb-12" style="background: inherit;">
-      <v-card-title>Current Status</v-card-title>
-        <v-divider></v-divider>
-        <div>
-          <v-card style="background: inherit;">
-            <v-card-title>
-              <v-chip class="status-chip" color="red" v-if="registStatus">Action</v-chip>
-              <v-chip class="status-chip" color="green" v-else>Finished</v-chip>
-              Regist Status
-            </v-card-title>
-            <v-card-text>
-              <v-expansion-panels rounded="md">
-                <v-expansion-panel>
-                  <v-expansion-panel-title>Detail</v-expansion-panel-title>
-                  <v-expansion-panel-text>
-                    <p>Regist Step1: 
-                      <v-chip color="red" v-if="registStatusStep1">
-                        Action
-                      </v-chip>
-                      <v-chip color="green" v-else>
-                        Finished
-                      </v-chip>
-                    </p>
-                    <p>Regist Step2: 
-                      <v-chip color="red" v-if="registStatusStep2">
-                        Action
-                      </v-chip>
-                      <v-chip color="green" v-else>
-                        Finished
-                      </v-chip>
-                    </p>
-                  </v-expansion-panel-text>
-                </v-expansion-panel>
-              </v-expansion-panels>
-            </v-card-text>
+    <v-card class="box mb-12 current-status-card" style="background: inherit;">
+      <v-card-title class="current-status-title">Current Status</v-card-title>
+      <v-divider />
+      <div class="current-status-body">
+        <RegistrationFailurePanel
+          ref="failurePanel"
+          :running="registStatus"
+          :step1-running="registStatusStep1"
+          :step2-running="registStatusStep2"
+          :analysis-gap="analysisGap"
+        />
+        <div class="status-metrics">
+          <v-card class="status-metric" style="background: inherit;">
+            <v-card-title>Analysis/Sound Count</v-card-title>
+            <v-card-text><v-divider /><span>{{ analysisSoundCount }}</span>/<span>{{ registSoundCount }}</span></v-card-text>
           </v-card>
-          <v-card style="background: inherit;">
-            <div class="d-flex flex-wrap align-content-space-around">
-              <v-card class="flex-grow-1 flex-shrink-1" style="background: inherit;">
-                <v-card-title>Analysis/Sound Count</v-card-title>
-                <v-card-text>
-                  <v-divider></v-divider>
-                  <span>{{ analysisSoundCount }}</span>/<span>{{ registSoundCount }}</span>
-                </v-card-text>
-              </v-card>
-              <v-card class="flex-grow-1 flex-shrink-1" style="background: inherit;">
-                <v-card-title>Album Count</v-card-title>
-                <v-card-text>
-                  <v-divider></v-divider>
-                  {{ albumCount }}
-                </v-card-text>
-              </v-card>
-              <v-card class="flex-grow-1 flex-shrink-1" style="background: inherit;">
-                <v-card-title>Artist Count</v-card-title>
-                <v-card-text>
-                  <v-divider></v-divider>
-                  {{ artistCount }}
-                </v-card-text>
-              </v-card>
-            </div>
+          <v-card class="status-metric" style="background: inherit;">
+            <v-card-title>Album Count</v-card-title>
+            <v-card-text><v-divider />{{ albumCount }}</v-card-text>
+          </v-card>
+          <v-card class="status-metric" style="background: inherit;">
+            <v-card-title>Artist Count</v-card-title>
+            <v-card-text><v-divider />{{ artistCount }}</v-card-text>
           </v-card>
         </div>
+      </div>
     </v-card>
     
-    <div class="d-flex flex-wrap align-content-space-around">
+    <div class="settings-columns d-flex flex-wrap align-content-space-around">
       <!-- DB -------------------------------------------------------->
         <v-card class="settings-panel box flex-grow-1 flex-shrink-1" style="background: inherit;">
           <v-card-title>DB</v-card-title>
@@ -123,7 +87,9 @@ import { SoundOwlProperty } from '../../../websocket';
 import { GetSetting } from '../../../page';
 import { BaseFrameWork } from '../../../base';
 import { getBackendServer } from '../../../utilization/path';
+import RegistrationFailurePanel from './RegistrationFailurePanel.vue';
 export default {
+  components: { RegistrationFailurePanel },
   emits: ['backend-update'],
   props: {
     backendSaving: {
@@ -160,6 +126,11 @@ export default {
       artistCount: SoundOwlProperty.SoundRegist.RegistDataCount.artist
     };
   },
+  computed: {
+    analysisGap() {
+      return Math.max(0, Number(this.registSoundCount || 0) - Number(this.analysisSoundCount || 0));
+    }
+  },
   mounted() {
     this.reloadBackendSettings();
     SoundOwlProperty.WebSocket.EventTarget.addEventListener('update',this.updateCurrentStatus);
@@ -168,6 +139,11 @@ export default {
     SoundOwlProperty.WebSocket.EventTarget.removeEventListener('update', this.updateCurrentStatus);
   },
   methods:{
+    /** Reload both detail lists after a backend change or registration action. */
+    refreshRegistrationDetails() {
+      const panel = this.$refs.failurePanel;
+      return Promise.all([panel?.refresh(), panel?.refreshAnalysisList()]);
+    },
     reloadBackendSettings() {
       return new Promise((resolve) => {
         let getSettingAction = new GetSetting;
@@ -228,10 +204,16 @@ export default {
         .filter(Boolean);
     },
     updateCurrentStatus(){
-
+      const wasRegistering = this.registStatusStep1 || this.registStatusStep2;
       this.registStatus=SoundOwlProperty.SoundRegist.registStatus;
       this.registStatusStep1=SoundOwlProperty.SoundRegist.registStatusStep1;
       this.registStatusStep2=SoundOwlProperty.SoundRegist.registStatusStep2;
+      if (wasRegistering && !this.registStatusStep1 && !this.registStatusStep2) {
+        this.refreshRegistrationDetails();
+      } else if (!this.registStatus) {
+        // A short Step2 job can start and finish between WebSocket broadcasts.
+        this.$refs.failurePanel?.refreshOnStatusUpdate();
+      }
 
       this.registSoundCount=SoundOwlProperty.SoundRegist.RegistDataCount.sound;
       this.analysisSoundCount=SoundOwlProperty.SoundRegist.RegistDataCount.analysisSound;
@@ -245,6 +227,7 @@ export default {
 <style scoped>
 .settings-form {
   padding: 16px;
+  width: 100%;
 }
 
 .settings-form :deep(.v-card-title) {
@@ -277,8 +260,27 @@ export default {
   padding-top: 24px;
 }
 
-.status-chip {
-  padding-inline: 13px;
+.current-status-body {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.current-status-card { scroll-margin-top: 64px; }
+
+.status-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.status-metric { min-width: 0; }
+.status-metric :deep(.v-card-title) { white-space: normal; text-overflow: clip; }
+.status-metric :deep(.v-divider) { margin-bottom: 8px; }
+
+@media (max-width: 600px) {
+  .status-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .status-metric:first-child { grid-column: 1 / -1; }
 }
 
 .settings-panel {

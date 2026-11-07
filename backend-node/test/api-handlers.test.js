@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { createApiHandlers, hasRange, json, normalizeExclusionPaths, text, binary, statusPayload } from '../src/api/handlers.js';
+import { SoundRegistrar } from '../src/services/soundRegistrar.js';
 import { compressHash } from '../src/utils/hash.js';
 
 test('response helpers and range predicate return explicit response DTOs', () => {
@@ -118,6 +119,100 @@ test('soundRegist still works when no runtime lock state service is injected', a
   });
 
   assert.deepEqual((await handlers.soundRegist({ query: {} })).body, { count: 1 });
+});
+
+test('soundRegist returns partial scan details and non-success status for individual failures', async () => {
+  const hash = '8e002bf5f50db0553d82bc67e9225ef2b7ab1611';
+  const registrar = {
+    registerDirectory: vi.fn(async () => ({
+      count: 2,
+      failedCount: 1,
+      failures: [{ target: '/music/bad.wav', reason: 'Could not read audio metadata.' }],
+    })),
+    refreshByHash: vi.fn(async () => ({
+      count: 2,
+      error: { target: '/music/bad.wav', reason: 'Could not read audio metadata.' },
+    })),
+  };
+  const handlers = createApiHandlers({
+    repository: fullRepositoryMock(),
+    settingsStore: { read: vi.fn(async () => ({ sound_directory: '/music', exclusionPaths: [] })) },
+    registrar,
+    mediaService: mediaMock(),
+    pulseStore: pulseMock(),
+    lockService: { beginStep1: vi.fn(() => vi.fn()) },
+    fontPath: await tempFile('font'),
+    placeholderImagePath: await tempFile('webp'),
+    equalizerPresetPath: await tempJson({}),
+  });
+
+  const scanResponse = await handlers.soundRegist({ query: {} });
+  assert.equal(scanResponse.status, 200);
+  assert.deepEqual(scanResponse.body, {
+    count: 2,
+    failedCount: 1,
+    failures: [{ target: '/music/bad.wav', reason: 'Could not read audio metadata.' }],
+  });
+  const updateResponse = await handlers.soundRegist({ query: { soundhash: compressHash(hash) } });
+  assert.equal(updateResponse.status, 500);
+  assert.equal(updateResponse.body.detail, 'Could not update /music/bad.wav: Could not read audio metadata.');
+  assert.equal(updateResponse.body.count, 2);
+  registrar.refreshByHash.mockResolvedValueOnce({
+    count: 2,
+    error: { target: hash, reason: 'Sound not found.', code: 'SOUND_NOT_FOUND' },
+  });
+  const missingResponse = await handlers.soundRegist({ query: { soundhash: compressHash(hash) } });
+  assert.equal(missingResponse.status, 404);
+  assert.equal(missingResponse.body.detail, `Could not update ${hash}: Sound not found.`);
+});
+
+test('soundRegist integrates file scan and API response while repository and queue are mocked', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'soundowl-api-register-'));
+  const goodFile = path.join(root, 'good.wav').replaceAll('\\', '/');
+  const badFile = path.join(root, 'bad.wav').replaceAll('\\', '/');
+  await Promise.all([fs.writeFile(goodFile, ''), fs.writeFile(badFile, '')]);
+  const savedSounds = new Map();
+  const registrar = new SoundRegistrar({
+    repository: {
+      findSoundByPath: async (file) => [...savedSounds.values()].find((sound) => sound.data_link === file),
+      findSoundByHash: async (hash) => savedSounds.get(hash),
+      upsertSound: async (sound) => savedSounds.set(sound.sound_hash, sound),
+      countSounds: async () => savedSounds.size,
+    },
+    redis: { enqueueAudioProcessing: vi.fn(async () => {}) },
+    metadataReader: async (file) => {
+      if (file === badFile) throw new Error('private parser detail');
+      return {
+        title: 'Good', artist: false, album: false, genre: false,
+        lyrics: false, track: false, year: false, picture: null,
+      };
+    },
+  });
+  const handlers = createApiHandlers({
+    repository: fullRepositoryMock(),
+    settingsStore: { read: vi.fn(async () => ({ sound_directory: root, exclusionPaths: [] })) },
+    registrar,
+    mediaService: mediaMock(),
+    pulseStore: pulseMock(),
+    lockService: { beginStep1: vi.fn(() => vi.fn()) },
+    fontPath: await tempFile('font'),
+    placeholderImagePath: await tempFile('webp'),
+    equalizerPresetPath: await tempJson({}),
+  });
+  const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const response = await handlers.soundRegist({ query: {} });
+    assert.equal(response.status, 200);
+    assert.equal(response.body.count, 1);
+    assert.deepEqual(response.body.failures, [
+      { target: badFile, reason: 'Could not read audio metadata.' },
+    ]);
+    assert.equal(response.body.failedCount, 1);
+    assert.equal([...savedSounds.values()][0].data_link, goodFile);
+  } finally {
+    errorLog.mockRestore();
+    await fs.rm(root, { recursive: true, force: true });
+  }
 });
 
 test('handlers cover artist album history playlist pulse media and binary paths', async () => {

@@ -4,6 +4,7 @@ import { loadConfig } from './config.js';
 import { createMysqlPool } from './db/mysql.js';
 import { createSchema } from './db/schema.js';
 import { SoundOwlRepository } from './db/soundRepository.js';
+import { RegistrationFailureStore } from './db/registrationFailureStore.js';
 import { createRedisClient } from './redis/soundRedis.js';
 import { analyzeLoudness } from './audio/ffmpeg.js';
 import { readMetadata } from './audio/metadata.js';
@@ -41,6 +42,7 @@ async function buildRuntime(env = process.env) {
   const config = loadConfig(env);
   const db = await createMysqlPool(config.db);
   const repository = new SoundOwlRepository(db);
+  const failureStore = new RegistrationFailureStore(db);
   const redis = await createRedisClient(config.redis);
   const settingsStore = createSettingsStore(config.settingsPath);
   const lockService = new LockService();
@@ -48,18 +50,23 @@ async function buildRuntime(env = process.env) {
     repository,
     redis,
     metadataReader: readMetadata,
+    failureStore,
   });
   const mediaService = new MediaService({ repository, redis, blankImagePath: config.blankImagePath });
   const handlers = createApiHandlers({
     repository,
     settingsStore,
     schemaService: {
-      create: () => createSchema(db, {
-        schemaPath: path.resolve(__dirname, '../../parts/setup/db/soundowl_table_mysql.sql'),
-        databaseName: config.db.database,
-      }),
+      create: async () => {
+        await createSchema(db, {
+          schemaPath: path.resolve(__dirname, '../../parts/setup/db/soundowl_table_mysql.sql'),
+          databaseName: config.db.database,
+        });
+        await failureStore.clearAll();
+      },
     },
     registrar,
+    failureStore,
     mediaService,
     pulseStore: new PulseStore(path.resolve(__dirname, '../../audio_pulse')),
     lockService,
@@ -80,6 +87,7 @@ async function buildRuntime(env = process.env) {
     redis,
     repository,
     analyzeLoudness,
+    failureStore,
     lockService,
   });
   const workerLoop = config.worker.enabled ? createWorkerLoop({
