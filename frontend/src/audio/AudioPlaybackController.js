@@ -36,6 +36,8 @@ export class AudioPlaybackController {
    * Audio要素へsrcを反映し、関連イベント発火とエフェクト初期化を行う。
    */
   audioDeployment(){
+    this.audioPlayer.audioSourceRequestId += 1;
+    this.audioPlayer.audioSourceHasFailed = false;
     this.audioPlayer.eventSupport.dispatchEvent(new CustomEvent('audioSet'));
     this.audioPlayer.audio.src = this.audioPlayer.playList.currentAudioClip.src;
     this.audioPlayer.exAudioEffect.reset();
@@ -56,6 +58,10 @@ export class AudioPlaybackController {
     if(audioClip == undefined && this.audioPlayer.playList.currentAudioClip == undefined) {
       return;
     }
+    // 変換失敗後に同じ曲を再生し直す場合は、元のURLを再設定してエラー処理を再実行する。
+    if (audioClip == undefined && this.audioPlayer.audioSourceHasFailed) {
+      this.audioDeployment();
+    }
     this.audioPlayer.audioPlayStateAction.lockEventTarget.action('setStopUpdate');
     if(audioClip != undefined && this.audioPlayer.playList.findAudioClipPosition(audioClip) == -1) {
       this.audioPlayer.playList.appendAudioClipNext(audioClip);
@@ -68,6 +74,7 @@ export class AudioPlaybackController {
       this.audioDeployment();
     }
 
+    const playbackSourceRequestId = this.audioPlayer.audioSourceRequestId;
     BaseFrameWork.waitForValue(
       ()=>{
         if(this.audioPlayer.loudnessNormalize.soundClip == null) {
@@ -78,6 +85,10 @@ export class AudioPlaybackController {
       this.audioPlayer.playList.currentAudioClip.src,
       2e5).
       then(()=>{
+        if (this.audioPlayer.audioSourceHasFailed ||
+            this.audioPlayer.audioSourceRequestId !== playbackSourceRequestId) {
+          return;
+        }
         setTitle(this.audioPlayer.playList.currentAudioClip.title);
         this.audioPlayer.audio.play();
         this.audioPlayer.audioPlayStateAction.currentPlayState = AudioPlayStateEnum.PLAY;
@@ -103,6 +114,7 @@ export class AudioPlaybackController {
     if(this.audioPlayer.audio.src == null){
       return;
     }
+    this.audioPlayer.audioSourceRequestId += 1;
     this.audioPlayer.audio.pause();
     this.audioPlayer.audio.currentTime = 0;
     this.audioPlayer.audioPlayStateAction.currentPlayState = AudioPlayStateEnum.STOP;
