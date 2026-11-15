@@ -1,10 +1,10 @@
-/**
- * Redis キューから音量解析ジョブを取り出し、ffmpeg 解析結果を DB へ反映する Worker です。
- */
+/** Process claimed audio jobs and keep unfinished work recoverable. */
 class AudioWorker {
   /**
-   * Worker の依存関係を受け取って初期化します。
-   * @param {{redis:{popAudioProcessing:(timeoutSeconds:number)=>Promise<{hash?:string,file_path?:string}|null>},repository:{findSoundByHash:(soundHash:string)=>Promise<{data_link?:string}|null>,updateLoudness:(soundHash:string,loudnessTarget:number|string|null)=>Promise<void>},analyzeLoudness:(filePath:string)=>Promise<{mean_volume:number|null}>,failureStore?:{record:Function,resolve:Function}|null,lockService?:{beginStep2:()=>()=>void}|null}} dependencies Redis、Repository、音量解析関数、失敗ストア、任意の登録状態ロック。
+   * @param {{redis:{popAudioProcessing:Function,acknowledgeAudioProcessing:Function,requeueAudioProcessing:Function},
+   * repository:{findSoundByHash:Function,updateLoudness:Function},
+   * analyzeLoudness:Function,failureStore?:{record:Function,resolve:Function}|null,
+   * lockService?:{beginStep2:()=>()=>void}|null}} dependencies
    */
   constructor({ redis, repository, analyzeLoudness, failureStore = null, lockService = null }) {
     this.redis = redis;
@@ -14,24 +14,26 @@ class AudioWorker {
     this.lockService = lockService;
   }
 
-  /**
-   * Redis キューから 1 件だけジョブを取得し、音量解析と DB 更新を行います。
-   * @param {number} [timeoutSeconds=5] Redis の brPop 待機秒数。
-   * @returns {Promise<{status:'idle'|'invalid'|'not_found'|'updated'|'failed',mean_volume?:number}>} 1 件分の処理結果。
-   */
+  /** Claim one job. A crash leaves it in the processing list for startup recovery. */
   async processOne(timeoutSeconds = 5) {
     const job = await this.redis.popAudioProcessing(timeoutSeconds);
-    if (!job) {
-      return { status: 'idle' };
-    }
-    if (!job.hash || !job.file_path) {
-      return { status: 'invalid' };
-    }
+    if (!job) return { status: 'idle' };
 
-    const release = this.lockService?.beginStep2 ? this.lockService.beginStep2() : () => {};
+    let acknowledged = false;
+    const acknowledge = async () => {
+      await this.redis.acknowledgeAudioProcessing(job);
+      acknowledged = true;
+    };
+    const release = job.hash && job.file_path && this.lockService?.beginStep2
+      ? this.lockService.beginStep2() : () => {};
     try {
+      if (!job.hash || !job.file_path) {
+        await acknowledge();
+        return { status: 'invalid' };
+      }
       const sound = await this.repository.findSoundByHash(job.hash);
       if (!sound || sound.data_link !== job.file_path) {
+        await acknowledge();
         return { status: 'not_found' };
       }
 
@@ -43,14 +45,27 @@ class AudioWorker {
         }
       } catch (error) {
         await this.failureStore?.record(2, job.file_path, 'Could not analyze or save audio loudness.');
+        await acknowledge();
         throw error;
       }
       if (loudness.mean_volume === null) {
         await this.failureStore?.record(2, job.file_path, 'Could not analyze audio loudness.');
+        await acknowledge();
         return { status: 'failed' };
       }
       await this.failureStore?.resolve(2, job.file_path);
+      await acknowledge();
       return { status: 'updated', mean_volume: loudness.mean_volume };
+    } catch (error) {
+      if (!acknowledged) {
+        try {
+          await this.redis.requeueAudioProcessing(job);
+        } catch (requeueError) {
+          // The processing list still holds the claim for the next startup recovery.
+          console.error('Could not requeue audio processing job:', requeueError);
+        }
+      }
+      throw error;
     } finally {
       release();
     }

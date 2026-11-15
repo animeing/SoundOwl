@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig } from './config.js';
 import { createMysqlPool } from './db/mysql.js';
+import { ensurePlayHistoryPartitions } from './db/playHistoryPartitions.js';
 import { createSchema } from './db/schema.js';
 import { SoundOwlRepository } from './db/soundRepository.js';
 import { RegistrationFailureStore } from './db/registrationFailureStore.js';
@@ -41,9 +42,11 @@ async function buildServer(env = process.env) {
 async function buildRuntime(env = process.env) {
   const config = loadConfig(env);
   const db = await createMysqlPool(config.db);
+  await ensurePlayHistoryPartitions(db);
   const repository = new SoundOwlRepository(db);
   const failureStore = new RegistrationFailureStore(db);
   const redis = await createRedisClient(config.redis);
+  await redis.recoverAudioProcessing();
   const settingsStore = createSettingsStore(config.settingsPath);
   const lockService = new LockService();
   const registrar = new SoundRegistrar({
@@ -62,6 +65,7 @@ async function buildRuntime(env = process.env) {
           schemaPath: path.resolve(__dirname, '../../parts/setup/db/soundowl_table_mysql.sql'),
           databaseName: config.db.database,
         });
+        await ensurePlayHistoryPartitions(db);
         await failureStore.clearAll();
       },
     },
@@ -90,6 +94,7 @@ async function buildRuntime(env = process.env) {
     failureStore,
     lockService,
   });
+  let partitionTimer = null;
   const workerLoop = config.worker.enabled ? createWorkerLoop({
     worker,
     timeoutSeconds: config.worker.timeoutSeconds,
@@ -113,11 +118,19 @@ async function buildRuntime(env = process.env) {
           if (workerLoop) {
             workerLoop.start();
           }
+          partitionTimer = setInterval(() => {
+            ensurePlayHistoryPartitions(db).catch((error) => console.error('Play history partition maintenance failed:', error));
+          }, 60 * 60 * 1000);
+          partitionTimer.unref();
           resolve();
         });
       });
     },
     stop() {
+      if (partitionTimer) {
+        clearInterval(partitionTimer);
+        partitionTimer = null;
+      }
       if (workerLoop) {
         workerLoop.stop();
       }

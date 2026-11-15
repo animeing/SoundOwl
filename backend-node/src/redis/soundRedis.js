@@ -1,5 +1,8 @@
 import { createClient } from 'redis';
 
+const AUDIO_QUEUE = 'queue:audio-processing';
+const AUDIO_PROCESSING = 'queue:audio-processing:processing';
+
 /**
  * @typedef {{hash:string,file_path:string}} AudioProcessingJob
  * 音量解析待ち Redis キューに積む 1 曲分のジョブです。
@@ -11,7 +14,7 @@ import { createClient } from 'redis';
 class SoundRedis {
   /**
    * Redis client を受け取り、キュー操作とアルバムアート cache 操作に使います。
-   * @param {{connect?:()=>Promise<void>,isOpen?:boolean,lPush?:(key:string,value:string)=>Promise<any>,lpush?:(key:string,values:string[])=>Promise<any>,brPop?:(key:string,timeout:number)=>Promise<{element:string}|null>,brpop?:(key:string,timeout:number)=>Promise<[string,string]|null>,setEx?:(key:string,ttl:number,value:string)=>Promise<any>,setex?:(key:string,ttl:number,value:string)=>Promise<any>,get:(key:string)=>Promise<string|null>,exists:(key:string)=>Promise<number>,configSet?:(key:string,value:string)=>Promise<any>,executeRaw?:(args:string[])=>Promise<any>}} client node-redis v4 または互換 client。
+   * @param {{connect?:()=>Promise<void>,isOpen?:boolean,lPush?:(key:string,value:string)=>Promise<any>,lpush?:(key:string,values:string[])=>Promise<any>,sendCommand?:(args:string[])=>Promise<string|number|null>,setEx?:(key:string,ttl:number,value:string)=>Promise<any>,setex?:(key:string,ttl:number,value:string)=>Promise<any>,get:(key:string)=>Promise<string|null>,exists:(key:string)=>Promise<number>,configSet?:(key:string,value:string)=>Promise<any>,executeRaw?:(args:string[])=>Promise<any>}} client node-redis v4 または互換 client。
    */
   constructor(client) {
     this.client = client;
@@ -32,23 +35,53 @@ class SoundRedis {
   async enqueueAudioProcessing(job) {
     const payload = JSON.stringify(job);
     if (this.client.lPush) {
-      return this.client.lPush('queue:audio-processing', payload);
+      return this.client.lPush(AUDIO_QUEUE, payload);
     }
-    return this.client.lpush('queue:audio-processing', [payload]);
+    return this.client.lpush(AUDIO_QUEUE, [payload]);
   }
 
   /**
    * 音量解析待ちジョブを Redis list の末尾から 1 件取得します。
-   * @param {number} [timeoutSeconds=5] brPop の待機秒数。
+   * @param {number} [timeoutSeconds=5] BLMOVE の待機秒数。
    * @returns {Promise<AudioProcessingJob|null>} 取得したジョブ。タイムアウト時は null。
    */
   async popAudioProcessing(timeoutSeconds = 5) {
-    if (this.client.brPop) {
-      const item = await this.client.brPop('queue:audio-processing', timeoutSeconds);
-      return item ? JSON.parse(item.element) : null;
+    const payload = await this.client.sendCommand([
+      'BLMOVE', AUDIO_QUEUE, AUDIO_PROCESSING, 'RIGHT', 'LEFT', String(timeoutSeconds),
+    ]);
+    return payload ? JSON.parse(payload) : null;
+  }
+
+  /** Remove a job only after its DB update or durable failure record is complete. */
+  async acknowledgeAudioProcessing(job) {
+    const removed = await this.client.sendCommand([
+      'LREM', AUDIO_PROCESSING, '1', JSON.stringify(job),
+    ]);
+    if (Number(removed) !== 1) {
+      throw new Error('Could not acknowledge audio processing job.');
     }
-    const item = await this.client.brpop('queue:audio-processing', timeoutSeconds);
-    return item ? JSON.parse(item[1]) : null;
+  }
+
+  /** Atomically return one failed claim to the waiting queue for retry. */
+  async requeueAudioProcessing(job) {
+    const script = "if redis.call('LREM', KEYS[1], 1, ARGV[1]) == 1 then " +
+      "return redis.call('LPUSH', KEYS[2], ARGV[1]) end return 0";
+    const moved = await this.client.sendCommand([
+      'EVAL', script, '2', AUDIO_PROCESSING, AUDIO_QUEUE, JSON.stringify(job),
+    ]);
+    if (Number(moved) < 1) {
+      throw new Error('Could not requeue audio processing job.');
+    }
+  }
+  /** Return jobs claimed by a previous worker process to the pending list on startup. */
+  async recoverAudioProcessing() {
+    let recovered = 0;
+    while (await this.client.sendCommand([
+      'LMOVE', AUDIO_PROCESSING, AUDIO_QUEUE, 'RIGHT', 'LEFT',
+    ]) !== null) {
+      recovered += 1;
+    }
+    return recovered;
   }
 
   /**

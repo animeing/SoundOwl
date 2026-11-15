@@ -18,7 +18,7 @@ test('AudioWorker updates loudness for valid jobs, rejects invalid jobs, and cle
   };
   const jobs = [{ hash: 'h', file_path: '/fixture/library/a.wav' }, { hash: 'h' }, null];
   const worker = new AudioWorker({
-    redis: { popAudioProcessing: async () => jobs.shift() },
+    redis: { popAudioProcessing: async () => jobs.shift(), acknowledgeAudioProcessing: async () => {} },
     repository: repo,
     analyzeLoudness: async () => ({ mean_volume: -12.5 }),
     lockService: {
@@ -40,18 +40,37 @@ test('AudioWorker updates loudness for valid jobs, rejects invalid jobs, and cle
 
 test('AudioWorker reports not_found and failed analysis branches', async () => {
   const workerNotFound = new AudioWorker({
-    redis: { popAudioProcessing: async () => ({ hash: 'missing', file_path: '/fixture/library/a.wav' }) },
+    redis: { popAudioProcessing: async () => ({ hash: 'missing', file_path: '/fixture/library/a.wav' }), acknowledgeAudioProcessing: async () => {} },
     repository: { findSoundByHash: async () => null },
     analyzeLoudness: async () => assert.fail('missing sound must not be analyzed'),
   });
   assert.deepEqual(await workerNotFound.processOne(), { status: 'not_found' });
 
   const workerFailed = new AudioWorker({
-    redis: { popAudioProcessing: async () => ({ hash: 'h', file_path: '/fixture/library/a.wav' }) },
+    redis: { popAudioProcessing: async () => ({ hash: 'h', file_path: '/fixture/library/a.wav' }), acknowledgeAudioProcessing: async () => {} },
     repository: { findSoundByHash: async () => ({ data_link: '/fixture/library/a.wav' }) },
     analyzeLoudness: async () => ({ mean_volume: null }),
   });
   assert.deepEqual(await workerFailed.processOne(), { status: 'failed' });
+});
+
+test('AudioWorker keeps the claim recoverable when failure history cannot be saved', async () => {
+  const job = { hash: 'h', file_path: '/fixture/library/a.wav' };
+  let acknowledgements = 0;
+  let requeues = 0;
+  const worker = new AudioWorker({
+    redis: {
+      popAudioProcessing: async () => job,
+      acknowledgeAudioProcessing: async () => { acknowledgements += 1; },
+      requeueAudioProcessing: async () => { requeues += 1; },
+    },
+    repository: { findSoundByHash: async () => ({ data_link: job.file_path }) },
+    analyzeLoudness: async () => { throw new Error('analysis failed'); },
+    failureStore: { record: async () => { throw new Error('history unavailable'); } },
+  });
+  await assert.rejects(worker.processOne(), /history unavailable/);
+  assert.equal(acknowledgements, 0);
+  assert.equal(requeues, 1);
 });
 
 test('MediaService prepares existing-compatible range metadata and blank/art fallbacks', async () => {
