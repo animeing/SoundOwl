@@ -54,6 +54,7 @@ services:
 
   db:
     image: mariadb:11
+    command: ["mariadbd", "--event-scheduler=OFF"]
     container_name: soundowl-db
     environment:
       MYSQL_ROOT_PASSWORD: sound

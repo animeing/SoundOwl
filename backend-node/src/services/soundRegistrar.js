@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { sha1 } from '../utils/hash.js';
+import { FailureHistoryUnavailableError } from '../db/registrationFailureStore.js';
 
 const SOUND_EXTENSIONS = /\.(mp3|m4a|wav|ogg|flac|ape)$/i;
 
@@ -57,10 +58,20 @@ class SoundRegistrar {
     const files = await listSoundFiles(rootDirectory, exclusionPaths);
     const failures = [];
     let historyUnavailable = false;
+    let retryTargets = new Set();
+    if (this.failureStore?.listRetryTargets) {
+      try {
+        retryTargets = new Set(await this.failureStore.listRetryTargets(1));
+      } catch (error) {
+        console.error('Could not load registration retries:', error);
+        historyUnavailable = true;
+      }
+    }
     for (const file of files) {
-      if (!(await this.repository.findSoundByPath(file))) {
+      const existing = await this.repository.findSoundByPath(file);
+      if (!existing || retryTargets.has(file)) {
         try {
-          await this.registerFile(file);
+          await this.registerFile(file, existing?.sound_hash ?? null);
         } catch (error) {
           // Continue the scan, but report each incomplete file instead of presenting the whole run as successful.
           console.error('Sound registration failed:', file, error);
@@ -136,6 +147,12 @@ class SoundRegistrar {
       throw new RegistrationFailure('Could not read audio metadata.', error);
     }
     const soundHash = soundHashOverride || sha1(filePath);
+    // Persist the retry intent before saving the sound, so a crash before Redis enqueue is recoverable.
+    try {
+      await this.failureStore?.record(1, filePath, 'Registration awaiting audio analysis queue.');
+    } catch (error) {
+      throw new FailureHistoryUnavailableError(error);
+    }
     /** @type {{action:'inserted'|'updated',sound:Record<string,unknown>}} */
     let soundUpsertResult;
     try {
