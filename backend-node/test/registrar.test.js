@@ -154,7 +154,10 @@ test('directory scan keeps successful files and reports metadata failures with t
     });
     assert.equal(repo.sounds.get(sha1(goodFile)).title, 'good.wav');
     assert.deepEqual(jobs, [{ file_path: goodFile, hash: sha1(goodFile) }]);
-    assert.deepEqual(failureStore.record.mock.calls, [[1, badFile, 'Could not read audio metadata.']]);
+    assert.deepEqual(failureStore.record.mock.calls, [
+      [1, badFile, 'Could not read audio metadata.'],
+      [1, goodFile, 'Registration awaiting audio analysis queue.'],
+    ]);
     assert.deepEqual(failureStore.resolve.mock.calls, [[1, goodFile]]);
     assert.equal(errorLog.mock.calls.length, 1);
   } finally {
@@ -197,6 +200,61 @@ test('directory scan reports save and analysis queue failures without leaking in
   }
 });
 
+test('registration does not save a sound when durable retry intent cannot be written', async () => {
+  const repository = fakeRepository();
+  let enqueueCalls = 0;
+  const registrar = new SoundRegistrar({
+    repository,
+    redis: { enqueueAudioProcessing: async () => { enqueueCalls += 1; } },
+    metadataReader: plainMetadata,
+    failureStore: {
+      record: async () => {
+        const error = new Error('failure history unavailable');
+        error.code = 'FAILURE_HISTORY_UNAVAILABLE';
+        throw error;
+      },
+    },
+  });
+  await assert.rejects(registrar.registerFile('/fixture/library/new.wav'),
+    (error) => error.code === 'FAILURE_HISTORY_UNAVAILABLE');
+  assert.equal(repository.sounds.size, 0);
+  assert.equal(enqueueCalls, 0);
+});
+test('a saved sound is queued on the next full scan after a transient Redis failure', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'soundowl-queue-retry-'));
+  const file = path.join(root, 'retry.wav').replaceAll('\\', '/');
+  await fs.writeFile(file, '');
+  const repository = fakeRepository();
+  const unresolved = new Set();
+  const jobs = [];
+  let enqueueCalls = 0;
+  const registrar = new SoundRegistrar({
+    repository,
+    redis: { enqueueAudioProcessing: async (job) => {
+      enqueueCalls += 1;
+      if (enqueueCalls === 1) throw new Error('temporary Redis outage');
+      jobs.push(job);
+    } },
+    metadataReader: plainMetadata,
+    failureStore: {
+      listRetryTargets: async () => [...unresolved],
+      record: async (_step, target) => unresolved.add(target),
+      resolve: async (_step, target) => unresolved.delete(target),
+    },
+  });
+  const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    assert.equal((await registrar.registerDirectory(root)).failedCount, 1);
+    assert.equal(repository.sounds.size, 1);
+    assert.equal((await registrar.registerDirectory(root)).failedCount, 0);
+    assert.equal(enqueueCalls, 2);
+    assert.deepEqual(jobs, [{ file_path: file, hash: sha1(file) }]);
+    assert.equal(unresolved.size, 0);
+  } finally {
+    errorLog.mockRestore();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
 test('directory scan continues after a failure-history write error and reports missing persistence', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'soundowl-history-error-'));
   const badFile = path.join(root, 'a-bad.wav').replaceAll('\\', '/');
@@ -220,7 +278,7 @@ test('directory scan continues after a failure-history write error and reports m
   const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
   try {
     assert.deepEqual(await registrar.registerDirectory(root), {
-      count: 1,
+      count: 0,
       failedCount: 1,
       failures: [{ target: badFile, reason: 'Could not read audio metadata.' }],
       historyUnavailable: true,
@@ -243,7 +301,7 @@ test('directory scan does not misclassify registered files when clearing old his
     redis: { enqueueAudioProcessing: async () => {} },
     metadataReader: plainMetadata,
     failureStore: {
-      record: async () => assert.fail('successful files must not be recorded as failed'),
+      record: async (_step, _target, reason) => assert.equal(reason, 'Registration awaiting audio analysis queue.'),
       resolve: async () => { throw Object.assign(new Error('history unavailable'), { code: 'FAILURE_HISTORY_UNAVAILABLE' }); },
     },
   });

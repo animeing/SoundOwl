@@ -44,7 +44,9 @@ function fakeDatabase({ tableCharset = 'utf8mb4' } = {}) {
         return [[1, 2].filter((step) => [...records.values()].some((row) => row.step === step))
           .map((step) => ({ step, total: [...records.values()].filter((row) => row.step === step).length }))];
       }
-      if (sql.includes('SELECT step, target, reason')) {
+      if (sql.startsWith('SELECT target FROM registration_failures WHERE step')) {
+        return [[...records.values()].filter((row) => row.step === params[0]).map(({ target }) => ({ target }))];
+      }      if (sql.includes('SELECT step, target, reason')) {
         const filtered = [...records.values()].filter((row) => !sql.includes('WHERE step') || row.step === params[0]);
         const [limit, offset] = params.slice(-2);
         return [filtered.sort((a, b) => a.target.localeCompare(b.target)).slice(offset, offset + limit)];
@@ -54,6 +56,12 @@ function fakeDatabase({ tableCharset = 'utf8mb4' } = {}) {
   };
 }
 
+test('retry targets are limited to the requested registration step', async () => {
+  const store = new RegistrationFailureStore(fakeDatabase());
+  await store.record(1, '/music/queue.wav', 'queue unavailable');
+  await store.record(2, '/music/analyze.wav', 'analysis failed');
+  assert.deepEqual(await store.listRetryTargets(1), ['/music/queue.wav']);
+});
 test('Step1 and Step2 failures remain available over HTTP until their own successful retry', async () => {
   const db = fakeDatabase();
   const failureStore = new RegistrationFailureStore(db);
@@ -79,7 +87,7 @@ test('Step1 and Step2 failures remain available over HTTP until their own succes
     assert.equal((await registrar.refreshByHash('hash')).error.reason, 'Could not read audio metadata.');
     let volume = null;
     const worker = new AudioWorker({
-      redis: { popAudioProcessing: async () => ({ hash: 'hash', file_path: target }) },
+      redis: { popAudioProcessing: async () => ({ hash: 'hash', file_path: target }), acknowledgeAudioProcessing: async () => {} },
       repository,
       analyzeLoudness: async () => ({ mean_volume: volume }),
       failureStore,
@@ -146,7 +154,7 @@ test('Step2 exceptions are retained with a public reason and the worker lock is 
   const store = new RegistrationFailureStore(fakeDatabase());
   let released = false;
   const worker = new AudioWorker({
-    redis: { popAudioProcessing: async () => ({ hash: 'h', file_path: '/music/problem.wav' }) },
+    redis: { popAudioProcessing: async () => ({ hash: 'h', file_path: '/music/problem.wav' }), acknowledgeAudioProcessing: async () => {} },
     repository: { findSoundByHash: async () => ({ data_link: '/music/problem.wav' }) },
     analyzeLoudness: async () => { throw new Error('private ffmpeg detail'); },
     lockService: { beginStep2: () => () => { released = true; } },
@@ -197,7 +205,7 @@ test('failure history database outage stops registration with a safe 503 instead
       assert.equal(error.message.includes('private'), false);
       return true;
     });
-    assert.equal(database.records.size, 0);
+    assert.equal(database.records.size, 1);
   } finally {
     errorLog.mockRestore();
   }

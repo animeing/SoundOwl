@@ -81,6 +81,14 @@ class RegistrationFailureStore {
     return this.withTable(() => this.db.query('DELETE FROM registration_failures'));
   }
 
+  /** Return unresolved paths for a scan so saved-but-not-queued sounds can be retried. */
+  async listRetryTargets(step) {
+    return this.withTable(async () => {
+      const rows = await queryRows(this.db, 'SELECT target FROM registration_failures WHERE step = ?', [step]);
+      return rows.map((row) => row.target);
+    });
+  }
+
   /** Return counts and a bounded page of unresolved failures. */
   async list({ step = null, limit = 25, offset = 0 } = {}) {
     return this.withTable(async () => {

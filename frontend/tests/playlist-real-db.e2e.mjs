@@ -110,3 +110,30 @@ test('browser reports a deleted song and the MariaDB transaction rolls back', as
   expect(await playlistExists(request, playlistName)).toBe(false);
   expect(await playlistSounds(request, playlistName)).toEqual([]);
 });
+
+test('browser records a finished song in MariaDB after the database restart', async ({ page, request }) => {
+  const historyBeforeResponse = await request.post(`${backendUrl}/api/history_range_list.php`, {
+    data: { start: 0, end: 50 },
+  });
+  expect(historyBeforeResponse.status()).toBe(200);
+  const historyBefore = await historyBeforeResponse.json();
+  expect(historyBefore.length).toBeGreaterThan(0);
+
+  await page.goto('/#/history_list');
+  const firstTrack = page.locator('#base button.audio-item').first();
+  await expect(firstTrack).toBeVisible();
+  const recorded = page.waitForResponse((response) =>
+    new URL(response.url()).pathname === '/api/action/sound_played.php');
+  await firstTrack.locator('.audio-title').click();
+  expect((await recorded).status()).toBe(200);
+
+  const historyAfterResponse = await request.post(`${backendUrl}/api/history_range_list.php`, {
+    data: { start: 0, end: 50 },
+  });
+  expect(historyAfterResponse.status()).toBe(200);
+  const historyAfter = await historyAfterResponse.json();
+  expect(historyAfter.length).toBeGreaterThan(historyBefore.length);
+  await expect(page.locator('sw-message-box[role="alert"] p').filter({
+    hasText: 'Could not confirm play history was saved.',
+  })).toHaveCount(0);
+});
